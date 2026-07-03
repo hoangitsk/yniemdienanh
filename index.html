@@ -1332,6 +1332,7 @@
                 <a onclick="goSection('events');closeMobileMenu()">Sự kiện</a>
                 <a onclick="goSection('voting');closeMobileMenu()">Bình chọn</a>
                 <a onclick="goSection('about');closeMobileMenu()">Về dự án</a>
+                <a onclick="showPage('community');closeMobileMenu()">Cộng đồng</a>
                 <a onclick="goSection('apply');closeMobileMenu()">Tuyển dụng</a>
                 <span id="navAuth"></span>
             </div>
@@ -1481,28 +1482,38 @@
                 </div>
             </section>
 
-            <!-- SOCIAL FEED SECTION -->
-            <section id="public-feed">
-                <div class="section-head">
-                    <h2>📰 Bảng tin cộng đồng</h2>
-                    <p>Chia sẻ khoảnh khắc, cảm nhận và câu chuyện điện ảnh của bạn.</p>
-                </div>
-                <div id="feedContainer"></div>
-            </section>
+        </div>
 
-            <!-- PUBLIC CHAT SECTION -->
-            <section id="public-chat">
-                <div class="section-head">
-                    <h2>💬 Chat cộng đồng</h2>
-                    <p>Trao đổi, thảo luận về điện ảnh và dự án cùng mọi người.</p>
+        <!-- ============ CỘNG ĐỒNG (COMMUNITY PAGE) ============ -->
+        <div id="page-community" style="display:none;padding-top:90px">
+            <div class="section-head" style="margin-top:20px">
+                <h2>🌐 Cộng đồng Ý Niệm Điện Ảnh</h2>
+                <p>Kết nối, chia sẻ và cùng nhau phát triển đam mê điện ảnh.</p>
+            </div>
+            <div class="community-tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:32px;flex-wrap:wrap">
+                <button class="btn btn-gold btn-sm" onclick="showCommunityTab('feed')" id="ctab-feed">📰 Bảng tin</button>
+                <button class="btn btn-line btn-sm" onclick="showCommunityTab('chat')" id="ctab-chat">💬 Chat</button>
+                <button class="btn btn-line btn-sm" onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người</button>
+            </div>
+            <div id="community-content">
+                <div id="communityFeed">
+                    <div id="feedContainer"></div>
                 </div>
-                <div class="card" style="padding:24px;max-width:800px;margin:0 auto">
-                    <div id="publicChatMsgList" class="chat-box" style="height:350px;margin-bottom:14px">
-                        <div style="color:var(--text-muted);text-align:center;padding:40px">Đang tải tin nhắn...</div>
+                <div id="communityChat" style="display:none;max-width:800px;margin:0 auto">
+                    <div class="card" style="padding:24px">
+                        <div id="publicChatMsgList" class="chat-box" style="height:450px;margin-bottom:14px">
+                            <div style="color:var(--text-muted);text-align:center;padding:40px">Đang tải tin nhắn...</div>
+                        </div>
+                        <div id="publicChatInputArea" class="chat-input-row"></div>
                     </div>
-                    <div id="publicChatInputArea" class="chat-input-row"></div>
                 </div>
-            </section>
+                <div id="communityMembers" style="display:none;max-width:800px;margin:0 auto">
+                    <div class="card" style="padding:24px">
+                        <h3 style="color:var(--gold-light);margin-bottom:16px">👥 Thành viên cộng đồng</h3>
+                        <div id="memberList"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- ============ DỰ ÁN NỘI BỘ (DASHBOARD) ============ -->
@@ -2000,6 +2011,9 @@
         function showPage(p) {
             document.getElementById('page-home').style.display = p === 'home' ? 'block' : 'none';
             document.getElementById('dashboard').style.display = p === 'dash' ? 'block' : 'none';
+            document.getElementById('page-community').style.display = p === 'community' ? 'block' : 'none';
+            window.scrollTo(0, 0);
+            if (p === 'community') { showCommunityTab(communityCurTab); }
         }
         function goSection(id) { 
             showPage('home'); 
@@ -3598,6 +3612,48 @@
                 }
             }
             renderFeed();
+        }
+
+        // ================= COMMUNITY PAGE =================
+
+        let communityCurTab = 'feed';
+
+        function showCommunityTab(tab) {
+            communityCurTab = tab;
+            ['feed', 'chat', 'members'].forEach(t => {
+                const btn = document.getElementById('ctab-' + t);
+                const pane = document.getElementById('community' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (btn) btn.className = t === tab ? 'btn btn-gold btn-sm' : 'btn btn-line btn-sm';
+                if (pane) pane.style.display = t === tab ? 'block' : 'none';
+            });
+            if (tab === 'feed') renderFeed();
+            if (tab === 'chat') renderPublicChat();
+            if (tab === 'members') renderMemberList();
+        }
+
+        function renderMemberList() {
+            const el = document.getElementById('memberList');
+            if (!el) return;
+            const users = localDB.users || [];
+            if (users.length === 0) {
+                el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px">Chưa có thành viên nào.</div>';
+                return;
+            }
+            el.innerHTML = users.map(u => {
+                const roleLabel = u.role === 'admin' ? 'Admin' : u.role === 'organizer' ? 'BTC' : 'Thành viên';
+                const roleColor = u.role === 'admin' ? 'var(--gold)' : u.role === 'organizer' ? 'var(--ok)' : 'var(--text-muted)';
+                const roleBg = u.role === 'admin' ? 'rgba(228,184,102,0.2)' : u.role === 'organizer' ? 'rgba(99,209,158,0.2)' : 'rgba(255,255,255,0.04)';
+                return `
+                    <div style="display:flex;align-items:center;gap:14px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer" onclick="openProfile('${u.id}')">
+                        ${getAvatarHtml(u.name)}
+                        <div style="flex:1">
+                            <div style="font-weight:600;color:var(--gold-light)">${esc(u.name)}</div>
+                            <div style="font-size:0.8rem;color:var(--text-muted)">${esc(u.school || '')}${u.school && u.className ? ' — ' : ''}${esc(u.className || '')}</div>
+                        </div>
+                        <span class="role-tag" style="background:${roleBg};color:${roleColor};font-size:0.7rem;padding:3px 10px;border-radius:20px;font-weight:600">${roleLabel}</span>
+                    </div>
+                `;
+            }).join('');
         }
 
         // ================= ADMIN ACCOUNT MANAGEMENT =================

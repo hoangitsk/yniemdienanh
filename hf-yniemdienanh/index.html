@@ -1006,6 +1006,61 @@
         .pr-med { border-left: 4px solid var(--gold); }
         .pr-low { border-left: 4px solid var(--ok); }
 
+        /* CHAT COMMUNITY */
+        .chat-box {
+            height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 14px;
+            border: 1px solid rgba(228,184,102,0.1);
+            margin-bottom: 16px;
+        }
+        .chat-box::-webkit-scrollbar { width: 6px; }
+        .chat-box::-webkit-scrollbar-track { background: transparent; }
+        .chat-box::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+        .chat-msg {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.05);
+            word-break: break-word;
+        }
+        .chat-msg.own {
+            align-self: flex-end;
+            background: rgba(228,184,102,0.12);
+            border-color: rgba(228,184,102,0.2);
+        }
+        .chat-msg .sender {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            margin-bottom: 4px;
+        }
+        .chat-msg .sender .role-tag {
+            font-size: 0.65rem;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+        .chat-msg .time {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-align: right;
+        }
+        .chat-input-row {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input-row input {
+            flex: 1;
+        }
+
         /* TIMELINE SHEETS */
         .timeline {
             position: relative;
@@ -1636,7 +1691,7 @@
                 useFirebase = false;
             }
 
-            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], config: { stage: 'Xây dựng đội ngũ' }, seq: 100 };
+            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], messages: [], config: { stage: 'Xây dựng đội ngũ' }, seq: 100 };
 
             if (useFirebase) {
                 try {
@@ -1724,6 +1779,7 @@
                 if (!localDB.config) localDB.config = { stage: 'Xây dựng đội ngũ' };
                 if (!localDB.submissions) localDB.submissions = getMockData().submissions;
                 if (!localDB.votes) localDB.votes = [];
+                if (!localDB.messages) localDB.messages = [];
                 
                 localDB.users = localDB.users.filter(u => !['admin@ynda.vn', 'harlan@ynda.vn'].includes(String(u.email || '').toLowerCase()));
                 const hasProjectAdmin = localDB.users.some(u => u.email && u.email.toLowerCase() === 'yniemdienanh@gmail.com');
@@ -1763,7 +1819,7 @@
         }
 
         async function loadInternalDataFromFirestore(uid) {
-            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes'];
+            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'messages'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await dbInstance.collection(col).get();
@@ -2469,6 +2525,8 @@
             announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'member'] },
             budget: { icon: '💰', label: 'Sổ tay Tài chính', roles: ['admin', 'organizer'] },
             docs: { icon: '📁', label: 'Thư viện Tài liệu', roles: ['admin', 'organizer', 'member'] },
+            chat: { icon: '💬', label: 'Chat cộng đồng', roles: ['admin', 'organizer', 'member'] },
+            accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
         };
 
         let curTab = 'overview';
@@ -2869,6 +2927,76 @@
                             `).join('')}
                         </div>
                     `;
+                },
+                chat() {
+                    const msgs = d.messages || [];
+                    main.innerHTML = `
+                        <h2>💬 Chat cộng đồng</h2>
+                        <div class="panel">
+                            <div class="chat-box" id="chatBox">
+                                ${msgs.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:40px">Chưa có tin nhắn nào. Hãy là người đầu tiên nhắn tin! 👋</div>' : ''}
+                                ${[...msgs].reverse().map(m => {
+                                    const isOwn = String(m.userId) === String(session.id);
+                                    return `
+                                        <div class="chat-msg${isOwn ? ' own' : ''}">
+                                            <div class="sender">
+                                                ${esc(m.userName)}
+                                                <span class="role-tag" style="background:${m.userRole === 'admin' ? 'rgba(228,184,102,0.2)' : m.userRole === 'organizer' ? 'rgba(99,209,158,0.2)' : 'rgba(255,255,255,0.1)'};color:${m.userRole === 'admin' ? 'var(--gold)' : m.userRole === 'organizer' ? 'var(--ok)' : 'var(--text-muted)'}">${m.userRole === 'admin' ? 'Admin' : m.userRole === 'organizer' ? 'BTC' : 'TV'}</span>
+                                            </div>
+                                            <div>${esc(m.content)}</div>
+                                            <div class="time">${m.time || ''}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            <div class="chat-input-row">
+                                <input id="chatInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendChatMsg()">
+                                <button class="btn btn-gold btn-sm" onclick="sendChatMsg()">Gửi</button>
+                            </div>
+                        </div>
+                    `;
+                    setTimeout(() => {
+                        const box = document.getElementById('chatBox');
+                        if (box) box.scrollTop = box.scrollHeight;
+                    }, 50);
+                },
+                accounts() {
+                    main.innerHTML = `
+                        <h2>🔐 Quản lý tài khoản</h2>
+                        <div class="panel">
+                            <p style="color:var(--text-muted);margin-bottom:16px">Quản lý tất cả tài khoản người dùng trong hệ thống.</p>
+                            <div class="table-wrap">
+                                <table>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Họ tên</th>
+                                        <th>Email</th>
+                                        <th>Vai trò</th>
+                                        <th>Phòng ban</th>
+                                        <th>Xác thực</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                    ${d.users.map(u => `
+                                        <tr>
+                                            <td>${u.id}</td>
+                                            <td><b>${esc(u.name || 'N/A')}</b></td>
+                                            <td>${esc(u.email)}</td>
+                                            <td>${u.role === 'admin' ? '👑 Admin' : u.role === 'organizer' ? '💼 BTC' : '👤 Thành viên'}</td>
+                                            <td>${esc(u.dept) || '—'}</td>
+                                            <td>${u.emailVerified ? '<span style="color:var(--ok)">✅ Đã XT</span>' : '<span style="color:var(--danger)">⏳ Chưa XT</span>'}</td>
+                                            <td>
+                                                ${String(u.id) !== String(session.id) ? `
+                                                    <button class="btn btn-line btn-sm" style="font-size:0.7rem;padding:4px 8px" onclick="adminResetPass('${esc(u.email)}')">🔑 Reset Pass</button>
+                                                    <button class="btn btn-line btn-sm" style="font-size:0.7rem;padding:4px 8px;color:var(--ok);border-color:var(--ok)" onclick="adminVerifyUser('${u.id}')">✅ Xác thực</button>
+                                                    <button class="btn btn-line btn-sm" style="font-size:0.7rem;padding:4px 8px;color:var(--danger);border-color:var(--danger)" onclick="adminDeleteUser('${u.id}')">🗑 Xoá</button>
+                                                ` : '<span style="color:var(--text-muted)">—</span>'}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </table>
+                            </div>
+                        </div>
+                    `;
                 }
             };
             
@@ -3121,6 +3249,71 @@
             if (!confirm("Bạn muốn gỡ bỏ liên kết tài liệu này?")) return;
             await deleteItemFromDB('docs', id);
             renderTab('docs');
+        }
+
+        // ================= CHAT FUNCTIONS =================
+        async function sendChatMsg() {
+            const input = document.getElementById('chatInput');
+            const content = input.value.trim();
+            if (!content) return;
+            input.value = '';
+            const nextId = await getNextId();
+            const now = new Date();
+            const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+            const msg = { id: nextId, userId: session.id, userName: session.name, userRole: session.role, content, time: timeStr };
+            if (!localDB.messages) localDB.messages = [];
+            await saveItem('messages', msg);
+            renderTab('chat');
+        }
+
+        // ================= ADMIN ACCOUNT MANAGEMENT =================
+        async function adminResetPass(email) {
+            if (!confirm(`Gửi email đặt lại mật khẩu cho ${email}?`)) return;
+            if (useFirebase) {
+                try {
+                    await authInstance.sendPasswordResetEmail(email);
+                    alert(`✅ Đã gửi email đặt lại mật khẩu đến ${email}.`);
+                } catch (e) {
+                    alert('Lỗi: ' + (e.message || 'Không thể gửi email.'));
+                }
+            } else {
+                alert('Tính năng này cần kết nối Firebase.');
+            }
+        }
+
+        async function adminVerifyUser(id) {
+            if (!confirm('Xác thực email cho tài khoản này?')) return;
+            const u = localDB.users.find(x => String(x.id) === String(id));
+            if (u) {
+                u.emailVerified = true;
+                if (useFirebase) {
+                    try {
+                        await dbInstance.collection('users').doc(String(id)).set({ emailVerified: true }, { merge: true });
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                await saveItem('users', u);
+                renderTab('accounts');
+                alert('✅ Đã xác thực tài khoản.');
+            }
+        }
+
+        async function adminDeleteUser(id) {
+            if (!confirm('⚠️ Bạn có chắc muốn XÓA tài khoản này?\nHành động này không thể hoàn tác!')) return;
+            const u = localDB.users.find(x => String(x.id) === String(id));
+            if (u) {
+                if (useFirebase) {
+                    try {
+                        await dbInstance.collection('users').doc(String(id)).delete();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                await deleteItemFromDB('users', id);
+                renderTab('accounts');
+                alert(`✅ Đã xoá tài khoản ${esc(u.name)}.`);
+            }
         }
 
         // ================= STARS DYNAMIC CANVAS (TWINKLING 4 & 5-POINT STARS) =================

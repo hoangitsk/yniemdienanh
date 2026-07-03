@@ -97,7 +97,7 @@ service cloud.firestore {
     }
 
     match /messages/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create: if signedIn();
       allow update, delete: if isOrganizer();
     }

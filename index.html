@@ -1410,6 +1410,20 @@
                     </div>
                 </div>
             </section>
+
+            <!-- PUBLIC CHAT SECTION -->
+            <section id="public-chat">
+                <div class="section-head">
+                    <h2>💬 Chat cộng đồng</h2>
+                    <p>Trao đổi, thảo luận về điện ảnh và dự án cùng mọi người.</p>
+                </div>
+                <div class="card" style="padding:24px;max-width:800px;margin:0 auto">
+                    <div id="publicChatMsgList" class="chat-box" style="height:350px;margin-bottom:14px">
+                        <div style="color:var(--text-muted);text-align:center;padding:40px">Đang tải tin nhắn...</div>
+                    </div>
+                    <div id="publicChatInputArea" class="chat-input-row"></div>
+                </div>
+            </section>
         </div>
 
         <!-- ============ DỰ ÁN NỘI BỘ (DASHBOARD) ============ -->
@@ -1742,6 +1756,7 @@
                             sessionStorage.removeItem('ynda_user');
                         }
                         renderNav();
+                        renderPublicChat();
                         updateStageDisplay();
                         if (session && document.getElementById('dashboard').style.display === 'block') {
                             renderTab(curTab);
@@ -1758,6 +1773,7 @@
             renderEvents();
             renderVoting();
             renderNav();
+            renderPublicChat();
             updateStageDisplay();
         }
 
@@ -2525,7 +2541,6 @@
             announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'member'] },
             budget: { icon: '💰', label: 'Sổ tay Tài chính', roles: ['admin', 'organizer'] },
             docs: { icon: '📁', label: 'Thư viện Tài liệu', roles: ['admin', 'organizer', 'member'] },
-            chat: { icon: '💬', label: 'Chat cộng đồng', roles: ['admin', 'organizer', 'member'] },
             accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
         };
 
@@ -2928,38 +2943,7 @@
                         </div>
                     `;
                 },
-                chat() {
-                    const msgs = d.messages || [];
-                    main.innerHTML = `
-                        <h2>💬 Chat cộng đồng</h2>
-                        <div class="panel">
-                            <div class="chat-box" id="chatBox">
-                                ${msgs.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:40px">Chưa có tin nhắn nào. Hãy là người đầu tiên nhắn tin! 👋</div>' : ''}
-                                ${[...msgs].reverse().map(m => {
-                                    const isOwn = String(m.userId) === String(session.id);
-                                    return `
-                                        <div class="chat-msg${isOwn ? ' own' : ''}">
-                                            <div class="sender">
-                                                ${esc(m.userName)}
-                                                <span class="role-tag" style="background:${m.userRole === 'admin' ? 'rgba(228,184,102,0.2)' : m.userRole === 'organizer' ? 'rgba(99,209,158,0.2)' : 'rgba(255,255,255,0.1)'};color:${m.userRole === 'admin' ? 'var(--gold)' : m.userRole === 'organizer' ? 'var(--ok)' : 'var(--text-muted)'}">${m.userRole === 'admin' ? 'Admin' : m.userRole === 'organizer' ? 'BTC' : 'TV'}</span>
-                                            </div>
-                                            <div>${esc(m.content)}</div>
-                                            <div class="time">${m.time || ''}</div>
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                            <div class="chat-input-row">
-                                <input id="chatInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendChatMsg()">
-                                <button class="btn btn-gold btn-sm" onclick="sendChatMsg()">Gửi</button>
-                            </div>
-                        </div>
-                    `;
-                    setTimeout(() => {
-                        const box = document.getElementById('chatBox');
-                        if (box) box.scrollTop = box.scrollHeight;
-                    }, 50);
-                },
+
                 accounts() {
                     main.innerHTML = `
                         <h2>🔐 Quản lý tài khoản</h2>
@@ -3252,8 +3236,10 @@
         }
 
         // ================= CHAT FUNCTIONS =================
-        async function sendChatMsg() {
-            const input = document.getElementById('chatInput');
+        async function sendPublicChatMsg() {
+            if (!session) return alert('Vui lòng đăng nhập để gửi tin nhắn!');
+            const input = document.getElementById('publicChatInput');
+            if (!input) return;
             const content = input.value.trim();
             if (!content) return;
             input.value = '';
@@ -3263,7 +3249,40 @@
             const msg = { id: nextId, userId: session.id, userName: session.name, userRole: session.role, content, time: timeStr };
             if (!localDB.messages) localDB.messages = [];
             await saveItem('messages', msg);
-            renderTab('chat');
+            renderPublicChat();
+        }
+
+        function renderPublicChat() {
+            const msgs = localDB.messages || [];
+            const listEl = document.getElementById('publicChatMsgList');
+            const inputEl = document.getElementById('publicChatInputArea');
+            if (!listEl) return;
+            if (msgs.length === 0) {
+                listEl.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:40px">Chưa có tin nhắn nào. Hãy là người đầu tiên! 👋</div>';
+            } else {
+                listEl.innerHTML = [...msgs].reverse().map(m => {
+                    const isOwn = session && String(m.userId) === String(session.id);
+                    return `
+                        <div class="chat-msg${isOwn ? ' own' : ''}">
+                            <div class="sender">
+                                ${esc(m.userName)}
+                                <span class="role-tag" style="background:${m.userRole === 'admin' ? 'rgba(228,184,102,0.2)' : m.userRole === 'organizer' ? 'rgba(99,209,158,0.2)' : 'rgba(255,255,255,0.1)'};color:${m.userRole === 'admin' ? 'var(--gold)' : m.userRole === 'organizer' ? 'var(--ok)' : 'var(--text-muted)'}">${m.userRole === 'admin' ? 'Admin' : m.userRole === 'organizer' ? 'BTC' : 'TV'}</span>
+                            </div>
+                            <div>${esc(m.content)}</div>
+                            <div class="time">${m.time || ''}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            if (inputEl) {
+                if (session) {
+                    inputEl.innerHTML = `<input id="publicChatInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendPublicChatMsg()" style="flex:1">
+                                         <button class="btn btn-gold btn-sm" onclick="sendPublicChatMsg()">Gửi</button>`;
+                } else {
+                    inputEl.innerHTML = `<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.9rem">👉 <a onclick="openModal('authModal');toggleAuth(true)" style="cursor:pointer;font-weight:600;color:var(--gold)">Đăng nhập</a> để gửi tin nhắn</div>`;
+                }
+            }
+            setTimeout(() => { listEl.scrollTop = listEl.scrollHeight; }, 50);
         }
 
         // ================= ADMIN ACCOUNT MANAGEMENT =================

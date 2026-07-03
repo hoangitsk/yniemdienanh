@@ -1391,6 +1391,9 @@
                 <input id="liPass" type="password" placeholder="••••••">
                 <div class="form-msg" id="liMsg"></div>
                 <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="doLogin()">Đăng nhập</button>
+                <p style="margin-top:10px;font-size:0.8rem;text-align:center">
+                    <a onclick="resetPassword()" style="cursor:pointer;color:var(--text-muted);text-decoration:underline">Quên mật khẩu?</a>
+                </p>
                 
                 <div style="display:flex; align-items:center; margin: 16px 0 8px 0;">
                     <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
@@ -1901,23 +1904,16 @@
                 return;
             }
             const provider = new firebase.auth.GoogleAuthProvider();
-            const liMsg = document.getElementById('liMsg');
-            const rgMsg = document.getElementById('rgMsg');
-            if (liMsg) { liMsg.className = 'form-msg err'; liMsg.textContent = ''; }
-            if (rgMsg) { rgMsg.className = 'form-msg err'; rgMsg.textContent = ''; }
-
             try {
                 const result = await authInstance.signInWithPopup(provider);
                 const firebaseUser = result.user;
                 
                 const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
                 if (userDoc.exists) {
-                    // Tài khoản đã có thông tin trong Firestore -> Đăng nhập ngay
                     const u = userDoc.data();
                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
                     session = { id: firebaseUser.uid, name: u.name, email: u.email, role: effectiveRole, dept: u.dept || '', phone: u.phone || '', school: u.school || '', className: u.className || '', interest: u.interest || '', intro: u.intro || '' };
                     
-                    // Cập nhật emailVerified sang true
                     await dbInstance.collection('users').doc(firebaseUser.uid).set({ emailVerified: true, role: effectiveRole }, { merge: true });
                     
                     sessionStorage.setItem('ynda_user', JSON.stringify(session));
@@ -1926,7 +1922,6 @@
                     openDash();
                     closeModal('authModal');
                 } else {
-                    // Chưa có thông tin -> Hiển thị form bổ sung thông tin
                     tempGoogleUser = firebaseUser;
                     document.getElementById('loginForm').style.display = 'none';
                     document.getElementById('registerForm').style.display = 'none';
@@ -1937,9 +1932,13 @@
                 }
             } catch (err) {
                 console.error("Google Auth Error:", err);
-                const msgText = "Lỗi đăng nhập bằng Google: " + (err.message || "Không thể kết nối.");
-                if (liMsg) liMsg.textContent = msgText;
-                if (rgMsg) rgMsg.textContent = msgText;
+                if (err.code === 'auth/popup-blocked' || err.code === 'auth/unauthorized-domain') {
+                    alert("Trình duyệt đã chặn cửa sổ đăng nhập Google.\n👉 Vui lòng:\n- Cho phép popup cho trang này, hoặc\n- Dùng đăng nhập bằng email/mật khẩu");
+                } else if (err.code === 'auth/popup-closed-by-user') {
+                    // Người dùng tự đóng popup, không cần thông báo
+                } else {
+                    alert("Lỗi đăng nhập bằng Google: " + (err.message || "Không thể kết nối."));
+                }
             }
         }
 
@@ -2049,9 +2048,13 @@
                     localStorage.setItem('ynda_db', JSON.stringify(localDB));
                 }
                 
-                m.className = 'form-msg ok'; m.textContent = useFirebase
-                    ? 'Đăng ký thành công! Hãy mở Gmail để bấm link xác thực. Nếu chưa thấy email, kiểm tra hòm thư rác/spam rồi quay lại đăng nhập.'
-                    : 'Đăng ký tài khoản thành công! Đang chuyển sang đăng nhập...';
+                const isFirebaseMode = useFirebase;
+                if (isFirebaseMode) {
+                    alert('✅ ĐĂNG KÝ THÀNH CÔNG!\n\nMột email xác thực đã được gửi đến địa chỉ Gmail của bạn.\n\n👉 Hãy mở Gmail, bấm vào link xác thực trong email (kiểm tra cả hòm thư Rác/Spam nếu chưa thấy).\n\nSau đó quay lại trang và đăng nhập để vào khu vực nội bộ!');
+                }
+                m.className = 'form-msg ok'; m.textContent = isFirebaseMode
+                    ? '✅ Đã gửi email xác thực! Hãy kiểm tra Gmail (cả Spam) và bấm link để kích hoạt tài khoản.'
+                    : '✅ Đăng ký tài khoản thành công! Đang chuyển sang đăng nhập...';
                 document.getElementById('rgName').value = '';
                 document.getElementById('rgEmail').value = '';
                 document.getElementById('rgPhone').value = '';
@@ -2059,7 +2062,7 @@
                 document.getElementById('rgClass').value = '';
                 document.getElementById('rgIntro').value = '';
                 document.getElementById('rgPass').value = '';
-                setTimeout(() => toggleAuth(true), useFirebase ? 4200 : 1200);
+                setTimeout(() => toggleAuth(true), isFirebaseMode ? 4200 : 1200);
             } catch (err) {
                 m.textContent = err.message || 'Lỗi đăng ký tài khoản.';
             }
@@ -2079,7 +2082,8 @@
                     if (!cred.user.emailVerified) {
                         await cred.user.sendEmailVerification();
                         await authInstance.signOut();
-                        return m.textContent = 'Tài khoản chưa xác thực Gmail. Mình đã gửi lại email xác thực, bạn nhớ kiểm tra cả hòm thư rác/spam.';
+                        alert('📧 EMAIL CHƯA XÁC THỰC!\n\nMột email xác thực mới đã được gửi đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực (kiểm tra cả Spam) rồi đăng nhập lại.');
+                        return m.textContent = 'Tài khoản chưa xác thực. Đã gửi lại email, kiểm tra Gmail (cả Spam) nhé!';
                     }
                 } else {
                     const u = localDB.users.find(u => u.email === email && u.pass === pass);
@@ -2095,7 +2099,41 @@
                 document.getElementById('liEmail').value = '';
                 document.getElementById('liPass').value = '';
             } catch (err) {
-                m.textContent = 'Đăng nhập không thành công. Hãy kiểm tra lại email/mật khẩu.';
+                console.error("Login error:", err);
+                if (err.code === 'auth/user-not-found') {
+                    m.textContent = 'Email chưa được đăng ký. Vui lòng tạo tài khoản trước.';
+                } else if (err.code === 'auth/wrong-password') {
+                    m.textContent = 'Sai mật khẩu. Vui lòng thử lại.';
+                } else if (err.code === 'auth/too-many-requests') {
+                    m.textContent = 'Tài khoản tạm thời bị khóa do nhập sai quá nhiều lần. Thử lại sau vài phút.';
+                } else if (err.code === 'auth/invalid-credential') {
+                    m.textContent = 'Sai email hoặc mật khẩu. Vui lòng kiểm tra lại.';
+                } else {
+                    m.textContent = 'Đăng nhập không thành công. Hãy kiểm tra lại email/mật khẩu.';
+                }
+            }
+        }
+
+        async function resetPassword() {
+            const email = document.getElementById('liEmail').value.trim();
+            if (!email) {
+                alert('Vui lòng nhập email vào ô trên trước, sau đó bấm "Quên mật khẩu".');
+                return;
+            }
+            if (!useFirebase) {
+                alert('Tính năng này chỉ khả dụng khi kết nối Firebase. Hãy liên hệ Admin để được hỗ trợ.');
+                return;
+            }
+            try {
+                await authInstance.sendPasswordResetEmail(email);
+                alert('📧 ĐÃ GỬI EMAIL ĐẶT LẠI MẬT KHẨU!\n\nVui lòng kiểm tra hộp thư Gmail (cả Spam) và bấm link để tạo mật khẩu mới.');
+            } catch (err) {
+                console.error("Reset password error:", err);
+                if (err.code === 'auth/user-not-found') {
+                    alert('Email này chưa được đăng ký tài khoản.');
+                } else {
+                    alert('Lỗi gửi email: ' + (err.message || 'Không thể kết nối.'));
+                }
             }
         }
 

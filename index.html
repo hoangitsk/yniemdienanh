@@ -1061,6 +1061,57 @@
             flex: 1;
         }
 
+        /* PRIZE POOL WIDGET */
+        .prize-pool {
+            background: linear-gradient(135deg, rgba(228,184,102,0.12) 0%, rgba(228,184,102,0.04) 100%);
+            border: 1px solid rgba(228,184,102,0.2);
+            border-radius: 20px; padding: 28px 32px;
+            max-width: 700px; margin: 0 auto;
+            text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .prize-pool::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(228,184,102,0.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .prize-pool .pp-amount {
+            font-size: 2.8rem; font-weight: 800;
+            background: linear-gradient(135deg, #fbbf24, #e4b866, #fbbf24);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: 2px; font-family: 'Playfair Display', serif;
+        }
+        .prize-pool .pp-label { font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; }
+        .prize-pool .pp-bar-wrap { margin-top: 16px; }
+        .prize-pool .pp-bar {
+            width: 100%; height: 10px; background: rgba(255,255,255,0.08);
+            border-radius: 5px; overflow: hidden;
+        }
+        .prize-pool .pp-bar-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #e4b866, #fbbf24);
+            border-radius: 5px; transition: width 0.8s ease;
+        }
+        .prize-pool .pp-bar-label {
+            display: flex; justify-content: space-between;
+            font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;
+        }
+
+        /* PAYMENT MODAL */
+        .qr-box {
+            text-align: center; padding: 20px 0;
+        }
+        .qr-box img { max-width: 260px; border-radius: 12px; margin: 12px 0; }
+        .qr-box .qr-amount { font-size: 1.6rem; font-weight: 700; color: var(--gold-light); }
+        .qr-box .qr-info { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        .qr-box .qr-countdown {
+            font-size: 1.1rem; font-weight: 600; margin-top: 12px;
+            padding: 8px 16px; display: inline-block;
+            border-radius: 8px; background: rgba(228,184,102,0.1); color: var(--gold-light);
+        }
+        .qr-box .qr-countdown.expired { background: rgba(239,68,68,0.1); color: var(--danger); }
+
         /* EVALUATION BADGES */
         .eval-badge {
             display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
@@ -1381,6 +1432,9 @@
                 </div>
             </div>
 
+            <!-- PRIZE POOL WIDGET -->
+            <div id="prizePoolHome" style="margin-top: 10px; margin-bottom: 40px"></div>
+
             <!-- EVENTS ONGOING/UPCOMING -->
             <section id="events">
                 <div class="section-head">
@@ -1524,10 +1578,11 @@
 
         <!-- ============ BÌNH CHỌN (VOTING PAGE) ============ -->
         <div id="page-voting" style="display:none;padding-top:90px">
+            <div id="prizePoolVoting" style="margin-top: 20px; margin-bottom: 30px"></div>
             <section id="voting">
-                <div class="section-head" style="margin-top:20px">
+                <div class="section-head">
                     <h2>🗳 Bình chọn tác phẩm dự thi</h2>
-                    <p>Hãy bình chọn cho những thước phim ngắn ấn tượng nhất từ các đội thi. Mỗi thiết bị/địa chỉ IP chỉ được vote 1 lần duy nhất để chống gian lận.</p>
+                    <p>Hãy bình chọn cho những thước phim ngắn ấn tượng nhất từ các đội thi. Mỗi thiết bị/địa chỉ IP chỉ được vote 1 lần duy nhất để chống gian lận. Mua thêm lượt vote (5.000đ/lượt) để ủng hộ tác phẩm yêu thích!</p>
                 </div>
                 <div class="grid grid-3" id="votingList"></div>
             </section>
@@ -1820,7 +1875,7 @@
                 useFirebase = false;
             }
 
-            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], messages: [], posts: [], comments: [], config: { stage: 'Xây dựng đội ngũ' }, seq: 100 };
+            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], messages: [], posts: [], comments: [], transactions: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 } }, seq: 100 };
 
             if (useFirebase) {
                 try {
@@ -1873,6 +1928,7 @@
                         renderNav();
                         renderFeed();
                         renderPublicChat();
+                        renderAllPrizePools();
                         updateStageDisplay();
                         if (session && document.getElementById('dashboard').style.display === 'block') {
                             renderTab(curTab);
@@ -1891,6 +1947,7 @@
             renderNav();
             renderFeed();
             renderPublicChat();
+            renderAllPrizePools();
             updateStageDisplay();
         }
 
@@ -1952,7 +2009,7 @@
         }
 
         async function loadInternalDataFromFirestore(uid) {
-            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'messages', 'posts', 'comments'];
+            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'messages', 'posts', 'comments', 'transactions'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await dbInstance.collection(col).get();
@@ -2031,6 +2088,7 @@
             document.getElementById('page-community').style.display = p === 'community' ? 'block' : 'none';
             document.getElementById('page-voting').style.display = p === 'voting' ? 'block' : 'none';
             window.scrollTo(0, 0);
+            renderAllPrizePools();
             if (p === 'community') { showCommunityTab(communityCurTab); }
             if (p === 'voting') { renderVoting(); }
         }
@@ -2458,6 +2516,7 @@
                         </div>
                         
                         <button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id})">🗳 Bình chọn</button>
+                        <button class="btn btn-line btn-sm" style="width:100%; margin-top:6px" onclick="openBuyVoteModal(${s.id}, '${esc(s.title)}')">⭐ Mua vote 5k</button>
                     </div>
                 `;
             }).join('') || '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px"><h3>Chưa mở cổng bình chọn</h3></div>';
@@ -2663,6 +2722,7 @@
             members: { icon: '👥', label: 'Đơn tuyển & Nhân sự', roles: ['admin', 'organizer'] },
             announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'member'] },
             budget: { icon: '💰', label: 'Sổ tay Tài chính', roles: ['admin', 'organizer'] },
+            transactions: { icon: '💳', label: 'Giao dịch & Quỹ', roles: ['admin', 'organizer'] },
             docs: { icon: '📁', label: 'Thư viện Tài liệu', roles: ['admin', 'organizer', 'member'] },
             accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
         };
@@ -3044,6 +3104,59 @@
                                 ${isOrg ? `<button class="btn btn-line btn-sm" style="margin-top:12px;color:var(--danger);border-color:var(--danger)" onclick="deleteAnnounceItem(${a.id})">🗑 Xóa thông báo</button>` : ''}
                             </div>
                         `).join('')}
+                    `;
+                },
+                transactions() {
+                    const txs = d.transactions || [];
+                    const pending = txs.filter(t => t.status === 'pending');
+                    const confirmed = txs.filter(t => t.status === 'confirmed');
+                    const pp = (d.config && d.config.prizePool) || { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
+                    main.innerHTML = `
+                        <h2>💳 Giao dịch & Quỹ giải thưởng</h2>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px">
+                            <div class="stat"><div class="num" style="color:var(--gold-light)">${pp.total.toLocaleString('vi-VN')}đ</div><div class="lbl">Tổng quỹ giải thưởng</div></div>
+                            <div class="stat"><div class="num" style="color:#60a5fa">${txs.length}</div><div class="lbl">Tổng giao dịch</div></div>
+                            <div class="stat"><div class="num" style="color:#fbbf24">${pending.length}</div><div class="lbl">Chờ xác nhận</div></div>
+                            <div class="stat"><div class="num" style="color:#63d19e">${confirmed.length}</div><div class="lbl">Đã xác nhận</div></div>
+                        </div>
+                        ${pending.length > 0 ? `
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">⏳ Giao dịch chờ xác nhận (${pending.length})</h3>
+                            <div class="table-wrap">
+                                <table>
+                                    <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>
+                                    ${pending.map(t => `
+                                        <tr>
+                                            <td><b>${esc(t.userName)}</b></td>
+                                            <td>${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
+                                            <td style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
+                                            <td style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
+                                            <td style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
+                                            <td><button class="btn btn-gold btn-sm" onclick="confirmTx(${t.id})">✔ Xác nhận</button></td>
+                                        </tr>
+                                    `).join('')}
+                                </table>
+                            </div>
+                        </div>
+                        ` : ''}
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">📋 Lịch sử giao dịch (${txs.length})</h3>
+                            <div class="table-wrap">
+                                <table>
+                                    <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th>Memo</th><th>Thời gian</th></tr>
+                                    ${[...txs].reverse().map(t => `
+                                        <tr>
+                                            <td><b>${esc(t.userName)}</b></td>
+                                            <td>${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
+                                            <td style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
+                                            <td>${t.status === 'confirmed' ? '<span style="color:#63d19e">✔ Đã xác nhận</span>' : '<span style="color:#fbbf24">⏳ Chờ</span>'}</td>
+                                            <td style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
+                                            <td style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có giao dịch nào.</td></tr>'}
+                                </table>
+                            </div>
+                        </div>
                     `;
                 },
                 budget() {
@@ -3773,6 +3886,128 @@
             if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
             closeModal('profileModal');
             renderTab('members');
+        }
+
+        // ================= PRIZE POOL & PAYMENT =================
+
+        function renderPrizePool(containerId) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            const cfg = localDB.config || {};
+            const pp = cfg.prizePool || { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
+            const pct = Math.min(100, Math.round((pp.total / pp.target) * 100));
+            const fmt = n => (n || 0).toLocaleString('vi-VN') + 'đ';
+            el.innerHTML = `
+                <div class="prize-pool">
+                    <div class="pp-label">🏆 TỔNG QUỸ GIẢI THƯỞNG</div>
+                    <div class="pp-amount">${fmt(pp.total)}</div>
+                    <div class="pp-bar-wrap">
+                        <div class="pp-bar">
+                            <div class="pp-bar-fill" style="width:${pct}%"></div>
+                        </div>
+                        <div class="pp-bar-label">
+                            <span>Đã đạt: ${fmt(pp.total)}</span>
+                            <span>Mục tiêu: ${fmt(pp.target)}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top:14px;font-size:0.8rem;color:var(--text-muted)">
+                        📌 Mỗi lượt đăng ký & bình chọn (5.000đ) đều được cộng trực tiếp vào quỹ giải thưởng
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAllPrizePools() {
+            renderPrizePool('prizePoolHome');
+        }
+
+        function openPaymentModal(type, extra) {
+            // type: 'registration' | 'vote'
+            // extra: { submissionId?, submissionTitle? }
+            const modal = document.getElementById('profileModalBody');
+            const fee = 5000;
+            const memo = type === 'registration' ? 'Lephidangky' : 'Vote_' + (extra?.submissionId || '');
+            const qrUrl = 'https://api.vietqr.io/image/970422-0337957054-RsBLi8C.jpg?accountName=NGUYEN%20MINH%20HOANG&amount=' + fee + '&addInfo=' + memo;
+            modal.innerHTML = `
+                <h3 style="margin-bottom:16px">💳 Thanh toán phí ${type === 'registration' ? 'đăng ký' : 'bình chọn'}</h3>
+                <div class="qr-box">
+                    <div class="qr-amount">${fee.toLocaleString('vi-VN')}đ</div>
+                    <div class="qr-info">Quét mã QR bằng app ngân hàng để chuyển khoản</div>
+                    <img src="${qrUrl}" alt="VietQR" loading="lazy">
+                    <div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">
+                        <div>Ngân hàng: <b>MB Bank</b></div>
+                        <div>Số tài khoản: <b>0337957054</b></div>
+                        <div>Chủ tài khoản: <b>NGUYEN MINH HOANG</b></div>
+                        <div>Nội dung: <b style="color:var(--gold-light)">${memo}</b></div>
+                    </div>
+                    <div id="qrCountdown" class="qr-countdown">⏳ Chờ xác nhận... 05:00</div>
+                    <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
+                        Sau khi chuyển khoản, admin sẽ xác nhận trong thời gian sớm nhất.
+                        ${type === 'vote' ? '<br>👉 <b>Lưu ý:</b> Bạn cần <a onclick="openModal(\'authModal\');toggleAuth(true)" style="cursor:pointer;color:var(--gold);font-weight:600">đăng nhập</a> để vote được ghi nhận!' : ''}
+                    </div>
+                </div>
+            `;
+            document.getElementById('profileModal').querySelector('.modal-box').style.maxWidth = '420px';
+            openModal('profileModal');
+            // Countdown 5 phút
+            let secs = 300;
+            const cdEl = document.getElementById('qrCountdown');
+            if (cdEl) {
+                const tmr = setInterval(() => {
+                    secs--;
+                    if (secs <= 0) { clearInterval(tmr); cdEl.textContent = '⏰ Đã hết hạn!'; cdEl.className = 'qr-countdown expired'; return; }
+                    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+                    const s = String(secs % 60).padStart(2, '0');
+                    cdEl.textContent = '⏳ Chờ xác nhận... ' + m + ':' + s;
+                }, 1000);
+            }
+        }
+
+        function openBuyVoteModal(submissionId, submissionTitle) {
+            if (!session) return alert('Vui lòng đăng nhập để mua vote!');
+            const u = localDB.users.find(x => String(x.id) === String(session.id));
+            if (!u) return alert('Không tìm thấy thông tin người dùng.');
+            // Check limit: tối đa 5 vote/user
+            const userVotes = (localDB.transactions || []).filter(t =>
+                String(t.userId) === String(session.id) &&
+                t.type === 'vote' &&
+                String(t.submissionId) === String(submissionId) &&
+                t.status === 'confirmed'
+            ).length;
+            if (userVotes >= 5) return alert('Bạn đã mua tối đa 5 lượt vote cho tác phẩm này rồi!');
+            openPaymentModal('vote', { submissionId, submissionTitle });
+        }
+
+        async function addTransaction(type, submissionId, memo) {
+            if (!session) return alert('Vui lòng đăng nhập!');
+            const nextId = await getNextId();
+            const now = new Date();
+            const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+            const tx = { id: nextId, userId: session.id, userName: session.name, type, submissionId: submissionId || '', amount: 5000, memo, status: 'pending', time: timeStr };
+            await saveItem('transactions', tx);
+            renderAllPrizePools();
+            renderTab('transactions');
+        }
+
+        async function confirmTx(txId) {
+            if (!confirm('Xác nhận giao dịch này?')) return;
+            const tx = (localDB.transactions || []).find(t => String(t.id) === String(txId));
+            if (!tx) return alert('Không tìm thấy giao dịch.');
+            tx.status = 'confirmed';
+            // Cập nhật prize pool
+            const cfg = localDB.config || {};
+            if (!cfg.prizePool) cfg.prizePool = { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
+            cfg.prizePool.total = (cfg.prizePool.total || 0) + (tx.amount || 5000);
+            if (localDB.config) localDB.config = cfg;
+            if (useFirebase) {
+                try {
+                    await dbInstance.collection('transactions').doc(String(txId)).set(tx, { merge: true });
+                    await dbInstance.collection('config').doc('prizePool').set(cfg.prizePool, { merge: true });
+                } catch (e) { console.error(e); }
+            }
+            if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            renderAllPrizePools();
+            renderTab('transactions');
         }
 
         // ================= ADMIN ACCOUNT MANAGEMENT =================

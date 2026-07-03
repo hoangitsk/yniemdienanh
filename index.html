@@ -1347,6 +1347,7 @@
                 <a onclick="goSection('events');closeMobileMenu()">Sự kiện</a>
                 <a onclick="goSection('voting');closeMobileMenu()">Bình chọn</a>
                 <a onclick="goSection('about');closeMobileMenu()">Về dự án</a>
+                <a onclick="showPage('voting');closeMobileMenu()">Bình chọn</a>
                 <a onclick="showPage('community');closeMobileMenu()">Cộng đồng</a>
                 <a onclick="goSection('apply');closeMobileMenu()">Tuyển dụng</a>
                 <span id="navAuth"></span>
@@ -1388,15 +1389,6 @@
                     <p>Nơi hội ngộ của những tâm hồn say mê điện ảnh. Theo dõi các hoạt động mới nhất từ dự án.</p>
                 </div>
                 <div class="grid events-grid" id="eventList"></div>
-            </section>
-
-            <!-- ============ VOTING SECTION (BÌNH CHỌN VÀ CHẶN IP GIAN LẬN) ============ -->
-            <section id="voting">
-                <div class="section-head">
-                    <h2>Bình chọn tác phẩm dự thi</h2>
-                    <p>Hãy bình chọn cho những thước phim ngắn ấn tượng nhất từ các đội thi. Mỗi thiết bị/địa chỉ IP chỉ được vote 1 lần duy nhất để chống gian lận.</p>
-                </div>
-                <div class="grid grid-3" id="votingList"></div>
             </section>
 
             <!-- ABOUT THE PROJECT (Chi tiết từ Word Kế hoạch) -->
@@ -1529,6 +1521,17 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- ============ BÌNH CHỌN (VOTING PAGE) ============ -->
+        <div id="page-voting" style="display:none;padding-top:90px">
+            <section id="voting">
+                <div class="section-head" style="margin-top:20px">
+                    <h2>🗳 Bình chọn tác phẩm dự thi</h2>
+                    <p>Hãy bình chọn cho những thước phim ngắn ấn tượng nhất từ các đội thi. Mỗi thiết bị/địa chỉ IP chỉ được vote 1 lần duy nhất để chống gian lận.</p>
+                </div>
+                <div class="grid grid-3" id="votingList"></div>
+            </section>
         </div>
 
         <!-- ============ DỰ ÁN NỘI BỘ (DASHBOARD) ============ -->
@@ -2027,8 +2030,10 @@
             document.getElementById('page-home').style.display = p === 'home' ? 'block' : 'none';
             document.getElementById('dashboard').style.display = p === 'dash' ? 'block' : 'none';
             document.getElementById('page-community').style.display = p === 'community' ? 'block' : 'none';
+            document.getElementById('page-voting').style.display = p === 'voting' ? 'block' : 'none';
             window.scrollTo(0, 0);
             if (p === 'community') { showCommunityTab(communityCurTab); }
+            if (p === 'voting') { renderVoting(); }
         }
         function goSection(id) { 
             showPage('home'); 

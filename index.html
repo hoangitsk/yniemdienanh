@@ -1650,7 +1650,7 @@
                     // Lắng nghe auth state để tải các dữ liệu nội bộ sau khi đăng nhập thành công
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
-                            if (!firebaseUser.emailVerified) {
+                            if (!firebaseUser.emailVerified && firebaseUser.email.toLowerCase() !== PROJECT_ADMIN_EMAIL) {
                                 await authInstance.signOut();
                                 return;
                             }
@@ -2025,24 +2025,41 @@
                 if (useFirebase) {
                     const cred = await authInstance.createUserWithEmailAndPassword(email, pass);
                     await cred.user.updateProfile({ displayName: name });
-                    await cred.user.sendEmailVerification();
                     
+                    const isAdmin = email === PROJECT_ADMIN_EMAIL;
                     let role = 'member';
                     let dept = '';
-                    const snap = await dbInstance.collection('users').where('email', '==', email).get();
-                    if (!snap.empty) {
-                        const preDoc = snap.docs[0];
-                        role = preDoc.data().role || 'member';
-                        dept = preDoc.data().dept || '';
-                        if (preDoc.id !== cred.user.uid) {
-                            await dbInstance.collection('users').doc(preDoc.id).delete();
+                    
+                    if (isAdmin) {
+                        role = 'admin';
+                    } else {
+                        await cred.user.sendEmailVerification();
+                        
+                        const snap = await dbInstance.collection('users').where('email', '==', email).get();
+                        if (!snap.empty) {
+                            const preDoc = snap.docs[0];
+                            role = preDoc.data().role || 'member';
+                            dept = preDoc.data().dept || '';
+                            if (preDoc.id !== cred.user.uid) {
+                                await dbInstance.collection('users').doc(preDoc.id).delete();
+                            }
                         }
                     }
                     
-                    const newUser = { id: cred.user.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: false };
+                    const newUser = { id: cred.user.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: isAdmin };
                     await dbInstance.collection('users').doc(cred.user.uid).set(newUser);
                     localDB.users = localDB.users.filter(u => u.email.toLowerCase() !== email);
                     localDB.users.push(newUser);
+                    
+                    if (isAdmin) {
+                        session = { id: cred.user.uid, name, email, role: 'admin', dept: 'Ban điều hành', phone, school, className, interest, intro };
+                        sessionStorage.setItem('ynda_user', JSON.stringify(session));
+                        renderNav();
+                        updateStageDisplay();
+                        openDash();
+                        closeModal('authModal');
+                        return;
+                    }
                     await authInstance.signOut();
                 } else {
                     if (localDB.users.find(u => u.email === email)) return m.textContent = 'Email này đã được đăng ký.';
@@ -2053,7 +2070,7 @@
                 }
                 
                 const isFirebaseMode = useFirebase;
-                if (isFirebaseMode) {
+                if (isFirebaseMode && email !== PROJECT_ADMIN_EMAIL) {
                     alert('✅ ĐĂNG KÝ THÀNH CÔNG!\n\nMột email xác thực đã được gửi đến địa chỉ Gmail của bạn.\n\n👉 Hãy mở Gmail, bấm vào link xác thực trong email (kiểm tra cả hòm thư Rác/Spam nếu chưa thấy).\n\nSau đó quay lại trang và đăng nhập để vào khu vực nội bộ!');
                 }
                 m.className = 'form-msg ok'; m.textContent = isFirebaseMode
@@ -2083,7 +2100,7 @@
             try {
                 if (useFirebase) {
                     const cred = await authInstance.signInWithEmailAndPassword(email, pass);
-                    if (!cred.user.emailVerified) {
+                    if (!cred.user.emailVerified && email !== PROJECT_ADMIN_EMAIL) {
                         await cred.user.sendEmailVerification();
                         await authInstance.signOut();
                         alert('📧 EMAIL CHƯA XÁC THỰC!\n\nMột email xác thực mới đã được gửi đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực (kiểm tra cả Spam) rồi đăng nhập lại.');
@@ -2105,13 +2122,21 @@
             } catch (err) {
                 console.error("Login error:", err);
                 if (err.code === 'auth/user-not-found') {
-                    m.textContent = 'Email chưa được đăng ký. Vui lòng tạo tài khoản trước.';
+                    if (email === PROJECT_ADMIN_EMAIL) {
+                        m.textContent = 'Tài khoản Admin chưa tồn tại trong Firebase. Hãy bấm "Đăng ký" để tạo tài khoản Admin trước, hoặc dùng "Quên mật khẩu?" nếu đã có.';
+                    } else {
+                        m.textContent = 'Email chưa được đăng ký. Vui lòng tạo tài khoản trước.';
+                    }
                 } else if (err.code === 'auth/wrong-password') {
                     m.textContent = 'Sai mật khẩu. Vui lòng thử lại.';
                 } else if (err.code === 'auth/too-many-requests') {
                     m.textContent = 'Tài khoản tạm thời bị khóa do nhập sai quá nhiều lần. Thử lại sau vài phút.';
                 } else if (err.code === 'auth/invalid-credential') {
-                    m.textContent = 'Sai email hoặc mật khẩu. Vui lòng kiểm tra lại.';
+                    if (email === PROJECT_ADMIN_EMAIL) {
+                        m.textContent = 'Tài khoản Admin chưa được tạo hoặc sai mật khẩu. Hãy bấm "Đăng ký" để tạo tài khoản Admin, hoặc dùng "Quên mật khẩu?".';
+                    } else {
+                        m.textContent = 'Sai email hoặc mật khẩu. Vui lòng kiểm tra lại.';
+                    }
                 } else {
                     m.textContent = 'Đăng nhập không thành công. Hãy kiểm tra lại email/mật khẩu.';
                 }

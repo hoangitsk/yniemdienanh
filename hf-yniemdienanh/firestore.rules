@@ -96,6 +96,12 @@ service cloud.firestore {
       allow write: if isOrganizer();
     }
 
+    match /messages/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if isOrganizer();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

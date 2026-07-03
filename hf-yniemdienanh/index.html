@@ -1393,6 +1393,8 @@
                 <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="doLogin()">Đăng nhập</button>
                 <p style="margin-top:10px;font-size:0.8rem;text-align:center">
                     <a onclick="resetPassword()" style="cursor:pointer;color:var(--text-muted);text-decoration:underline">Quên mật khẩu?</a>
+                    <span style="color:var(--text-muted);margin:0 6px">·</span>
+                    <a onclick="resendVerification()" style="cursor:pointer;color:var(--text-muted);text-decoration:underline">Gửi lại email xác thực</a>
                 </p>
                 
                 <div style="display:flex; align-items:center; margin: 16px 0 8px 0;">
@@ -1932,8 +1934,10 @@
                 }
             } catch (err) {
                 console.error("Google Auth Error:", err);
-                if (err.code === 'auth/popup-blocked' || err.code === 'auth/unauthorized-domain') {
-                    alert("Trình duyệt đã chặn cửa sổ đăng nhập Google.\n👉 Vui lòng:\n- Cho phép popup cho trang này, hoặc\n- Dùng đăng nhập bằng email/mật khẩu");
+                if (err.code === 'auth/unauthorized-domain') {
+                    alert("❌ Domain không được hỗ trợ đăng nhập Google!\n\n👉 Hướng dẫn sửa:\n1. Vào https://console.firebase.google.com\n2. Chọn project yniemdienanh-fb0b7\n3. Authentication → Settings → Authorized domains\n4. Thêm domain: " + window.location.hostname + "\n5. Lưu lại và thử đăng nhập lại");
+                } else if (err.code === 'auth/popup-blocked') {
+                    alert("Trình duyệt đã chặn cửa sổ đăng nhập Google.\n👉 Cho phép popup cho trang này, hoặc dùng đăng nhập email/mật khẩu.");
                 } else if (err.code === 'auth/popup-closed-by-user') {
                     // Người dùng tự đóng popup, không cần thông báo
                 } else {
@@ -2134,6 +2138,29 @@
                 } else {
                     alert('Lỗi gửi email: ' + (err.message || 'Không thể kết nối.'));
                 }
+            }
+        }
+
+        async function resendVerification() {
+            const email = document.getElementById('liEmail').value.trim();
+            if (!email) {
+                alert('👉 Nhập email vào ô phía trên trước, sau đó bấm "Gửi lại email xác thực".');
+                return;
+            }
+            if (!useFirebase) {
+                alert('Tính năng này chỉ khả dụng khi kết nối Firebase.');
+                return;
+            }
+            try {
+                const methods = await authInstance.fetchSignInMethodsForEmail(email);
+                if (methods.length === 0) {
+                    alert('❌ Email này chưa được đăng ký tài khoản.\n👉 Vui lòng đăng ký trước.');
+                    return;
+                }
+                alert(`📧 Email ${email} đã được đăng ký.\n\n👉 Hãy nhập MẬT KHẨU và bấm "Đăng nhập".\nNếu tài khoản chưa xác thực, hệ thống sẽ tự động gửi lại email xác thực cho bạn.\n\nNếu quên mật khẩu, bấm "Quên mật khẩu?" để đặt lại.`);
+            } catch (err) {
+                console.error("Resend verification error:", err);
+                alert('Lỗi kiểm tra email: ' + (err.message || 'Không thể kết nối.'));
             }
         }
 

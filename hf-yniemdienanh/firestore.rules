@@ -1,0 +1,103 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function myUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function myRole() {
+      return signedIn() && myUserDoc().data.role;
+    }
+
+    function isAdmin() {
+      return myRole() == 'admin';
+    }
+
+    function isProjectAdminEmail() {
+      return request.auth != null
+        && request.auth.token.email == 'yniemdienanh@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    function validUserRoleOnCreate() {
+      return (isProjectAdminEmail() && request.resource.data.role == 'admin')
+        || (!isProjectAdminEmail() && request.resource.data.role == 'member');
+    }
+
+    function keepsOwnRole() {
+      return !('role' in request.resource.data)
+        || request.resource.data.role == resource.data.role
+        || isProjectAdminEmail();
+    }
+
+    function isOrganizer() {
+      return myRole() in ['admin', 'organizer'];
+    }
+
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /events/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /submissions/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /votes/{docId} {
+      allow read: if isOrganizer();
+      allow create: if true;
+      allow update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId && validUserRoleOnCreate();
+      allow read: if signedIn() && (request.auth.uid == userId || isOrganizer());
+      allow update: if signedIn() && ((request.auth.uid == userId && keepsOwnRole()) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /applications/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isOrganizer();
+    }
+
+    match /tasks/{docId} {
+      allow read: if signedIn();
+      allow write: if isOrganizer();
+    }
+
+    match /plans/{docId} {
+      allow read: if signedIn();
+      allow write: if isOrganizer();
+    }
+
+    match /announcements/{docId} {
+      allow read: if signedIn();
+      allow write: if isOrganizer();
+    }
+
+    match /budget/{docId} {
+      allow read, write: if isOrganizer();
+    }
+
+    match /docs/{docId} {
+      allow read: if signedIn();
+      allow write: if isOrganizer();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

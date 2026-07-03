@@ -2538,9 +2538,9 @@
         }
 
         function renderSideMenu() {
-            const role = session.role;
-            document.getElementById('sideMenu').innerHTML = Object.entries(TABS)
-                .filter(([k, t]) => t.roles.includes(role))
+            const role = session?.role || 'member';
+            const tabs = Object.entries(TABS).filter(([k, t]) => t.roles.includes(role));
+            document.getElementById('sideMenu').innerHTML = tabs
                 .map(([k, t]) => `<a class="${k === curTab ? 'active' : ''}" onclick="renderTab('${k}')">${t.icon} ${t.label}</a>`).join('');
         }
 

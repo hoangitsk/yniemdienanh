@@ -102,6 +102,19 @@ service cloud.firestore {
       allow update, delete: if isOrganizer();
     }
 
+    match /posts/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn();
+      allow delete: if isOrganizer();
+    }
+
+    match /comments/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if isOrganizer();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

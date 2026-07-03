@@ -1061,6 +1061,76 @@
             flex: 1;
         }
 
+        /* SOCIAL FEED & PROFILES */
+        .avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1rem; flex-shrink: 0;
+            background: var(--gold-dark); color: #fff;
+        }
+        .avatar-sm { width: 32px; height: 32px; font-size: 0.8rem; }
+        .avatar-lg { width: 64px; height: 64px; font-size: 1.5rem; }
+        .post-card {
+            background: var(--navy-card);
+            border: 1px solid rgba(228,184,102,0.15);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            max-width: 680px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .post-header {
+            display: flex; gap: 12px; align-items: center;
+            margin-bottom: 12px; cursor: pointer;
+        }
+        .post-header .name { font-weight: 600; color: var(--gold-light); }
+        .post-header .time { font-size: 0.75rem; color: var(--text-muted); }
+        .post-content { font-size: 0.95rem; line-height: 1.6; margin-bottom: 14px; color: #e2e8f0; }
+        .post-actions {
+            display: flex; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06);
+            padding-top: 12px; margin-top: 4px;
+        }
+        .post-actions button {
+            background: none; border: none; color: var(--text-muted);
+            cursor: pointer; font-size: 0.85rem; padding: 6px 12px;
+            border-radius: 8px; transition: all 0.2s;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .post-actions button:hover { background: rgba(255,255,255,0.05); color: var(--gold-light); }
+        .post-actions button.liked { color: var(--danger); }
+        .comment-box {
+            border-top: 1px solid rgba(255,255,255,0.06);
+            padding-top: 12px; margin-top: 8px;
+        }
+        .comment-item {
+            display: flex; gap: 10px; margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+        .comment-item .c-body {
+            background: rgba(255,255,255,0.04);
+            padding: 8px 12px; border-radius: 12px; flex: 1;
+        }
+        .comment-item .c-name { font-weight: 600; color: var(--gold-light); font-size: 0.8rem; }
+        .comment-item .c-time { font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; }
+        .comment-input-row {
+            display: flex; gap: 8px; margin-top: 8px;
+        }
+        .comment-input-row input { flex: 1; font-size: 0.85rem; padding: 8px 12px; }
+
+        /* PROFILE MODAL */
+        .profile-cover {
+            text-align: center; padding: 30px 20px 20px;
+            border-bottom: 1px solid rgba(228,184,102,0.1);
+            margin-bottom: 20px;
+        }
+        .profile-cover .avatar-lg { margin: 0 auto 12px; }
+        .profile-cover h3 { color: var(--gold-light); margin-bottom: 4px; }
+        .profile-cover .role-badge {
+            display: inline-block; padding: 3px 12px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+
         /* TIMELINE SHEETS */
         .timeline {
             position: relative;
@@ -1411,6 +1481,15 @@
                 </div>
             </section>
 
+            <!-- SOCIAL FEED SECTION -->
+            <section id="public-feed">
+                <div class="section-head">
+                    <h2>📰 Bảng tin cộng đồng</h2>
+                    <p>Chia sẻ khoảnh khắc, cảm nhận và câu chuyện điện ảnh của bạn.</p>
+                </div>
+                <div id="feedContainer"></div>
+            </section>
+
             <!-- PUBLIC CHAT SECTION -->
             <section id="public-chat">
                 <div class="section-head">
@@ -1603,6 +1682,14 @@
         </div>
     </div>
 
+    <!-- PROFILE MODAL -->
+    <div class="modal" id="profileModal">
+        <div class="modal-box" style="max-width:560px">
+            <span class="close-x" onclick="closeModal('profileModal')">✕</span>
+            <div id="profileModalBody"></div>
+        </div>
+    </div>
+
     <script>
         // Bắt lỗi Javascript toàn cục hiển thị trực tiếp trên giao diện để debug dễ dàng
         window.onerror = function(message, source, lineno, colno, error) {
@@ -1705,7 +1792,7 @@
                 useFirebase = false;
             }
 
-            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], messages: [], config: { stage: 'Xây dựng đội ngũ' }, seq: 100 };
+            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], messages: [], posts: [], comments: [], config: { stage: 'Xây dựng đội ngũ' }, seq: 100 };
 
             if (useFirebase) {
                 try {
@@ -1756,6 +1843,7 @@
                             sessionStorage.removeItem('ynda_user');
                         }
                         renderNav();
+                        renderFeed();
                         renderPublicChat();
                         updateStageDisplay();
                         if (session && document.getElementById('dashboard').style.display === 'block') {
@@ -1773,6 +1861,7 @@
             renderEvents();
             renderVoting();
             renderNav();
+            renderFeed();
             renderPublicChat();
             updateStageDisplay();
         }
@@ -1835,7 +1924,7 @@
         }
 
         async function loadInternalDataFromFirestore(uid) {
-            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'messages'];
+            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'messages', 'posts', 'comments'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await dbInstance.collection(col).get();
@@ -2053,7 +2142,7 @@
                     role = 'admin';
                 }
                 
-                const newUser = { id: tempGoogleUser.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: true };
+                const newUser = { id: tempGoogleUser.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: true, createdAt: new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) };
                 await dbInstance.collection('users').doc(tempGoogleUser.uid).set(newUser);
                 
                 session = { id: tempGoogleUser.uid, name, email, role, dept, phone, school, className, interest, intro };
@@ -2118,7 +2207,7 @@
                         }
                     }
                     
-                    const newUser = { id: cred.user.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: isAdmin };
+                    const newUser = { id: cred.user.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: isAdmin, createdAt: new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) };
                     await dbInstance.collection('users').doc(cred.user.uid).set(newUser);
                     localDB.users = localDB.users.filter(u => u.email.toLowerCase() !== email);
                     localDB.users.push(newUser);
@@ -2136,7 +2225,7 @@
                 } else {
                     if (localDB.users.find(u => u.email === email)) return m.textContent = 'Email này đã được đăng ký.';
                     const nextId = await getNextId();
-                    const newUser = { id: nextId, name, email, phone, school, className, interest, intro, pass, role: 'member', dept: '', emailVerified: true };
+                    const newUser = { id: nextId, name, email, phone, school, className, interest, intro, pass, role: 'member', dept: '', emailVerified: true, createdAt: new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) };
                     localDB.users.push(newUser);
                     localStorage.setItem('ynda_db', JSON.stringify(localDB));
                 }
@@ -2534,6 +2623,7 @@
         // ================= INTERNAL ZONE / DASHBOARD =================
         const TABS = {
             overview: { icon: '📊', label: 'Tổng quan', roles: ['admin', 'organizer', 'member'] },
+            profile: { icon: '👤', label: 'Hồ sơ của tôi', roles: ['admin', 'organizer', 'member'] },
             tasks: { icon: '✅', label: 'Bảng Công việc', roles: ['admin', 'organizer', 'member'] },
             plan: { icon: '🗓️', label: 'Lộ trình 3 tháng', roles: ['admin', 'organizer'] },
             events: { icon: '🎬', label: 'Quản lý sự kiện', roles: ['admin', 'organizer'] },
@@ -2589,6 +2679,52 @@
                                     <p style="color:var(--text-muted);font-size:0.9rem;margin-top:6px">${esc(a.content)}</p>
                                 </div>
                             `).join('') || 'Chưa có thông báo nào.'}
+                        </div>
+                    `;
+                },
+                profile() {
+                    const u = d.users.find(x => String(x.id) === String(session.id));
+                    if (!u) { main.innerHTML = '<p>Không tìm thấy thông tin người dùng.</p>'; return; }
+                    const roleLabel = u.role === 'admin' ? 'Admin' : u.role === 'organizer' ? 'BTC' : 'Thành viên';
+                    const roleColor = u.role === 'admin' ? 'var(--gold)' : u.role === 'organizer' ? 'var(--ok)' : 'var(--text-muted)';
+                    const roleBg = u.role === 'admin' ? 'rgba(228,184,102,0.2)' : u.role === 'organizer' ? 'rgba(99,209,158,0.2)' : 'rgba(255,255,255,0.06)';
+                    const userPosts = (d.posts || []).filter(p => String(p.userId) === String(session.id));
+                    main.innerHTML = `
+                        <h2>👤 Hồ sơ của tôi</h2>
+                        <div class="card" style="padding:30px;max-width:600px">
+                            <div style="display:flex;gap:20px;align-items:center;margin-bottom:24px">
+                                ${getAvatarHtml(u.name, 'lg')}
+                                <div>
+                                    <h3 style="color:var(--gold-light);margin-bottom:4px">${esc(u.name)}</h3>
+                                    <div class="role-badge" style="background:${roleBg};color:${roleColor};font-size:0.75rem;display:inline-block;padding:3px 12px;border-radius:20px;font-weight:600">${roleLabel}</div>
+                                    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:6px">Tham gia từ: ${u.createdAt || 'Không rõ'}</p>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom:10px">
+                                <div><label>Email</label><p style="color:#e2e8f0;font-size:0.9rem">${esc(u.email)}</p></div>
+                                <div><label>Điện thoại / Zalo</label><p style="color:#e2e8f0;font-size:0.9rem">${esc(u.phone || '—')}</p></div>
+                            </div>
+                            <div class="row" style="margin-bottom:10px">
+                                <div><label>Trường / đơn vị</label><p style="color:#e2e8f0;font-size:0.9rem">${esc(u.school || '—')}</p></div>
+                                <div><label>Lớp / khoa</label><p style="color:#e2e8f0;font-size:0.9rem">${esc(u.className || '—')}</p></div>
+                            </div>
+                            <div style="margin-bottom:10px">
+                                <label>Vai trò quan tâm</label><p style="color:#e2e8f0;font-size:0.9rem">${esc(u.interest || '—')}</p>
+                            </div>
+                            <div style="margin-bottom:10px">
+                                <label>Giới thiệu</label><p style="color:var(--text-muted);font-size:0.9rem;font-style:italic">${u.intro ? '"' + esc(u.intro) + '"' : '—'}</p>
+                            </div>
+                            <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06)">
+                                <h4 style="color:var(--text-muted);margin-bottom:12px">Bài viết của tôi (${userPosts.length})</h4>
+                                ${userPosts.length === 0 ? '<p style="color:var(--text-muted);font-size:0.85rem">Bạn chưa có bài viết nào trên bảng tin cộng đồng.</p>' :
+                                    [...userPosts].reverse().slice(0, 5).map(p => `
+                                        <div style="margin-bottom:12px;padding:12px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid rgba(228,184,102,0.08)">
+                                            <div style="font-size:0.9rem;margin-bottom:6px">${esc(p.content)}</div>
+                                            <div style="font-size:0.75rem;color:var(--text-muted)">${p.time || ''} · ${(p.likes||[]).length} thích · ${p.commentCount||0} bình luận</div>
+                                        </div>
+                                    `).join('')
+                                }
+                            </div>
                         </div>
                     `;
                 },
@@ -3283,6 +3419,185 @@
                 }
             }
             setTimeout(() => { listEl.scrollTop = listEl.scrollHeight; }, 50);
+        }
+
+        // ================= SOCIAL FEED & PROFILES =================
+
+        function getAvatarHtml(name, size) {
+            const cls = size === 'lg' ? 'avatar avatar-lg' : size === 'sm' ? 'avatar avatar-sm' : 'avatar';
+            const initial = (name || '?').charAt(0).toUpperCase();
+            return `<div class="${cls}" title="${esc(name)}">${initial}</div>`;
+        }
+
+        function openProfile(userId) {
+            const u = localDB.users.find(x => String(x.id) === String(userId));
+            if (!u) return alert('Không tìm thấy người dùng.');
+            const modal = document.getElementById('profileModalBody');
+            const isOwn = session && String(session.id) === String(userId);
+            const userPosts = (localDB.posts || []).filter(p => String(p.userId) === String(userId)).reverse();
+            const roleLabel = u.role === 'admin' ? 'Admin' : u.role === 'organizer' ? 'BTC' : 'Thành viên';
+            const roleColor = u.role === 'admin' ? 'var(--gold)' : u.role === 'organizer' ? 'var(--ok)' : 'var(--text-muted)';
+            const roleBg = u.role === 'admin' ? 'rgba(228,184,102,0.2)' : u.role === 'organizer' ? 'rgba(99,209,158,0.2)' : 'rgba(255,255,255,0.06)';
+            modal.innerHTML = `
+                <div class="profile-cover">
+                    ${getAvatarHtml(u.name, 'lg')}
+                    <h3>${esc(u.name)}</h3>
+                    <div class="role-badge" style="background:${roleBg};color:${roleColor}">${roleLabel}</div>
+                    ${u.school ? `<p style="margin-top:8px;color:var(--text-muted);font-size:0.85rem">${esc(u.school)}${u.gclass ? ' — ' + esc(u.gclass) : ''}</p>` : ''}
+                    ${u.intro ? `<p style="margin-top:6px;color:var(--text-muted);font-size:0.85rem;font-style:italic">"${esc(u.intro)}"</p>` : ''}
+                    <p style="margin-top:6px;color:var(--text-muted);font-size:0.75rem">Tham gia từ: ${u.createdAt || 'Không rõ'}</p>
+                </div>
+                <h4 style="margin-bottom:12px;color:var(--text-muted)">Bài viết (${userPosts.length})</h4>
+                ${userPosts.length === 0 ? '<p style="text-align:center;color:var(--text-muted);padding:20px">Chưa có bài viết nào.</p>' :
+                    userPosts.map(p => `
+                        <div class="post-card" style="border-color:rgba(228,184,102,0.08);background:rgba(255,255,255,0.02)">
+                            <div class="post-content" style="font-size:0.9rem">${esc(p.content)}</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted)">${p.time || ''} · ${(p.likes||[]).length} thích · ${p.commentCount||0} bình luận</div>
+                        </div>
+                    `).join('')
+                }
+            `;
+            openModal('profileModal');
+        }
+
+        function renderFeed() {
+            const container = document.getElementById('feedContainer');
+            if (!container) return;
+            const posts = localDB.posts || [];
+            const users = localDB.users || [];
+            const allComments = localDB.comments || [];
+
+            let html = '';
+            if (session) {
+                html += `
+                    <div class="post-card">
+                        <div style="display:flex;gap:12px;align-items:flex-start">
+                            ${getAvatarHtml(session.name)}
+                            <div style="flex:1">
+                                <textarea id="newPostInput" placeholder="Bạn đang nghĩ gì về điện ảnh?..." rows="3" style="width:100%;resize:none;padding:10px;border-radius:12px;background:rgba(0,0,0,0.2);border:1px solid rgba(228,184,102,0.15);color:#e2e8f0;font-size:0.9rem"></textarea>
+                                <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="createPost()">📝 Đăng bài</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (posts.length === 0) {
+                html += '<div style="text-align:center;padding:40px;color:var(--text-muted)">Chưa có bài viết nào. Hãy là người đầu tiên chia sẻ! 🎬</div>';
+            } else {
+                html += [...posts].reverse().map(p => {
+                    const u = users.find(x => String(x.id) === String(p.userId));
+                    const pComments = allComments.filter(c => String(c.postId) === String(p.id));
+                    const hasLiked = session && (p.likes || []).some(l => String(l) === String(session.id));
+                    const likeCount = (p.likes || []).length;
+                    return `
+                        <div class="post-card">
+                            <div class="post-header" onclick="openProfile('${p.userId}')">
+                                ${getAvatarHtml(p.userName)}
+                                <div>
+                                    <div class="name">${esc(p.userName)}</div>
+                                    <div class="time">${p.time || ''} · <span style="color:${p.userRole === 'admin' ? 'var(--gold)' : p.userRole === 'organizer' ? 'var(--ok)' : 'var(--text-muted)'}">${p.userRole === 'admin' ? 'Admin' : p.userRole === 'organizer' ? 'BTC' : 'Thành viên'}</span></div>
+                                </div>
+                            </div>
+                            <div class="post-content">${esc(p.content)}</div>
+                            <div class="post-actions">
+                                <button class="${hasLiked ? 'liked' : ''}" onclick="toggleLike(${p.id})">${hasLiked ? '❤️' : '🤍'} ${likeCount > 0 ? likeCount : ''}</button>
+                                <button onclick="document.getElementById('commentToggle_${p.id}').style.display=document.getElementById('commentToggle_${p.id}').style.display==='none'?'block':'none'">💬 ${pComments.length > 0 ? pComments.length : ''}</button>
+                            </div>
+                            <div id="commentToggle_${p.id}" style="display:none">
+                                <div class="comment-box">
+                                    ${pComments.length === 0 ? '<div style="color:var(--text-muted);font-size:0.8rem;margin-bottom:8px">Chưa có bình luận.</div>' :
+                                        pComments.map(c => `
+                                            <div class="comment-item">
+                                                ${getAvatarHtml(c.userName, 'sm')}
+                                                <div class="c-body">
+                                                    <div onclick="openProfile('${c.userId}')" style="cursor:pointer">
+                                                        <span class="c-name">${esc(c.userName)} <span style="color:${c.userRole === 'admin' ? 'var(--gold)' : c.userRole === 'organizer' ? 'var(--ok)' : 'var(--text-muted)'};font-weight:400;font-size:0.7rem">${c.userRole === 'admin' ? 'Admin' : c.userRole === 'organizer' ? 'BTC' : 'TV'}</span></span>
+                                                    </div>
+                                                    <div>${esc(c.content)}</div>
+                                                    <div class="c-time">${c.time || ''}</div>
+                                                </div>
+                                            </div>
+                                        `).join('')
+                                    }
+                                    ${session ? `
+                                        <div class="comment-input-row">
+                                            <input id="commentInput_${p.id}" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter') addComment(${p.id})">
+                                            <button class="btn btn-gold btn-sm" onclick="addComment(${p.id})">Gửi</button>
+                                        </div>
+                                    ` : '<div style="font-size:0.8rem;color:var(--text-muted);padding:4px 0"><a onclick="openModal(\'authModal\');toggleAuth(true)" style="cursor:pointer;color:var(--gold)">Đăng nhập</a> để bình luận</div>'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            container.innerHTML = html;
+        }
+
+        async function createPost() {
+            if (!session) return alert('Vui lòng đăng nhập!');
+            const input = document.getElementById('newPostInput');
+            if (!input) return;
+            const content = input.value.trim();
+            if (!content) return alert('Vui lòng nhập nội dung bài viết.');
+            if (content.length < 2) return alert('Nội dung quá ngắn.');
+            input.value = '';
+            const nextId = await getNextId();
+            const now = new Date();
+            const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+            const post = { id: nextId, userId: session.id, userName: session.name, userRole: session.role, content, likes: [], commentCount: 0, time: timeStr };
+            await saveItem('posts', post);
+            renderFeed();
+        }
+
+        async function toggleLike(postId) {
+            if (!session) return alert('Vui lòng đăng nhập để thích bài viết!');
+            const post = (localDB.posts || []).find(p => String(p.id) === String(postId));
+            if (!post) return;
+            if (!post.likes) post.likes = [];
+            const idx = post.likes.findIndex(l => String(l) === String(session.id));
+            if (idx > -1) {
+                post.likes.splice(idx, 1);
+            } else {
+                post.likes.push(session.id);
+            }
+            if (useFirebase) {
+                try {
+                    await dbInstance.collection('posts').doc(String(postId)).set({ likes: post.likes }, { merge: true });
+                } catch (e) { console.error(e); }
+            }
+            // Update local
+            const lIdx = localDB.posts.findIndex(p => String(p.id) === String(postId));
+            if (lIdx > -1) localDB.posts[lIdx] = post;
+            if (!useFirebase) localStorage.setItem('ynda_posts', JSON.stringify(localDB.posts));
+            renderFeed();
+        }
+
+        async function addComment(postId) {
+            if (!session) return alert('Vui lòng đăng nhập!');
+            const input = document.getElementById('commentInput_' + postId);
+            if (!input) return;
+            const content = input.value.trim();
+            if (!content) return;
+            input.value = '';
+            const nextId = await getNextId();
+            const now = new Date();
+            const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+            const comment = { id: nextId, postId, userId: session.id, userName: session.name, userRole: session.role, content, time: timeStr };
+            await saveItem('comments', comment);
+
+            // Update comment count
+            const post = localDB.posts.find(p => String(p.id) === String(postId));
+            if (post) {
+                post.commentCount = (post.commentCount || 0) + 1;
+                if (useFirebase) {
+                    try {
+                        await dbInstance.collection('posts').doc(String(postId)).set({ commentCount: post.commentCount }, { merge: true });
+                    } catch (e) { console.error(e); }
+                }
+            }
+            renderFeed();
         }
 
         // ================= ADMIN ACCOUNT MANAGEMENT =================

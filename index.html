@@ -1371,6 +1371,255 @@
                 font-size: clamp(2.8rem, 14vw, 5rem);
             }
         }
+
+        /* ================= NEW PREMIUM RESPONSIVE MOBILE STYLES ================= */
+        @media (max-width: 900px) {
+            .poster {
+                min-height: auto !important;
+                padding: 30px 20px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 24px !important;
+            }
+            .poster img {
+                position: static !important;
+                width: 90% !important;
+                max-width: 280px !important;
+                height: auto !important;
+                margin: 0 auto !important;
+            }
+            .poster .frame {
+                position: static !important;
+                width: 100% !important;
+                border-top: 1px solid var(--line) !important;
+                padding-top: 20px !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav .links {
+                display: flex !important;
+                position: absolute !important;
+                top: 100% !important;
+                left: 0 !important;
+                right: 0 !important;
+                background: rgba(5, 12, 20, 0.98) !important;
+                backdrop-filter: blur(20px) !important;
+                -webkit-backdrop-filter: blur(20px) !important;
+                flex-direction: column !important;
+                padding: 24px !important;
+                gap: 16px !important;
+                border-bottom: 1.5px solid rgba(224, 178, 98, 0.25) !important;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
+                align-items: stretch !important;
+                text-align: center !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                transform: translateY(-10px) !important;
+                pointer-events: none !important;
+                transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s !important;
+            }
+
+            nav .links.open {
+                opacity: 1 !important;
+                visibility: visible !important;
+                transform: translateY(0) !important;
+                pointer-events: auto !important;
+            }
+
+            /* Responsive Dashboard Side Menu */
+            .side {
+                flex-direction: row !important;
+                overflow-x: auto !important;
+                padding: 10px !important;
+                border-right: none !important;
+                border-bottom: 1px solid rgba(228, 184, 102, 0.15) !important;
+                white-space: nowrap !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .side::-webkit-scrollbar {
+                display: none !important;
+            }
+            .side a {
+                padding: 8px 14px !important;
+                font-size: 0.85rem !important;
+                border-radius: 20px !important;
+                border-bottom: none !important;
+            }
+            .side a.active {
+                background: rgba(228, 184, 102, 0.15) !important;
+                border-bottom-color: transparent !important;
+                color: var(--gold-light) !important;
+            }
+
+            /* Mobile Kanban Board */
+            .kanban-tabs-mobile {
+                display: flex !important;
+            }
+            .kanban {
+                display: block !important;
+            }
+            .kcol {
+                display: none !important;
+                margin-bottom: 0 !important;
+            }
+            .kcol.active-mobile {
+                display: block !important;
+            }
+
+            /* Responsive Tables for Mobile */
+            .table-wrap {
+                border: none !important;
+                background: transparent !important;
+            }
+            .table-wrap table, 
+            .table-wrap tbody, 
+            .table-wrap tr, 
+            .table-wrap td {
+                display: block !important;
+                width: 100% !important;
+            }
+            .table-wrap th {
+                display: none !important;
+            }
+            .table-wrap tr {
+                background: var(--navy-card) !important;
+                border: 1px solid rgba(228, 184, 102, 0.15) !important;
+                border-radius: 14px !important;
+                padding: 12px 16px !important;
+                margin-bottom: 16px !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            }
+            .table-wrap td {
+                border: none !important;
+                border-bottom: 1px dashed rgba(255, 255, 255, 0.05) !important;
+                padding: 10px 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                text-align: right !important;
+                font-size: 0.88rem !important;
+            }
+            .table-wrap td:last-child {
+                border-bottom: none !important;
+            }
+            .table-wrap td::before {
+                content: attr(data-label) !important;
+                font-weight: 700 !important;
+                color: var(--gold-light) !important;
+                text-align: left !important;
+                font-size: 0.78rem !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.5px !important;
+            }
+            .table-wrap td > select,
+            .table-wrap td > input,
+            .table-wrap td > button {
+                margin: 0 !important;
+                max-width: 60% !important;
+                text-align-last: right !important;
+            }
+            .table-wrap td > .btn {
+                width: auto !important;
+                display: inline-flex !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .prize-pool {
+                padding: 20px 16px !important;
+                border-radius: 16px !important;
+            }
+            .prize-pool .pp-amount {
+                font-size: 2.2rem !important;
+            }
+            .modal-box {
+                padding: 24px 16px !important;
+                border-radius: 16px !important;
+                max-height: 90vh !important;
+            }
+            label {
+                margin: 12px 0 4px !important;
+            }
+            .post-card {
+                padding: 16px 12px !important;
+                border-radius: 12px !important;
+                margin-bottom: 12px !important;
+            }
+            .post-header {
+                gap: 8px !important;
+            }
+            .chat-box {
+                padding: 12px 10px !important;
+                height: 350px !important;
+            }
+            .chat-msg {
+                max-width: 90% !important;
+                padding: 8px 12px !important;
+            }
+        }
+
+        /* Segmented Controls for Tabs */
+        .community-tabs {
+            display: flex;
+            background: rgba(13, 32, 52, 0.6);
+            border: 1px solid rgba(228, 184, 102, 0.15);
+            border-radius: 12px;
+            padding: 4px;
+            max-width: 480px;
+            margin: 0 auto 32px;
+            gap: 4px;
+        }
+        .community-tabs button {
+            flex: 1;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .community-tabs button.active {
+            background: var(--grad);
+            color: #050c14;
+            box-shadow: 0 4px 12px rgba(224, 178, 98, 0.2);
+        }
+
+        /* Mobile Kanban tabs */
+        .kanban-tabs-mobile {
+            display: none;
+            background: rgba(13, 32, 52, 0.6);
+            border: 1px solid rgba(228, 184, 102, 0.15);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 20px;
+        }
+        .kanban-tabs-mobile button {
+            flex: 1;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .kanban-tabs-mobile button.active {
+            background: var(--grad);
+            color: #050c14;
+            box-shadow: 0 4px 12px rgba(224, 178, 98, 0.2);
+        }
     </style>
 </head>
 
@@ -1550,10 +1799,10 @@
                 <h2>🌐 Cộng đồng Ý Niệm Điện Ảnh</h2>
                 <p>Kết nối, chia sẻ và cùng nhau phát triển đam mê điện ảnh.</p>
             </div>
-            <div class="community-tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:32px;flex-wrap:wrap">
-                <button class="btn btn-gold btn-sm" onclick="showCommunityTab('feed')" id="ctab-feed">📰 Bảng tin</button>
-                <button class="btn btn-line btn-sm" onclick="showCommunityTab('chat')" id="ctab-chat">💬 Chat</button>
-                <button class="btn btn-line btn-sm" onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người</button>
+            <div class="community-tabs">
+                <button class="active" onclick="showCommunityTab('feed')" id="ctab-feed">📰 Bảng tin</button>
+                <button onclick="showCommunityTab('chat')" id="ctab-chat">💬 Chat</button>
+                <button onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người</button>
             </div>
             <div id="community-content">
                 <div id="communityFeed">
@@ -2100,10 +2349,35 @@
             }, 80); 
         }
         function toggleMobileMenu() {
-            document.getElementById('navLinks').classList.toggle('open');
+            const navLinks = document.getElementById('navLinks');
+            const toggleBtn = document.querySelector('.menu-toggle');
+            navLinks.classList.toggle('open');
+            if (toggleBtn) {
+                toggleBtn.textContent = navLinks.classList.contains('open') ? '✕' : '☰';
+            }
         }
         function closeMobileMenu() {
-            document.getElementById('navLinks').classList.remove('open');
+            const navLinks = document.getElementById('navLinks');
+            const toggleBtn = document.querySelector('.menu-toggle');
+            if (navLinks) navLinks.classList.remove('open');
+            if (toggleBtn) toggleBtn.textContent = '☰';
+        }
+
+        // Chuyển tab Kanban trên giao diện di động
+        function switchKanbanMobile(statusKey) {
+            window.currentKanbanMobileTab = statusKey;
+            ['todo', 'doing', 'done'].forEach(s => {
+                const btn = document.getElementById('ktab-' + s);
+                const col = document.getElementById('kcol-' + s);
+                if (btn) {
+                    if (s === statusKey) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+                if (col) {
+                    if (s === statusKey) col.classList.add('active-mobile');
+                    else col.classList.remove('active-mobile');
+                }
+            });
         }
 
         // Cập nhật hiển thị Giai đoạn
@@ -2832,6 +3106,8 @@
                 tasks() {
                     const cols = { todo: '📋 Cần thực hiện', doing: '⚙️ Đang tiến hành', done: '✔️ Hoàn thành' };
                     const userOpts = d.users.map(u => `<option>${esc(u.name)}</option>`).join('');
+                    const activeCol = window.currentKanbanMobileTab || 'todo';
+                    window.currentKanbanMobileTab = activeCol;
                     
                     main.innerHTML = `
                         <h2>✅ Bảng công việc (Kanban)</h2>
@@ -2860,11 +3136,17 @@
                             </div>
                         ` : ''}
                         
+                        <div class="kanban-tabs-mobile">
+                            <button id="ktab-todo" class="${activeCol === 'todo' ? 'active' : ''}" onclick="switchKanbanMobile('todo')">📋 Cần làm</button>
+                            <button id="ktab-doing" class="${activeCol === 'doing' ? 'active' : ''}" onclick="switchKanbanMobile('doing')">⚙️ Đang chạy</button>
+                            <button id="ktab-done" class="${activeCol === 'done' ? 'active' : ''}" onclick="switchKanbanMobile('done')">✔️ Đã xong</button>
+                        </div>
+                        
                         <div class="kanban">
                             ${Object.entries(cols).map(([statusKey, label]) => {
                                 const listInStatus = d.tasks.filter(t => t.status === statusKey);
                                 return `
-                                    <div class="kcol" ondragover="allowDrop(event)" ondrop="drop(event, '${statusKey}')">
+                                    <div class="kcol ${statusKey === activeCol ? 'active-mobile' : ''}" id="kcol-${statusKey}" ondragover="allowDrop(event)" ondrop="drop(event, '${statusKey}')">
                                         <h4>${label} <span>${listInStatus.length}</span></h4>
                                         ${listInStatus.map(t => `
                                             <div class="task pr-${t.priority}" draggable="true" ondragstart="drag(event, ${t.id})" id="task-card-${t.id}">
@@ -2951,17 +3233,17 @@
                                 </tr>
                                 ${d.events.map(e => `
                                     <tr>
-                                        <td><b>${esc(e.title)}</b></td>
-                                        <td>${e.date}</td>
-                                        <td>${esc(e.loc)}</td>
-                                        <td>
+                                        <td data-label="Tên chương trình"><b>${esc(e.title)}</b></td>
+                                        <td data-label="Ngày tổ chức">${e.date}</td>
+                                        <td data-label="Địa điểm">${esc(e.loc)}</td>
+                                        <td data-label="Trạng thái">
                                             <select style="padding:6px;font-size:0.85rem" onchange="updateEventStatus(${e.id}, this.value)">
                                                 <option value="soon" ${e.status === 'soon' ? 'selected' : ''}>Sắp diễn ra</option>
                                                 <option value="live" ${e.status === 'live' ? 'selected' : ''}>Đang diễn ra</option>
                                                 <option value="done" ${e.status === 'done' ? 'selected' : ''}>Đã kết thúc</option>
                                             </select>
                                         </td>
-                                        <td>
+                                        <td data-label="Hành động">
                                             <button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteEventItem(${e.id})">🗑 Xóa</button>
                                         </td>
                                     </tr>
@@ -2990,12 +3272,12 @@
                                     </tr>
                                     ${pendings.map(a => `
                                         <tr>
-                                            <td><span class="chip">${a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'}</span></td>
-                                            <td><b>${esc(a.name)}</b></td>
-                                            <td style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
-                                            <td>${esc(a.dept) || 'Cộng đồng'}</td>
-                                            <td style="font-size:0.82rem;color:var(--text-muted)">${esc(a.intro)}</td>
-                                            <td>
+                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'}</span></td>
+                                            <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
+                                            <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
+                                            <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'}</td>
+                                            <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">${esc(a.intro)}</td>
+                                            <td data-label="Quyết định">
                                                 <button class="btn btn-gold btn-sm" onclick="approveApplication(${a.id})">✔ Duyệt</button>
                                                 <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication(${a.id})">✕ Từ chối</button>
                                             </td>
@@ -3045,9 +3327,9 @@
                                     </tr>
                                     ${d.users.map(u => `
                                         <tr>
-                                            <td><b>${esc(u.name)}</b></td>
-                                            <td>${esc(u.email)}</td>
-                                            <td>
+                                            <td data-label="Họ và tên"><b>${esc(u.name)}</b></td>
+                                            <td data-label="Email">${esc(u.email)}</td>
+                                            <td data-label="Phân quyền truy cập">
                                                 ${(session.role === 'admin' && String(u.id) !== String(session.id)) ? `
                                                     <select style="padding:6px" onchange="updateUserRole('${u.id}', this.value)">
                                                         <option value="member" ${u.role === 'member' ? 'selected' : ''}>Thành viên</option>
@@ -3056,25 +3338,25 @@
                                                     </select>
                                                 ` : u.role === 'admin' ? '👑 Quản trị viên (Admin)' : u.role === 'organizer' ? '💼 Ban Tổ Chức' : '🍿 Thành viên tham gia'}
                                             </td>
-                                <td>
-                                                    ${(session.role === 'admin' && String(u.id) !== String(session.id)) ? `
-                                                        <select style="padding:6px" onchange="updateUserDept('${u.id}', this.value)">
-                                                            <option value="">Không có</option>
-                                                            <option value="Nội dung & Chuyên môn" ${u.dept === 'Nội dung & Chuyên môn' ? 'selected' : ''}>Nội dung</option>
-                                                            <option value="Truyền thông & Sáng tạo" ${u.dept === 'Truyền thông & Sáng tạo' ? 'selected' : ''}>Truyền thông</option>
-                                                            <option value="Đối ngoại & Tài trợ" ${u.dept === 'Đối ngoại & Tài trợ' ? 'selected' : ''}>Đối ngoại</option>
-                                                            <option value="Kỹ thuật & Vận hành" ${u.dept === 'Kỹ thuật & Vận hành' ? 'selected' : ''}>Kỹ thuật</option>
-                                                            <option value="Nhân sự & Vận hành" ${u.dept === 'Nhân sự & Vận hành' ? 'selected' : ''}>Nhân sự</option>
-                                                            <option value="Tài chính - Minh bạch" ${u.dept === 'Tài chính - Minh bạch' ? 'selected' : ''}>Tài chính</option>
-                                                        </select>
-                                                    ` : esc(u.dept) || '—'}
-                                                </td>
-                                                <td style="font-size:0.8rem">
-                                                    ${renderEvalBadge(u)}
-                                                    ${isOrg ? `<button class="btn btn-sm" style="margin-top:4px;padding:3px 8px;font-size:0.7rem;background:rgba(228,184,102,0.15);color:var(--gold-light);border:1px solid rgba(228,184,102,0.2);border-radius:6px;cursor:pointer" onclick="openRateModal('${u.id}')">⭐ Đánh giá</button>` : ''}
-                                                </td>
-                                            </tr>
-                                        `).join('')}
+                                            <td data-label="Phòng ban phụ trách">
+                                                ${(session.role === 'admin' && String(u.id) !== String(session.id)) ? `
+                                                    <select style="padding:6px" onchange="updateUserDept('${u.id}', this.value)">
+                                                        <option value="">Không có</option>
+                                                        <option value="Nội dung & Chuyên môn" ${u.dept === 'Nội dung & Chuyên môn' ? 'selected' : ''}>Nội dung</option>
+                                                        <option value="Truyền thông & Sáng tạo" ${u.dept === 'Truyền thông & Sáng tạo' ? 'selected' : ''}>Truyền thông</option>
+                                                        <option value="Đối ngoại & Tài trợ" ${u.dept === 'Đối ngoại & Tài trợ' ? 'selected' : ''}>Đối ngoại</option>
+                                                        <option value="Kỹ thuật & Vận hành" ${u.dept === 'Kỹ thuật & Vận hành' ? 'selected' : ''}>Kỹ thuật</option>
+                                                        <option value="Nhân sự & Vận hành" ${u.dept === 'Nhân sự & Vận hành' ? 'selected' : ''}>Nhân sự</option>
+                                                        <option value="Tài chính - Minh bạch" ${u.dept === 'Tài chính - Minh bạch' ? 'selected' : ''}>Tài chính</option>
+                                                    </select>
+                                                ` : esc(u.dept) || '—'}
+                                            </td>
+                                            <td data-label="Đánh giá" style="font-size:0.8rem">
+                                                ${renderEvalBadge(u)}
+                                                ${isOrg ? `<button class="btn btn-sm" style="margin-top:4px;padding:3px 8px;font-size:0.7rem;background:rgba(228,184,102,0.15);color:var(--gold-light);border:1px solid rgba(228,184,102,0.2);border-radius:6px;cursor:pointer" onclick="openRateModal('${u.id}')">⭐ Đánh giá</button>` : ''}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
                                     </table>
                                 </div>
                             </div>
@@ -3127,12 +3409,12 @@
                                     <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>
                                     ${pending.map(t => `
                                         <tr>
-                                            <td><b>${esc(t.userName)}</b></td>
-                                            <td>${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
-                                            <td style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
-                                            <td style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
-                                            <td style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
-                                            <td><button class="btn btn-gold btn-sm" onclick="confirmTx(${t.id})">✔ Xác nhận</button></td>
+                                            <td data-label="Người dùng"><b>${esc(t.userName)}</b></td>
+                                            <td data-label="Loại giao dịch">${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
+                                            <td data-label="Số tiền" style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
+                                            <td data-label="Memo" style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
+                                            <td data-label="Thời gian" style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
+                                            <td data-label="Thao tác"><button class="btn btn-gold btn-sm" onclick="confirmTx(${t.id})">✔ Xác nhận</button></td>
                                         </tr>
                                     `).join('')}
                                 </table>
@@ -3146,12 +3428,12 @@
                                     <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th>Memo</th><th>Thời gian</th></tr>
                                     ${[...txs].reverse().map(t => `
                                         <tr>
-                                            <td><b>${esc(t.userName)}</b></td>
-                                            <td>${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
-                                            <td style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
-                                            <td>${t.status === 'confirmed' ? '<span style="color:#63d19e">✔ Đã xác nhận</span>' : '<span style="color:#fbbf24">⏳ Chờ</span>'}</td>
-                                            <td style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
-                                            <td style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
+                                            <td data-label="Người dùng"><b>${esc(t.userName)}</b></td>
+                                            <td data-label="Loại giao dịch">${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
+                                            <td data-label="Số tiền" style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
+                                            <td data-label="Trạng thái">${t.status === 'confirmed' ? '<span style="color:#63d19e">✔ Đã xác nhận</span>' : '<span style="color:#fbbf24">⏳ Chờ</span>'}</td>
+                                            <td data-label="Memo" style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
+                                            <td data-label="Thời gian" style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
                                         </tr>
                                     `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có giao dịch nào.</td></tr>'}
                                 </table>
@@ -3198,11 +3480,11 @@
                                 </tr>
                                 ${[...d.budget].reverse().map(b => `
                                     <tr>
-                                        <td>${b.date}</td>
-                                        <td>${esc(b.label)}</td>
-                                        <td>${b.type === 'in' ? `<span style="color:var(--ok);font-weight:600">Thu quỹ</span>` : `<span style="color:var(--danger);font-weight:600">Chi phí</span>`}</td>
-                                        <td>${money(b.amount)}</td>
-                                        <td><button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteBudgetLedger(${b.id})">🗑</button></td>
+                                        <td data-label="Thời gian">${b.date}</td>
+                                        <td data-label="Nội dung thu chi">${esc(b.label)}</td>
+                                        <td data-label="Loại hình">${b.type === 'in' ? `<span style="color:var(--ok);font-weight:600">Thu quỹ</span>` : `<span style="color:var(--danger);font-weight:600">Chi phí</span>`}</td>
+                                        <td data-label="Số tiền giao dịch">${money(b.amount)}</td>
+                                        <td data-label="Xóa"><button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteBudgetLedger(${b.id})">🗑</button></td>
                                     </tr>
                                 `).join('')}
                             </table>
@@ -3257,13 +3539,13 @@
                                     </tr>
                                     ${d.users.map(u => `
                                         <tr>
-                                            <td>${u.id}</td>
-                                            <td><b>${esc(u.name || 'N/A')}</b></td>
-                                            <td>${esc(u.email)}</td>
-                                            <td>${u.role === 'admin' ? '👑 Admin' : u.role === 'organizer' ? '💼 BTC' : '👤 Thành viên'}</td>
-                                            <td>${esc(u.dept) || '—'}</td>
-                                            <td>${u.emailVerified ? '<span style="color:var(--ok)">✅ Đã XT</span>' : '<span style="color:var(--danger)">⏳ Chưa XT</span>'}</td>
-                                            <td>
+                                            <td data-label="ID">${u.id}</td>
+                                            <td data-label="Họ tên"><b>${esc(u.name || 'N/A')}</b></td>
+                                            <td data-label="Email">${esc(u.email)}</td>
+                                            <td data-label="Vai trò">${u.role === 'admin' ? '👑 Admin' : u.role === 'organizer' ? '💼 BTC' : '👤 Thành viên'}</td>
+                                            <td data-label="Phòng ban">${esc(u.dept) || '—'}</td>
+                                            <td data-label="Xác thực">${u.emailVerified ? '<span style="color:var(--ok)">✅ Đã XT</span>' : '<span style="color:var(--danger)">⏳ Chưa XT</span>'}</td>
+                                            <td data-label="Thao tác">
                                                 ${String(u.id) !== String(session.id) ? `
                                                     <button class="btn btn-line btn-sm" style="font-size:0.7rem;padding:4px 8px" onclick="adminResetPass('${esc(u.email)}')">🔑 Reset Pass</button>
                                                     <button class="btn btn-line btn-sm" style="font-size:0.7rem;padding:4px 8px;color:var(--ok);border-color:var(--ok)" onclick="adminVerifyUser('${u.id}')">✅ Xác thực</button>
@@ -3777,7 +4059,10 @@
             ['feed', 'chat', 'members'].forEach(t => {
                 const btn = document.getElementById('ctab-' + t);
                 const pane = document.getElementById('community' + t.charAt(0).toUpperCase() + t.slice(1));
-                if (btn) btn.className = t === tab ? 'btn btn-gold btn-sm' : 'btn btn-line btn-sm';
+                if (btn) {
+                    if (t === tab) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
                 if (pane) pane.style.display = t === tab ? 'block' : 'none';
             });
             if (tab === 'feed') renderFeed();

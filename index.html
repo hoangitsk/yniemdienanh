@@ -780,6 +780,21 @@
             color: var(--ok);
         }
 
+        .feedback-fab {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 90;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35), var(--glow);
+        }
+
+        .feedback-meta {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
         /* Form validation error feedback states */
         input.invalid, select.invalid, textarea.invalid {
             border-color: var(--danger) !important;
@@ -1879,6 +1894,8 @@
         </footer>
     </div>
 
+    <button class="btn btn-gold feedback-fab" onclick="openFeedback()">Góp ý / báo lỗi</button>
+
     <!-- ============ AUTHENTICATION MODAL (ĐĂNG NHẬP / ĐĂNG KÝ) ============ -->
     <div class="modal" id="authModal">
         <div class="modal-box">
@@ -2036,6 +2053,36 @@
         </div>
     </div>
 
+    <!-- ============ FEEDBACK MODAL ============ -->
+    <div class="modal" id="feedbackModal">
+        <div class="modal-box">
+            <span class="close-x" onclick="closeModal('feedbackModal')">✕</span>
+            <h3>Góp ý / báo lỗi</h3>
+
+            <label for="fbType">Loại phản hồi *</label>
+            <select id="fbType">
+                <option value="bug">Báo lỗi website</option>
+                <option value="idea">Góp ý cải thiện</option>
+                <option value="content">Góp ý nội dung</option>
+                <option value="other">Khác</option>
+            </select>
+
+            <label for="fbName">Tên của bạn</label>
+            <input id="fbName" placeholder="Có thể bỏ trống">
+
+            <label for="fbContact">Email / Zalo liên hệ</label>
+            <input id="fbContact" placeholder="Có thể bỏ trống nếu không cần phản hồi">
+
+            <label for="fbMessage">Nội dung *</label>
+            <textarea id="fbMessage" placeholder="Mô tả lỗi bạn gặp, góp ý của bạn, hoặc điều bạn muốn đội ngũ cải thiện..."></textarea>
+            <div class="error-hint">Nội dung feedback cần có ít nhất 10 ký tự.</div>
+
+            <div class="feedback-meta">Hệ thống sẽ lưu kèm đường dẫn trang hiện tại và thời điểm gửi để BTC dễ kiểm tra lỗi.</div>
+            <div class="form-msg" id="fbMsg"></div>
+            <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitFeedback()">Gửi phản hồi</button>
+        </div>
+    </div>
+
     <!-- PROFILE MODAL -->
     <div class="modal" id="profileModal">
         <div class="modal-box" style="max-width:560px">
@@ -2115,6 +2162,7 @@
                     { id: 3, title: "Chuyến tàu lúc hoàng hôn", team: "Nhóm Hạt Cát", votes: 35, url: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
                 ],
                 votes: [],
+                feedback: [],
                 config: { stage: 'Xây dựng đội ngũ' },
                 seq: 100
             };
@@ -2146,7 +2194,7 @@
                 useFirebase = false;
             }
 
-            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], messages: [], posts: [], comments: [], transactions: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 } }, seq: 100 };
+            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 } }, seq: 100 };
 
             if (useFirebase) {
                 try {
@@ -2160,17 +2208,21 @@
                     // Lắng nghe auth state để tải các dữ liệu nội bộ sau khi đăng nhập thành công
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
-                            if (!firebaseUser.emailVerified && firebaseUser.email.toLowerCase() !== PROJECT_ADMIN_EMAIL) {
-                                await authInstance.signOut();
-                                return;
-                            }
                             document.getElementById('loadingOverlay').style.display = 'flex';
                             try {
+                                const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
+                                const userData = userDoc.exists ? userDoc.data() : null;
+                                const isAdminApproved = userData?.emailVerified === true;
+                                if (!firebaseUser.emailVerified && !isAdminApproved && firebaseUser.email.toLowerCase() !== PROJECT_ADMIN_EMAIL) {
+                                    await authInstance.signOut();
+                                    document.getElementById('loadingOverlay').style.display = 'none';
+                                    return;
+                                }
+
                                 await loadInternalDataFromFirestore(firebaseUser.uid);
                                 
-                                const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
                                 if (userDoc.exists) {
-                                    const u = userDoc.data();
+                                    const u = userData;
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
                                     session = { id: firebaseUser.uid, name: u.name, email: u.email, role: u.role, dept: u.dept, phone: u.phone, school: u.school, className: u.className, interest: u.interest, intro: u.intro };
                                     session.role = effectiveRole;
@@ -2241,6 +2293,7 @@
                 if (!localDB.submissions) localDB.submissions = getMockData().submissions;
                 if (!localDB.votes) localDB.votes = [];
                 if (!localDB.messages) localDB.messages = [];
+                if (!localDB.feedback) localDB.feedback = [];
                 
                 localDB.users = localDB.users.filter(u => !['admin@ynda.vn', 'harlan@ynda.vn'].includes(String(u.email || '').toLowerCase()));
                 const hasProjectAdmin = localDB.users.some(u => u.email && u.email.toLowerCase() === 'yniemdienanh@gmail.com');
@@ -2280,7 +2333,7 @@
         }
 
         async function loadInternalDataFromFirestore(uid) {
-            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'messages', 'posts', 'comments', 'transactions'];
+            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await dbInstance.collection(col).get();
@@ -2648,7 +2701,16 @@
             try {
                 if (useFirebase) {
                     const cred = await authInstance.signInWithEmailAndPassword(email, pass);
+                    let isAdminApproved = false;
                     if (!cred.user.emailVerified && email !== PROJECT_ADMIN_EMAIL) {
+                        try {
+                            const userDoc = await dbInstance.collection('users').doc(cred.user.uid).get();
+                            isAdminApproved = userDoc.exists && userDoc.data().emailVerified === true;
+                        } catch (verifyErr) {
+                            console.warn('Không thể kiểm tra xác thực admin:', verifyErr);
+                        }
+                    }
+                    if (!cred.user.emailVerified && !isAdminApproved && email !== PROJECT_ADMIN_EMAIL) {
                         await cred.user.sendEmailVerification();
                         await authInstance.signOut();
                         alert('📧 EMAIL CHƯA XÁC THỰC!\n\nMột email xác thực mới đã được gửi đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực (kiểm tra cả Spam) rồi đăng nhập lại.');
@@ -2998,9 +3060,81 @@
             }
         }
 
+        function openFeedback() {
+            const msg = document.getElementById('fbMsg');
+            const messageEl = document.getElementById('fbMessage');
+            if (msg) {
+                msg.className = 'form-msg';
+                msg.textContent = '';
+            }
+            if (messageEl) messageEl.classList.remove('invalid');
+            if (session) {
+                const nameEl = document.getElementById('fbName');
+                const contactEl = document.getElementById('fbContact');
+                if (nameEl && !nameEl.value) nameEl.value = session.name || '';
+                if (contactEl && !contactEl.value) contactEl.value = session.email || '';
+            }
+            openModal('feedbackModal');
+        }
+
+        async function submitFeedback() {
+            const typeEl = document.getElementById('fbType');
+            const nameEl = document.getElementById('fbName');
+            const contactEl = document.getElementById('fbContact');
+            const messageEl = document.getElementById('fbMessage');
+            const msg = document.getElementById('fbMsg');
+
+            msg.className = 'form-msg err';
+            msg.textContent = '';
+            messageEl.classList.remove('invalid');
+
+            const message = messageEl.value.trim();
+            if (message.length < 10) {
+                messageEl.classList.add('invalid');
+                msg.textContent = 'Vui lòng nhập nội dung feedback ít nhất 10 ký tự.';
+                return;
+            }
+
+            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const item = {
+                id,
+                type: typeEl.value,
+                name: nameEl.value.trim() || 'Ẩn danh',
+                contact: contactEl.value.trim(),
+                message,
+                page: window.location.href,
+                userAgent: navigator.userAgent,
+                userId: session?.id || '',
+                userEmail: session?.email || '',
+                status: 'new',
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                localDB.feedback = localDB.feedback || [];
+                localDB.feedback.push(item);
+                if (useFirebase) {
+                    await dbInstance.collection('feedback').doc(String(item.id)).set(item);
+                } else {
+                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
+                }
+
+                msg.className = 'form-msg ok';
+                msg.textContent = 'Đã gửi phản hồi. Cảm ơn bạn đã giúp website tốt hơn!';
+                messageEl.value = '';
+                setTimeout(() => {
+                    closeModal('feedbackModal');
+                    msg.textContent = '';
+                }, 2200);
+            } catch (e) {
+                localDB.feedback = (localDB.feedback || []).filter(x => x.id !== item.id);
+                msg.textContent = 'Có lỗi khi gửi phản hồi: ' + (e.message || 'Không xác định');
+            }
+        }
+
         // Bổ sung listener lắng nghe sự kiện nhập liệu để tự động xóa lỗi viền đỏ khi người dùng gõ
         setTimeout(() => {
-            ['apName', 'apEmail', 'apPhone', 'apIntro'].forEach(id => {
+            ['apName', 'apEmail', 'apPhone', 'apIntro', 'fbMessage'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.addEventListener('input', () => el.classList.remove('invalid'));
@@ -3019,6 +3153,7 @@
             announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'member'] },
             budget: { icon: '💰', label: 'Sổ tay Tài chính', roles: ['admin', 'organizer'] },
             transactions: { icon: '💳', label: 'Giao dịch & Quỹ', roles: ['admin', 'organizer'] },
+            feedback: { icon: '💬', label: 'Feedback & Báo lỗi', roles: ['admin', 'organizer'] },
             docs: { icon: '📁', label: 'Thư viện Tài liệu', roles: ['admin', 'organizer', 'member'] },
             accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
         };
@@ -3543,6 +3678,43 @@
                     `;
                 },
 
+                feedback() {
+                    const items = [...(d.feedback || [])].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+                    const typeLabel = { bug: 'Báo lỗi', idea: 'Góp ý cải thiện', content: 'Góp ý nội dung', other: 'Khác' };
+                    const newCount = items.filter(f => (f.status || 'new') === 'new').length;
+                    main.innerHTML = `
+                        <h2>💬 Feedback & Báo lỗi</h2>
+                        <div class="stats">
+                            <div class="stat"><div class="num">${items.length}</div><div class="lbl">Tổng phản hồi</div></div>
+                            <div class="stat"><div class="num" style="color:var(--gold-light)">${newCount}</div><div class="lbl">Chưa xử lý</div></div>
+                            <div class="stat"><div class="num" style="color:var(--ok)">${items.length - newCount}</div><div class="lbl">Đã xem</div></div>
+                        </div>
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">Danh sách phản hồi mới nhất</h3>
+                            ${items.map(f => `
+                                <div style="padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+                                    <div style="display:flex;gap:10px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap">
+                                        <div>
+                                            <span class="chip">${typeLabel[f.type] || 'Feedback'}</span>
+                                            ${(f.status || 'new') === 'new' ? '<span class="chip" style="color:var(--gold-light);margin-left:6px">Mới</span>' : '<span class="chip" style="color:var(--ok);margin-left:6px">Đã xem</span>'}
+                                        </div>
+                                        <span style="color:var(--text-muted);font-size:0.78rem">${f.createdAt ? new Date(f.createdAt).toLocaleString('vi-VN') : ''}</span>
+                                    </div>
+                                    <p style="margin-top:10px;color:#e2e8f0;white-space:pre-wrap">${esc(f.message || '')}</p>
+                                    <div class="feedback-meta">
+                                        Người gửi: ${esc(f.name || 'Ẩn danh')}${f.contact ? ` · Liên hệ: ${esc(f.contact)}` : ''}${f.userEmail ? ` · Tài khoản: ${esc(f.userEmail)}` : ''}<br>
+                                        Trang: ${f.page ? `<a href="${esc(f.page)}" target="_blank" style="color:var(--gold-light)">${esc(f.page)}</a>` : 'Không rõ'}
+                                    </div>
+                                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                                        ${(f.status || 'new') === 'new' ? `<button class="btn btn-gold btn-sm" onclick="markFeedbackSeen('${esc(f.id)}')">Đánh dấu đã xem</button>` : ''}
+                                        <button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteFeedbackItem('${esc(f.id)}')">Xóa</button>
+                                    </div>
+                                </div>
+                            `).join('') || '<p style="color:var(--text-muted)">Chưa có feedback nào.</p>'}
+                        </div>
+                    `;
+                },
+
                 accounts() {
                     main.innerHTML = `
                         <h2>🔐 Quản lý tài khoản</h2>
@@ -3601,6 +3773,21 @@
         }
 
         // ================= DASHBOARD ACTIONS =================
+        async function markFeedbackSeen(id) {
+            const item = (localDB.feedback || []).find(f => String(f.id) === String(id));
+            if (!item) return;
+            item.status = 'seen';
+            item.seenAt = new Date().toISOString();
+            await saveItem('feedback', item);
+            renderTab('feedback');
+        }
+
+        async function deleteFeedbackItem(id) {
+            if (!confirm('Xóa feedback này?')) return;
+            await deleteItemFromDB('feedback', id);
+            renderTab('feedback');
+        }
+
         async function addTask() {
             const title = document.getElementById('tkTitle').value.trim();
             const assignee = document.getElementById('tkAss').value;

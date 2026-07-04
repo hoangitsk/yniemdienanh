@@ -3,7 +3,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
-      return request.auth != null && request.auth.token.email_verified == true;
+      return request.auth != null
+        && (
+          request.auth.token.email_verified == true
+          || (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.emailVerified == true
+          )
+        );
     }
 
     function myUserDoc() {
@@ -60,9 +67,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /feedback/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isOrganizer();
+    }
+
     match /users/{userId} {
       allow create: if request.auth != null && request.auth.uid == userId && validUserRoleOnCreate();
-      allow read: if signedIn() && (request.auth.uid == userId || isOrganizer());
+      allow read: if request.auth != null && (request.auth.uid == userId || isOrganizer());
       allow update: if signedIn() && ((request.auth.uid == userId && keepsOwnRole()) || isAdmin());
       allow delete: if isAdmin();
     }

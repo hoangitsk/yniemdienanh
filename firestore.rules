@@ -115,6 +115,13 @@ service cloud.firestore {
       allow update, delete: if isOrganizer();
     }
 
+    match /transactions/{docId} {
+      allow read: if isOrganizer();
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+      allow delete: if isOrganizer();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        (function () {
+            if (typeof window.zaloJSV2 !== 'undefined') return;
+
+            var noop = function () { return undefined; };
+            window.zaloJSV2 = typeof Proxy === 'function'
+                ? new Proxy(noop, {
+                    get: function (_target, prop) {
+                        if (prop === 'then') return undefined;
+                        return window.zaloJSV2;
+                    },
+                    apply: noop
+                })
+                : {
+                    init: noop,
+                    ready: noop,
+                    share: noop,
+                    postMessage: noop
+                };
+        })();
+    </script>
     
     <!-- Firebase Compat SDKs (Hoạt động trực tiếp qua CDN, không cần cài đặt node_modules phức tạp) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>

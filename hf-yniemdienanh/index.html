@@ -1999,12 +1999,11 @@
             <div id="apRoleWrap">
                 <label for="apDept">Phân ban bạn muốn ứng tuyển *</label>
                 <select id="apDept" name="dept">
-                    <option>Nội dung & Chuyên môn</option>
-                    <option>Truyền thông & Sáng tạo</option>
-                    <option>Đối ngoại & Tài trợ</option>
-                    <option>Kỹ thuật & Vận hành</option>
-                    <option>Nhân sự & Vận hành</option>
-                    <option>Tài chính - Minh bạch</option>
+                    <option>Ban Media (Thiết kế&Edit)</option>
+                    <option>Ban duyệt bài</option>
+                    <option>Ban Nội Dung</option>
+                    <option>Ban Nhân Sự</option>
+                    <option>Ban Truyền Thông</option>
                 </select>
             </div>
             
@@ -2117,8 +2116,8 @@
                 applications: [],
                 events: [],
                 tasks: [
-                    { id: 1, title: 'Thiết kế poster chính thức cho Mùa 1', assignee: 'Admin Ý Niệm Điện Ảnh', dept: 'Truyền thông & Sáng tạo', deadline: '2026-07-10', priority: 'high', status: 'doing' },
-                    { id: 2, title: 'Soạn thảo thư ngỏ gửi phụ huynh & nhà trường', assignee: 'Admin Ý Niệm Điện Ảnh', dept: 'Nhân sự & Vận hành', deadline: '2026-07-12', priority: 'med', status: 'todo' }
+                    { id: 1, title: 'Thiết kế poster chính thức cho Mùa 1', assignee: 'Admin Ý Niệm Điện Ảnh', dept: 'Ban Media (Thiết kế&Edit)', deadline: '2026-07-10', priority: 'high', status: 'doing' },
+                    { id: 2, title: 'Soạn thảo thư ngỏ gửi phụ huynh & nhà trường', assignee: 'Admin Ý Niệm Điện Ảnh', dept: 'Ban Nội Dung', deadline: '2026-07-12', priority: 'med', status: 'todo' }
                 ],
                 plans: [
                     { id: 1, title: 'Mở đơn tuyển thành viên & BTC', date: '2026-07-03', note: 'Giai đoạn xây dựng lực lượng nòng cốt' },
@@ -3602,12 +3601,11 @@
                                     <div><label>Tên đầu việc *</label><input id="tkTitle" placeholder="Nhập tên công việc"></div>
                                     <div><label>Giao cho ai</label><select id="tkAss">${userOpts}</select></div>
                                     <div><label>Phân ban đảm nhiệm</label><select id="tkDept">
-                                        <option>Nội dung & Chuyên môn</option>
-                                        <option>Truyền thông & Sáng tạo</option>
-                                        <option>Đối ngoại & Tài trợ</option>
-                                        <option>Kỹ thuật & Vận hành</option>
-                                        <option>Nhân sự & Vận hành</option>
-                                        <option>Tài chính - Minh bạch</option>
+                                        <option>Ban Media (Thiết kế&Edit)</option>
+                                        <option>Ban duyệt bài</option>
+                                        <option>Ban Nội Dung</option>
+                                        <option>Ban Nhân Sự</option>
+                                        <option>Ban Truyền Thông</option>
                                     </select></div>
                                     <div><label>Hạn hoàn thành</label><input id="tkDl" type="date"></div>
                                     <div><label>Độ ưu tiên</label><select id="tkPr">
@@ -3864,12 +3862,11 @@
                                     </select></div>
                                     <div><label>Phòng ban</label><select id="usDept">
                                         <option value="">Không có</option>
-                                        <option value="Nội dung & Chuyên môn">Nội dung</option>
-                                        <option value="Truyền thông & Sáng tạo">Truyền thông</option>
-                                        <option value="Đối ngoại & Tài trợ">Đối ngoại</option>
-                                        <option value="Kỹ thuật & Vận hành">Kỹ thuật</option>
-                                        <option value="Nhân sự & Vận hành">Nhân sự</option>
-                                        <option value="Tài chính - Minh bạch">Tài chính</option>
+                                        <option value="Ban Media (Thiết kế&Edit)">Ban Media</option>
+                                        <option value="Ban duyệt bài">Ban duyệt bài</option>
+                                        <option value="Ban Nội Dung">Ban Nội Dung</option>
+                                        <option value="Ban Nhân Sự">Ban Nhân Sự</option>
+                                        <option value="Ban Truyền Thông">Ban Truyền Thông</option>
                                     </select></div>
                                     <div><button class="btn btn-gold btn-sm" onclick="addNewUserFromDash()">+ Thêm</button></div>
                                 </div>
@@ -3905,12 +3902,11 @@
                                                 ${(session.role === 'admin' && String(u.id) !== String(session.id)) ? `
                                                     <select style="padding:6px" onchange="updateUserDept('${u.id}', this.value)">
                                                         <option value="">Không có</option>
-                                                        <option value="Nội dung & Chuyên môn" ${u.dept === 'Nội dung & Chuyên môn' ? 'selected' : ''}>Nội dung</option>
-                                                        <option value="Truyền thông & Sáng tạo" ${u.dept === 'Truyền thông & Sáng tạo' ? 'selected' : ''}>Truyền thông</option>
-                                                        <option value="Đối ngoại & Tài trợ" ${u.dept === 'Đối ngoại & Tài trợ' ? 'selected' : ''}>Đối ngoại</option>
-                                                        <option value="Kỹ thuật & Vận hành" ${u.dept === 'Kỹ thuật & Vận hành' ? 'selected' : ''}>Kỹ thuật</option>
-                                                        <option value="Nhân sự & Vận hành" ${u.dept === 'Nhân sự & Vận hành' ? 'selected' : ''}>Nhân sự</option>
-                                                        <option value="Tài chính - Minh bạch" ${u.dept === 'Tài chính - Minh bạch' ? 'selected' : ''}>Tài chính</option>
+                                                        <option value="Ban Media (Thiết kế&Edit)" ${u.dept === 'Ban Media (Thiết kế&Edit)' ? 'selected' : ''}>Ban Media</option>
+                                                        <option value="Ban duyệt bài" ${u.dept === 'Ban duyệt bài' ? 'selected' : ''}>Ban duyệt bài</option>
+                                                        <option value="Ban Nội Dung" ${u.dept === 'Ban Nội Dung' ? 'selected' : ''}>Ban Nội Dung</option>
+                                                        <option value="Ban Nhân Sự" ${u.dept === 'Ban Nhân Sự' ? 'selected' : ''}>Ban Nhân Sự</option>
+                                                        <option value="Ban Truyền Thông" ${u.dept === 'Ban Truyền Thông' ? 'selected' : ''}>Ban Truyền Thông</option>
                                                     </select>
                                                 ` : esc(u.dept) || '—'}
                                             </td>

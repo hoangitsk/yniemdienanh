@@ -3163,7 +3163,16 @@
                     if (isAdmin) {
                         role = 'admin';
                     } else {
-                        await cred.user.sendEmailVerification();
+                        try {
+                            const idToken = await cred.user.getIdToken();
+                            await fetch('/api/email/send-verification', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ idToken, email }),
+                            });
+                        } catch (e) {
+                            console.warn('Custom email skip:', e.message);
+                        }
                         try {
                             const snap = await dbInstance.collection('users').where('email', '==', email).get();
                             if (!snap.empty) {
@@ -3252,7 +3261,16 @@
                         }
                     }
                     if (!cred.user.emailVerified && !isAdminApproved && email !== PROJECT_ADMIN_EMAIL) {
-                        await cred.user.sendEmailVerification();
+                        try {
+                            const idToken = await cred.user.getIdToken();
+                            await fetch('/api/email/send-verification', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ idToken, email }),
+                            });
+                        } catch (e) {
+                            console.warn('Custom email skip:', e.message);
+                        }
                         await authInstance.signOut();
                         alert('📧 EMAIL CHƯA XÁC THỰC!\n\nMột email xác thực mới đã được gửi đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực (kiểm tra cả Spam) rồi đăng nhập lại.');
                         return m.textContent = 'Tài khoản chưa xác thực. Đã gửi lại email, kiểm tra Gmail (cả Spam) nhé!';
@@ -3306,15 +3324,15 @@
                 return;
             }
             try {
-                await authInstance.sendPasswordResetEmail(email);
-                alert('📧 ĐÃ GỬI EMAIL ĐẶT LẠI MẬT KHẨU!\n\nVui lòng kiểm tra hộp thư Gmail (cả Spam) và bấm link để tạo mật khẩu mới.');
+                await fetch('/api/email/send-password-reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email }),
+                });
+                alert('📧 ĐÃ GỬI EMAIL ĐẶT LẠI MẬT KHẨU!\n\nVui lòng kiểm tra hộp thư Gmail và bấm link để tạo mật khẩu mới.');
             } catch (err) {
                 console.error("Reset password error:", err);
-                if (err.code === 'auth/user-not-found') {
-                    showToast('Email chưa được đăng ký.', "error");
-                } else {
-                    showToast('Lỗi gửi email: ' + (err.message || 'Không thể kết nối.'), "error");
-                }
+                showToast('Lỗi gửi email: ' + (err.message || 'Không thể kết nối.'), "error");
             }
         }
 
@@ -4741,9 +4759,23 @@
                     try {
                         const tempPass = Math.random().toString(36).slice(2, 14) + 'A1!';
                         const cred = await authInstance.createUserWithEmailAndPassword(userEmail, tempPass);
-                        await cred.user.sendEmailVerification();
-                        await authInstance.sendPasswordResetEmail(userEmail);
-                        showToast(`Đã tạo tài khoản & gửi email đặt mật khẩu đến ${userEmail}!`, 'success');
+                        try {
+                            const idToken = await cred.user.getIdToken();
+                            await fetch('/api/email/send-verification', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ idToken, email: userEmail }),
+                            });
+                            await fetch('/api/email/send-password-reset', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: userEmail }),
+                            });
+                            showToast(`Đã tạo tài khoản & gửi email đặt mật khẩu đến ${userEmail}!`, 'success');
+                        } catch (e) {
+                            console.warn('Custom email skip:', e.message);
+                            showToast(`Đã tạo tài khoản cho ${userEmail} (lỗi gửi email: ${e.message})`, 'warning');
+                        }
                     } catch (e) {
                         console.warn('Auth skip:', e.message);
                         if (e.code === 'auth/email-already-in-use') {
@@ -5610,15 +5642,15 @@
         // ================= ADMIN ACCOUNT MANAGEMENT =================
         async function adminResetPass(email) {
             if (!confirm(`Gửi email đặt lại mật khẩu cho ${email}?`)) return;
-            if (useFirebase) {
-                try {
-                    await authInstance.sendPasswordResetEmail(email);
-                    showToast(`✅ Đã gửi email đặt lại mật khẩu đến ${email}.`, 'success');
-                } catch (e) {
-                    showToast('Lỗi: ' + (e.message || 'Không thể gửi email.'), 'error');
-                }
-            } else {
-                showToast('Tính năng này cần kết nối Firebase.', 'info');
+            try {
+                await fetch('/api/email/send-password-reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email }),
+                });
+                showToast(`✅ Đã gửi email đặt lại mật khẩu đến ${email}.`, 'success');
+            } catch (e) {
+                showToast('Lỗi: ' + (e.message || 'Không thể gửi email.'), 'error');
             }
         }
 

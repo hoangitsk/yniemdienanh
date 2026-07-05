@@ -18,6 +18,46 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <script>
+        // Core navigation functions – defined early so onclick attributes work
+        function showPage(p) {
+            var home = document.getElementById('page-home');
+            var dash = document.getElementById('dashboard');
+            var community = document.getElementById('page-community');
+            var voting = document.getElementById('page-voting');
+            if (home) home.style.display = p === 'home' ? 'block' : 'none';
+            if (dash) dash.style.display = p === 'dash' ? 'block' : 'none';
+            if (community) community.style.display = p === 'community' ? 'block' : 'none';
+            if (voting) voting.style.display = p === 'voting' ? 'block' : 'none';
+            window.scrollTo(0, 0);
+            try { renderAllPrizePools(); } catch(e) {}
+            if (p === 'community') { try { showCommunityTab(window.communityCurTab || 'feed'); } catch(e) {} }
+            if (p === 'voting') { try { renderVoting(); } catch(e) {} }
+        }
+        function goSection(id) {
+            showPage('home');
+            setTimeout(function() {
+                var el = document.getElementById(id);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 80);
+        }
+        function toggleMobileMenu() {
+            var navLinks = document.getElementById('navLinks');
+            var toggleBtn = document.querySelector('.menu-toggle');
+            if (navLinks) navLinks.classList.toggle('open');
+            if (toggleBtn) toggleBtn.textContent = navLinks && navLinks.classList.contains('open') ? '✕' : '☰';
+        }
+        function closeMobileMenu() {
+            var navLinks = document.getElementById('navLinks');
+            var toggleBtn = document.querySelector('.menu-toggle');
+            if (navLinks) navLinks.classList.remove('open');
+            if (toggleBtn) toggleBtn.textContent = '☰';
+        }
+        function closeSuccessPopup() {
+            var popup = document.getElementById('successPopup');
+            if (popup) popup.classList.remove('open');
+        }
+    </script>
+    <script>
         (function () {
             if (typeof window.zaloJSV2 !== 'undefined') return;
 

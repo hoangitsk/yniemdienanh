@@ -43,6 +43,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
     <style>
         :root {
@@ -2030,6 +2031,8 @@
                 </select>
                 <label>Giới thiệu ngắn</label>
                 <textarea id="ggIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
+                <label>Mật khẩu <span style="color:var(--text-muted);font-size:0.75rem">(tùy chọn — để trống nếu chỉ muốn đăng nhập bằng Google)</span></label>
+                <input id="ggPass" type="password" placeholder="Nhập mật khẩu nếu muốn đăng nhập bằng email">
                 <div class="form-msg" id="ggMsg"></div>
                 <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitGoogleAdditional()">Hoàn tất đăng ký</button>
             </div>
@@ -2148,6 +2151,7 @@
         const FIREBASE_CONFIG = {
           apiKey: "AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ",
           authDomain: "yniemdienanh-fb0b7.firebaseapp.com",
+          databaseURL: "https://yniemdienanh-fb0b7-default-rtdb.asia-southeast1.firebasedatabase.app",
           projectId: "yniemdienanh-fb0b7",
           storageBucket: "yniemdienanh-fb0b7.firebasestorage.app",
           messagingSenderId: "69246326577",
@@ -2156,8 +2160,10 @@
         };
 
         let useFirebase = false;
+        let useRTDB = false;
         let dbInstance = null;
         let authInstance = null;
+        let rtdbInstance = null;
 
         // Cơ sở dữ liệu in-memory
         let localDB = null;
@@ -2309,6 +2315,13 @@
                     dbInstance = firebase.firestore();
                     authInstance = firebase.auth();
                     useFirebase = true;
+                    try {
+                        rtdbInstance = firebase.database();
+                        useRTDB = true;
+                    } catch (rtdbErr) {
+                        console.warn("RTDB init failed, continuing without:", rtdbErr.message || rtdbErr);
+                        useRTDB = false;
+                    }
                     console.log("Firebase initialized. Cloud sync activated!");
                 } catch (e) {
                     console.error("Firebase init failed, fallback to local storage:", e);
@@ -2412,6 +2425,7 @@
                                     localDB.users.push(session);
                                 }
                                 sessionStorage.setItem('ynda_user', JSON.stringify(session));
+                                syncUserToRTDB(session);
                             } catch (e) {
                                 console.error("Firestore không khả dụng, dùng dữ liệu local:", e.message || e);
                                 const localUser = localDB.users.find(u => u.email && u.email.toLowerCase() === firebaseUser.email.toLowerCase());
@@ -2419,6 +2433,7 @@
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (localUser.role || 'member');
                                     session = { id: firebaseUser.uid, name: localUser.name, email: firebaseUser.email, role: effectiveRole, dept: localUser.dept || '', phone: localUser.phone || '', school: localUser.school || '', className: localUser.className || '', interest: localUser.interest || '', intro: localUser.intro || '' };
                                     sessionStorage.setItem('ynda_user', JSON.stringify(session));
+                                    syncUserToRTDB(session);
                                 } else {
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : 'member';
                                     session = { id: firebaseUser.uid, name: firebaseUser.displayName || 'Thành viên mới', email: firebaseUser.email, role: effectiveRole, dept: '' };
@@ -2908,6 +2923,16 @@
         // ================= LOGIN & AUTH =================
         let tempGoogleUser = null;
 
+        async function syncUserToRTDB(userData) {
+            if (!rtdbInstance) return;
+            try {
+                await rtdbInstance.ref('users/' + userData.id).set(userData);
+                await rtdbInstance.ref('emailIndex/' + userData.email.replace(/\./g, ',')).set(userData.id);
+            } catch (e) {
+                console.warn('RTDB sync failed:', e.message || e);
+            }
+        }
+
         async function doGoogleLogin() {
             if (!authInstance) {
                 showToast("Đăng nhập Google chỉ khả dụng khi có kết nối Firebase.", "info");
@@ -2918,7 +2943,8 @@
                 const result = await authInstance.signInWithPopup(provider);
                 const firebaseUser = result.user;
 
-                let firestoreAvailable = true;
+                // Try Firestore first
+                let userFound = false;
                 try {
                     const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
                     if (userDoc.exists) {
@@ -2933,15 +2959,36 @@
                         updateStageDisplay();
                         openDash();
                         closeModal('authModal');
+                        userFound = true;
                         return;
                     }
                 } catch (fsErr) {
-                    firestoreAvailable = false;
-                    console.warn("Firestore không khả dụng, fallback localDB:", fsErr.message || fsErr);
+                    console.warn("Firestore không khả dụng:", fsErr.message || fsErr);
                 }
 
-                // Firestore unavailable, fallback to localDB
-                if (!firestoreAvailable) {
+                // Try RTDB if Firestore didn't find user
+                if (!userFound && rtdbInstance) {
+                    try {
+                        const rtdbSnap = await rtdbInstance.ref('users/' + firebaseUser.uid).once('value');
+                        if (rtdbSnap.exists()) {
+                            const u = rtdbSnap.val();
+                            const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
+                            session = { id: firebaseUser.uid, name: u.name, email: u.email, role: effectiveRole, dept: u.dept || '', phone: u.phone || '', school: u.school || '', className: u.className || '', interest: u.interest || '', intro: u.intro || '' };
+                            sessionStorage.setItem('ynda_user', JSON.stringify(session));
+                            renderNav();
+                            updateStageDisplay();
+                            openDash();
+                            closeModal('authModal');
+                            userFound = true;
+                            return;
+                        }
+                    } catch (rtdbErr) {
+                        console.warn("RTDB không khả dụng:", rtdbErr.message || rtdbErr);
+                    }
+                }
+
+                // Fallback to localDB
+                if (!userFound) {
                     const localUser = localDB.users.find(u => u.email && u.email.toLowerCase() === firebaseUser.email.toLowerCase());
                     if (localUser) {
                         const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (localUser.role || 'member');
@@ -2951,20 +2998,21 @@
                         updateStageDisplay();
                         openDash();
                         closeModal('authModal');
+                        userFound = true;
                         showToast("Đã đăng nhập. Firestore không khả dụng - dữ liệu chỉ lưu local.", "warning", 5000);
                         return;
                     }
                 }
 
-                // New Google user (Firestore unavailable OR user not found in localDB)
-                tempGoogleUser = firebaseUser;
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('registerForm').style.display = 'none';
-                document.getElementById('googleAdditionalForm').style.display = 'block';
-                document.getElementById('ggName').value = firebaseUser.displayName || '';
-                document.getElementById('ggEmail').value = firebaseUser.email || '';
-                if (!firestoreAvailable) {
-                    showToast("Firestore không khả dụng. Thông tin sẽ chỉ lưu local.", "warning", 5000);
+                // New Google user (not found anywhere)
+                if (!userFound) {
+                    tempGoogleUser = firebaseUser;
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('registerForm').style.display = 'none';
+                    document.getElementById('googleAdditionalForm').style.display = 'block';
+                    document.getElementById('ggName').value = firebaseUser.displayName || '';
+                    document.getElementById('ggEmail').value = firebaseUser.email || '';
+                    showToast("Vui lòng hoàn tất thông tin đăng ký.", "info", 5000);
                 }
             } catch (err) {
                 console.error("Google Auth Error:", err);
@@ -2989,16 +3037,19 @@
             const className = document.getElementById('ggClass').value.trim();
             const interest = document.getElementById('ggInterest').value;
             const intro = document.getElementById('ggIntro').value.trim();
+            const pass = document.getElementById('ggPass').value;
             const m = document.getElementById('ggMsg');
             m.className = 'form-msg err'; m.textContent = '';
 
             if (!name || !phone || !school || !className || !interest || !intro) return m.textContent = 'Vui lòng điền đủ tất cả các trường!';
             if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
             if (intro.length < 20) return m.textContent = 'Giới thiệu ngắn cần tối thiểu 20 ký tự.';
+            if (pass && pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
 
             let role = 'member';
             let dept = '';
 
+            // Try Firestore for existing email, fallback to RTDB
             try {
                 const snap = await dbInstance.collection('users').where('email', '==', email).get();
                 if (!snap.empty) {
@@ -3010,7 +3061,26 @@
                     }
                 }
             } catch (e) {
-                console.warn('Firestore không khả dụng, bỏ qua kiểm tra email cũ:', e.message || e);
+                console.warn('Firestore không khả dụng, thử RTDB:', e.message || e);
+                try {
+                    const emailKey = email.replace(/\./g, ',');
+                    const emailIdxSnap = await rtdbInstance.ref('emailIndex/' + emailKey).once('value');
+                    const existingUid = emailIdxSnap.val();
+                    if (existingUid) {
+                        const existingUserSnap = await rtdbInstance.ref('users/' + existingUid).once('value');
+                        const preData = existingUserSnap.val();
+                        if (preData) {
+                            role = preData.role || 'member';
+                            dept = preData.dept || '';
+                            if (existingUid !== tempGoogleUser.uid) {
+                                await rtdbInstance.ref('users/' + existingUid).remove();
+                                await rtdbInstance.ref('emailIndex/' + emailKey).remove();
+                            }
+                        }
+                    }
+                } catch (rtdbErr) {
+                    console.warn('RTDB cũng không khả dụng:', rtdbErr.message || rtdbErr);
+                }
             }
 
             if (email.toLowerCase() === PROJECT_ADMIN_EMAIL) {
@@ -3019,14 +3089,32 @@
 
             const newUser = { id: tempGoogleUser.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: true, createdAt: new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) };
 
+            // Save to Firestore if available
             try {
                 await dbInstance.collection('users').doc(tempGoogleUser.uid).set(newUser);
             } catch (e) {
                 console.warn('Firestore không khả dụng, chỉ lưu local:', e.message || e);
             }
 
+            // Sync to RTDB if available
+            syncUserToRTDB(newUser);
+
+            // Set password in Firebase Auth if provided
+            if (pass && tempGoogleUser) {
+                try {
+                    await tempGoogleUser.updatePassword(pass);
+                } catch (e) {
+                    console.warn('Không thể đặt mật khẩu (có thể cần reauth):', e.message || e);
+                }
+            }
+
+            // Save to localDB (always)
             localDB.users = localDB.users.filter(u => String(u.id) !== tempGoogleUser.uid);
-            localDB.users.push(newUser);
+            const localUserEntry = { ...newUser };
+            if (pass) {
+                localUserEntry.passHash = btoa(pass);
+            }
+            localDB.users.push(localUserEntry);
             localStorage.setItem('ynda_db', JSON.stringify(localDB));
 
             session = { id: tempGoogleUser.uid, name, email, role, dept, phone, school, className, interest, intro };
@@ -3042,6 +3130,7 @@
             document.getElementById('ggSchool').value = '';
             document.getElementById('ggClass').value = '';
             document.getElementById('ggIntro').value = '';
+            document.getElementById('ggPass').value = '';
         }
 
         async function doRegister() {
@@ -3101,6 +3190,8 @@
                     localDB.users = localDB.users.filter(u => u.email.toLowerCase() !== email);
                     localDB.users.push(newUser);
                     localStorage.setItem('ynda_db', JSON.stringify(localDB));
+
+                    syncUserToRTDB(newUser);
                     
                     if (isAdmin) {
                         session = { id: cred.user.uid, name, email, role: 'admin', dept: 'Ban điều hành', phone, school, className, interest, intro };
@@ -3168,7 +3259,7 @@
                     }
                     // onAuthStateChanged sẽ xử lý session + UI sau khi đăng nhập Firebase thành công
                 } else {
-                    const u = localDB.users.find(u => u.email === email && u.pass === pass);
+                    const u = localDB.users.find(u => u.email === email && (u.pass === pass || u.passHash === btoa(pass)));
                     if (!u) return m.textContent = 'Sai tài khoản hoặc mật khẩu!';
                     
                     session = { id: u.id, name: u.name, email: u.email, role: u.role, dept: u.dept };
@@ -3192,7 +3283,7 @@
                     m.textContent = 'Sai mật khẩu. Vui lòng thử lại.';
                 } else if (err.code === 'auth/too-many-requests') {
                     m.textContent = 'Tài khoản tạm thời bị khóa do nhập sai quá nhiều lần. Thử lại sau vài phút.';
-                } else if (err.code === 'auth/invalid-credential') {
+                } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
                     if (email === PROJECT_ADMIN_EMAIL) {
                         m.textContent = 'Tài khoản Admin chưa được tạo hoặc sai mật khẩu. Hãy bấm "Đăng ký" để tạo tài khoản Admin, hoặc dùng "Quên mật khẩu?".';
                     } else {

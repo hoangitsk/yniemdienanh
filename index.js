@@ -28,20 +28,34 @@ const transporter = nodemailer.createTransport({
 const FIREBASE_API_KEY = 'AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ';
 const FIREBASE_AUTH_URL = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${FIREBASE_API_KEY}`;
 
+// Helper: fetch với timeout
+async function fbFetch(body) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    try {
+        const res = await fetch(FIREBASE_AUTH_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: ctrl.signal,
+        });
+        return await res.json();
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 // Email API endpoints (defined BEFORE proxy to avoid being forwarded to Python)
 app.post('/api/email/send-verification', async (req, res) => {
     try {
         const { idToken, email } = req.body;
         if (!idToken || !email) return res.status(400).json({ error: 'Missing idToken or email' });
 
-        // Get OOB link from Firebase (without sending Firebase email)
-        const fbRes = await fetch(FIREBASE_AUTH_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requestType: 'VERIFY_EMAIL', idToken, returnOobLink: true }),
-        });
-        const fbData = await fbRes.json();
-        if (!fbData.oobLink) return res.status(500).json({ error: 'Failed to generate verification link', detail: fbData });
+        const fbData = await fbFetch({ requestType: 'VERIFY_EMAIL', idToken, returnOobLink: true });
+        if (!fbData.oobLink) {
+            console.error('Firebase OOB error:', JSON.stringify(fbData));
+            return res.status(500).json({ error: 'Firebase OOB link failed', detail: fbData });
+        }
 
         await transporter.sendMail({
             from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
@@ -58,6 +72,7 @@ app.post('/api/email/send-verification', async (req, res) => {
             `,
         });
 
+        console.log('Verification email sent to', email);
         res.json({ success: true });
     } catch (err) {
         console.error('Send verification error:', err);
@@ -70,13 +85,11 @@ app.post('/api/email/send-password-reset', async (req, res) => {
         const { email } = req.body;
         if (!email) return res.status(400).json({ error: 'Missing email' });
 
-        const fbRes = await fetch(FIREBASE_AUTH_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requestType: 'PASSWORD_RESET', email, returnOobLink: true }),
-        });
-        const fbData = await fbRes.json();
-        if (!fbData.oobLink) return res.status(500).json({ error: 'Failed to generate reset link', detail: fbData });
+        const fbData = await fbFetch({ requestType: 'PASSWORD_RESET', email, returnOobLink: true });
+        if (!fbData.oobLink) {
+            console.error('Firebase OOB error:', JSON.stringify(fbData));
+            return res.status(500).json({ error: 'Firebase OOB link failed', detail: fbData });
+        }
 
         await transporter.sendMail({
             from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
@@ -93,6 +106,7 @@ app.post('/api/email/send-password-reset', async (req, res) => {
             `,
         });
 
+        console.log('Password reset email sent to', email);
         res.json({ success: true });
     } catch (err) {
         console.error('Send password reset error:', err);

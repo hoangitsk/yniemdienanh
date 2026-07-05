@@ -743,6 +743,90 @@
             color: var(--danger);
         }
 
+        /* ===== SUCCESS POPUP ===== */
+        #successPopup {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 7, 12, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 24px;
+        }
+        #successPopup.open { display: flex; }
+        #successPopup .popup-box {
+            background: var(--navy-card);
+            border: 1px solid rgba(99, 209, 158, 0.3);
+            border-radius: 24px;
+            padding: 48px 36px 36px;
+            width: min(420px, 100%);
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 209, 158, 0.08);
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        #successPopup .checkmark {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+        #successPopup .checkmark-circle {
+            fill: none;
+            stroke: #63d19e;
+            stroke-width: 3;
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            animation: drawCircle 0.6s ease forwards;
+        }
+        @keyframes drawCircle {
+            to { stroke-dashoffset: 0; }
+        }
+        #successPopup .checkmark-path {
+            fill: none;
+            stroke: #63d19e;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: drawCheck 0.4s 0.5s ease forwards;
+        }
+        @keyframes drawCheck {
+            to { stroke-dashoffset: 0; }
+        }
+        #successPopup h3 {
+            color: #63d19e;
+            font-size: 1.6rem;
+            margin: 0 0 8px;
+        }
+        #successPopup p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin: 0 0 24px;
+            line-height: 1.6;
+        }
+        #successPopup .btn-success {
+            background: linear-gradient(135deg, #63d19e, #4ab87a);
+            color: #050c14;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        #successPopup .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 209, 158, 0.3);
+        }
+
         label {
             display: block;
             font-size: 0.82rem;
@@ -1738,6 +1822,21 @@
         <p style="color:var(--gold-light);font-weight:600;margin-top:10px">Đang đồng bộ dữ liệu đám mây...</p>
     </div>
 
+    <!-- Success popup -->
+    <div id="successPopup">
+        <div class="popup-box">
+            <div class="checkmark">
+                <svg viewBox="0 0 52 52" style="width:80px;height:80px">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25"/>
+                    <path class="checkmark-path" d="M14 27l7 7 16-16"/>
+                </svg>
+            </div>
+            <h3>Thành công!</h3>
+            <p id="successPopupMsg">Đăng ký tài khoản thành công.</p>
+            <button class="btn-success" onclick="closeSuccessPopup()">Tiếp tục</button>
+        </div>
+    </div>
+
     <div class="wrap">
 
         <!-- ============ HEADER / NAVBAR ============ -->
@@ -2617,6 +2716,13 @@
             document.getElementById(id).classList.add('open');
         }
         function closeModal(id) { document.getElementById(id).classList.remove('open') }
+        function showSuccessPopup(msg) {
+            document.getElementById('successPopupMsg').innerHTML = msg || 'Đăng ký tài khoản thành công.';
+            document.getElementById('successPopup').classList.add('open');
+        }
+        function closeSuccessPopup() {
+            document.getElementById('successPopup').classList.remove('open');
+        }
         function toggleAuth(login) {
             document.getElementById('loginForm').style.display = login ? 'block' : 'none';
             document.getElementById('registerForm').style.display = login ? 'none' : 'block';
@@ -3163,15 +3269,25 @@
                     if (isAdmin) {
                         role = 'admin';
                     } else {
+                        let emailSent = false;
                         try {
                             const idToken = await cred.user.getIdToken();
-                            await fetch('/api/email/send-verification', {
+                            const ctrl = new AbortController();
+                            const timer = setTimeout(() => ctrl.abort(), 10000);
+                            const r = await fetch('/api/email/send-verification', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ idToken, email }),
+                                signal: ctrl.signal,
                             });
+                            clearTimeout(timer);
+                            emailSent = r.ok;
+                            if (!r.ok) {
+                                const ed = await r.json().catch(() => ({}));
+                                console.warn('Email API error:', ed);
+                            }
                         } catch (e) {
-                            console.warn('Custom email skip:', e.message);
+                            console.warn('Email skip:', e.message);
                         }
                         try {
                             const snap = await dbInstance.collection('users').where('email', '==', email).get();
@@ -3222,10 +3338,15 @@
                 
                 const isFirebaseMode = !!authInstance;
                 if (isFirebaseMode && email !== PROJECT_ADMIN_EMAIL) {
-                    alert('✅ ĐĂNG KÝ THÀNH CÔNG!\n\nMột email xác thực đã được gửi đến địa chỉ Gmail của bạn.\n\n👉 Hãy mở Gmail, bấm vào link xác thực trong email (kiểm tra cả hòm thư Rác/Spam nếu chưa thấy).\n\nSau đó quay lại trang và đăng nhập để vào khu vực nội bộ!');
+                    const popupMsg = emailSent
+                        ? 'Email xác thực đã được gửi từ <strong>yniemdienanh@gmail.com</strong>.<br>Hãy mở Gmail và bấm link xác thực trong email.'
+                        : 'Hệ thống gửi email xác thực đang gặp sự cố.<br>Vui lòng liên hệ Admin để được xác thực thủ công.';
+                    showSuccessPopup(popupMsg);
+                } else {
+                    showSuccessPopup('Đăng ký tài khoản thành công!');
                 }
                 m.className = 'form-msg ok'; m.textContent = isFirebaseMode
-                    ? '✅ Đã gửi email xác thực! Hãy kiểm tra Gmail (cả Spam) và bấm link để kích hoạt tài khoản.'
+                    ? (emailSent ? '✅ Đã gửi email xác thực từ yniemdienanh@gmail.com!' : '✅ Đăng ký thành công! Admin sẽ xác thực thủ công.')
                     : '✅ Đăng ký tài khoản thành công! Đang chuyển sang đăng nhập...';
                 document.getElementById('rgName').value = '';
                 document.getElementById('rgEmail').value = '';
@@ -3263,17 +3384,21 @@
                     if (!cred.user.emailVerified && !isAdminApproved && email !== PROJECT_ADMIN_EMAIL) {
                         try {
                             const idToken = await cred.user.getIdToken();
+                            const ctrl = new AbortController();
+                            const timer = setTimeout(() => ctrl.abort(), 10000);
                             await fetch('/api/email/send-verification', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ idToken, email }),
+                                signal: ctrl.signal,
                             });
+                            clearTimeout(timer);
                         } catch (e) {
-                            console.warn('Custom email skip:', e.message);
+                            console.warn('Email skip:', e.message);
                         }
                         await authInstance.signOut();
-                        alert('📧 EMAIL CHƯA XÁC THỰC!\n\nMột email xác thực mới đã được gửi đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực (kiểm tra cả Spam) rồi đăng nhập lại.');
-                        return m.textContent = 'Tài khoản chưa xác thực. Đã gửi lại email, kiểm tra Gmail (cả Spam) nhé!';
+                        alert('📧 EMAIL CHƯA XÁC THỰC!\n\nEmail xác thực mới đã được gửi từ yniemdienanh@gmail.com đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực rồi đăng nhập lại.');
+                        return m.textContent = 'Tài khoản chưa xác thực. Đã gửi lại email, hãy kiểm tra Gmail nhé!';
                     }
                     // onAuthStateChanged sẽ xử lý session + UI sau khi đăng nhập Firebase thành công
                 } else {
@@ -3324,11 +3449,19 @@
                 return;
             }
             try {
-                await fetch('/api/email/send-password-reset', {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 10000);
+                const r = await fetch('/api/email/send-password-reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email }),
+                    signal: ctrl.signal,
                 });
+                clearTimeout(timer);
+                if (!r.ok) {
+                    const ed = await r.json().catch(() => ({}));
+                    throw new Error(ed.error || 'Lỗi gửi email');
+                }
                 alert('📧 ĐÃ GỬI EMAIL ĐẶT LẠI MẬT KHẨU!\n\nVui lòng kiểm tra hộp thư Gmail và bấm link để tạo mật khẩu mới.');
             } catch (err) {
                 console.error("Reset password error:", err);
@@ -4761,20 +4894,28 @@
                         const cred = await authInstance.createUserWithEmailAndPassword(userEmail, tempPass);
                         try {
                             const idToken = await cred.user.getIdToken();
+                            const ctrl1 = new AbortController();
+                            const t1 = setTimeout(() => ctrl1.abort(), 10000);
                             await fetch('/api/email/send-verification', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ idToken, email: userEmail }),
+                                signal: ctrl1.signal,
                             });
+                            clearTimeout(t1);
+                            const ctrl2 = new AbortController();
+                            const t2 = setTimeout(() => ctrl2.abort(), 10000);
                             await fetch('/api/email/send-password-reset', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ email: userEmail }),
+                                signal: ctrl2.signal,
                             });
+                            clearTimeout(t2);
                             showToast(`Đã tạo tài khoản & gửi email đặt mật khẩu đến ${userEmail}!`, 'success');
                         } catch (e) {
-                            console.warn('Custom email skip:', e.message);
-                            showToast(`Đã tạo tài khoản cho ${userEmail} (lỗi gửi email: ${e.message})`, 'warning');
+                            console.warn('Email error:', e.message);
+                            showToast(`Đã tạo tài khoản cho ${userEmail} (email gửi lỗi: ${e.message})`, 'warning');
                         }
                     } catch (e) {
                         console.warn('Auth skip:', e.message);
@@ -5643,11 +5784,15 @@
         async function adminResetPass(email) {
             if (!confirm(`Gửi email đặt lại mật khẩu cho ${email}?`)) return;
             try {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 10000);
                 await fetch('/api/email/send-password-reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email }),
+                    signal: ctrl.signal,
                 });
+                clearTimeout(timer);
                 showToast(`✅ Đã gửi email đặt lại mật khẩu đến ${email}.`, 'success');
             } catch (e) {
                 showToast('Lỗi: ' + (e.message || 'Không thể gửi email.'), 'error');

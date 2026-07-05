@@ -1833,6 +1833,7 @@
             </div>
             <h3>Thành công!</h3>
             <p id="successPopupMsg">Đăng ký tài khoản thành công.</p>
+            <p id="successSubMsg" style="font-size:0.82rem;color:var(--text-muted);margin:-12px 0 24px">📧 Mã xác nhận đã được gửi đến email của bạn</p>
             <button class="btn-success" onclick="closeSuccessPopup()">Tiếp tục</button>
         </div>
     </div>
@@ -2492,16 +2493,18 @@
                             const loadingTimeout = setTimeout(() => {
                                 document.getElementById('loadingOverlay').style.display = 'none';
                             }, 12000);
+
+                            // Nếu email chưa xác thực → sign out ngay, không đợi Firestore
+                            if (!firebaseUser.emailVerified && firebaseUser.email.toLowerCase() !== PROJECT_ADMIN_EMAIL) {
+                                await authInstance.signOut();
+                                clearTimeout(loadingTimeout);
+                                document.getElementById('loadingOverlay').style.display = 'none';
+                                return;
+                            }
+
                             try {
                                 const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
                                 const userData = userDoc.exists ? userDoc.data() : null;
-                                const isAdminApproved = userData?.emailVerified === true;
-                                if (!firebaseUser.emailVerified && !isAdminApproved && firebaseUser.email.toLowerCase() !== PROJECT_ADMIN_EMAIL) {
-                                    await authInstance.signOut();
-                                    clearTimeout(loadingTimeout);
-                                    document.getElementById('loadingOverlay').style.display = 'none';
-                                    return;
-                                }
 
                                 await loadInternalDataFromFirestore(firebaseUser.uid, session.role);
 
@@ -2716,8 +2719,15 @@
             document.getElementById(id).classList.add('open');
         }
         function closeModal(id) { document.getElementById(id).classList.remove('open') }
-        function showSuccessPopup(msg) {
+        function showSuccessPopup(msg, subMsg) {
             document.getElementById('successPopupMsg').innerHTML = msg || 'Đăng ký tài khoản thành công.';
+            const subEl = document.getElementById('successSubMsg');
+            if (subMsg) {
+                subEl.innerHTML = subMsg;
+                subEl.style.display = 'block';
+            } else {
+                subEl.style.display = 'none';
+            }
             document.getElementById('successPopup').classList.add('open');
         }
         function closeSuccessPopup() {
@@ -3338,10 +3348,17 @@
                 
                 const isFirebaseMode = !!authInstance;
                 if (isFirebaseMode && email !== PROJECT_ADMIN_EMAIL) {
-                    const popupMsg = emailSent
-                        ? 'Email xác thực đã được gửi từ <strong>yniemdienanh@gmail.com</strong>.<br>Hãy mở Gmail và bấm link xác thực trong email.'
-                        : 'Hệ thống gửi email xác thực đang gặp sự cố.<br>Vui lòng liên hệ Admin để được xác thực thủ công.';
-                    showSuccessPopup(popupMsg);
+                    if (emailSent) {
+                        showSuccessPopup(
+                            'Email xác thực đã được gửi từ <strong>yniemdienanh@gmail.com</strong>.',
+                            '📧 Mã xác nhận đã gửi — hãy mở Gmail và bấm link xác thực trong email.'
+                        );
+                    } else {
+                        showSuccessPopup(
+                            'Hệ thống gửi email xác thực đang gặp sự cố.',
+                            '⚠️ Vui lòng liên hệ Admin để được xác thực thủ công.'
+                        );
+                    }
                 } else {
                     showSuccessPopup('Đăng ký tài khoản thành công!');
                 }

@@ -19,7 +19,12 @@ PAYOS_CLIENT_ID = os.getenv("PAYOS_CLIENT_ID", "")
 PAYOS_API_KEY = os.getenv("PAYOS_API_KEY", "")
 PAYOS_CHECKSUM_KEY = os.getenv("PAYOS_CHECKSUM_KEY", "")
 
-payos = PayOS(client_id=PAYOS_CLIENT_ID, api_key=PAYOS_API_KEY, checksum_key=PAYOS_CHECKSUM_KEY)
+PAYOS_ENABLED = bool(PAYOS_CLIENT_ID and PAYOS_API_KEY and PAYOS_CHECKSUM_KEY)
+if PAYOS_ENABLED:
+    payos = PayOS(client_id=PAYOS_CLIENT_ID, api_key=PAYOS_API_KEY, checksum_key=PAYOS_CHECKSUM_KEY)
+else:
+    payos = None
+    logger.warning("⚠️ PayOS chưa được cấu hình. Đặt biến môi trường PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY để kích hoạt thanh toán.")
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
 
@@ -45,6 +50,9 @@ def health():
 @app.post("/api/create-payment")
 async def create_payment(req: Request):
     try:
+        if not PAYOS_ENABLED:
+            return JSONResponse(status_code=400, content={"error": "⚠️ PayOS chưa được cấu hình. Vui lòng liên hệ Admin để thiết lập thanh toán."})
+
         body = await req.json()
         amount = int(body.get("amount", 5000))
         description = str(body.get("description", "Thanh toan"))[:25]

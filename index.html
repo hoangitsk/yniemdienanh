@@ -2324,22 +2324,67 @@
 
             localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], registrations: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 }, voteStart: '', voteEnd: '' }, content: getMockData().content, seq: 100 };
 
-            if (useFirebase) {
+            // Khôi phục dữ liệu từ localStorage (nếu có) trước, Firebase sẽ ghi đè sau
+            const backupRaw = localStorage.getItem('ynda_db');
+            if (backupRaw) {
                 try {
-                    // Tải public config
-                    const stageDoc = await dbInstance.collection('config').doc('stage').get();
-                    localDB.config = { stage: stageDoc.exists ? stageDoc.data().val : 'Xây dựng đội ngũ' };
-
-                    // Tải nội dung động từ Firestore
-                    const contentDoc = await dbInstance.collection('config').doc('content').get();
-                    if (contentDoc.exists) {
-                        localDB.content = { ...getMockData().content, ...contentDoc.data() };
+                    const backup = JSON.parse(backupRaw);
+                    if (backup && backup.users) {
+                        localDB.users = backup.users;
+                        localDB.applications = backup.applications || [];
+                        localDB.events = backup.events || [];
+                        localDB.tasks = backup.tasks || [];
+                        localDB.plans = backup.plans || [];
+                        localDB.announcements = backup.announcements || [];
+                        localDB.budget = backup.budget || [];
+                        localDB.docs = backup.docs || [];
+                        localDB.submissions = backup.submissions || [];
+                        localDB.votes = backup.votes || [];
+                        localDB.feedback = backup.feedback || [];
+                        localDB.messages = backup.messages || [];
+                        localDB.posts = backup.posts || [];
+                        localDB.comments = backup.comments || [];
+                        localDB.transactions = backup.transactions || [];
+                        localDB.registrations = backup.registrations || [];
+                        if (backup.seq) localDB.seq = backup.seq;
                     }
+                } catch (e) { console.warn('Không thể đọc backup:', e); }
+            }
 
-                    await loadPublicEventsFromFirestore();
-                    await loadPublicSubmissionsFromFirestore();
+            // Render ngay với dữ liệu có sẵn (localStorage backup) trước khi đợi Firebase
+            renderEvents();
+            renderVoting();
+            renderNav();
+            renderFeed();
+            renderPublicChat();
+            renderAllPrizePools();
+            updateStageDisplay();
+            renderAllContent();
 
-                    // Lắng nghe auth state để tải các dữ liệu nội bộ sau khi đăng nhập thành công
+            if (useFirebase) {
+                // Load public data bất đồng bộ, không block UI
+                (async () => {
+                    try {
+                        const [stageSnap, contentSnap] = await Promise.all([
+                            dbInstance.collection('config').doc('stage').get(),
+                            dbInstance.collection('config').doc('content').get()
+                        ]);
+                        if (stageSnap.exists) localDB.config.stage = stageSnap.data().val;
+                        if (contentSnap.exists) localDB.content = { ...getMockData().content, ...contentSnap.data() };
+                        updateStageDisplay();
+                        renderAllContent();
+                    } catch (e) { console.warn('Firebase config load error:', e); }
+
+                    try {
+                        await Promise.all([
+                            loadPublicEventsFromFirestore(),
+                            loadPublicSubmissionsFromFirestore()
+                        ]);
+                        renderEvents();
+                        renderVoting();
+                    } catch (e) { console.warn('Firebase public data load error:', e); }
+
+                    // Lắng nghe auth state để tải dữ liệu nội bộ
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
                             document.getElementById('loadingOverlay').style.display = 'flex';
@@ -2392,22 +2437,18 @@
                             renderTab(curTab);
                         }
                     });
-                } catch (err) {
-                    console.error("Lỗi kết nối Firebase Firestore:", err);
-                    useFirebase = false;
-                    loadLocalStorage();
-                }
+                })();
             } else {
                 loadLocalStorage();
+                renderEvents();
+                renderVoting();
+                renderNav();
+                renderFeed();
+                renderPublicChat();
+                renderAllPrizePools();
+                updateStageDisplay();
+                renderAllContent();
             }
-            renderEvents();
-            renderVoting();
-            renderNav();
-            renderFeed();
-            renderPublicChat();
-            renderAllPrizePools();
-            updateStageDisplay();
-            renderAllContent();
         }
 
         function loadLocalStorage() {
@@ -2490,6 +2531,9 @@
 
             const seqDoc = await dbInstance.collection('config').doc('sequence').get();
             localDB.seq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
+
+            // Sao lưu dữ liệu xuống localStorage để phòng khi mất kết nối Firebase
+            localStorage.setItem('ynda_db', JSON.stringify(localDB));
         }
 
         async function saveItem(collection, item) {
@@ -2925,6 +2969,10 @@
                 
                 const newUser = { id: tempGoogleUser.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: true, createdAt: new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) };
                 await dbInstance.collection('users').doc(tempGoogleUser.uid).set(newUser);
+                // Cập nhật localDB ngay để dashboard hiển thị
+                localDB.users = localDB.users.filter(u => String(u.id) !== tempGoogleUser.uid);
+                localDB.users.push(newUser);
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
                 
                 session = { id: tempGoogleUser.uid, name, email, role, dept, phone, school, className, interest, intro };
                 sessionStorage.setItem('ynda_user', JSON.stringify(session));
@@ -5206,8 +5254,6 @@
             const orderCode = Date.now() % 10**12;
             const lt = showLoadingToast('Đang tạo liên kết thanh toán...');
             try {
-                // Tạo giao dịch ngay lập tức
-                await addTransaction(type, extra?.submissionId, description);
                 const res = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -5215,6 +5261,8 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Không thể tạo liên kết thanh toán');
+                // Chỉ tạo giao dịch khi API thanh toán thành công
+                await addTransaction(type, extra?.submissionId, description);
                 const area = document.getElementById('payosPaymentArea');
                 const status = document.getElementById('payosStatus');
                 if (area) {

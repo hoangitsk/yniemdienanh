@@ -1705,7 +1705,7 @@
             <!-- HERO ZONE (2-column layout) -->
             <div class="hero">
                 <div class="hero-grid">
-                    <div>
+                    <div id="heroContent">
                         <div class="eyebrow">Dự án phi lợi nhuận về điện ảnh</div>
                         <h1>Ý Niệm<br>Điện Ảnh</h1>
                         <p class="lead">Nơi những khung hình đầu tiên cất lời — Kiến tạo sân chơi sáng tạo và bệ phóng cho các nhà làm phim học sinh, sinh viên trên toàn quốc. Kết nối đam mê điện ảnh qua workshop, làm phim và chụp ảnh giải đấu phim ngắn.</p>
@@ -1719,9 +1719,9 @@
                         <div class="frame">
                             <!-- Click để sửa giai đoạn (Chỉ Admin) -->
                             <div class="ticker"><strong>Giai đoạn</strong><span id="currentStage" style="cursor:pointer; color:var(--gold-light); font-weight:800;" onclick="editStage()">Xây dựng đội ngũ</span></div>
-                            <div class="ticker"><strong>Đối tượng</strong><span>Học sinh — Sinh viên</span></div>
-                            <div class="ticker"><strong>Minh bạch</strong><span>Quỹ giải thưởng & hoạt động</span></div>
-                            <div class="ticker"><strong>Mục tiêu</strong><span>Sân chơi lành mạnh cho học sinh, sinh viên</span></div>
+                            <div class="ticker"><strong>Đối tượng</strong><span id="heroTarget">Học sinh — Sinh viên</span></div>
+                            <div class="ticker"><strong>Minh bạch</strong><span id="heroTransparency">Quỹ giải thưởng & hoạt động</span></div>
+                            <div class="ticker"><strong>Mục tiêu</strong><span id="heroGoal">Sân chơi lành mạnh cho học sinh, sinh viên</span></div>
                         </div>
                     </aside>
                 </div>
@@ -1734,38 +1734,24 @@
 
             <!-- EVENTS ONGOING/UPCOMING -->
             <section id="events">
-                <div class="section-head">
-                    <h2>Sự kiện đang & sắp diễn ra</h2>
-                    <p>Nơi hội ngộ của những tâm hồn say mê điện ảnh. Theo dõi các hoạt động mới nhất từ dự án.</p>
+                <div class="section-head" id="eventsHeading">
+                    <h2 id="eventsTitle">Sự kiện đang & sắp diễn ra</h2>
+                    <p id="eventsDesc">Nơi hội ngộ của những tâm hồn say mê điện ảnh. Theo dõi các hoạt động mới nhất từ dự án.</p>
                 </div>
                 <div class="grid events-grid" id="eventList"></div>
             </section>
 
             <!-- ABOUT THE PROJECT (Chi tiết từ Word Kế hoạch) -->
             <section id="about">
-                <div class="section-head">
-                    <h2>Về Dự Án</h2>
-                    <p>Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án phi lợi nhuận, minh bạch 100%.</p>
+                <div class="section-head" id="aboutHeading">
+                    <h2 id="aboutTitle">Về Dự Án</h2>
+                    <p id="aboutDesc">Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án phi lợi nhuận, minh bạch 100%.</p>
                 </div>
                 
-                <div class="grid grid-3">
-                    <div class="card">
-                        <h3>🎥 Sứ mệnh</h3>
-                        <p>Xây dựng sân chơi sáng tạo, thực chiến và bài bản, giúp người trẻ (15–22 tuổi) tiếp cận ngôn ngữ điện ảnh dễ hiểu, không phụ thuộc thiết bị hay địa lý.</p>
-                    </div>
-                    <div class="card">
-                        <h3>🏆 Quy mô 3 năm</h3>
-                        <p>Từ giải đấu thuần trực tuyến kết nối 63 tỉnh thành, hướng đến tổ chức chuỗi Gala offline khu vực và tiến tới Liên hoan phim ngắn học đường toàn quốc.</p>
-                    </div>
-                    <div class="card">
-                        <!-- Sửa chi phí vận hành btc dùng chung chi phí giải thưởng + ghi 5k/thí sinh -->
-                        <h3>🤝 Phi lợi nhuận & Minh bạch</h3>
-                        <p>100% minh bạch tài chính. Khoản góp quỹ dự án là 5.000đ/thí sinh khi đăng ký tham gia sự kiện. Trong đó, 70% đóng góp trực tiếp vào Quỹ giải thưởng, 30% còn lại dùng làm chi phí duy trì, vận hành dự án.</p>
-                    </div>
-                </div>
+                <div class="grid grid-3" id="aboutCards"></div>
 
                 <!-- Quy chế & Tiêu chí chấm điểm chính thức -->
-                <div class="rules-wrapper">
+                <div class="rules-wrapper" id="rulesContent">
                     <h2 class="sec-title" style="font-size:1.8rem;margin-bottom:10px">Thể Lệ & Tiêu Chí Chấm Giải</h2>
                     <p class="sec-sub" style="margin-bottom:30px">Thông tin kỹ thuật và nguyên tắc đánh giá từ Hội đồng chuyên môn</p>
                     
@@ -1794,49 +1780,12 @@
 
             <!-- RECRUITMENT / APPLY SECTION (2 cột) -->
             <section id="apply">
-                <div class="section-head">
-                    <h2>Đồng hành cùng dự án</h2>
-                    <p>Chọn vai trò của bạn để cùng thắp sáng đam mê điện ảnh.</p>
+                <div class="section-head" id="applyHeading">
+                    <h2 id="applyTitle">Đồng hành cùng dự án</h2>
+                    <p id="applyDesc">Chọn vai trò của bạn để cùng thắp sáng đam mê điện ảnh.</p>
                 </div>
                 
-                <div class="apply-layout">
-                    <div class="split-cards">
-                        <div class="card">
-                            <span class="pill">Apply ban tổ chức</span>
-                            <h3>Điều phối, truyền thông, nội dung, hậu cần, tài chính</h3>
-                            <p>Cơ hội lên kế hoạch, trực tiếp vận hành dự án. Phù hợp các ban: Nội dung, Truyền thông, Hậu cần, Đối ngoại, Kỹ thuật/Media, Nhân sự, Tài chính.</p>
-                            <button class="btn btn-gold" style="margin-top:20px" onclick="openApply('organizer')">Apply Ban Tổ Chức</button>
-                        </div>
-                        <div class="card">
-                            <span class="pill">Thành viên dự án</span>
-                            <h3>Tạo tài khoản để tham gia cộng đồng</h3>
-                            <p>Thành viên đăng ký bằng Gmail, bổ sung thông tin học tập/liên hệ và xác thực email trước khi vào khu vực nội bộ. Khoản góp quỹ 5.000đ (với 70% cộng vào Quỹ giải thưởng và 30% dành cho chi phí duy trì dự án) giúp đảm bảo sự minh bạch và bền vững của sân chơi.</p>
-                            <button class="btn btn-line" style="margin-top:20px" onclick="openModal('authModal');toggleAuth(false)">Tạo Tài Khoản</button>
-                        </div>
-                    </div>
-                    <div class="card" style="padding:36px">
-                        <span class="pill" style="margin-bottom:14px">Về quy trình</span>
-                        <h3 style="margin-top:8px">Quy trình tuyển dụng</h3>
-                        <div style="margin-top:20px; display:grid; gap:18px">
-                            <div style="display:flex; gap:14px; align-items:flex-start">
-                                <div style="min-width:42px; height:42px; border-radius:50%; background:rgba(228,184,102,0.1); display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:var(--gold-light)">1</div>
-                                <div><strong style="color:var(--gold-light)">BTC điền đơn ứng tuyển</strong><p style="font-size:0.88rem; color:var(--text-muted); margin-top:4px">Chọn phân ban phù hợp, điền thông tin và giới thiệu bản thân.</p></div>
-                            </div>
-                            <div style="display:flex; gap:14px; align-items:flex-start">
-                                <div style="min-width:42px; height:42px; border-radius:50%; background:rgba(228,184,102,0.1); display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:var(--gold-light)">2</div>
-                                <div><strong style="color:var(--gold-light)">BTC xét duyệt đơn</strong><p style="font-size:0.88rem; color:var(--text-muted); margin-top:4px">Đội ngũ nội bộ sẽ xem xét và phản hồi trong 2–3 ngày làm việc.</p></div>
-                            </div>
-                            <div style="display:flex; gap:14px; align-items:flex-start">
-                                <div style="min-width:42px; height:42px; border-radius:50%; background:rgba(228,184,102,0.1); display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:var(--gold-light)">3</div>
-                                <div><strong style="color:var(--gold-light)">Thành viên tạo tài khoản</strong><p style="font-size:0.88rem; color:var(--text-muted); margin-top:4px">Thành viên đăng ký Gmail, xác thực email và cập nhật đầy đủ thông tin cá nhân.</p></div>
-                            </div>
-                            <div style="display:flex; gap:14px; align-items:flex-start">
-                                <div style="min-width:42px; height:42px; border-radius:50%; background:rgba(228,184,102,0.1); display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:var(--gold-light)">4</div>
-                                <div><strong style="color:var(--gold-light)">Bắt đầu hoạt động</strong><p style="font-size:0.88rem; color:var(--text-muted); margin-top:4px">Tham gia các công việc, sự kiện và cùng xây dựng cộng đồng điện ảnh!</p></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div class="apply-layout" id="applyContent"></div>
             </section>
 
         </div>
@@ -1876,10 +1825,14 @@
         <!-- ============ BÌNH CHỌN (VOTING PAGE) ============ -->
         <div id="page-voting" style="display:none;padding-top:90px">
             <div id="prizePoolVoting" style="margin-top: 20px; margin-bottom: 30px"></div>
+            <div id="votingRegisterBanner" style="max-width:700px;margin:0 auto 20px"></div>
             <section id="voting">
                 <div class="section-head">
                     <h2>🗳 Bình chọn tác phẩm dự thi</h2>
                     <p>Hãy bình chọn cho những thước phim ngắn ấn tượng nhất từ các đội thi. Mỗi thiết bị/địa chỉ IP chỉ được vote 1 lần duy nhất để chống gian lận. Mua thêm lượt vote (5.000đ/lượt) để ủng hộ tác phẩm yêu thích!</p>
+                    <div id="votingActions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px">
+                        <button class="btn btn-gold" onclick="openSubmitModal()">📤 Nộp bài dự thi</button>
+                    </div>
                 </div>
                 <div class="grid grid-3" id="votingList"></div>
             </section>
@@ -1901,7 +1854,7 @@
             <div class="logo" style="justify-content:center;margin-bottom:12px">
                 <img src="Logo/avtar.png" alt="Ý Niệm Điện Ảnh" style="height: 52px; width: 52px; object-fit: cover; border-radius: 8px;">
             </div>
-            <p>Ý Niệm Điện Ảnh là dự án phi lợi nhuận dành cho thế hệ trẻ. "Nơi những khung hình đầu tiên cất lời" ✨</p>
+            <p id="footerText">Ý Niệm Điện Ảnh là dự án phi lợi nhuận dành cho thế hệ trẻ. "Nơi những khung hình đầu tiên cất lời" ✨</p>
         </footer>
     </div>
 
@@ -2064,6 +2017,24 @@
         </div>
     </div>
 
+    <!-- ============ SUBMIT FILM MODAL ============ -->
+    <div class="modal" id="submitModal">
+        <div class="modal-box">
+            <span class="close-x" onclick="closeModal('submitModal')">✕</span>
+            <h3>📤 Nộp bài dự thi</h3>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">Gửi tác phẩm của bạn đến BTC. Bài dự thi sẽ được kiểm duyệt trước khi hiển thị công khai.</p>
+            <label>Tên tác phẩm *</label>
+            <input id="sfTitle" placeholder="VD: Khung hình ký ức">
+            <label>Tên đội thi *</label>
+            <input id="sfTeam" placeholder="VD: Đội phim 10A2">
+            <label>Link YouTube Embed *</label>
+            <input id="sfUrl" placeholder="https://www.youtube.com/embed/...">
+            <p style="font-size:0.78rem;color:var(--text-muted);margin:4px 0 10px">Sao chép link nhúng (Embed) từ YouTube. Video cần ở chế độ không công khai hoặc công khai.</p>
+            <div class="form-msg" id="sfMsg"></div>
+            <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitFilm()">Gửi bài dự thi</button>
+        </div>
+    </div>
+
     <!-- ============ FEEDBACK MODAL ============ -->
     <div class="modal" id="feedbackModal">
         <div class="modal-box">
@@ -2168,13 +2139,66 @@
                     { id: 2, title: 'Thư viện âm nhạc & SFX hợp lệ bản quyền', url: 'https://youtube.com', note: 'Tổng hợp danh sách các nguồn nhạc được phép sử dụng trong cuộc thi' }
                 ],
                 submissions: [
-                    { id: 1, title: "Khung hình ký ức", team: "Đội phim 10A2", votes: 42, url: "https://www.youtube.com/embed/dQw4w9WgXcQ" },
-                    { id: 2, title: "Lặng im sau ống kính", team: "CLB Điện ảnh Trẻ", votes: 28, url: "https://www.youtube.com/embed/dQw4w9WgXcQ" },
-                    { id: 3, title: "Chuyến tàu lúc hoàng hôn", team: "Nhóm Hạt Cát", votes: 35, url: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
+                    { id: 1, title: "Khung hình ký ức", team: "Đội phim 10A2", votes: 42, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: 'approved', submittedBy: 'admin', date: '2026-07-01' },
+                    { id: 2, title: "Lặng im sau ống kính", team: "CLB Điện ảnh Trẻ", votes: 28, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: 'approved', submittedBy: 'admin', date: '2026-07-02' },
+                    { id: 3, title: "Chuyến tàu lúc hoàng hôn", team: "Nhóm Hạt Cát", votes: 35, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: 'approved', submittedBy: 'admin', date: '2026-07-03' }
                 ],
                 votes: [],
                 feedback: [],
-                config: { stage: 'Xây dựng đội ngũ' },
+                config: { stage: 'Xây dựng đội ngũ', voteStart: '', voteEnd: '' },
+                content: {
+                    hero: {
+                        eyebrow: 'Dự án phi lợi nhuận về điện ảnh',
+                        title: 'Ý Niệm<br>Điện Ảnh',
+                        lead: 'Nơi những khung hình đầu tiên cất lời — Kiến tạo sân chơi sáng tạo và bệ phóng cho các nhà làm phim học sinh, sinh viên trên toàn quốc. Kết nối đam mê điện ảnh qua workshop, làm phim và chụp ảnh giải đấu phim ngắn.',
+                        target: 'Học sinh — Sinh viên',
+                        transparency: 'Quỹ giải thưởng & hoạt động',
+                        goal: 'Sân chơi lành mạnh cho học sinh, sinh viên'
+                    },
+                    events: {
+                        title: 'Sự kiện đang & sắp diễn ra',
+                        desc: 'Nơi hội ngộ của những tâm hồn say mê điện ảnh. Theo dõi các hoạt động mới nhất từ dự án.'
+                    },
+                    about: {
+                        title: 'Về Dự Án',
+                        desc: 'Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án phi lợi nhuận, minh bạch 100%.',
+                        cards: [
+                            { title: '🎥 Sứ mệnh', text: 'Xây dựng sân chơi sáng tạo, thực chiến và bài bản, giúp người trẻ (15–22 tuổi) tiếp cận ngôn ngữ điện ảnh dễ hiểu, không phụ thuộc thiết bị hay địa lý.' },
+                            { title: '🏆 Quy mô 3 năm', text: 'Từ giải đấu thuần trực tuyến kết nối 63 tỉnh thành, hướng đến tổ chức chuỗi Gala offline khu vực và tiến tới Liên hoan phim ngắn học đường toàn quốc.' },
+                            { title: '🤝 Phi lợi nhuận & Minh bạch', text: '100% minh bạch tài chính. Khoản góp quỹ dự án là 5.000đ/thí sinh khi đăng ký tham gia sự kiện. Trong đó, 70% đóng góp trực tiếp vào Quỹ giải thưởng, 30% còn lại dùng làm chi phí duy trì, vận hành dự án.' }
+                        ]
+                    },
+                    rules: {
+                        title: 'Thể Lệ & Tiêu Chí Chấm Giải',
+                        subtitle: 'Thông tin kỹ thuật và nguyên tắc đánh giá từ Hội đồng chuyên môn',
+                        col1Title: 'Phân hạng Thiết bị Công bằng',
+                        col1Items: [
+                            '<b>Hạng mục Ống Kính Di Động (Mobile):</b> Dành riêng cho phim quay bằng điện thoại, độ phân giải tối thiểu 1080p. Khuyến khích sự sáng tạo không giới hạn thiết bị.',
+                            '<b>Hạng mục Ống Kính Điện Ảnh (Camera):</b> Dành cho máy ảnh, máy quay chuyên dụng (Mirrorless, DSLR...). Yêu cầu kỹ thuật tối thiểu 1080p, khuyến khích 4K.',
+                            '<b>Thời lượng tác phẩm:</b> Từ 3 đến 7 phút (tính cả credit đầu/cuối), nộp bài qua liên kết Drive hoặc Youtube ẩn.'
+                        ],
+                        col2Title: 'Hình thức chấm điểm',
+                        col2Text: 'Điểm đánh giá các tác phẩm dự thi được quyết định 100% bằng lượt **Bình chọn trực tuyến** từ cộng đồng.<br><br>Để đảm bảo tính công bằng tối đa và tránh gian lận vote, hệ thống tích hợp công nghệ quét địa chỉ IP và mã thiết bị đặc biệt. Mỗi địa chỉ IP hoặc thiết bị chỉ được bình chọn 1 lần duy nhất cho mỗi tác phẩm.'
+                    },
+                    apply: {
+                        title: 'Đồng hành cùng dự án',
+                        desc: 'Chọn vai trò của bạn để cùng thắp sáng đam mê điện ảnh.',
+                        orgTitle: 'Điều phối, truyền thông, nội dung, hậu cần, tài chính',
+                        orgText: 'Cơ hội lên kế hoạch, trực tiếp vận hành dự án. Phù hợp các ban: Nội dung, Truyền thông, Hậu cần, Đối ngoại, Kỹ thuật/Media, Nhân sự, Tài chính.',
+                        memberTitle: 'Tạo tài khoản để tham gia cộng đồng',
+                        memberText: 'Thành viên đăng ký bằng Gmail, bổ sung thông tin học tập/liên hệ và xác thực email trước khi vào khu vực nội bộ. Khoản góp quỹ 5.000đ (với 70% cộng vào Quỹ giải thưởng và 30% dành cho chi phí duy trì dự án) giúp đảm bảo sự minh bạch và bền vững của sân chơi.',
+                        processTitle: 'Quy trình tuyển dụng',
+                        steps: [
+                            { num: '1', title: 'BTC điền đơn ứng tuyển', desc: 'Chọn phân ban phù hợp, điền thông tin và giới thiệu bản thân.' },
+                            { num: '2', title: 'BTC xét duyệt đơn', desc: 'Đội ngũ nội bộ sẽ xem xét và phản hồi trong 2–3 ngày làm việc.' },
+                            { num: '3', title: 'Thành viên tạo tài khoản', desc: 'Thành viên đăng ký Gmail, xác thực email và cập nhật đầy đủ thông tin cá nhân.' },
+                            { num: '4', title: 'Bắt đầu hoạt động', desc: 'Tham gia các công việc, sự kiện và cùng xây dựng cộng đồng điện ảnh!' }
+                        ]
+                    },
+                    footer: {
+                        text: 'Ý Niệm Điện Ảnh là dự án phi lợi nhuận dành cho thế hệ trẻ. "Nơi những khung hình đầu tiên cất lời" ✨'
+                    }
+                },
                 seq: 100
             };
         }
@@ -2205,13 +2229,19 @@
                 useFirebase = false;
             }
 
-            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 } }, seq: 100 };
+            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], registrations: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 }, voteStart: '', voteEnd: '' }, content: getMockData().content, seq: 100 };
 
             if (useFirebase) {
                 try {
                     // Tải public config
                     const stageDoc = await dbInstance.collection('config').doc('stage').get();
                     localDB.config = { stage: stageDoc.exists ? stageDoc.data().val : 'Xây dựng đội ngũ' };
+
+                    // Tải nội dung động từ Firestore
+                    const contentDoc = await dbInstance.collection('config').doc('content').get();
+                    if (contentDoc.exists) {
+                        localDB.content = { ...getMockData().content, ...contentDoc.data() };
+                    }
 
                     await loadPublicEventsFromFirestore();
                     await loadPublicSubmissionsFromFirestore();
@@ -2264,6 +2294,7 @@
                         renderPublicChat();
                         renderAllPrizePools();
                         updateStageDisplay();
+                        renderAllContent();
                         if (session && document.getElementById('dashboard').style.display === 'block') {
                             renderTab(curTab);
                         }
@@ -2283,6 +2314,7 @@
             renderPublicChat();
             renderAllPrizePools();
             updateStageDisplay();
+            renderAllContent();
         }
 
         function loadLocalStorage() {
@@ -2301,6 +2333,7 @@
             } else {
                 // Tự động đồng bộ các trường mới
                 if (!localDB.config) localDB.config = { stage: 'Xây dựng đội ngũ' };
+                if (!localDB.content) localDB.content = getMockData().content;
                 if (!localDB.submissions) localDB.submissions = getMockData().submissions;
                 if (!localDB.votes) localDB.votes = [];
                 if (!localDB.messages) localDB.messages = [];
@@ -2506,6 +2539,211 @@
                 } catch (e) {
                     alert("Có lỗi xảy ra: " + e.message);
                 }
+            }
+        }
+
+        // ================= CONTENT MANAGEMENT (DYNAMIC CONTENT FROM DB) =================
+        function getContent() {
+            return localDB.content || getMockData().content;
+        }
+
+        async function saveContentToDB(newContent) {
+            localDB.content = newContent;
+            if (useFirebase) {
+                try {
+                    await dbInstance.collection('config').doc('content').set(newContent, { merge: true });
+                } catch (e) {
+                    console.error('Lỗi lưu content lên Firestore:', e);
+                }
+            } else {
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            }
+        }
+
+        function renderHeroContent() {
+            const c = getContent().hero;
+            const heroEl = document.getElementById('heroContent');
+            if (heroEl) {
+                heroEl.innerHTML = `
+                    <div class="eyebrow">${c.eyebrow}</div>
+                    <h1>${c.title}</h1>
+                    <p class="lead">${c.lead}</p>
+                    <div class="hero-actions">
+                        <button class="btn btn-gold" onclick="goSection('events')">🎬 Khám phá sự kiện</button>
+                        <button class="btn btn-line" onclick="goSection('apply')">✨ Đăng ký tham gia</button>
+                    </div>
+                `;
+            }
+            const targetEl = document.getElementById('heroTarget');
+            if (targetEl) targetEl.textContent = c.target;
+            const transEl = document.getElementById('heroTransparency');
+            if (transEl) transEl.textContent = c.transparency;
+            const goalEl = document.getElementById('heroGoal');
+            if (goalEl) goalEl.textContent = c.goal;
+        }
+
+        function renderEventsHeading() {
+            const c = getContent().events;
+            const titleEl = document.getElementById('eventsTitle');
+            if (titleEl) titleEl.textContent = c.title;
+            const descEl = document.getElementById('eventsDesc');
+            if (descEl) descEl.textContent = c.desc;
+        }
+
+        function renderAboutContent() {
+            const c = getContent().about;
+            const titleEl = document.getElementById('aboutTitle');
+            if (titleEl) titleEl.textContent = c.title;
+            const descEl = document.getElementById('aboutDesc');
+            if (descEl) descEl.textContent = c.desc;
+            const cardsEl = document.getElementById('aboutCards');
+            if (cardsEl) {
+                cardsEl.innerHTML = c.cards.map(card => `
+                    <div class="card">
+                        <h3>${card.title}</h3>
+                        <p>${card.text}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderRulesContent() {
+            const c = getContent().rules;
+            const wrapper = document.getElementById('rulesContent');
+            if (wrapper) {
+                wrapper.innerHTML = `
+                    <h2 class="sec-title" style="font-size:1.8rem;margin-bottom:10px">${c.title}</h2>
+                    <p class="sec-sub" style="margin-bottom:30px">${c.subtitle}</p>
+                    <div class="rules-split">
+                        <div class="rules-column">
+                            <h3>${c.col1Title}</h3>
+                            <ul class="rules-list">
+                                ${c.col1Items.map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="rules-column">
+                            <h3>${c.col2Title}</h3>
+                            <p style="font-size:0.95rem;color:#e2e8f0;line-height:1.7">${c.col2Text}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderApplyContent() {
+            const c = getContent().apply;
+            const titleEl = document.getElementById('applyTitle');
+            if (titleEl) titleEl.textContent = c.title;
+            const descEl = document.getElementById('applyDesc');
+            if (descEl) descEl.textContent = c.desc;
+            const contentEl = document.getElementById('applyContent');
+            if (contentEl) {
+                contentEl.innerHTML = `
+                    <div class="split-cards">
+                        <div class="card">
+                            <span class="pill">Apply ban tổ chức</span>
+                            <h3>${c.orgTitle}</h3>
+                            <p>${c.orgText}</p>
+                            <button class="btn btn-gold" style="margin-top:20px" onclick="openApply('organizer')">Apply Ban Tổ Chức</button>
+                        </div>
+                        <div class="card">
+                            <span class="pill">Thành viên dự án</span>
+                            <h3>${c.memberTitle}</h3>
+                            <p>${c.memberText}</p>
+                            <button class="btn btn-line" style="margin-top:20px" onclick="openModal('authModal');toggleAuth(false)">Tạo Tài Khoản</button>
+                        </div>
+                    </div>
+                    <div class="card" style="padding:36px">
+                        <span class="pill" style="margin-bottom:14px">Về quy trình</span>
+                        <h3 style="margin-top:8px">${c.processTitle}</h3>
+                        <div style="margin-top:20px; display:grid; gap:18px">
+                            ${c.steps.map(s => `
+                                <div style="display:flex; gap:14px; align-items:flex-start">
+                                    <div style="min-width:42px; height:42px; border-radius:50%; background:rgba(228,184,102,0.1); display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:var(--gold-light)">${s.num}</div>
+                                    <div><strong style="color:var(--gold-light)">${s.title}</strong><p style="font-size:0.88rem; color:var(--text-muted); margin-top:4px">${s.desc}</p></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderFooterContent() {
+            const c = getContent().footer;
+            const footerEl = document.getElementById('footerText');
+            if (footerEl) footerEl.textContent = c.text;
+        }
+
+        function renderAllContent() {
+            renderHeroContent();
+            renderEventsHeading();
+            renderAboutContent();
+            renderRulesContent();
+            renderApplyContent();
+            renderFooterContent();
+        }
+
+        async function saveContentFromDash() {
+            const g = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value : '';
+            };
+            const c = {
+                hero: {
+                    eyebrow: g('cHeroEyebrow'),
+                    title: g('cHeroTitle').replace(/\\n/g, '<br>'),
+                    lead: g('cHeroLead'),
+                    target: g('cHeroTarget'),
+                    transparency: g('cHeroTransparency'),
+                    goal: g('cHeroGoal')
+                },
+                events: {
+                    title: g('cEventsTitle'),
+                    desc: g('cEventsDesc')
+                },
+                about: {
+                    title: g('cAboutTitle'),
+                    desc: g('cAboutDesc'),
+                    cards: [0,1,2].map(i => ({
+                        title: g('cAboutCard' + i + 'Title'),
+                        text: g('cAboutCard' + i + 'Text')
+                    }))
+                },
+                rules: {
+                    title: g('cRulesTitle'),
+                    subtitle: g('cRulesSubtitle'),
+                    col1Title: g('cRulesCol1Title'),
+                    col1Items: [0,1,2].map(i => g('cRulesCol1Item' + i)),
+                    col2Title: g('cRulesCol2Title'),
+                    col2Text: g('cRulesCol2Text')
+                },
+                apply: {
+                    title: g('cApplyTitle'),
+                    desc: g('cApplyDesc'),
+                    orgTitle: g('cApplyOrgTitle'),
+                    orgText: g('cApplyOrgText'),
+                    memberTitle: g('cApplyMemberTitle'),
+                    memberText: g('cApplyMemberText'),
+                    processTitle: 'Quy trình tuyển dụng',
+                    steps: [0,1,2,3].map(i => ({
+                        num: g('cApplyStep' + i + 'Num') || String(i+1),
+                        title: g('cApplyStep' + i + 'Title'),
+                        desc: g('cApplyStep' + i + 'Desc')
+                    }))
+                },
+                footer: {
+                    text: g('cFooterText')
+                }
+            };
+            await saveContentToDB(c);
+            renderAllContent();
+            renderEvents();
+            const msg = document.getElementById('cSaveMsg');
+            if (msg) {
+                msg.style.color = 'var(--ok)';
+                msg.textContent = '✅ Đã lưu nội dung thành công! Trang chủ đã được cập nhật.';
+                setTimeout(() => msg.textContent = '', 3000);
             }
         }
 
@@ -2857,12 +3095,64 @@
         }
 
         // ================= PUBLIC VOTING RENDERING (WITH ANTI-CHEAT) =================
+        function isVoteOpen() {
+            const cfg = localDB.config || {};
+            const now = new Date();
+            if (cfg.voteStart && new Date(cfg.voteStart) > now) return { open: false, msg: '⏳ Cổng bình chọn chưa mở. Quay lại sau nhé!' };
+            if (cfg.voteEnd && new Date(cfg.voteEnd) < now) return { open: false, msg: '🔒 Cổng bình chọn đã đóng. Cảm ơn bạn đã theo dõi!' };
+            return { open: true };
+        }
+
+        function getVoteLink(id) {
+            return window.location.origin + window.location.pathname + '#vote-' + id;
+        }
+
+        function copyVoteLink(id) {
+            navigator.clipboard.writeText(getVoteLink(id)).then(() => {
+                alert('🔗 Đã copy link vote! Chia sẻ cho bạn bè để kêu gọi bình chọn.');
+            }).catch(() => {
+                alert('Không thể copy. Vui lòng copy thủ công: ' + getVoteLink(id));
+            });
+        }
+
+        function shareVoteFB(id, title) {
+            const url = encodeURIComponent(getVoteLink(id));
+            const text = encodeURIComponent('🎬 Bình chọn cho tác phẩm "' + title + '" tại Ý Niệm Điện Ảnh!');
+            window.open('https://www.facebook.com/sharer/sharer.php?u=' + url + '&quote=' + text, '_blank', 'width=600,height=400');
+        }
+
         function renderVoting() {
-            const list = localDB.submissions || [];
+            const list = (localDB.submissions || []).filter(s => s.status === 'approved');
             const totalVotes = list.reduce((sum, s) => sum + s.votes, 0) || 1;
+            const voteStatus = isVoteOpen();
             
             const vListEl = document.getElementById('votingList');
             if (!vListEl) return;
+
+            // Render registration banner
+            const bannerEl = document.getElementById('votingRegisterBanner');
+            if (bannerEl) {
+                if (!session) {
+                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">📌 <a onclick="openModal(\'authModal\');toggleAuth(true)" style="cursor:pointer;color:var(--gold);font-weight:600">Đăng nhập</a> để nộp bài dự thi hoặc bình chọn!</p></div>';
+                } else if (!isRegistered()) {
+                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">🎟️ Bạn chưa đăng ký tham gia dự án. <button class="btn btn-gold btn-sm" onclick="openRegisterEvent()" style="margin-left:8px">Đăng ký tham gia (5.000đ)</button></p></div>';
+                } else {
+                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:12px 20px;text-align:center"><p style="color:#22c55e;margin:0">✅ Bạn đã đăng ký tham gia dự án. Hãy nộp bài dự thi của bạn!</p></div>';
+                }
+            }
+            // Update voting actions
+            const actionsEl = document.getElementById('votingActions');
+            if (actionsEl) {
+                actionsEl.innerHTML = '<button class="btn btn-gold" onclick="openSubmitModal()">📤 Nộp bài dự thi</button>';
+                if (session && !isRegistered()) {
+                    actionsEl.innerHTML += '<button class="btn btn-line" onclick="openRegisterEvent()">🎟️ Đăng ký (5k)</button>';
+                }
+            }
+
+            if (!voteStatus.open) {
+                vListEl.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px"><h3>' + voteStatus.msg + '</h3></div>';
+                return;
+            }
             
             vListEl.innerHTML = list.map(s => {
                 const pct = Math.round((s.votes / totalVotes) * 100);
@@ -2886,13 +3176,19 @@
                         
                         <button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id})">🗳 Bình chọn</button>
                         <button class="btn btn-line btn-sm" style="width:100%; margin-top:6px" onclick="openBuyVoteModal(${s.id}, '${esc(s.title)}')">⭐ Mua vote 5k</button>
+                        <div style="display:flex;gap:8px;margin-top:10px">
+                            <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${s.id}, '${esc(s.title)}')">📤 Share Facebook</button>
+                            <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="copyVoteLink(${s.id})">🔗 Copy link</button>
+                        </div>
                     </div>
                 `;
-            }).join('') || '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px"><h3>Chưa mở cổng bình chọn</h3></div>';
+            }).join('') || '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px"><h3>Chưa có tác phẩm nào.</h3></div>';
         }
 
         // Chức năng bình chọn chống gian lận (quét IP thiết bị và chặn cookie/localstorage)
         async function castVote(id) {
+            const vOpen = isVoteOpen();
+            if (!vOpen.open) return alert(vOpen.msg);
             // 1. Kiểm tra nhanh thiết bị qua LocalStorage để chặn bình chọn nhiều lần trên cùng 1 trình duyệt
             if (localStorage.getItem('voted_sub_' + id)) {
                 return alert("Thiết bị của bạn đã thực hiện bình chọn cho tác phẩm này rồi!");
@@ -3166,7 +3462,9 @@
             transactions: { icon: '💳', label: 'Giao dịch & Quỹ', roles: ['admin', 'organizer'] },
             feedback: { icon: '💬', label: 'Feedback & Báo lỗi', roles: ['admin', 'organizer'] },
             docs: { icon: '📁', label: 'Thư viện Tài liệu', roles: ['admin', 'organizer', 'member'] },
+            submissions: { icon: '🎥', label: 'Quản lý Bài dự thi', roles: ['admin', 'organizer'] },
             accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
+            content: { icon: '📝', label: 'Quản lý nội dung', roles: ['admin'] },
         };
 
         let curTab = 'overview';
@@ -3194,6 +3492,12 @@
             const renderers = {
                 overview() {
                     const myTasks = d.tasks.filter(t => t.assignee === session.name && t.status !== 'done').length;
+                    const cfg = d.config || {};
+                    const now = new Date();
+                    const vs = cfg.voteStart ? new Date(cfg.voteStart) : null;
+                    const ve = cfg.voteEnd ? new Date(cfg.voteEnd) : null;
+                    const voteStatus = !vs ? 'Chưa cấu hình' : now < vs ? 'Chưa mở' : ve && now > ve ? 'Đã đóng' : 'Đang mở';
+                    const registered = (d.registrations || []).length;
                     main.innerHTML = `
                         <h2>📊 Tổng quan vận hành</h2>
                         <div class="stats">
@@ -3202,7 +3506,19 @@
                             <div class="stat"><div class="num">${d.applications.filter(a => a.status === 'pending').length}</div><div class="lbl">Đơn apply chờ duyệt</div></div>
                             <div class="stat"><div class="num">${d.tasks.filter(t => t.status !== 'done').length}</div><div class="lbl">Công việc cần làm</div></div>
                             <div class="stat"><div class="num">${myTasks}</div><div class="lbl">Nhiệm vụ của bạn</div></div>
+                            <div class="stat"><div class="num">${registered}</div><div class="lbl">Đã đăng ký dự án</div></div>
                         </div>
+                        ${isOrg ? `
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">⏰ Cấu hình cổng bình chọn</h3>
+                            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:end">
+                                <div><label>Mở cổng vote</label><input id="cfgVoteStart" type="datetime-local" value="${cfg.voteStart || ''}"></div>
+                                <div><label>Đóng cổng vote</label><input id="cfgVoteEnd" type="datetime-local" value="${cfg.voteEnd || ''}"></div>
+                                <div><span class="chip" style="background:${voteStatus === 'Đang mở' ? 'rgba(34,197,94,0.2)' : voteStatus === 'Chưa cấu hình' ? 'rgba(234,179,8,0.2)' : 'rgba(239,68,68,0.2)'};color:${voteStatus === 'Đang mở' ? '#22c55e' : voteStatus === 'Chưa cấu hình' ? '#eab308' : '#ef4444'}">${voteStatus}</span></div>
+                                <div><button class="btn btn-gold btn-sm" onclick="saveVoteConfig()">💾 Lưu cấu hình</button></div>
+                            </div>
+                        </div>
+                        ` : ''}
                         <div class="panel">
                             <h3 style="color:var(--gold-light);margin-bottom:16px">📢 Bảng tin nội bộ mới nhất</h3>
                             ${[...d.announcements].reverse().slice(0, 3).map(a => `
@@ -3419,6 +3735,85 @@
                             </table>
                         </div>
                     `;
+                },
+                submissions() {
+                    const subs = d.submissions || [];
+                    const pendingList = subs.filter(s => s.status === 'pending');
+                    main.innerHTML = `
+                        <h2>🎥 Quản lý Bài dự thi</h2>
+
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">Thêm bài dự thi mới</h3>
+                            <div class="row">
+                                <div><label>Tên tác phẩm *</label><input id="subTitle" placeholder="VD: Khung hình ký ức"></div>
+                                <div><label>Đội thi *</label><input id="subTeam" placeholder="VD: Đội phim 10A2"></div>
+                                <div><label>Link YouTube Embed *</label><input id="subUrl" placeholder="https://www.youtube.com/embed/..."></div>
+                                <div><button class="btn btn-gold btn-sm" style="margin-bottom:2px" onclick="addSubmission()">+ Thêm bài dự thi</button></div>
+                            </div>
+                        </div>
+
+                        ${pendingList.length ? `
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">Bài dự thi chờ duyệt (${pendingList.length})</h3>
+                            <div class="table-wrap">
+                                <table>
+                                    <tr>
+                                        <th>Tác phẩm</th>
+                                        <th>Đội thi</th>
+                                        <th>Người nộp</th>
+                                        <th>Ngày nộp</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                    ${pendingList.map(s => `
+                                        <tr>
+                                            <td data-label="Tác phẩm"><b>${esc(s.title)}</b></td>
+                                            <td data-label="Đội thi">${esc(s.team)}</td>
+                                            <td data-label="Người nộp">${esc(s.submittedBy || '—')}</td>
+                                            <td data-label="Ngày nộp">${s.date || '—'}</td>
+                                            <td data-label="Hành động">
+                                                <button class="btn btn-gold btn-sm" onclick="approveSubmission(${s.id})">✔ Duyệt</button>
+                                                <button class="btn btn-line btn-sm" style="margin-top:4px;color:var(--danger);border-color:var(--danger)" onclick="rejectSubmission(${s.id})">✕ Từ chối</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </table>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">Tất cả bài dự thi</h3>
+                            <div class="table-wrap">
+                                <table>
+                                    <tr>
+                                        <th>Tác phẩm</th>
+                                        <th>Đội thi</th>
+                                        <th>Lượt vote</th>
+                                        <th>Trạng thái</th>
+                                        <th>Người nộp</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                    ${subs.map(s => `
+                                        <tr>
+                                            <td data-label="Tác phẩm"><b>${esc(s.title)}</b></td>
+                                            <td data-label="Đội thi">${esc(s.team)}</td>
+                                            <td data-label="Lượt vote">${s.votes || 0}</td>
+                                            <td data-label="Trạng thái">
+                                                <span class="chip" style="background:${s.status === 'approved' ? 'rgba(34,197,94,0.2)' : s.status === 'pending' ? 'rgba(234,179,8,0.2)' : 'rgba(239,68,68,0.2)'};color:${s.status === 'approved' ? '#22c55e' : s.status === 'pending' ? '#eab308' : '#ef4444'}">
+                                                    ${s.status === 'approved' ? 'Đã duyệt' : s.status === 'pending' ? 'Chờ duyệt' : 'Từ chối'}
+                                                </span>
+                                            </td>
+                                            <td data-label="Người nộp">${esc(s.submittedBy || '—')}</td>
+                                            <td data-label="Hành động">
+                                                <button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteSubmissionItem(${s.id})">🗑 Xóa</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có bài dự thi nào.</td></tr>'}
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                    renderVoting();
                 },
                 members() {
                     const pendings = d.applications.filter(a => a.status === 'pending');
@@ -3763,6 +4158,127 @@
                             </div>
                         </div>
                     `;
+                },
+                content() {
+                    const c = getContent();
+                    main.innerHTML = `
+                        <h2>📝 Quản lý nội dung trang chủ</h2>
+                        <p style="color:var(--text-muted);margin-bottom:20px">Chỉnh sửa nội dung hiển thị trên trang chủ. Nội dung được lưu vào Firestore, AI deploy sẽ không ghi đè.</p>
+
+                        <!-- HERO SECTION -->
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">🎬 Hero Section</h3>
+                            <div class="row">
+                                <div><label>Eyebrow</label><input id="cHeroEyebrow" value="${esc(c.hero.eyebrow)}"></div>
+                                <div><label>Đối tượng</label><input id="cHeroTarget" value="${esc(c.hero.target)}"></div>
+                            </div>
+                            <div class="row">
+                                <div><label>Minh bạch</label><input id="cHeroTransparency" value="${esc(c.hero.transparency)}"></div>
+                                <div><label>Mục tiêu</label><input id="cHeroGoal" value="${esc(c.hero.goal)}"></div>
+                            </div>
+                            <div style="margin-top:14px">
+                                <label>Tiêu đề (có thể dùng &lt;br&gt;)</label>
+                                <input id="cHeroTitle" value="${esc(c.hero.title.replace(/<br\s*\/?>/gi, '\\n'))}">
+                            </div>
+                            <div style="margin-top:14px">
+                                <label>Mô tả chính</label>
+                                <textarea id="cHeroLead" rows="3">${esc(c.hero.lead)}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- EVENTS HEADING -->
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">📅 Tiêu đề Sự kiện</h3>
+                            <div class="row">
+                                <div><label>Tiêu đề</label><input id="cEventsTitle" value="${esc(c.events.title)}"></div>
+                                <div><label>Mô tả</label><input id="cEventsDesc" value="${esc(c.events.desc)}"></div>
+                            </div>
+                        </div>
+
+                        <!-- ABOUT SECTION -->
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">ℹ️ Về Dự Án</h3>
+                            <div class="row">
+                                <div><label>Tiêu đề</label><input id="cAboutTitle" value="${esc(c.about.title)}"></div>
+                                <div><label>Mô tả</label><input id="cAboutDesc" value="${esc(c.about.desc)}"></div>
+                            </div>
+                            <div style="margin-top:14px"><strong style="color:var(--gold-light)">3 thẻ card:</strong></div>
+                            ${c.about.cards.map((card, i) => `
+                                <div style="margin-top:10px;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px">
+                                    <div class="row">
+                                        <div><label>Card ${i+1} Tiêu đề</label><input id="cAboutCard${i}Title" value="${esc(card.title)}"></div>
+                                        <div><label>Card ${i+1} Nội dung</label><input id="cAboutCard${i}Text" value="${esc(card.text)}"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- RULES SECTION -->
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">📋 Thể Lệ & Tiêu Chí</h3>
+                            <div class="row">
+                                <div><label>Tiêu đề</label><input id="cRulesTitle" value="${esc(c.rules.title)}"></div>
+                                <div><label>Phụ đề</label><input id="cRulesSubtitle" value="${esc(c.rules.subtitle)}"></div>
+                            </div>
+                            <div style="margin-top:14px">
+                                <label>Cột 1 - Tiêu đề</label>
+                                <input id="cRulesCol1Title" value="${esc(c.rules.col1Title)}">
+                            </div>
+                            ${c.rules.col1Items.map((item, i) => `
+                                <div style="margin-top:8px">
+                                    <label>Cột 1 - Mục ${i+1}</label>
+                                    <input id="cRulesCol1Item${i}" value="${esc(item)}">
+                                </div>
+                            `).join('')}
+                            <div style="margin-top:14px">
+                                <label>Cột 2 - Tiêu đề</label>
+                                <input id="cRulesCol2Title" value="${esc(c.rules.col2Title)}">
+                            </div>
+                            <div style="margin-top:8px">
+                                <label>Cột 2 - Nội dung</label>
+                                <textarea id="cRulesCol2Text" rows="4">${esc(c.rules.col2Text)}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- APPLY SECTION -->
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">🚀 Tuyển dụng</h3>
+                            <div class="row">
+                                <div><label>Tiêu đề</label><input id="cApplyTitle" value="${esc(c.apply.title)}"></div>
+                                <div><label>Mô tả</label><input id="cApplyDesc" value="${esc(c.apply.desc)}"></div>
+                            </div>
+                            <div style="margin-top:14px"><strong style="color:var(--gold-light)">Card Organizer:</strong></div>
+                            <div class="row">
+                                <div><label>Tiêu đề</label><input id="cApplyOrgTitle" value="${esc(c.apply.orgTitle)}"></div>
+                                <div><label>Nội dung</label><input id="cApplyOrgText" value="${esc(c.apply.orgText)}"></div>
+                            </div>
+                            <div style="margin-top:14px"><strong style="color:var(--gold-light)">Card Member:</strong></div>
+                            <div class="row">
+                                <div><label>Tiêu đề</label><input id="cApplyMemberTitle" value="${esc(c.apply.memberTitle)}"></div>
+                                <div><label>Nội dung</label><input id="cApplyMemberText" value="${esc(c.apply.memberText)}"></div>
+                            </div>
+                            <div style="margin-top:14px"><strong style="color:var(--gold-light)">Quy trình:</strong></div>
+                            ${c.apply.steps.map((step, i) => `
+                                <div style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.03);border-radius:8px">
+                                    <div class="row">
+                                        <div style="flex:0 0 60px"><label>Số</label><input id="cApplyStep${i}Num" value="${step.num}" style="width:50px"></div>
+                                        <div><label>Tiêu đề</label><input id="cApplyStep${i}Title" value="${esc(step.title)}"></div>
+                                        <div><label>Mô tả</label><input id="cApplyStep${i}Desc" value="${esc(step.desc)}"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- FOOTER -->
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">🔻 Footer</h3>
+                            <label>Nội dung footer</label>
+                            <input id="cFooterText" value="${esc(c.footer.text)}">
+                        </div>
+
+                        <button class="btn btn-gold" style="margin-top:20px" onclick="saveContentFromDash()">💾 Lưu tất cả nội dung</button>
+                        <div id="cSaveMsg" style="margin-top:10px;font-size:0.9rem;min-height:1.2em"></div>
+                    `;
                 }
             };
             
@@ -4030,6 +4546,131 @@
             if (!confirm("Bạn muốn gỡ bỏ liên kết tài liệu này?")) return;
             await deleteItemFromDB('docs', id);
             renderTab('docs');
+        }
+
+        // ================= SUBMISSION MANAGEMENT =================
+
+        function isRegistered() {
+            return (localDB.registrations || []).some(r => String(r.userId) === String(session?.id));
+        }
+
+        function openRegisterEvent() {
+            if (!session) return alert('Vui lòng đăng nhập trước!');
+            if (isRegistered()) return alert('Bạn đã đăng ký tham gia dự án rồi!');
+            openPaymentModal('registration', {});
+        }
+
+        function openSubmitModal() {
+            if (!session) return alert('Vui lòng đăng nhập để nộp bài dự thi!');
+            if (!isRegistered()) {
+                return alert('Bạn cần đăng ký tham gia dự án (5.000đ) trước khi nộp bài! Vui lòng bấm "Đăng ký tham gia" trên trang.');
+            }
+            document.getElementById('sfTitle').value = '';
+            document.getElementById('sfTeam').value = '';
+            document.getElementById('sfUrl').value = '';
+            document.getElementById('sfMsg').textContent = '';
+            openModal('submitModal');
+        }
+
+        async function submitFilm() {
+            const title = document.getElementById('sfTitle').value.trim();
+            const team = document.getElementById('sfTeam').value.trim();
+            const url = document.getElementById('sfUrl').value.trim();
+            const msgEl = document.getElementById('sfMsg');
+
+            if (!title || !team || !url) {
+                msgEl.textContent = 'Vui lòng điền đầy đủ thông tin!';
+                msgEl.style.color = 'var(--danger)';
+                return;
+            }
+            if (!url.includes('youtube.com/embed/') && !url.includes('youtu.be/')) {
+                msgEl.textContent = 'Vui lòng nhập link YouTube Embed hợp lệ (https://www.youtube.com/embed/...)';
+                msgEl.style.color = 'var(--danger)';
+                return;
+            }
+
+            const nextId = await getNextId();
+            const newSub = {
+                id: nextId,
+                title,
+                team,
+                url,
+                votes: 0,
+                status: 'pending',
+                submittedBy: session.name,
+                date: new Date().toISOString().slice(0, 10)
+            };
+            await saveItem('submissions', newSub);
+            closeModal('submitModal');
+            alert('🎉 Gửi bài dự thi thành công! BTC sẽ kiểm duyệt và đưa lên công khai sớm nhất.');
+            renderVoting();
+        }
+
+        async function addSubmission() {
+            const title = document.getElementById('subTitle').value.trim();
+            const team = document.getElementById('subTeam').value.trim();
+            const url = document.getElementById('subUrl').value.trim();
+
+            if (!title || !team || !url) return alert('Vui lòng điền đầy đủ thông tin!');
+            if (!url.includes('youtube.com/embed/') && !url.includes('youtu.be/')) {
+                return alert('Vui lòng nhập link YouTube Embed hợp lệ (https://www.youtube.com/embed/...)');
+            }
+
+            const nextId = await getNextId();
+            const newSub = {
+                id: nextId,
+                title,
+                team,
+                url,
+                votes: 0,
+                status: 'approved',
+                submittedBy: session?.name || 'admin',
+                date: new Date().toISOString().slice(0, 10)
+            };
+            await saveItem('submissions', newSub);
+            document.getElementById('subTitle').value = '';
+            document.getElementById('subTeam').value = '';
+            document.getElementById('subUrl').value = '';
+            renderTab('submissions');
+        }
+
+        async function approveSubmission(id) {
+            const sub = localDB.submissions.find(s => s.id === id);
+            if (!sub) return;
+            sub.status = 'approved';
+            await saveItem('submissions', sub);
+            renderTab('submissions');
+        }
+
+        async function rejectSubmission(id) {
+            if (!confirm('Từ chối bài dự thi này?')) return;
+            const sub = localDB.submissions.find(s => s.id === id);
+            if (!sub) return;
+            sub.status = 'rejected';
+            await saveItem('submissions', sub);
+            renderTab('submissions');
+        }
+
+        async function deleteSubmissionItem(id) {
+            if (!confirm('Xóa bài dự thi này?')) return;
+            await deleteItemFromDB('submissions', id);
+            renderTab('submissions');
+        }
+
+        async function saveVoteConfig() {
+            const start = document.getElementById('cfgVoteStart').value;
+            const end = document.getElementById('cfgVoteEnd').value;
+            if (!localDB.config) localDB.config = {};
+            localDB.config.voteStart = start;
+            localDB.config.voteEnd = end;
+            if (useFirebase) {
+                try {
+                    await dbInstance.collection('config').doc('settings').set({ voteStart: start, voteEnd: end }, { merge: true });
+                } catch (e) { console.error(e); }
+            }
+            if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            alert('Đã lưu cấu hình cổng bình chọn!');
+            renderTab('overview');
         }
 
         // ================= CHAT FUNCTIONS =================
@@ -4507,6 +5148,13 @@
             if (!cfg.prizePool) cfg.prizePool = { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
             cfg.prizePool.total = (cfg.prizePool.total || 0) + Math.round((tx.amount || 5000) * 0.7);
             if (localDB.config) localDB.config = cfg;
+            // Nếu là giao dịch đăng ký, thêm vào danh sách registrations
+            if (tx.type === 'registration') {
+                if (!localDB.registrations) localDB.registrations = [];
+                if (!localDB.registrations.some(r => String(r.userId) === String(tx.userId))) {
+                    localDB.registrations.push({ userId: tx.userId, userName: tx.userName, date: new Date().toISOString().slice(0, 10) });
+                }
+            }
             if (useFirebase) {
                 try {
                     await dbInstance.collection('transactions').doc(String(txId)).set(tx, { merge: true });

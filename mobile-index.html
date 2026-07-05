@@ -1876,10 +1876,14 @@
         <!-- ============ BÌNH CHỌN (VOTING PAGE) ============ -->
         <div id="page-voting" style="display:none;padding-top:90px">
             <div id="prizePoolVoting" style="margin-top: 20px; margin-bottom: 30px"></div>
+            <div id="votingRegisterBanner" style="max-width:700px;margin:0 auto 20px"></div>
             <section id="voting">
                 <div class="section-head">
                     <h2>🗳 Bình chọn tác phẩm dự thi</h2>
                     <p>Hãy bình chọn cho những thước phim ngắn ấn tượng nhất từ các đội thi. Mỗi thiết bị/địa chỉ IP chỉ được vote 1 lần duy nhất để chống gian lận. Mua thêm lượt vote (5.000đ/lượt) để ủng hộ tác phẩm yêu thích!</p>
+                    <div id="votingActions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px">
+                        <button class="btn btn-gold" onclick="openSubmitModal()">📤 Nộp bài dự thi</button>
+                    </div>
                 </div>
                 <div class="grid grid-3" id="votingList"></div>
             </section>
@@ -2064,6 +2068,24 @@
         </div>
     </div>
 
+    <!-- ============ SUBMIT FILM MODAL ============ -->
+    <div class="modal" id="submitModal">
+        <div class="modal-box">
+            <span class="close-x" onclick="closeModal('submitModal')">✕</span>
+            <h3>📤 Nộp bài dự thi</h3>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">Gửi tác phẩm của bạn đến BTC. Bài dự thi sẽ được kiểm duyệt trước khi hiển thị công khai.</p>
+            <label>Tên tác phẩm *</label>
+            <input id="sfTitle" placeholder="VD: Khung hình ký ức">
+            <label>Tên đội thi *</label>
+            <input id="sfTeam" placeholder="VD: Đội phim 10A2">
+            <label>Link YouTube Embed *</label>
+            <input id="sfUrl" placeholder="https://www.youtube.com/embed/...">
+            <p style="font-size:0.78rem;color:var(--text-muted);margin:4px 0 10px">Sao chép link nhúng (Embed) từ YouTube. Video cần ở chế độ không công khai hoặc công khai.</p>
+            <div class="form-msg" id="sfMsg"></div>
+            <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitFilm()">Gửi bài dự thi</button>
+        </div>
+    </div>
+
     <!-- ============ FEEDBACK MODAL ============ -->
     <div class="modal" id="feedbackModal">
         <div class="modal-box">
@@ -2168,13 +2190,13 @@
                     { id: 2, title: 'Thư viện âm nhạc & SFX hợp lệ bản quyền', url: 'https://youtube.com', note: 'Tổng hợp danh sách các nguồn nhạc được phép sử dụng trong cuộc thi' }
                 ],
                 submissions: [
-                    { id: 1, title: "Khung hình ký ức", team: "Đội phim 10A2", votes: 42, url: "https://www.youtube.com/embed/dQw4w9WgXcQ" },
-                    { id: 2, title: "Lặng im sau ống kính", team: "CLB Điện ảnh Trẻ", votes: 28, url: "https://www.youtube.com/embed/dQw4w9WgXcQ" },
-                    { id: 3, title: "Chuyến tàu lúc hoàng hôn", team: "Nhóm Hạt Cát", votes: 35, url: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
+                    { id: 1, title: "Khung hình ký ức", team: "Đội phim 10A2", votes: 42, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: 'approved', submittedBy: 'admin', date: '2026-07-01' },
+                    { id: 2, title: "Lặng im sau ống kính", team: "CLB Điện ảnh Trẻ", votes: 28, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: 'approved', submittedBy: 'admin', date: '2026-07-02' },
+                    { id: 3, title: "Chuyến tàu lúc hoàng hôn", team: "Nhóm Hạt Cát", votes: 35, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: 'approved', submittedBy: 'admin', date: '2026-07-03' }
                 ],
                 votes: [],
                 feedback: [],
-                config: { stage: 'Xây dựng đội ngũ' },
+                config: { stage: 'Xây dựng đội ngũ', voteStart: '', voteEnd: '' },
                 seq: 100
             };
         }
@@ -2205,7 +2227,7 @@
                 useFirebase = false;
             }
 
-            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 } }, seq: 100 };
+            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], registrations: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 }, voteStart: '', voteEnd: '' }, seq: 100 };
 
             if (useFirebase) {
                 try {
@@ -2857,12 +2879,64 @@
         }
 
         // ================= PUBLIC VOTING RENDERING (WITH ANTI-CHEAT) =================
+        function isVoteOpen() {
+            const cfg = localDB.config || {};
+            const now = new Date();
+            if (cfg.voteStart && new Date(cfg.voteStart) > now) return { open: false, msg: '⏳ Cổng bình chọn chưa mở. Quay lại sau nhé!' };
+            if (cfg.voteEnd && new Date(cfg.voteEnd) < now) return { open: false, msg: '🔒 Cổng bình chọn đã đóng. Cảm ơn bạn đã theo dõi!' };
+            return { open: true };
+        }
+
+        function getVoteLink(id) {
+            return window.location.origin + window.location.pathname + '#vote-' + id;
+        }
+
+        function copyVoteLink(id) {
+            navigator.clipboard.writeText(getVoteLink(id)).then(() => {
+                alert('🔗 Đã copy link vote! Chia sẻ cho bạn bè để kêu gọi bình chọn.');
+            }).catch(() => {
+                alert('Không thể copy. Vui lòng copy thủ công: ' + getVoteLink(id));
+            });
+        }
+
+        function shareVoteFB(id, title) {
+            const url = encodeURIComponent(getVoteLink(id));
+            const text = encodeURIComponent('🎬 Bình chọn cho tác phẩm "' + title + '" tại Ý Niệm Điện Ảnh!');
+            window.open('https://www.facebook.com/sharer/sharer.php?u=' + url + '&quote=' + text, '_blank', 'width=600,height=400');
+        }
+
         function renderVoting() {
-            const list = localDB.submissions || [];
+            const list = (localDB.submissions || []).filter(s => s.status === 'approved');
             const totalVotes = list.reduce((sum, s) => sum + s.votes, 0) || 1;
+            const voteStatus = isVoteOpen();
             
             const vListEl = document.getElementById('votingList');
             if (!vListEl) return;
+
+            // Render registration banner
+            const bannerEl = document.getElementById('votingRegisterBanner');
+            if (bannerEl) {
+                if (!session) {
+                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">📌 <a onclick="openModal(\'authModal\');toggleAuth(true)" style="cursor:pointer;color:var(--gold);font-weight:600">Đăng nhập</a> để nộp bài dự thi hoặc bình chọn!</p></div>';
+                } else if (!isRegistered()) {
+                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">🎟️ Bạn chưa đăng ký tham gia dự án. <button class="btn btn-gold btn-sm" onclick="openRegisterEvent()" style="margin-left:8px">Đăng ký tham gia (5.000đ)</button></p></div>';
+                } else {
+                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:12px 20px;text-align:center"><p style="color:#22c55e;margin:0">✅ Bạn đã đăng ký tham gia dự án. Hãy nộp bài dự thi của bạn!</p></div>';
+                }
+            }
+            // Update voting actions
+            const actionsEl = document.getElementById('votingActions');
+            if (actionsEl) {
+                actionsEl.innerHTML = '<button class="btn btn-gold" onclick="openSubmitModal()">📤 Nộp bài dự thi</button>';
+                if (session && !isRegistered()) {
+                    actionsEl.innerHTML += '<button class="btn btn-line" onclick="openRegisterEvent()">🎟️ Đăng ký (5k)</button>';
+                }
+            }
+
+            if (!voteStatus.open) {
+                vListEl.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px"><h3>' + voteStatus.msg + '</h3></div>';
+                return;
+            }
             
             vListEl.innerHTML = list.map(s => {
                 const pct = Math.round((s.votes / totalVotes) * 100);
@@ -2886,13 +2960,19 @@
                         
                         <button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id})">🗳 Bình chọn</button>
                         <button class="btn btn-line btn-sm" style="width:100%; margin-top:6px" onclick="openBuyVoteModal(${s.id}, '${esc(s.title)}')">⭐ Mua vote 5k</button>
+                        <div style="display:flex;gap:8px;margin-top:10px">
+                            <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${s.id}, '${esc(s.title)}')">📤 Share Facebook</button>
+                            <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="copyVoteLink(${s.id})">🔗 Copy link</button>
+                        </div>
                     </div>
                 `;
-            }).join('') || '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px"><h3>Chưa mở cổng bình chọn</h3></div>';
+            }).join('') || '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px"><h3>Chưa có tác phẩm nào.</h3></div>';
         }
 
         // Chức năng bình chọn chống gian lận (quét IP thiết bị và chặn cookie/localstorage)
         async function castVote(id) {
+            const vOpen = isVoteOpen();
+            if (!vOpen.open) return alert(vOpen.msg);
             // 1. Kiểm tra nhanh thiết bị qua LocalStorage để chặn bình chọn nhiều lần trên cùng 1 trình duyệt
             if (localStorage.getItem('voted_sub_' + id)) {
                 return alert("Thiết bị của bạn đã thực hiện bình chọn cho tác phẩm này rồi!");
@@ -3166,6 +3246,7 @@
             transactions: { icon: '💳', label: 'Giao dịch & Quỹ', roles: ['admin', 'organizer'] },
             feedback: { icon: '💬', label: 'Feedback & Báo lỗi', roles: ['admin', 'organizer'] },
             docs: { icon: '📁', label: 'Thư viện Tài liệu', roles: ['admin', 'organizer', 'member'] },
+            submissions: { icon: '🎥', label: 'Quản lý Bài dự thi', roles: ['admin', 'organizer'] },
             accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
         };
 
@@ -3194,6 +3275,12 @@
             const renderers = {
                 overview() {
                     const myTasks = d.tasks.filter(t => t.assignee === session.name && t.status !== 'done').length;
+                    const cfg = d.config || {};
+                    const now = new Date();
+                    const vs = cfg.voteStart ? new Date(cfg.voteStart) : null;
+                    const ve = cfg.voteEnd ? new Date(cfg.voteEnd) : null;
+                    const voteStatus = !vs ? 'Chưa cấu hình' : now < vs ? 'Chưa mở' : ve && now > ve ? 'Đã đóng' : 'Đang mở';
+                    const registered = (d.registrations || []).length;
                     main.innerHTML = `
                         <h2>📊 Tổng quan vận hành</h2>
                         <div class="stats">
@@ -3202,7 +3289,19 @@
                             <div class="stat"><div class="num">${d.applications.filter(a => a.status === 'pending').length}</div><div class="lbl">Đơn apply chờ duyệt</div></div>
                             <div class="stat"><div class="num">${d.tasks.filter(t => t.status !== 'done').length}</div><div class="lbl">Công việc cần làm</div></div>
                             <div class="stat"><div class="num">${myTasks}</div><div class="lbl">Nhiệm vụ của bạn</div></div>
+                            <div class="stat"><div class="num">${registered}</div><div class="lbl">Đã đăng ký dự án</div></div>
                         </div>
+                        ${isOrg ? `
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">⏰ Cấu hình cổng bình chọn</h3>
+                            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:end">
+                                <div><label>Mở cổng vote</label><input id="cfgVoteStart" type="datetime-local" value="${cfg.voteStart || ''}"></div>
+                                <div><label>Đóng cổng vote</label><input id="cfgVoteEnd" type="datetime-local" value="${cfg.voteEnd || ''}"></div>
+                                <div><span class="chip" style="background:${voteStatus === 'Đang mở' ? 'rgba(34,197,94,0.2)' : voteStatus === 'Chưa cấu hình' ? 'rgba(234,179,8,0.2)' : 'rgba(239,68,68,0.2)'};color:${voteStatus === 'Đang mở' ? '#22c55e' : voteStatus === 'Chưa cấu hình' ? '#eab308' : '#ef4444'}">${voteStatus}</span></div>
+                                <div><button class="btn btn-gold btn-sm" onclick="saveVoteConfig()">💾 Lưu cấu hình</button></div>
+                            </div>
+                        </div>
+                        ` : ''}
                         <div class="panel">
                             <h3 style="color:var(--gold-light);margin-bottom:16px">📢 Bảng tin nội bộ mới nhất</h3>
                             ${[...d.announcements].reverse().slice(0, 3).map(a => `
@@ -3419,6 +3518,85 @@
                             </table>
                         </div>
                     `;
+                },
+                submissions() {
+                    const subs = d.submissions || [];
+                    const pendingList = subs.filter(s => s.status === 'pending');
+                    main.innerHTML = `
+                        <h2>🎥 Quản lý Bài dự thi</h2>
+
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">Thêm bài dự thi mới</h3>
+                            <div class="row">
+                                <div><label>Tên tác phẩm *</label><input id="subTitle" placeholder="VD: Khung hình ký ức"></div>
+                                <div><label>Đội thi *</label><input id="subTeam" placeholder="VD: Đội phim 10A2"></div>
+                                <div><label>Link YouTube Embed *</label><input id="subUrl" placeholder="https://www.youtube.com/embed/..."></div>
+                                <div><button class="btn btn-gold btn-sm" style="margin-bottom:2px" onclick="addSubmission()">+ Thêm bài dự thi</button></div>
+                            </div>
+                        </div>
+
+                        ${pendingList.length ? `
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">Bài dự thi chờ duyệt (${pendingList.length})</h3>
+                            <div class="table-wrap">
+                                <table>
+                                    <tr>
+                                        <th>Tác phẩm</th>
+                                        <th>Đội thi</th>
+                                        <th>Người nộp</th>
+                                        <th>Ngày nộp</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                    ${pendingList.map(s => `
+                                        <tr>
+                                            <td data-label="Tác phẩm"><b>${esc(s.title)}</b></td>
+                                            <td data-label="Đội thi">${esc(s.team)}</td>
+                                            <td data-label="Người nộp">${esc(s.submittedBy || '—')}</td>
+                                            <td data-label="Ngày nộp">${s.date || '—'}</td>
+                                            <td data-label="Hành động">
+                                                <button class="btn btn-gold btn-sm" onclick="approveSubmission(${s.id})">✔ Duyệt</button>
+                                                <button class="btn btn-line btn-sm" style="margin-top:4px;color:var(--danger);border-color:var(--danger)" onclick="rejectSubmission(${s.id})">✕ Từ chối</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </table>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">Tất cả bài dự thi</h3>
+                            <div class="table-wrap">
+                                <table>
+                                    <tr>
+                                        <th>Tác phẩm</th>
+                                        <th>Đội thi</th>
+                                        <th>Lượt vote</th>
+                                        <th>Trạng thái</th>
+                                        <th>Người nộp</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                    ${subs.map(s => `
+                                        <tr>
+                                            <td data-label="Tác phẩm"><b>${esc(s.title)}</b></td>
+                                            <td data-label="Đội thi">${esc(s.team)}</td>
+                                            <td data-label="Lượt vote">${s.votes || 0}</td>
+                                            <td data-label="Trạng thái">
+                                                <span class="chip" style="background:${s.status === 'approved' ? 'rgba(34,197,94,0.2)' : s.status === 'pending' ? 'rgba(234,179,8,0.2)' : 'rgba(239,68,68,0.2)'};color:${s.status === 'approved' ? '#22c55e' : s.status === 'pending' ? '#eab308' : '#ef4444'}">
+                                                    ${s.status === 'approved' ? 'Đã duyệt' : s.status === 'pending' ? 'Chờ duyệt' : 'Từ chối'}
+                                                </span>
+                                            </td>
+                                            <td data-label="Người nộp">${esc(s.submittedBy || '—')}</td>
+                                            <td data-label="Hành động">
+                                                <button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteSubmissionItem(${s.id})">🗑 Xóa</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có bài dự thi nào.</td></tr>'}
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                    renderVoting();
                 },
                 members() {
                     const pendings = d.applications.filter(a => a.status === 'pending');
@@ -4032,6 +4210,131 @@
             renderTab('docs');
         }
 
+        // ================= SUBMISSION MANAGEMENT =================
+
+        function isRegistered() {
+            return (localDB.registrations || []).some(r => String(r.userId) === String(session?.id));
+        }
+
+        function openRegisterEvent() {
+            if (!session) return alert('Vui lòng đăng nhập trước!');
+            if (isRegistered()) return alert('Bạn đã đăng ký tham gia dự án rồi!');
+            openPaymentModal('registration', {});
+        }
+
+        function openSubmitModal() {
+            if (!session) return alert('Vui lòng đăng nhập để nộp bài dự thi!');
+            if (!isRegistered()) {
+                return alert('Bạn cần đăng ký tham gia dự án (5.000đ) trước khi nộp bài! Vui lòng bấm "Đăng ký tham gia" trên trang.');
+            }
+            document.getElementById('sfTitle').value = '';
+            document.getElementById('sfTeam').value = '';
+            document.getElementById('sfUrl').value = '';
+            document.getElementById('sfMsg').textContent = '';
+            openModal('submitModal');
+        }
+
+        async function submitFilm() {
+            const title = document.getElementById('sfTitle').value.trim();
+            const team = document.getElementById('sfTeam').value.trim();
+            const url = document.getElementById('sfUrl').value.trim();
+            const msgEl = document.getElementById('sfMsg');
+
+            if (!title || !team || !url) {
+                msgEl.textContent = 'Vui lòng điền đầy đủ thông tin!';
+                msgEl.style.color = 'var(--danger)';
+                return;
+            }
+            if (!url.includes('youtube.com/embed/') && !url.includes('youtu.be/')) {
+                msgEl.textContent = 'Vui lòng nhập link YouTube Embed hợp lệ (https://www.youtube.com/embed/...)';
+                msgEl.style.color = 'var(--danger)';
+                return;
+            }
+
+            const nextId = await getNextId();
+            const newSub = {
+                id: nextId,
+                title,
+                team,
+                url,
+                votes: 0,
+                status: 'pending',
+                submittedBy: session.name,
+                date: new Date().toISOString().slice(0, 10)
+            };
+            await saveItem('submissions', newSub);
+            closeModal('submitModal');
+            alert('🎉 Gửi bài dự thi thành công! BTC sẽ kiểm duyệt và đưa lên công khai sớm nhất.');
+            renderVoting();
+        }
+
+        async function addSubmission() {
+            const title = document.getElementById('subTitle').value.trim();
+            const team = document.getElementById('subTeam').value.trim();
+            const url = document.getElementById('subUrl').value.trim();
+
+            if (!title || !team || !url) return alert('Vui lòng điền đầy đủ thông tin!');
+            if (!url.includes('youtube.com/embed/') && !url.includes('youtu.be/')) {
+                return alert('Vui lòng nhập link YouTube Embed hợp lệ (https://www.youtube.com/embed/...)');
+            }
+
+            const nextId = await getNextId();
+            const newSub = {
+                id: nextId,
+                title,
+                team,
+                url,
+                votes: 0,
+                status: 'approved',
+                submittedBy: session?.name || 'admin',
+                date: new Date().toISOString().slice(0, 10)
+            };
+            await saveItem('submissions', newSub);
+            document.getElementById('subTitle').value = '';
+            document.getElementById('subTeam').value = '';
+            document.getElementById('subUrl').value = '';
+            renderTab('submissions');
+        }
+
+        async function approveSubmission(id) {
+            const sub = localDB.submissions.find(s => s.id === id);
+            if (!sub) return;
+            sub.status = 'approved';
+            await saveItem('submissions', sub);
+            renderTab('submissions');
+        }
+
+        async function rejectSubmission(id) {
+            if (!confirm('Từ chối bài dự thi này?')) return;
+            const sub = localDB.submissions.find(s => s.id === id);
+            if (!sub) return;
+            sub.status = 'rejected';
+            await saveItem('submissions', sub);
+            renderTab('submissions');
+        }
+
+        async function deleteSubmissionItem(id) {
+            if (!confirm('Xóa bài dự thi này?')) return;
+            await deleteItemFromDB('submissions', id);
+            renderTab('submissions');
+        }
+
+        async function saveVoteConfig() {
+            const start = document.getElementById('cfgVoteStart').value;
+            const end = document.getElementById('cfgVoteEnd').value;
+            if (!localDB.config) localDB.config = {};
+            localDB.config.voteStart = start;
+            localDB.config.voteEnd = end;
+            if (useFirebase) {
+                try {
+                    await dbInstance.collection('config').doc('settings').set({ voteStart: start, voteEnd: end }, { merge: true });
+                } catch (e) { console.error(e); }
+            }
+            if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            alert('Đã lưu cấu hình cổng bình chọn!');
+            renderTab('overview');
+        }
+
         // ================= CHAT FUNCTIONS =================
         async function sendPublicChatMsg() {
             if (!session) return alert('Vui lòng đăng nhập để gửi tin nhắn!');
@@ -4507,6 +4810,13 @@
             if (!cfg.prizePool) cfg.prizePool = { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
             cfg.prizePool.total = (cfg.prizePool.total || 0) + Math.round((tx.amount || 5000) * 0.7);
             if (localDB.config) localDB.config = cfg;
+            // Nếu là giao dịch đăng ký, thêm vào danh sách registrations
+            if (tx.type === 'registration') {
+                if (!localDB.registrations) localDB.registrations = [];
+                if (!localDB.registrations.some(r => String(r.userId) === String(tx.userId))) {
+                    localDB.registrations.push({ userId: tx.userId, userName: tx.userName, date: new Date().toISOString().slice(0, 10) });
+                }
+            }
             if (useFirebase) {
                 try {
                     await dbInstance.collection('transactions').doc(String(txId)).set(tx, { merge: true });

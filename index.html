@@ -2388,12 +2388,17 @@
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
                             document.getElementById('loadingOverlay').style.display = 'flex';
+                            // Auto-ẩn loading sau 12s để không bị treo vĩnh viễn
+                            const loadingTimeout = setTimeout(() => {
+                                document.getElementById('loadingOverlay').style.display = 'none';
+                            }, 12000);
                             try {
                                 const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
                                 const userData = userDoc.exists ? userDoc.data() : null;
                                 const isAdminApproved = userData?.emailVerified === true;
                                 if (!firebaseUser.emailVerified && !isAdminApproved && firebaseUser.email.toLowerCase() !== PROJECT_ADMIN_EMAIL) {
                                     await authInstance.signOut();
+                                    clearTimeout(loadingTimeout);
                                     document.getElementById('loadingOverlay').style.display = 'none';
                                     return;
                                 }
@@ -2422,6 +2427,7 @@
                             } catch (e) {
                                 console.error("Lỗi khi tải cơ sở dữ liệu nội bộ:", e);
                             }
+                            clearTimeout(loadingTimeout);
                             document.getElementById('loadingOverlay').style.display = 'none';
                         } else {
                             session = null;
@@ -2509,11 +2515,18 @@
             }
         }
 
+        function firestoreWithTimeout(query, ms = 8000) {
+            return Promise.race([
+                query,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), ms))
+            ]);
+        }
+
         async function loadInternalDataFromFirestore(uid) {
             const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions'];
             const promises = collections.map(async (col) => {
                 try {
-                    const snap = await dbInstance.collection(col).get();
+                    const snap = await firestoreWithTimeout(dbInstance.collection(col).get());
                     localDB[col] = [];
                     snap.forEach(doc => {
                         let docData = doc.data();
@@ -2523,14 +2536,18 @@
                         localDB[col].push(docData);
                     });
                 } catch (err) {
-                    console.warn(`Không có quyền đọc dữ liệu từ collection ${col}:`, err);
-                    localDB[col] = [];
+                    console.warn(`Không thể đọc ${col}:`, err.message || err);
+                    localDB[col] = localDB[col] || [];
                 }
             });
             await Promise.all(promises);
 
-            const seqDoc = await dbInstance.collection('config').doc('sequence').get();
-            localDB.seq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
+            try {
+                const seqDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('sequence').get());
+                localDB.seq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
+            } catch (e) {
+                console.warn('Không thể đọc sequence, giữ giá trị cũ:', e.message);
+            }
 
             // Sao lưu dữ liệu xuống localStorage để phòng khi mất kết nối Firebase
             localStorage.setItem('ynda_db', JSON.stringify(localDB));

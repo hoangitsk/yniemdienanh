@@ -13,16 +13,20 @@ service cloud.firestore {
         );
     }
 
+    function hasUserDoc() {
+      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
     function myUserDoc() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     function myRole() {
-      return signedIn() && myUserDoc().data.role;
+      return myUserDoc().data.role;
     }
 
     function isAdmin() {
-      return myRole() == 'admin';
+      return signedIn() && hasUserDoc() && myRole() == 'admin';
     }
 
     function isProjectAdminEmail() {
@@ -43,7 +47,7 @@ service cloud.firestore {
     }
 
     function isOrganizer() {
-      return myRole() in ['admin', 'organizer'];
+      return signedIn() && hasUserDoc() && (myRole() == 'admin' || myRole() == 'organizer');
     }
 
     function isOwner(userId) {
@@ -137,6 +141,12 @@ service cloud.firestore {
       allow create: if signedIn();
       allow update: if isOrganizer();
       allow delete: if isOrganizer();
+    }
+
+    match /registrations/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if isOrganizer();
     }
 
     match /{document=**} {

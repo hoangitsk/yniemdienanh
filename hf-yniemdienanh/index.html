@@ -1887,7 +1887,7 @@
             <section id="voting">
                 <div class="section-head">
                     <h2>🗳 Bình chọn tác phẩm dự thi</h2>
-                    <p>Hãy bình chọn cho những thước phim ngắn ấn tượng nhất từ các đội thi. Mỗi thiết bị/địa chỉ IP chỉ được vote 1 lần duy nhất để chống gian lận. Mua thêm lượt vote (5.000đ/lượt) để ủng hộ tác phẩm yêu thích!</p>
+                    <p>Hãy bình chọn cho những thước phim ngắn ấn tượng nhất từ các đội thi. Mỗi thiết bị/địa chỉ IP chỉ được vote 1 lần duy nhất để chống gian lận.</p>
                     <div id="votingActions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px">
                         <button class="btn btn-gold" onclick="openSubmitModal()">📤 Nộp bài dự thi</button>
                     </div>
@@ -2081,6 +2081,8 @@
             <span class="close-x" onclick="closeModal('submitModal')">✕</span>
             <h3>📤 Nộp bài dự thi</h3>
             <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">Gửi tác phẩm của bạn đến BTC. Bài dự thi sẽ được kiểm duyệt trước khi hiển thị công khai.</p>
+            <label>Dự án / Hoạt động đăng ký *</label>
+            <select id="sfEventId" style="width:100%;padding:10px;border-radius:8px;background:var(--navy-light);color:var(--text-light);border:1px solid var(--line);margin-bottom:12px"></select>
             <label>Tên tác phẩm *</label>
             <input id="sfTitle" placeholder="VD: Khung hình ký ức">
             <label>Tên đội thi *</label>
@@ -2523,7 +2525,7 @@
         }
 
         async function loadInternalDataFromFirestore(uid) {
-            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions'];
+            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await firestoreWithTimeout(dbInstance.collection(col).get());
@@ -3238,17 +3240,39 @@
                 done: ['Đã kết thúc', 'pill-done'] 
             };
             
-            document.getElementById('eventList').innerHTML = list.map(e => `
-                <div class="card">
-                    <span class="pill ${pillType[e.status]?.[1] || 'pill-soon'}">${pillType[e.status]?.[0] || 'Sắp diễn ra'}</span>
-                    <h3>${esc(e.title)}</h3>
-                    <p>${esc(e.desc)}</p>
-                    <div class="meta" style="margin-top:16px; display:grid; gap:6px; color:#dfe8f2; font-size:0.9rem">
-                        <span>📅 Thời gian: ${e.date}</span>
-                        <span>📍 Địa điểm: ${esc(e.loc)}</span>
+            document.getElementById('eventList').innerHTML = list.map(e => {
+                const feeText = e.feeOption === 'paid' ? 'Có phí (5.000đ)' : e.feeOption === 'free' ? 'Miễn phí' : '';
+                const isReg = isRegistered(e.id);
+                let regButton = '';
+                if (e.status !== 'done' && e.feeOption && e.feeOption !== 'none') {
+                    if (isReg) {
+                        regButton = `<span class="chip chip-ok" style="margin-top:10px;display:inline-block;background:rgba(99,209,158,0.15);color:var(--ok)">✅ Đã đăng ký tham gia</span>`;
+                    } else {
+                        if (e.feeOption === 'paid') {
+                            regButton = `<button class="btn btn-gold btn-sm" style="margin-top:12px;width:100%" onclick="openRegisterEvent('${e.id}', '${esc(e.title)}')">🎟️ Đăng ký tham gia (5k)</button>`;
+                        } else {
+                            regButton = `<button class="btn btn-gold btn-sm" style="margin-top:12px;width:100%" onclick="registerFreeEvent('${e.id}', '${esc(e.title)}')">🎟️ Đăng ký tham gia (Miễn phí)</button>`;
+                        }
+                    }
+                }
+                return `
+                    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+                                <span class="pill ${pillType[e.status]?.[1] || 'pill-soon'}">${pillType[e.status]?.[0] || 'Sắp diễn ra'}</span>
+                                ${feeText ? `<span class="chip" style="background:rgba(228,184,102,0.15);color:var(--gold-light)">${feeText}</span>` : ''}
+                            </div>
+                            <h3>${esc(e.title)}</h3>
+                            <p style="margin-bottom:12px">${esc(e.desc)}</p>
+                            <div class="meta" style="margin-top:auto; display:grid; gap:6px; color:#dfe8f2; font-size:0.9rem">
+                                <span>📅 Thời gian: ${e.date}</span>
+                                <span>📍 Địa điểm: ${esc(e.loc)}</span>
+                            </div>
+                        </div>
+                        ${regButton}
                     </div>
-                </div>
-            `).join('') || '<div class="card" style="grid-column:1/-1;text-align:center;padding:60px 30px"><h3>Chưa có sự kiện nào</h3><p>Ban tổ chức sẽ cập nhật các hoạt động sắp tới tại đây.</p></div>';
+                `;
+            }).join('') || '<div class="card" style="grid-column:1/-1;text-align:center;padding:60px 30px"><h3>Chưa có sự kiện nào</h3><p>Ban tổ chức sẽ cập nhật các hoạt động sắp tới tại đây.</p></div>';
         }
 
         // ================= PUBLIC VOTING RENDERING (WITH ANTI-CHEAT) =================
@@ -3291,19 +3315,14 @@
             if (bannerEl) {
                 if (!session) {
                     bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">📌 <a onclick="openModal(\'authModal\');toggleAuth(true)" style="cursor:pointer;color:var(--gold);font-weight:600">Đăng nhập</a> để nộp bài dự thi hoặc bình chọn!</p></div>';
-                } else if (!isRegistered()) {
-                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">🎟️ Bạn chưa đăng ký tham gia dự án. <button class="btn btn-gold btn-sm" onclick="openRegisterEvent()" style="margin-left:8px">Đăng ký tham gia (5.000đ)</button></p></div>';
                 } else {
-                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:12px 20px;text-align:center"><p style="color:#22c55e;margin:0">✅ Bạn đã đăng ký tham gia dự án. Hãy nộp bài dự thi của bạn!</p></div>';
+                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:12px 20px;text-align:center"><p style="color:#22c55e;margin:0">🎉 Hãy đăng ký tham gia các dự án bên dưới để nộp bài dự thi của bạn!</p></div>';
                 }
             }
             // Update voting actions
             const actionsEl = document.getElementById('votingActions');
             if (actionsEl) {
                 actionsEl.innerHTML = '<button class="btn btn-gold" onclick="openSubmitModal()">📤 Nộp bài dự thi</button>';
-                if (session && !isRegistered()) {
-                    actionsEl.innerHTML += '<button class="btn btn-line" onclick="openRegisterEvent()">🎟️ Đăng ký (5k)</button>';
-                }
             }
 
             if (!voteStatus.open) {
@@ -3319,7 +3338,7 @@
                             <iframe src="${s.url}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none" allowfullscreen></iframe>
                         </div>
                         <h3 style="margin-top:14px;font-size:1.2rem">🎬 ${esc(s.title)}</h3>
-                        <p style="font-size:0.85rem;color:var(--text-muted)">Đội thi: <b>${esc(s.team)}</b></p>
+                        <p style="font-size:0.85rem;color:var(--text-muted)">Đội thi: <b>${esc(s.team)}</b> ${s.eventTitle ? `· Dự án: <b style="color:var(--gold-light)">${esc(s.eventTitle)}</b>` : ''}</p>
                         
                         <div style="margin-top:14px">
                             <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px">
@@ -3332,7 +3351,6 @@
                         </div>
                         
                         <button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>
-                        <button class="btn btn-line btn-sm" style="width:100%; margin-top:6px" onclick="openBuyVoteModal(${s.id}, '${esc(s.title)}')">⭐ Mua vote 5k</button>
                         <div style="display:flex;gap:8px;margin-top:10px">
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${s.id}, '${esc(s.title)}')">📤 Share Facebook</button>
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="copyVoteLink(${s.id})">🔗 Copy link</button>
@@ -3860,6 +3878,11 @@
                                     <option value="live">Đang diễn ra</option>
                                     <option value="done">Đã kết thúc</option>
                                 </select></div>
+                                <div><label>Hình thức đăng ký</label><select id="evFeeOption">
+                                    <option value="none">Không yêu cầu đăng ký (Miễn phí hoàn toàn)</option>
+                                    <option value="free">Yêu cầu đăng ký (Miễn phí)</option>
+                                    <option value="paid">Yêu cầu đăng ký (Thu phí 5.000đ)</option>
+                                </select></div>
                             </div>
                             <div style="margin-top:14px">
                                 <label>Mô tả ngắn gọn về sự kiện</label>
@@ -3874,6 +3897,7 @@
                                     <th>Tên chương trình</th>
                                     <th>Ngày tổ chức</th>
                                     <th>Địa điểm</th>
+                                    <th>Phí đăng ký</th>
                                     <th>Cập nhật trạng thái</th>
                                     <th>Hành động</th>
                                 </tr>
@@ -3882,6 +3906,7 @@
                                         <td data-label="Tên chương trình"><b>${esc(e.title)}</b></td>
                                         <td data-label="Ngày tổ chức">${e.date}</td>
                                         <td data-label="Địa điểm">${esc(e.loc)}</td>
+                                        <td data-label="Phí đăng ký"><span class="chip">${e.feeOption === 'paid' ? 'Có phí (5k)' : e.feeOption === 'free' ? 'Miễn phí' : 'Không yêu cầu'}</span></td>
                                         <td data-label="Trạng thái">
                                             <select style="padding:6px;font-size:0.85rem" onchange="updateEventStatus(${e.id}, this.value)">
                                                 <option value="soon" ${e.status === 'soon' ? 'selected' : ''}>Sắp diễn ra</option>
@@ -4531,12 +4556,13 @@
             const date = document.getElementById('evDate').value;
             const loc = document.getElementById('evLoc').value.trim();
             const status = document.getElementById('evStatus').value;
+            const feeOption = document.getElementById('evFeeOption').value;
             const desc = document.getElementById('evDesc').value.trim();
             
             if (!title || !date) return showToast("Vui lòng nhập đầy đủ thông tin!", "error");
             
             const nextId = await getNextId();
-            const newEvent = { id: nextId, title, date, loc, status, desc };
+            const newEvent = { id: nextId, title, date, loc, status, feeOption, desc };
             await saveItem('events', newEvent);
             renderTab('events');
             renderEvents();
@@ -4640,13 +4666,34 @@
 
             try {
                 if (useFirebase) {
-                    const cred = await authInstance.createUserWithEmailAndPassword(email, pass);
-                    const nextId = String(await getNextId());
-                    const newUser = { id: nextId, name, email, role, dept };
-                    await saveItem('users', newUser);
+                    const secondaryApp = firebase.initializeApp(FIREBASE_CONFIG, "SecondaryApp");
+                    try {
+                        const cred = await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
+                        const newUser = { 
+                            id: cred.user.uid, 
+                            name, 
+                            email, 
+                            role, 
+                            dept, 
+                            emailVerified: true, 
+                            createdAt: new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) 
+                        };
+                        await saveItem('users', newUser);
+                    } finally {
+                        await secondaryApp.delete();
+                    }
                 } else {
                     const nextId = await getNextId();
-                    const newUser = { id: nextId, name, email, pass, role, dept };
+                    const newUser = { 
+                        id: nextId, 
+                        name, 
+                        email, 
+                        pass, 
+                        role, 
+                        dept, 
+                        emailVerified: true, 
+                        createdAt: new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) 
+                    };
                     localDB.users.push(newUser);
                     localStorage.setItem('ynda_db', JSON.stringify(localDB));
                 }
@@ -4724,21 +4771,59 @@
 
         // ================= SUBMISSION MANAGEMENT =================
 
-        function isRegistered() {
-            return (localDB.registrations || []).some(r => String(r.userId) === String(session?.id));
+        function isRegistered(eventId) {
+            if (!eventId) {
+                return (localDB.registrations || []).some(r => String(r.userId) === String(session?.id));
+            }
+            return (localDB.registrations || []).some(r => String(r.userId) === String(session?.id) && String(r.eventId) === String(eventId));
         }
 
-        function openRegisterEvent() {
+        function openRegisterEvent(eventId, eventTitle) {
             if (!session) return showToast('Vui lòng đăng nhập!', 'error');
-            if (isRegistered()) return showToast('Bạn đã đăng ký tham gia dự án rồi!', 'info');
-            openPaymentModal('registration', {});
+            if (isRegistered(eventId)) return showToast('Bạn đã đăng ký tham gia dự án này rồi!', 'info');
+            openPaymentModal('registration', { eventId, eventTitle });
+        }
+
+        async function registerFreeEvent(eventId, eventTitle) {
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
+            if (isRegistered(eventId)) return showToast('Bạn đã đăng ký tham gia dự án này rồi!', 'info');
+            
+            const nextId = await getNextId();
+            const newReg = { 
+                id: nextId,
+                userId: session.id, 
+                userName: session.name, 
+                eventId: String(eventId), 
+                eventTitle: eventTitle, 
+                date: new Date().toISOString().slice(0, 10) 
+            };
+            
+            const lt = showLoadingToast('Đang đăng ký...');
+            try {
+                await saveItem('registrations', newReg);
+                hideLoadingToast(lt);
+                showToast('🎉 Đăng ký tham gia thành công!', 'success');
+                renderEvents();
+                renderVoting();
+            } catch (e) {
+                hideLoadingToast(lt);
+                showToast('Lỗi: ' + e.message, 'error');
+            }
         }
 
         function openSubmitModal() {
             if (!session) return showToast('Vui lòng đăng nhập để nộp bài dự thi!', 'error');
-            if (!isRegistered()) {
-                return showToast('Bạn cần đăng ký tham gia dự án (5.000đ) trước khi nộp bài!', 'error');
+            
+            const activeRegEvents = (localDB.events || []).filter(e => e.status !== 'done' && e.feeOption && e.feeOption !== 'none' && isRegistered(e.id));
+            if (activeRegEvents.length === 0) {
+                return showToast('Bạn cần đăng ký tham gia ít nhất một dự án/hoạt động đang mở trước khi nộp bài!', 'error');
             }
+            
+            const selectEl = document.getElementById('sfEventId');
+            if (selectEl) {
+                selectEl.innerHTML = activeRegEvents.map(e => `<option value="${e.id}">${esc(e.title)}</option>`).join('');
+            }
+
             document.getElementById('sfTitle').value = '';
             document.getElementById('sfTeam').value = '';
             document.getElementById('sfUrl').value = '';
@@ -4747,6 +4832,9 @@
         }
 
         async function submitFilm() {
+            const eventId = document.getElementById('sfEventId').value;
+            const event = localDB.events.find(e => String(e.id) === String(eventId));
+            const eventTitle = event ? event.title : '';
             const title = document.getElementById('sfTitle').value.trim();
             const team = document.getElementById('sfTeam').value.trim();
             const url = document.getElementById('sfUrl').value.trim();
@@ -4769,6 +4857,8 @@
                 title,
                 team,
                 url,
+                eventId,
+                eventTitle,
                 votes: 0,
                 status: 'pending',
                 submittedBy: session.name,
@@ -5233,7 +5323,7 @@
                         </div>
                     </div>
                     <div style="margin-top:14px;font-size:0.82rem;color:var(--gold-light);line-height:1.4">
-                        📌 <b>Góp quỹ dự án & Bình chọn (5.000đ/lượt):</b> 70% (3.500đ) cộng trực tiếp vào Quỹ giải thưởng, 30% (1.500đ) phục vụ chi phí duy trì hoạt động dự án.
+                        📌 <b>Góp quỹ dự án (5.000đ/lượt đăng ký):</b> 70% (3.500đ) cộng trực tiếp vào Quỹ giải thưởng, 30% (1.500đ) phục vụ chi phí duy trì hoạt động dự án.
                     </div>
                 </div>
             `;
@@ -5247,9 +5337,9 @@
         function openPaymentModal(type, extra) {
             const modal = document.getElementById('profileModalBody');
             const fee = 5000;
-            const memo = type === 'registration' ? 'Lephidangky' : 'Vote_' + (extra?.submissionId || '');
+            const memo = type === 'registration' ? ('Reg_' + (extra?.eventId || '')) : 'Vote_' + (extra?.submissionId || '');
             modal.innerHTML = `
-                <h3 style="margin-bottom:16px">💳 Thanh toán ${type === 'registration' ? 'khoản góp quỹ tham gia' : 'lượt bình chọn'}</h3>
+                <h3 style="margin-bottom:16px">💳 Thanh toán khoản góp quỹ tham gia: ${esc(extra?.eventTitle || 'Dự án')}</h3>
                 <div class="qr-box">
                     <div class="qr-amount">${fee.toLocaleString('vi-VN')}đ</div>
                     <div class="qr-info" id="payosStatus">Đang tạo liên kết thanh toán...</div>
@@ -5258,7 +5348,6 @@
                     </div>
                     <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
                         Khoản đóng góp (5.000đ) được phân bổ: 70% (3.500đ) vào Quỹ giải thưởng, 30% (1.500đ) cho chi phí duy trì.
-                        ${type === 'vote' ? '<br>👉 <b>Lưu ý:</b> Bạn cần <a onclick="openModal(\'authModal\');toggleAuth(true)" style="cursor:pointer;color:var(--gold);font-weight:600">đăng nhập</a> để vote được ghi nhận!' : ''}
                     </div>
                 </div>
             `;
@@ -5279,7 +5368,7 @@
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Không thể tạo liên kết thanh toán');
                 // Chỉ tạo giao dịch khi API thanh toán thành công
-                await addTransaction(type, extra?.submissionId, description);
+                await addTransaction(type, extra?.submissionId, description, extra);
                 const area = document.getElementById('payosPaymentArea');
                 const status = document.getElementById('payosStatus');
                 if (area) {
@@ -5319,7 +5408,7 @@
             openPaymentModal('vote', { submissionId, submissionTitle });
         }
 
-        async function addTransaction(type, submissionId, memo) {
+        async function addTransaction(type, submissionId, memo, extra) {
             if (!session) {
                 showToast('Vui lòng đăng nhập!', 'error');
                 return;
@@ -5327,7 +5416,19 @@
             const nextId = await getNextId();
             const now = new Date();
             const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
-            const tx = { id: nextId, userId: session.id, userName: session.name, type, submissionId: submissionId || '', amount: 5000, memo, status: 'pending', time: timeStr };
+            const tx = { 
+                id: nextId, 
+                userId: session.id, 
+                userName: session.name, 
+                type, 
+                submissionId: submissionId || '', 
+                eventId: extra?.eventId || '',
+                eventTitle: extra?.eventTitle || '',
+                amount: 5000, 
+                memo, 
+                status: 'pending', 
+                time: timeStr 
+            };
             await saveItem('transactions', tx);
             renderAllPrizePools();
             if (document.getElementById('dashboard').style.display === 'block') {
@@ -5348,8 +5449,17 @@
             // Nếu là giao dịch đăng ký, thêm vào danh sách registrations
             if (tx.type === 'registration') {
                 if (!localDB.registrations) localDB.registrations = [];
-                if (!localDB.registrations.some(r => String(r.userId) === String(tx.userId))) {
-                    localDB.registrations.push({ userId: tx.userId, userName: tx.userName, date: new Date().toISOString().slice(0, 10) });
+                if (!localDB.registrations.some(r => String(r.userId) === String(tx.userId) && String(r.eventId) === String(tx.eventId))) {
+                    const nextId = await getNextId();
+                    const newReg = { 
+                        id: nextId,
+                        userId: tx.userId, 
+                        userName: tx.userName, 
+                        eventId: String(tx.eventId || ''), 
+                        eventTitle: tx.eventTitle || '', 
+                        date: new Date().toISOString().slice(0, 10) 
+                    };
+                    await saveItem('registrations', newReg);
                 }
             }
             if (useFirebase) {

@@ -1,19 +1,15 @@
 import os
 import logging
 import time as time_module
-from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from payos import PayOS
 from payos.types import CreatePaymentLinkRequest
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-BASE_DIR = Path(__file__).resolve().parent
 
 PAYOS_CLIENT_ID = os.getenv("PAYOS_CLIENT_ID", "")
 PAYOS_API_KEY = os.getenv("PAYOS_API_KEY", "")
@@ -24,9 +20,9 @@ if PAYOS_ENABLED:
     payos = PayOS(client_id=PAYOS_CLIENT_ID, api_key=PAYOS_API_KEY, checksum_key=PAYOS_CHECKSUM_KEY)
 else:
     payos = None
-    logger.warning("⚠️ PayOS chưa được cấu hình. Đặt biến môi trường PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY để kích hoạt thanh toán.")
+    logger.warning("PayOS chua duoc cau hinh. Dat bien moi truong PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY de kich hoat thanh toan.")
 
-BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:24687")
 
 app = FastAPI()
 
@@ -38,9 +34,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/Logo", StaticFiles(directory=BASE_DIR / "Logo"), name="logo")
-app.mount("/Kế hoạch", StaticFiles(directory=BASE_DIR / "Kế hoạch"), name="plans")
-
 
 @app.get("/health")
 def health():
@@ -51,7 +44,7 @@ def health():
 async def create_payment(req: Request):
     try:
         if not PAYOS_ENABLED:
-            return JSONResponse(status_code=400, content={"error": "⚠️ PayOS chưa được cấu hình. Vui lòng liên hệ Admin để thiết lập thanh toán."})
+            return JSONResponse(status_code=400, content={"error": "PayOS chua duoc cau hinh. Vui long lien he Admin de thiet lap thanh toan."})
 
         body = await req.json()
         amount = int(body.get("amount", 5000))
@@ -88,23 +81,3 @@ async def payos_webhook(req: Request):
     except Exception as e:
         logger.error("PayOS webhook error: %s", e)
         return JSONResponse(status_code=400, content={"error": str(e)})
-
-
-@app.get("/payment-success")
-def payment_success(orderCode: str = ""):
-    return FileResponse(BASE_DIR / "index.html", media_type="text/html")
-
-
-@app.get("/payment-cancel")
-def payment_cancel(orderCode: str = ""):
-    return FileResponse(BASE_DIR / "index.html", media_type="text/html")
-
-
-@app.get("/")
-def index():
-    return FileResponse(BASE_DIR / "index.html", media_type="text/html")
-
-
-@app.get("/{path:path}")
-def spa_fallback(path: str):
-    return FileResponse(BASE_DIR / "index.html", media_type="text/html")

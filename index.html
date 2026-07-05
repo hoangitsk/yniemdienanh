@@ -2448,8 +2448,21 @@
         async function initDatabase() {
             const isLocalFile = window.location.protocol === 'file:';
             const isFirebaseConfigured = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.trim() !== "" && !isLocalFile;
+            let firebaseReachable = true;
 
+            // Quick connectivity check before attempting Firebase (Cốc Cốc blocks Firestore)
             if (isFirebaseConfigured) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                    await fetch('https://firestore.googleapis.com/.well-known/openid-configuration', { method: 'HEAD', mode: 'no-cors', signal: controller.signal });
+                    clearTimeout(timeoutId);
+                } catch (_) {
+                    firebaseReachable = false;
+                }
+            }
+
+            if (isFirebaseConfigured && firebaseReachable) {
                 try {
                     firebase.initializeApp(FIREBASE_CONFIG);
                     dbInstance = firebase.firestore();
@@ -2470,6 +2483,8 @@
             } else {
                 if (isLocalFile) {
                     console.log("Giao thức file:/// được phát hiện. Firebase Auth đã được tắt để cho phép đăng nhập offline bình thường.");
+                } else if (isFirebaseConfigured) {
+                    console.log("Firebase backend không kết nối được. Chạy ở chế độ local.");
                 }
                 useFirebase = false;
             }

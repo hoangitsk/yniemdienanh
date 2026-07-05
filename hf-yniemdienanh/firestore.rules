@@ -46,6 +46,10 @@ service cloud.firestore {
       return myRole() in ['admin', 'organizer'];
     }
 
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
     match /config/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -58,7 +62,8 @@ service cloud.firestore {
 
     match /submissions/{docId} {
       allow read: if true;
-      allow write: if isOrganizer();
+      allow create: if signedIn();
+      allow update, delete: if isOrganizer();
     }
 
     match /votes/{docId} {
@@ -117,7 +122,7 @@ service cloud.firestore {
     match /posts/{docId} {
       allow read: if true;
       allow create: if signedIn();
-      allow update: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
       allow delete: if isOrganizer();
     }
 
@@ -125,6 +130,13 @@ service cloud.firestore {
       allow read: if true;
       allow create: if signedIn();
       allow update, delete: if isOrganizer();
+    }
+
+    match /transactions/{docId} {
+      allow read: if isOrganizer();
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+      allow delete: if isOrganizer();
     }
 
     match /{document=**} {

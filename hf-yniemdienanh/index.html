@@ -1666,6 +1666,54 @@
             color: #050c14;
             box-shadow: 0 4px 12px rgba(224, 178, 98, 0.2);
         }
+
+        /* ===== TOAST NOTIFICATION ===== */
+        #toastContainer {
+            position: fixed;
+            bottom: 80px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+            max-width: 380px;
+        }
+        .toast {
+            pointer-events: auto;
+            padding: 14px 20px;
+            border-radius: 14px;
+            background: var(--navy-card);
+            border: 1px solid var(--line);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+            color: var(--text-light);
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(12px);
+        }
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .toast-success { border-color: rgba(99,209,158,0.4); }
+        .toast-error { border-color: rgba(255,127,127,0.4); }
+        .toast-info { border-color: rgba(96,165,250,0.4); }
+        .toast-icon { font-size: 1.3rem; flex-shrink: 0; }
+        .toast.loading { border-color: rgba(228,184,102,0.4); }
+        .toast-spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(228,184,102,0.2);
+            border-top: 2px solid var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 
@@ -1858,6 +1906,7 @@
         </footer>
     </div>
 
+    <div id="toastContainer"></div>
     <button class="btn btn-gold feedback-fab" onclick="openFeedback()">Góp ý / báo lỗi</button>
 
     <!-- ============ AUTHENTICATION MODAL (ĐĂNG NHẬP / ĐĂNG KÝ) ============ -->
@@ -2105,13 +2154,48 @@
 
         const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
         const money = n => Number(n).toLocaleString('vi-VN') + 'đ';
+
+        // Toast notification system
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const icons = { success: '✅', error: '❌', info: 'ℹ️', loading: '' };
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            if (type === 'loading') {
+                toast.innerHTML = '<div class="toast-spinner"></div><span>' + esc(message) + '</span>';
+            } else {
+                toast.innerHTML = '<span class="toast-icon">' + (icons[type] || 'ℹ️') + '</span><span>' + esc(message) + '</span>';
+            }
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            if (duration > 0) {
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 400);
+                }, duration);
+            }
+            return toast;
+        }
+
+        function showLoadingToast(msg) {
+            return showToast(msg || 'Đang xử lý...', 'loading', 0);
+        }
+
+        function hideLoadingToast(toast) {
+            if (toast) {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }
+        }
+
         const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
 
         // Dữ liệu mặc định tạo ban đầu
         function getMockData() {
             return {
                 users: [
-                    { id: 1, name: 'Admin Ý Niệm Điện Ảnh', email: 'yniemdienanh@gmail.com', pass: 'Harlan2008@', role: 'admin', dept: 'Ban điều hành' }
+                    { id: 1, name: 'Admin Ý Niệm Điện Ảnh', email: 'yniemdienanh@gmail.com', role: 'admin', dept: 'Ban điều hành' }
                 ],
                 applications: [],
                 events: [],
@@ -2338,10 +2422,9 @@
                 if (!localDB.messages) localDB.messages = [];
                 if (!localDB.feedback) localDB.feedback = [];
                 
-                localDB.users = localDB.users.filter(u => !['admin@ynda.vn', 'harlan@ynda.vn'].includes(String(u.email || '').toLowerCase()));
                 const hasProjectAdmin = localDB.users.some(u => u.email && u.email.toLowerCase() === 'yniemdienanh@gmail.com');
                 if (!hasProjectAdmin) {
-                    localDB.users.push({ id: 1, name: 'Admin Ý Niệm Điện Ảnh', email: 'yniemdienanh@gmail.com', pass: 'Harlan2008@', role: 'admin', dept: 'Ban điều hành' });
+                    localDB.users.push({ id: 1, name: 'Admin Ý Niệm Điện Ảnh', email: 'yniemdienanh@gmail.com', role: 'admin', dept: 'Ban điều hành' });
                 }
                 localStorage.setItem('ynda_db', JSON.stringify(localDB));
             }
@@ -2534,9 +2617,9 @@
                         localStorage.setItem('ynda_db', JSON.stringify(localDB));
                     }
                     updateStageDisplay();
-                    alert("Cập nhật giai đoạn dự án thành công!");
+                    showToast("Cập nhật giai đoạn dự án thành công!", "success");
                 } catch (e) {
-                    alert("Có lỗi xảy ra: " + e.message);
+                    showToast("Có lỗi: " + e.message, "error");
                 }
             }
         }
@@ -3187,7 +3270,7 @@
         // Chức năng bình chọn chống gian lận (quét IP thiết bị và chặn cookie/localstorage)
         async function castVote(id) {
             const vOpen = isVoteOpen();
-            if (!vOpen.open) return alert(vOpen.msg);
+            if (!vOpen.open) return showToast(vOpen.msg, 'info');
             // 1. Kiểm tra nhanh thiết bị qua LocalStorage để chặn bình chọn nhiều lần trên cùng 1 trình duyệt
             if (localStorage.getItem('voted_sub_' + id)) {
                 return alert("Thiết bị của bạn đã thực hiện bình chọn cho tác phẩm này rồi!");
@@ -3231,12 +3314,12 @@
                     }
                     
                     localStorage.setItem('voted_sub_' + id, 'true');
-                    alert(`🎉 Bình chọn thành công tác phẩm "${sub.title}"! Cảm ơn bạn đã bình chọn.`);
+                    showToast(`🎉 Bình chọn thành công "${sub.title}"!`, 'success');
                     renderVoting();
                 }
             } catch (err) {
                 console.error("Lỗi bình chọn:", err);
-                alert("⚠️ Kết nối mạng thất bại hoặc không thể quét IP. Vui lòng kết nối mạng Internet để thực hiện bình chọn!");
+                showToast("⚠️ Kết nối mạng thất bại!", "error");
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -4318,7 +4401,7 @@
             const dl = document.getElementById('tkDl').value;
             const pr = document.getElementById('tkPr').value;
             
-            if (!title) return alert("Vui lòng nhập tên đầu việc!");
+            if (!title) return showToast("Vui lòng nhập tên đầu việc!", "error");
             
             const nextId = await getNextId();
             const newTask = { id: nextId, title, assignee, dept, deadline: dl, priority: pr, status: 'todo' };
@@ -4348,7 +4431,7 @@
             const date = document.getElementById('plDate').value;
             const note = document.getElementById('plNote').value.trim();
             
-            if (!title || !date) return alert("Vui lòng điền mốc sự kiện và thời hạn!");
+            if (!title || !date) return showToast("Vui lòng điền mốc sự kiện và thời hạn!", "error");
             
             const nextId = await getNextId();
             const newMilestone = { id: nextId, title, date, note };
@@ -4369,7 +4452,7 @@
             const status = document.getElementById('evStatus').value;
             const desc = document.getElementById('evDesc').value.trim();
             
-            if (!title || !date) return alert("Vui lòng nhập đầy đủ thông tin!");
+            if (!title || !date) return showToast("Vui lòng nhập đầy đủ thông tin!", "error");
             
             const nextId = await getNextId();
             const newEvent = { id: nextId, title, date, loc, status, desc };
@@ -4409,13 +4492,12 @@
                     id: nextId,
                     name: a.name,
                     email: userEmail,
-                    pass: 'ynda2026', // Mật khẩu mặc định
                     role: a.type === 'organizer' ? 'organizer' : 'member',
                     dept: a.dept
                 };
                 await saveItem('users', newUser);
             }
-            alert(`Duyệt thành công! Đã tạo tài khoản cho thành viên ${a.name} với mật khẩu mặc định là: ynda2026`);
+            showToast(`Đã duyệt đơn cho ${a.name}!`, 'success');
             renderTab('members');
         }
 
@@ -4454,11 +4536,11 @@
             const role = document.getElementById('usRole').value;
             const dept = document.getElementById('usDept').value;
 
-            if (!name || !email || !pass) return alert("Vui lòng điền đủ họ tên, email và mật khẩu!");
-            if (pass.length < 6) return alert("Mật khẩu phải chứa ít nhất 6 ký tự!");
+            if (!name || !email || !pass) return showToast("Vui lòng điền đủ họ tên, email và mật khẩu!", "error");
+            if (pass.length < 6) return showToast("Mật khẩu phải chứa ít nhất 6 ký tự!", "error");
             
             if (localDB.users.find(u => u.email.toLowerCase() === email)) {
-                return alert("Email này đã tồn tại trong danh sách!");
+                return showToast("Email này đã tồn tại trong danh sách!", "error");
             }
 
             try {
@@ -4473,20 +4555,20 @@
                     localStorage.setItem('ynda_db', JSON.stringify(localDB));
                 }
                 
-                alert("Thêm nhân sự mới thành công!");
+                showToast("Thêm nhân sự mới thành công!", "success");
                 document.getElementById('usName').value = '';
                 document.getElementById('usEmail').value = '';
                 document.getElementById('usPass').value = '';
                 renderTab('members');
             } catch (err) {
-                alert("Lỗi khi thêm nhân sự: " + err.message);
+                showToast("Lỗi: " + err.message, "error");
             }
         }
 
         async function addNewAnnounce() {
             const title = document.getElementById('anTitle').value.trim();
             const content = document.getElementById('anContent').value.trim();
-            if (!title || !content) return alert("Vui lòng điền đầy đủ tiêu đề và nội dung!");
+            if (!title || !content) return showToast("Vui lòng điền đầy đủ tiêu đề và nội dung!", "error");
             
             const nextId = await getNextId();
             const newAnn = {
@@ -4511,7 +4593,7 @@
             const amount = parseFloat(document.getElementById('bgAmount').value);
             const date = document.getElementById('bgDate').value || new Date().toISOString().slice(0, 10);
             
-            if (!label || isNaN(amount)) return alert("Vui lòng điền nội dung và số tiền giao dịch hợp lệ!");
+            if (!label || isNaN(amount)) return showToast("Vui lòng điền nội dung và số tiền giao dịch hợp lệ!", "error");
             
             const nextId = await getNextId();
             const newLedger = { id: nextId, type, label, amount, date };
@@ -4530,7 +4612,7 @@
             const url = document.getElementById('dcUrl').value.trim();
             const note = document.getElementById('dcNote').value.trim();
             
-            if (!title || !url) return alert("Vui lòng nhập tên tài liệu và đường dẫn liên kết!");
+            if (!title || !url) return showToast("Vui lòng nhập tên tài liệu và đường dẫn liên kết!", "error");
             
             const nextId = await getNextId();
             const newDoc = { id: nextId, title, url, note };
@@ -4551,15 +4633,15 @@
         }
 
         function openRegisterEvent() {
-            if (!session) return alert('Vui lòng đăng nhập trước!');
-            if (isRegistered()) return alert('Bạn đã đăng ký tham gia dự án rồi!');
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
+            if (isRegistered()) return showToast('Bạn đã đăng ký tham gia dự án rồi!', 'info');
             openPaymentModal('registration', {});
         }
 
         function openSubmitModal() {
-            if (!session) return alert('Vui lòng đăng nhập để nộp bài dự thi!');
+            if (!session) return showToast('Vui lòng đăng nhập để nộp bài dự thi!', 'error');
             if (!isRegistered()) {
-                return alert('Bạn cần đăng ký tham gia dự án (5.000đ) trước khi nộp bài! Vui lòng bấm "Đăng ký tham gia" trên trang.');
+                return showToast('Bạn cần đăng ký tham gia dự án (5.000đ) trước khi nộp bài!', 'error');
             }
             document.getElementById('sfTitle').value = '';
             document.getElementById('sfTeam').value = '';
@@ -4598,7 +4680,7 @@
             };
             await saveItem('submissions', newSub);
             closeModal('submitModal');
-            alert('🎉 Gửi bài dự thi thành công! BTC sẽ kiểm duyệt và đưa lên công khai sớm nhất.');
+            showToast('🎉 Gửi bài dự thi thành công! BTC sẽ kiểm duyệt sớm nhất.', 'success');
             renderVoting();
         }
 
@@ -4607,9 +4689,9 @@
             const team = document.getElementById('subTeam').value.trim();
             const url = document.getElementById('subUrl').value.trim();
 
-            if (!title || !team || !url) return alert('Vui lòng điền đầy đủ thông tin!');
+            if (!title || !team || !url) return showToast('Vui lòng điền đầy đủ thông tin!', 'error');
             if (!url.includes('youtube.com/embed/') && !url.includes('youtu.be/')) {
-                return alert('Vui lòng nhập link YouTube Embed hợp lệ (https://www.youtube.com/embed/...)');
+                return showToast('Vui lòng nhập link YouTube Embed hợp lệ!', 'error');
             }
 
             const nextId = await getNextId();
@@ -4874,10 +4956,9 @@
                     await dbInstance.collection('posts').doc(String(postId)).set({ likes: post.likes }, { merge: true });
                 } catch (e) { console.error(e); }
             }
-            // Update local
             const lIdx = localDB.posts.findIndex(p => String(p.id) === String(postId));
             if (lIdx > -1) localDB.posts[lIdx] = post;
-            if (!useFirebase) localStorage.setItem('ynda_posts', JSON.stringify(localDB.posts));
+            if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
             renderFeed();
         }
 
@@ -5061,50 +5142,63 @@
 
         function renderAllPrizePools() {
             renderPrizePool('prizePoolHome');
+            renderPrizePool('prizePoolVoting');
         }
 
         function openPaymentModal(type, extra) {
-            // type: 'registration' | 'vote'
-            // extra: { submissionId?, submissionTitle? }
             const modal = document.getElementById('profileModalBody');
             const fee = 5000;
             const memo = type === 'registration' ? 'Lephidangky' : 'Vote_' + (extra?.submissionId || '');
-            const qrUrl = 'https://api.vietqr.io/image/970422-0337957054-RsBLi8C.jpg?accountName=NGUYEN%20MINH%20HOANG&amount=' + fee + '&addInfo=' + memo;
             modal.innerHTML = `
                 <h3 style="margin-bottom:16px">💳 Thanh toán ${type === 'registration' ? 'khoản góp quỹ tham gia' : 'lượt bình chọn'}</h3>
                 <div class="qr-box">
                     <div class="qr-amount">${fee.toLocaleString('vi-VN')}đ</div>
-                    <div class="qr-info">Quét mã QR bằng app ngân hàng để chuyển khoản</div>
-                    <img src="${qrUrl}" alt="VietQR" loading="lazy">
-                    <div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">
-                        <div>Ngân hàng: <b>MB Bank</b></div>
-                        <div>Số tài khoản: <b>0337957054</b></div>
-                        <div>Chủ tài khoản: <b>NGUYEN MINH HOANG</b></div>
-                        <div>Nội dung: <b style="color:var(--gold-light)">${memo}</b></div>
+                    <div class="qr-info" id="payosStatus">Đang tạo liên kết thanh toán...</div>
+                    <div id="payosPaymentArea" style="text-align:center;padding:10px 0">
+                        <div class="toast-spinner" style="margin:20px auto"></div>
                     </div>
-                    <div id="qrCountdown" class="qr-countdown">⏳ Chờ xác nhận... 05:00</div>
                     <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
-                        Sau khi chuyển khoản, admin sẽ xác nhận trong thời gian sớm nhất.
-                        <div style="margin-top:8px;color:var(--gold-light);line-height:1.4">
-                            * Khoản đóng góp (5.000đ) sẽ được phân bổ: 70% (3.500đ) trực tiếp vào Quỹ giải thưởng và 30% (1.500đ) cho chi phí duy trì hoạt động dự án.
-                        </div>
+                        Khoản đóng góp (5.000đ) được phân bổ: 70% (3.500đ) vào Quỹ giải thưởng, 30% (1.500đ) cho chi phí duy trì.
                         ${type === 'vote' ? '<br>👉 <b>Lưu ý:</b> Bạn cần <a onclick="openModal(\'authModal\');toggleAuth(true)" style="cursor:pointer;color:var(--gold);font-weight:600">đăng nhập</a> để vote được ghi nhận!' : ''}
                     </div>
                 </div>
             `;
-            document.getElementById('profileModal').querySelector('.modal-box').style.maxWidth = '420px';
+            document.getElementById('profileModal').querySelector('.modal-box').style.maxWidth = '440px';
             openModal('profileModal');
-            // Countdown 5 phút
-            let secs = 300;
-            const cdEl = document.getElementById('qrCountdown');
-            if (cdEl) {
-                const tmr = setInterval(() => {
-                    secs--;
-                    if (secs <= 0) { clearInterval(tmr); cdEl.textContent = '⏰ Đã hết hạn!'; cdEl.className = 'qr-countdown expired'; return; }
-                    const m = String(Math.floor(secs / 60)).padStart(2, '0');
-                    const s = String(secs % 60).padStart(2, '0');
-                    cdEl.textContent = '⏳ Chờ xác nhận... ' + m + ':' + s;
-                }, 1000);
+            createPayOSPayment(type, fee, memo, extra);
+        }
+
+        async function createPayOSPayment(type, amount, description, extra) {
+            const orderCode = Date.now() % 10**12;
+            try {
+                // Tạo giao dịch ngay lập tức
+                await addTransaction(type, extra?.submissionId, description);
+                const res = await fetch('/api/create-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount, description, orderCode })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Không thể tạo liên kết thanh toán');
+                const area = document.getElementById('payosPaymentArea');
+                const status = document.getElementById('payosStatus');
+                if (area) {
+                    area.innerHTML = `
+                        <p style="margin-bottom:16px;color:var(--text-muted)">Quét mã QR bằng app ngân hàng hoặc bấm nút bên dưới:</p>
+                        ${data.qrCode ? `<img src="${data.qrCode}" alt="PayOS QR" style="max-width:240px;border-radius:12px;margin-bottom:16px;border:1px solid var(--line)">` : ''}
+                        <div>
+                            <a href="${data.checkoutUrl}" target="_blank" class="btn btn-gold" style="text-decoration:none">💳 Thanh toán ngay</a>
+                        </div>
+                        <p style="margin-top:16px;font-size:0.82rem;color:var(--text-muted)">Sau khi thanh toán, quay lại trang này. Admin sẽ xác nhận trong thời gian sớm nhất.</p>
+                    `;
+                }
+                if (status) status.textContent = '✅ Chọn phương thức thanh toán:';
+            } catch (e) {
+                const area = document.getElementById('payosPaymentArea');
+                const status = document.getElementById('payosStatus');
+                if (area) area.innerHTML = `<p style="color:var(--danger);margin:10px 0">❌ ${esc(e.message)}</p>`;
+                if (status) status.textContent = '❌ Lỗi tạo thanh toán';
+                showToast(e.message, 'error');
             }
         }
 
@@ -5124,14 +5218,19 @@
         }
 
         async function addTransaction(type, submissionId, memo) {
-            if (!session) return alert('Vui lòng đăng nhập!');
+            if (!session) {
+                showToast('Vui lòng đăng nhập!', 'error');
+                return;
+            }
             const nextId = await getNextId();
             const now = new Date();
             const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
             const tx = { id: nextId, userId: session.id, userName: session.name, type, submissionId: submissionId || '', amount: 5000, memo, status: 'pending', time: timeStr };
             await saveItem('transactions', tx);
             renderAllPrizePools();
-            renderTab('transactions');
+            if (document.getElementById('dashboard').style.display === 'block') {
+                renderTab('transactions');
+            }
         }
 
         async function confirmTx(txId) {

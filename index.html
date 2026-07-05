@@ -3089,22 +3089,32 @@
                         role = 'admin';
                     } else {
                         await cred.user.sendEmailVerification();
-                        
-                        const snap = await dbInstance.collection('users').where('email', '==', email).get();
-                        if (!snap.empty) {
-                            const preDoc = snap.docs[0];
-                            role = preDoc.data().role || 'member';
-                            dept = preDoc.data().dept || '';
-                            if (preDoc.id !== cred.user.uid) {
-                                await dbInstance.collection('users').doc(preDoc.id).delete();
+                        try {
+                            const snap = await dbInstance.collection('users').where('email', '==', email).get();
+                            if (!snap.empty) {
+                                const preDoc = snap.docs[0];
+                                role = preDoc.data().role || 'member';
+                                dept = preDoc.data().dept || '';
+                                if (preDoc.id !== cred.user.uid) {
+                                    await dbInstance.collection('users').doc(preDoc.id).delete();
+                                }
                             }
+                        } catch (e) {
+                            console.warn('Firestore không khả dụng, bỏ qua kiểm tra email cũ:', e.message || e);
                         }
                     }
                     
                     const newUser = { id: cred.user.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: isAdmin, createdAt: new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) };
-                    await dbInstance.collection('users').doc(cred.user.uid).set(newUser);
+                    
+                    try {
+                        await dbInstance.collection('users').doc(cred.user.uid).set(newUser);
+                    } catch (e) {
+                        console.warn('Firestore không khả dụng, chỉ lưu local:', e.message || e);
+                    }
+                    
                     localDB.users = localDB.users.filter(u => u.email.toLowerCase() !== email);
                     localDB.users.push(newUser);
+                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
                     
                     if (isAdmin) {
                         session = { id: cred.user.uid, name, email, role: 'admin', dept: 'Ban điều hành', phone, school, className, interest, intro };
@@ -3170,6 +3180,19 @@
                         alert('📧 EMAIL CHƯA XÁC THỰC!\n\nMột email xác thực mới đã được gửi đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực (kiểm tra cả Spam) rồi đăng nhập lại.');
                         return m.textContent = 'Tài khoản chưa xác thực. Đã gửi lại email, kiểm tra Gmail (cả Spam) nhé!';
                     }
+                    // Tìm user trong localDB hoặc tạo session tạm
+                    const localUser = localDB.users.find(u => u.email && u.email.toLowerCase() === email);
+                    if (localUser) {
+                        const effectiveRole = email === PROJECT_ADMIN_EMAIL ? 'admin' : (localUser.role || 'member');
+                        session = { id: cred.user.uid, name: localUser.name, email: email, role: effectiveRole, dept: localUser.dept || '', phone: localUser.phone || '', school: localUser.school || '', className: localUser.className || '', interest: localUser.interest || '', intro: localUser.intro || '' };
+                    } else {
+                        const effectiveRole = email === PROJECT_ADMIN_EMAIL ? 'admin' : 'member';
+                        session = { id: cred.user.uid, name: cred.user.displayName || email, email: email, role: effectiveRole, dept: '' };
+                    }
+                    sessionStorage.setItem('ynda_user', JSON.stringify(session));
+                    renderNav();
+                    updateStageDisplay();
+                    openDash();
                 } else {
                     const u = localDB.users.find(u => u.email === email && u.pass === pass);
                     if (!u) return m.textContent = 'Sai tài khoản hoặc mật khẩu!';

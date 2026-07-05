@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import time as time_module
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -9,15 +10,16 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from payos import PayOS
+from payos.types import CreatePaymentLinkRequest
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
 
-PAYOS_CLIENT_ID = os.getenv("PAYOS_CLIENT_ID", "a214cd31-2135-4ca7-9a75-2ce78c120162")
-PAYOS_API_KEY = os.getenv("PAYOS_API_KEY", "cf09b581-376e-4402-9c50-cba641eb5f19")
-PAYOS_CHECKSUM_KEY = os.getenv("PAYOS_CHECKSUM_KEY", "cc3948ed2f90e993e7a45fb51281ed8037be48317eac30794ead6d8b0f7c492c")
+PAYOS_CLIENT_ID = os.getenv("PAYOS_CLIENT_ID", "")
+PAYOS_API_KEY = os.getenv("PAYOS_API_KEY", "")
+PAYOS_CHECKSUM_KEY = os.getenv("PAYOS_CHECKSUM_KEY", "")
 
 payos = PayOS(client_id=PAYOS_CLIENT_ID, api_key=PAYOS_API_KEY, checksum_key=PAYOS_CHECKSUM_KEY)
 
@@ -48,21 +50,21 @@ async def create_payment(req: Request):
         body = await req.json()
         amount = int(body.get("amount", 5000))
         description = str(body.get("description", "Thanh toan"))[:25]
-        order_code = int(body.get("orderCode", abs(hash(str(body))) % 10**12))
+        order_code = int(body.get("orderCode", int(time_module.time() * 1000) % 10**12))
 
-        payment_data = {
-            "orderCode": order_code,
-            "amount": amount,
-            "description": description,
-            "returnUrl": f"{BASE_URL}/payment-success?orderCode={order_code}",
-            "cancelUrl": f"{BASE_URL}/payment-cancel?orderCode={order_code}",
-        }
+        payment_request = CreatePaymentLinkRequest(
+            order_code=order_code,
+            amount=amount,
+            description=description,
+            cancel_url=f"{BASE_URL}/payment-cancel?orderCode={order_code}",
+            return_url=f"{BASE_URL}/payment-success?orderCode={order_code}",
+        )
 
-        payment_link = payos.create_payment_link(payment_data)
+        payment_link = payos.payment_requests.create(payment_request)
         return {
-            "checkoutUrl": payment_link.get("checkoutUrl"),
-            "qrCode": payment_link.get("qrCode"),
-            "orderCode": order_code,
+            "checkoutUrl": payment_link.checkout_url,
+            "qrCode": payment_link.qr_code,
+            "orderCode": payment_link.order_code,
         }
     except Exception as e:
         logger.error("PayOS create payment error: %s", e)
@@ -72,10 +74,10 @@ async def create_payment(req: Request):
 @app.post("/api/payos-webhook")
 async def payos_webhook(req: Request):
     try:
-        body = await req.json()
-        order_code = body.get("data", {}).get("orderCode")
-        status = body.get("data", {}).get("status")
-        logger.info("PayOS webhook received: orderCode=%s, status=%s", order_code, status)
+        body = await req.body()
+        webhook_data = payos.webhooks.verify(body)
+        order_code = webhook_data.order_code
+        logger.info("PayOS webhook received: orderCode=%s, amount=%s", order_code, webhook_data.amount)
         return {"success": True}
     except Exception as e:
         logger.error("PayOS webhook error: %s", e)

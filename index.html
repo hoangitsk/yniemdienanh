@@ -4,6 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ý Niệm Điện Ảnh - Cuộc thi làm phim ngắn cho học sinh, sinh viên yêu thích điện ảnh. Nơi ý tưởng cất cánh!">
+    <meta name="keywords" content="ý niệm điện ảnh, cuộc thi làm phim ngắn, học sinh, sinh viên, điện ảnh, làm phim">
+    <meta property="og:title" content="Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh">
+    <meta property="og:description" content="Cuộc thi làm phim ngắn cho học sinh, sinh viên yêu thích điện ảnh.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh">
     <title>Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -2834,7 +2841,7 @@
 
         async function doGoogleLogin() {
             if (!useFirebase) {
-                alert("Đăng nhập bằng Google chỉ khả dụng khi có kết nối Firebase trực tuyến.");
+                showToast("Đăng nhập Google chỉ khả dụng khi có kết nối Firebase.", "info");
                 return;
             }
             const provider = new firebase.auth.GoogleAuthProvider();
@@ -2869,11 +2876,11 @@
                 if (err.code === 'auth/unauthorized-domain') {
                     alert("❌ Domain không được hỗ trợ đăng nhập Google!\n\n👉 Hướng dẫn sửa:\n1. Vào https://console.firebase.google.com\n2. Chọn project yniemdienanh-fb0b7\n3. Authentication → Settings → Authorized domains\n4. Thêm domain: " + window.location.hostname + "\n5. Lưu lại và thử đăng nhập lại");
                 } else if (err.code === 'auth/popup-blocked') {
-                    alert("Trình duyệt đã chặn cửa sổ đăng nhập Google.\n👉 Cho phép popup cho trang này, hoặc dùng đăng nhập email/mật khẩu.");
+                    showToast("Trình duyệt đã chặn popup đăng nhập Google.", "error");
                 } else if (err.code === 'auth/popup-closed-by-user') {
                     // Người dùng tự đóng popup, không cần thông báo
                 } else {
-                    alert("Lỗi đăng nhập bằng Google: " + (err.message || "Không thể kết nối."));
+                    showToast("Lỗi đăng nhập Google: " + (err.message || "Không thể kết nối."), "error");
                 }
             }
         }
@@ -2891,7 +2898,7 @@
             m.className = 'form-msg err'; m.textContent = '';
             
             if (!name || !phone || !school || !className || !interest || !intro) return m.textContent = 'Vui lòng điền đủ tất cả các trường!';
-            if (!/^(0[3|5|7|8|9])[0-9]{8}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại/Zalo cần đúng 10 chữ số Việt Nam.';
+            if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
             if (intro.length < 20) return m.textContent = 'Giới thiệu ngắn cần tối thiểu 20 ký tự.';
             
             try {
@@ -2949,7 +2956,7 @@
             
             if (!name || !email || !phone || !school || !className || !interest || !intro || !pass) return m.textContent = 'Vui lòng điền đủ tất cả các trường!';
             if (!/^[^\s@]+@gmail\.com$/i.test(email)) return m.textContent = 'Vui lòng đăng ký bằng địa chỉ Gmail hợp lệ.';
-            if (!/^(0[3|5|7|8|9])[0-9]{8}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại/Zalo cần đúng 10 chữ số Việt Nam.';
+            if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
             if (intro.length < 20) return m.textContent = 'Giới thiệu ngắn cần tối thiểu 20 ký tự.';
             if (pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
             
@@ -3087,11 +3094,11 @@
         async function resetPassword() {
             const email = document.getElementById('liEmail').value.trim();
             if (!email) {
-                alert('Vui lòng nhập email vào ô trên trước, sau đó bấm "Quên mật khẩu".');
+                showToast('Vui lòng nhập email trước.', "info");
                 return;
             }
             if (!useFirebase) {
-                alert('Tính năng này chỉ khả dụng khi kết nối Firebase. Hãy liên hệ Admin để được hỗ trợ.');
+                showToast('Tính năng này cần kết nối Firebase.', "info");
                 return;
             }
             try {
@@ -3100,9 +3107,9 @@
             } catch (err) {
                 console.error("Reset password error:", err);
                 if (err.code === 'auth/user-not-found') {
-                    alert('Email này chưa được đăng ký tài khoản.');
+                    showToast('Email chưa được đăng ký.', "error");
                 } else {
-                    alert('Lỗi gửi email: ' + (err.message || 'Không thể kết nối.'));
+                    showToast('Lỗi gửi email: ' + (err.message || 'Không thể kết nối.'), "error");
                 }
             }
         }
@@ -3110,23 +3117,23 @@
         async function resendVerification() {
             const email = document.getElementById('liEmail').value.trim();
             if (!email) {
-                alert('👉 Nhập email vào ô phía trên trước, sau đó bấm "Gửi lại email xác thực".');
+                showToast('Vui lòng nhập email trước.', "info");
                 return;
             }
             if (!useFirebase) {
-                alert('Tính năng này chỉ khả dụng khi kết nối Firebase.');
+                showToast('Tính năng này cần kết nối Firebase.', "info");
                 return;
             }
             try {
                 const methods = await authInstance.fetchSignInMethodsForEmail(email);
                 if (methods.length === 0) {
-                    alert('❌ Email này chưa được đăng ký tài khoản.\n👉 Vui lòng đăng ký trước.');
+                    showToast('Email chưa được đăng ký. Vui lòng đăng ký trước.', "error");
                     return;
                 }
                 alert(`📧 Email ${email} đã được đăng ký.\n\n👉 Hãy nhập MẬT KHẨU và bấm "Đăng nhập".\nNếu tài khoản chưa xác thực, hệ thống sẽ tự động gửi lại email xác thực cho bạn.\n\nNếu quên mật khẩu, bấm "Quên mật khẩu?" để đặt lại.`);
             } catch (err) {
                 console.error("Resend verification error:", err);
-                alert('Lỗi kiểm tra email: ' + (err.message || 'Không thể kết nối.'));
+                showToast('Lỗi kiểm tra email: ' + (err.message || 'Không thể kết nối.'), "error");
             }
         }
 
@@ -3191,9 +3198,9 @@
 
         function copyVoteLink(id) {
             navigator.clipboard.writeText(getVoteLink(id)).then(() => {
-                alert('🔗 Đã copy link vote! Chia sẻ cho bạn bè để kêu gọi bình chọn.');
+                showToast('🔗 Đã copy link vote!', "success");
             }).catch(() => {
-                alert('Không thể copy. Vui lòng copy thủ công: ' + getVoteLink(id));
+                showToast('Không thể copy. Vui lòng copy thủ công.', "error");
             });
         }
 
@@ -3273,7 +3280,7 @@
             if (!vOpen.open) return showToast(vOpen.msg, 'info');
             // 1. Kiểm tra nhanh thiết bị qua LocalStorage để chặn bình chọn nhiều lần trên cùng 1 trình duyệt
             if (localStorage.getItem('voted_sub_' + id)) {
-                return alert("Thiết bị của bạn đã thực hiện bình chọn cho tác phẩm này rồi!");
+                return showToast("Thiết bị đã vote tác phẩm này rồi!", "info");
             }
             
             const btn = event?.target;
@@ -3292,7 +3299,7 @@
                 // 3. Kiểm tra địa chỉ IP đã tồn tại trong danh sách đã bình chọn cho tác phẩm này chưa
                 const ipHasVoted = localDB.votes.some(v => v.submissionId === id && v.ip === userIp);
                 if (ipHasVoted) {
-                    alert(`Lỗi chống gian lận: Địa chỉ IP (${userIp}) của bạn đã được hệ thống ghi nhận bình chọn cho tác phẩm này. Mỗi địa chỉ IP/máy tính chỉ được vote tối đa 1 lần!`);
+                    showToast(`IP (${userIp}) đã vote tác phẩm này rồi!`, "info");
                     localStorage.setItem('voted_sub_' + id, 'true'); // Cập nhật localstorage để tránh gọi API lần sau
                     if (btn) btn.disabled = false;
                     return;
@@ -3390,7 +3397,7 @@
             }
             
             // 3. Kiểm tra số điện thoại (chấp nhận 10 chữ số)
-            const phoneRegex = /^(0[3|5|7|8|9])[0-9]{8}$/;
+            const phoneRegex = /^0[0-9]{9}$/;
             if (!phone) {
                 phoneEl.classList.add('invalid');
                 hasError = true;
@@ -3417,6 +3424,7 @@
                 return;
             }
             
+            const lt = showLoadingToast('Đang gửi đơn...');
             const nextId = await getNextId();
             const newApp = {
                 id: nextId,
@@ -3432,6 +3440,7 @@
             
             try {
                 await saveItem('applications', newApp);
+                hideLoadingToast(lt);
                 m.className = 'form-msg ok'; 
                 m.textContent = '✅ Đã gửi đơn thành công! BTC sẽ liên hệ lại với bạn sớm nhất.';
                 
@@ -3445,6 +3454,7 @@
                     m.textContent = '';
                 }, 2500);
             } catch (e) {
+                hideLoadingToast(lt);
                 m.textContent = 'Có lỗi xảy ra khi gửi dữ liệu: ' + e.message;
             }
         }
@@ -3499,9 +3509,11 @@
                 createdAt: new Date().toISOString()
             };
 
+            const lt = showLoadingToast('Đang gửi phản hồi...');
             try {
                 localDB.feedback = localDB.feedback || [];
                 localDB.feedback.push(item);
+                hideLoadingToast(lt);
                 if (useFirebase) {
                     await dbInstance.collection('feedback').doc(String(item.id)).set(item);
                 } else {
@@ -3516,6 +3528,7 @@
                     msg.textContent = '';
                 }, 2200);
             } catch (e) {
+                hideLoadingToast(lt);
                 localDB.feedback = (localDB.feedback || []).filter(x => x.id !== item.id);
                 msg.textContent = 'Có lỗi khi gửi phản hồi: ' + (e.message || 'Không xác định');
             }
@@ -4747,13 +4760,13 @@
                 } catch (e) { console.error(e); }
             }
             if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
-            alert('Đã lưu cấu hình cổng bình chọn!');
+            showToast('Đã lưu cấu hình cổng bình chọn!', 'success');
             renderTab('overview');
         }
 
         // ================= CHAT FUNCTIONS =================
         async function sendPublicChatMsg() {
-            if (!session) return alert('Vui lòng đăng nhập để gửi tin nhắn!');
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
             const input = document.getElementById('publicChatInput');
             if (!input) return;
             const content = input.value.trim();
@@ -4811,7 +4824,7 @@
 
         function openProfile(userId) {
             const u = localDB.users.find(x => String(x.id) === String(userId));
-            if (!u) return alert('Không tìm thấy người dùng.');
+            if (!u) return showToast('Không tìm thấy người dùng.', 'error');
             const modal = document.getElementById('profileModalBody');
             const isOwn = session && String(session.id) === String(userId);
             const userPosts = (localDB.posts || []).filter(p => String(p.userId) === String(userId)).reverse();
@@ -4925,23 +4938,24 @@
         }
 
         async function createPost() {
-            if (!session) return alert('Vui lòng đăng nhập!');
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
             const input = document.getElementById('newPostInput');
             if (!input) return;
             const content = input.value.trim();
-            if (!content) return alert('Vui lòng nhập nội dung bài viết.');
-            if (content.length < 2) return alert('Nội dung quá ngắn.');
-            input.value = '';
+            if (!content) return showToast('Vui lòng nhập nội dung.', 'info');
+            if (content.length < 2) return showToast('Nội dung quá ngắn.', 'info');
+            const lt = showLoadingToast('Đang đăng bài...');
             const nextId = await getNextId();
             const now = new Date();
             const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
             const post = { id: nextId, userId: session.id, userName: session.name, userRole: session.role, content, likes: [], commentCount: 0, time: timeStr };
             await saveItem('posts', post);
+            hideLoadingToast(lt);
             renderFeed();
         }
 
         async function toggleLike(postId) {
-            if (!session) return alert('Vui lòng đăng nhập để thích bài viết!');
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
             const post = (localDB.posts || []).find(p => String(p.id) === String(postId));
             if (!post) return;
             if (!post.likes) post.likes = [];
@@ -4963,7 +4977,7 @@
         }
 
         async function addComment(postId) {
-            if (!session) return alert('Vui lòng đăng nhập!');
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
             const input = document.getElementById('commentInput_' + postId);
             if (!input) return;
             const content = input.value.trim();
@@ -5065,7 +5079,7 @@
 
         function openRateModal(userId) {
             const u = localDB.users.find(x => String(x.id) === String(userId));
-            if (!u) return alert('Không tìm thấy người dùng.');
+            if (!u) return showToast('Không tìm thấy người dùng.', 'error');
             const modal = document.getElementById('profileModalBody');
             modal.innerHTML = `
                 <h3 style="margin-bottom:16px">⭐ Đánh giá: ${esc(u.name)}</h3>
@@ -5094,9 +5108,10 @@
         async function saveEvaluation(userId) {
             const rating = document.getElementById('rateSelect')?.value;
             const comment = document.getElementById('rateComment')?.value.trim();
-            if (!rating) return alert('Vui lòng chọn xếp loại.');
+            if (!rating) return showToast('Vui lòng chọn xếp loại.', 'info');
             const u = localDB.users.find(x => String(x.id) === String(userId));
-            if (!u) return alert('Không tìm thấy người dùng.');
+            if (!u) return showToast('Không tìm thấy người dùng.', 'error');
+            const lt = showLoadingToast('Đang lưu đánh giá...');
             if (!u.evaluations) u.evaluations = [];
             const now = new Date();
             const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -5107,6 +5122,7 @@
                 } catch (e) { console.error(e); }
             }
             if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            hideLoadingToast(lt);
             closeModal('profileModal');
             renderTab('members');
         }
@@ -5170,6 +5186,7 @@
 
         async function createPayOSPayment(type, amount, description, extra) {
             const orderCode = Date.now() % 10**12;
+            const lt = showLoadingToast('Đang tạo liên kết thanh toán...');
             try {
                 // Tạo giao dịch ngay lập tức
                 await addTransaction(type, extra?.submissionId, description);
@@ -5198,14 +5215,16 @@
                 const status = document.getElementById('payosStatus');
                 if (area) area.innerHTML = `<p style="color:var(--danger);margin:10px 0">❌ ${esc(e.message)}</p>`;
                 if (status) status.textContent = '❌ Lỗi tạo thanh toán';
+                hideLoadingToast(lt);
                 showToast(e.message, 'error');
             }
+            hideLoadingToast(lt);
         }
 
         function openBuyVoteModal(submissionId, submissionTitle) {
-            if (!session) return alert('Vui lòng đăng nhập để mua vote!');
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
             const u = localDB.users.find(x => String(x.id) === String(session.id));
-            if (!u) return alert('Không tìm thấy thông tin người dùng.');
+            if (!u) return showToast('Không tìm thấy người dùng.', 'error');
             // Check limit: tối đa 5 vote/user
             const userVotes = (localDB.transactions || []).filter(t =>
                 String(t.userId) === String(session.id) &&
@@ -5213,7 +5232,7 @@
                 String(t.submissionId) === String(submissionId) &&
                 t.status === 'confirmed'
             ).length;
-            if (userVotes >= 5) return alert('Bạn đã mua tối đa 5 lượt vote cho tác phẩm này rồi!');
+            if (userVotes >= 5) return showToast('Đã mua tối đa 5 vote cho tác phẩm này!', 'info');
             openPaymentModal('vote', { submissionId, submissionTitle });
         }
 
@@ -5236,7 +5255,7 @@
         async function confirmTx(txId) {
             if (!confirm('Xác nhận giao dịch này?')) return;
             const tx = (localDB.transactions || []).find(t => String(t.id) === String(txId));
-            if (!tx) return alert('Không tìm thấy giao dịch.');
+            if (!tx) return showToast('Không tìm thấy giao dịch.', 'error');
             tx.status = 'confirmed';
             // Cập nhật prize pool (70% vào giải thưởng, 30% duy trì)
             const cfg = localDB.config || {};
@@ -5267,12 +5286,12 @@
             if (useFirebase) {
                 try {
                     await authInstance.sendPasswordResetEmail(email);
-                    alert(`✅ Đã gửi email đặt lại mật khẩu đến ${email}.`);
+                    showToast(`✅ Đã gửi email đặt lại mật khẩu đến ${email}.`, 'success');
                 } catch (e) {
-                    alert('Lỗi: ' + (e.message || 'Không thể gửi email.'));
+                    showToast('Lỗi: ' + (e.message || 'Không thể gửi email.'), 'error');
                 }
             } else {
-                alert('Tính năng này cần kết nối Firebase.');
+                showToast('Tính năng này cần kết nối Firebase.', 'info');
             }
         }
 
@@ -5290,7 +5309,7 @@
                 }
                 await saveItem('users', u);
                 renderTab('accounts');
-                alert('✅ Đã xác thực tài khoản.');
+                showToast('✅ Đã xác thực tài khoản.', 'success');
             }
         }
 
@@ -5307,7 +5326,7 @@
                 }
                 await deleteItemFromDB('users', id);
                 renderTab('accounts');
-                alert(`✅ Đã xoá tài khoản ${esc(u.name)}.`);
+                showToast(`✅ Đã xoá tài khoản ${esc(u.name)}.`, 'success');
             }
         }
 
@@ -5316,6 +5335,7 @@
             const c = document.getElementById('stars');
             const xCtx = c.getContext('2d');
             let stars = [];
+            let animId = null;
 
             // Vẽ ngôi sao 4 cánh cong lấp lánh (Sparkle) - Tối ưu hóa bỏ shadowBlur gây lag máy yếu
             function draw4Star(x, y, size, alpha) {
@@ -5405,26 +5425,33 @@
             resize();
             window.addEventListener('resize', resize);
 
-            (function animate() {
+            function animate() {
                 xCtx.clearRect(0, 0, c.width, c.height);
                 stars.forEach(st => {
                     st.p += st.s;
-                    const a = 0.2 + 0.8 * Math.abs(Math.sin(st.p)); // Biên độ sáng từ 0.2 đến 1.0
+                    const a = 0.2 + 0.8 * Math.abs(Math.sin(st.p));
                     
                     if (st.type === 1) {
                         draw4Star(st.x, st.y, st.size, a);
                     } else if (st.type === 2) {
                         draw5Star(st.x, st.y, st.size, st.size * 0.4, a);
                     } else {
-                        // Sao tròn thông thường
                         xCtx.beginPath();
                         xCtx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
                         xCtx.fillStyle = `rgba(247, 208, 112, ${a})`;
                         xCtx.fill();
                     }
                 });
-                requestAnimationFrame(animate);
-            })();
+                animId = requestAnimationFrame(animate);
+            }
+            animate();
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (animId) { cancelAnimationFrame(animId); animId = null; }
+                } else {
+                    if (!animId) animate();
+                }
+            });
         })();
 
         // ================= CONTEXT INITS =================

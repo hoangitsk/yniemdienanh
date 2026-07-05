@@ -2405,17 +2405,25 @@
                                     return;
                                 }
 
-                                await loadInternalDataFromFirestore(firebaseUser.uid);
-                                
+                                // Thiết lập session ngay lập tức dựa trên thông tin sẵn có để tránh treo giao diện
                                 if (userDoc.exists) {
                                     const u = userData;
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
                                     session = { id: firebaseUser.uid, name: u.name, email: u.email, role: u.role, dept: u.dept, phone: u.phone, school: u.school, className: u.className, interest: u.interest, intro: u.intro };
                                     session.role = effectiveRole;
-                                    await dbInstance.collection('users').doc(firebaseUser.uid).set({ emailVerified: true, role: effectiveRole }, { merge: true });
                                 } else {
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : 'member';
                                     session = { id: firebaseUser.uid, name: firebaseUser.displayName || 'Thành viên mới', email: firebaseUser.email, role: effectiveRole, dept: '' };
+                                }
+                                sessionStorage.setItem('ynda_user', JSON.stringify(session));
+
+                                // Tải dữ liệu Firebase bất đồng bộ theo vai trò của người dùng
+                                await loadInternalDataFromFirestore(firebaseUser.uid, session.role);
+                                
+                                // Cập nhật trạng thái người dùng trong Firestore
+                                if (userDoc.exists) {
+                                    await dbInstance.collection('users').doc(firebaseUser.uid).set({ emailVerified: true, role: session.role }, { merge: true });
+                                } else {
                                     await dbInstance.collection('users').doc(firebaseUser.uid).set({
                                         id: firebaseUser.uid,
                                         name: session.name,
@@ -2425,7 +2433,6 @@
                                     });
                                     localDB.users.push(session);
                                 }
-                                sessionStorage.setItem('ynda_user', JSON.stringify(session));
                             } catch (e) {
                                 console.error("Lỗi khi tải cơ sở dữ liệu nội bộ:", e);
                             }
@@ -2491,7 +2498,7 @@
         }
 
         async function loadPublicEventsFromFirestore() {
-            const snap = await dbInstance.collection('events').get();
+            const snap = await firestoreWithTimeout(dbInstance.collection('events').get());
             localDB.events = [];
             snap.forEach(doc => {
                 let docData = doc.data();
@@ -2503,7 +2510,7 @@
         }
 
         async function loadPublicSubmissionsFromFirestore() {
-            const snap = await dbInstance.collection('submissions').get();
+            const snap = await firestoreWithTimeout(dbInstance.collection('submissions').get());
             localDB.submissions = [];
             snap.forEach(doc => {
                 let docData = doc.data();
@@ -2524,8 +2531,11 @@
             ]);
         }
 
-        async function loadInternalDataFromFirestore(uid) {
-            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations'];
+        async function loadInternalDataFromFirestore(uid, role) {
+            const isOrg = ['admin', 'organizer'].includes(role);
+            const collections = isOrg 
+                ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations']
+                : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await firestoreWithTimeout(dbInstance.collection(col).get());

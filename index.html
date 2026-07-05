@@ -2300,12 +2300,9 @@
 
         // ================= DATABASE HANDLERS (HYBRID LOCAL/FIREBASE) =================
         async function initDatabase() {
-            // Tự động kiểm tra nếu là chạy local file protocol (file:///)
             const isLocalFile = window.location.protocol === 'file:';
-            
-            // Force disable Firebase khi chạy bằng file:/// vì Firebase Auth không hỗ trợ origin null
             const isFirebaseConfigured = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.trim() !== "" && !isLocalFile;
-            
+
             if (isFirebaseConfigured) {
                 try {
                     firebase.initializeApp(FIREBASE_CONFIG);
@@ -2326,7 +2323,6 @@
 
             localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], registrations: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 }, voteStart: '', voteEnd: '' }, content: getMockData().content, seq: 100 };
 
-            // Khôi phục dữ liệu từ localStorage (nếu có) trước, Firebase sẽ ghi đè sau
             const backupRaw = localStorage.getItem('ynda_db');
             if (backupRaw) {
                 try {
@@ -2353,7 +2349,6 @@
                 } catch (e) { console.warn('Không thể đọc backup:', e); }
             }
 
-            // Render ngay với dữ liệu có sẵn (localStorage backup) trước khi đợi Firebase
             renderEvents();
             renderVoting();
             renderNav();
@@ -2364,29 +2359,21 @@
             renderAllContent();
 
             if (useFirebase) {
-                // Load public data bất đồng bộ, không block UI
-                (async () => {
+                try {
+                    const stageDoc = await dbInstance.collection('config').doc('stage').get();
+                    localDB.config.stage = stageDoc.exists ? stageDoc.data().val : 'Xây dựng đội ngũ';
                     try {
-                        const [stageSnap, contentSnap] = await Promise.all([
-                            dbInstance.collection('config').doc('stage').get(),
-                            dbInstance.collection('config').doc('content').get()
-                        ]);
-                        if (stageSnap.exists) localDB.config.stage = stageSnap.data().val;
+                        const contentSnap = await dbInstance.collection('config').doc('content').get();
                         if (contentSnap.exists) localDB.content = { ...getMockData().content, ...contentSnap.data() };
-                        updateStageDisplay();
-                        renderAllContent();
-                    } catch (e) { console.warn('Firebase config load error:', e); }
+                    } catch (e) { console.warn('Content load error:', e); }
+                    updateStageDisplay();
+                    renderAllContent();
 
-                    try {
-                        await Promise.all([
-                            loadPublicEventsFromFirestore(),
-                            loadPublicSubmissionsFromFirestore()
-                        ]);
-                        renderEvents();
-                        renderVoting();
-                    } catch (e) { console.warn('Firebase public data load error:', e); }
+                    await loadPublicEventsFromFirestore();
+                    await loadPublicSubmissionsFromFirestore();
+                    renderEvents();
+                    renderVoting();
 
-                    // Lắng nghe auth state để tải dữ liệu nội bộ
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
                             document.getElementById('loadingOverlay').style.display = 'flex';
@@ -2404,22 +2391,17 @@
                                     return;
                                 }
 
+                                await loadInternalDataFromFirestore(firebaseUser.uid, session.role);
+
                                 if (userDoc.exists) {
                                     const u = userData;
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
                                     session = { id: firebaseUser.uid, name: u.name, email: u.email, role: u.role, dept: u.dept, phone: u.phone, school: u.school, className: u.className, interest: u.interest, intro: u.intro };
                                     session.role = effectiveRole;
+                                    await dbInstance.collection('users').doc(firebaseUser.uid).set({ emailVerified: true, role: effectiveRole }, { merge: true });
                                 } else {
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : 'member';
                                     session = { id: firebaseUser.uid, name: firebaseUser.displayName || 'Thành viên mới', email: firebaseUser.email, role: effectiveRole, dept: '' };
-                                }
-                                sessionStorage.setItem('ynda_user', JSON.stringify(session));
-
-                                await loadInternalDataFromFirestore(firebaseUser.uid, session.role);
-
-                                if (userDoc.exists) {
-                                    await dbInstance.collection('users').doc(firebaseUser.uid).set({ emailVerified: true, role: session.role }, { merge: true });
-                                } else {
                                     await dbInstance.collection('users').doc(firebaseUser.uid).set({
                                         id: firebaseUser.uid,
                                         name: session.name,
@@ -2429,9 +2411,9 @@
                                     });
                                     localDB.users.push(session);
                                 }
+                                sessionStorage.setItem('ynda_user', JSON.stringify(session));
                             } catch (e) {
                                 console.error("Firestore không khả dụng, dùng dữ liệu local:", e.message || e);
-                                // Fallback: tìm user trong localDB
                                 const localUser = localDB.users.find(u => u.email && u.email.toLowerCase() === firebaseUser.email.toLowerCase());
                                 if (localUser) {
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (localUser.role || 'member');
@@ -2459,17 +2441,21 @@
                             renderTab(curTab);
                         }
                     });
-                })();
+                } catch (err) {
+                    console.error("Lỗi kết nối Firebase Firestore:", err);
+                    useFirebase = false;
+                    loadLocalStorage();
+                    renderEvents();
+                    renderVoting();
+                    renderNav();
+                    renderFeed();
+                    renderPublicChat();
+                    renderAllPrizePools();
+                    updateStageDisplay();
+                    renderAllContent();
+                }
             } else {
                 loadLocalStorage();
-                renderEvents();
-                renderVoting();
-                renderNav();
-                renderFeed();
-                renderPublicChat();
-                renderAllPrizePools();
-                updateStageDisplay();
-                renderAllContent();
             }
         }
 
@@ -2923,7 +2909,7 @@
         let tempGoogleUser = null;
 
         async function doGoogleLogin() {
-            if (!useFirebase) {
+            if (!authInstance) {
                 showToast("Đăng nhập Google chỉ khả dụng khi có kết nối Firebase.", "info");
                 return;
             }
@@ -3077,7 +3063,7 @@
             if (pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
             
             try {
-                if (useFirebase) {
+                if (authInstance) {
                     const cred = await authInstance.createUserWithEmailAndPassword(email, pass);
                     await cred.user.updateProfile({ displayName: name });
                     
@@ -3134,7 +3120,7 @@
                     localStorage.setItem('ynda_db', JSON.stringify(localDB));
                 }
                 
-                const isFirebaseMode = useFirebase;
+                const isFirebaseMode = !!authInstance;
                 if (isFirebaseMode && email !== PROJECT_ADMIN_EMAIL) {
                     alert('✅ ĐĂNG KÝ THÀNH CÔNG!\n\nMột email xác thực đã được gửi đến địa chỉ Gmail của bạn.\n\n👉 Hãy mở Gmail, bấm vào link xác thực trong email (kiểm tra cả hòm thư Rác/Spam nếu chưa thấy).\n\nSau đó quay lại trang và đăng nhập để vào khu vực nội bộ!');
                 }
@@ -3163,7 +3149,7 @@
             if (!email || !pass) return m.textContent = 'Vui lòng nhập email và mật khẩu!';
             
             try {
-                if (useFirebase) {
+                if (authInstance) {
                     const cred = await authInstance.signInWithEmailAndPassword(email, pass);
                     let isAdminApproved = false;
                     if (!cred.user.emailVerified && email !== PROJECT_ADMIN_EMAIL) {
@@ -3180,19 +3166,7 @@
                         alert('📧 EMAIL CHƯA XÁC THỰC!\n\nMột email xác thực mới đã được gửi đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực (kiểm tra cả Spam) rồi đăng nhập lại.');
                         return m.textContent = 'Tài khoản chưa xác thực. Đã gửi lại email, kiểm tra Gmail (cả Spam) nhé!';
                     }
-                    // Tìm user trong localDB hoặc tạo session tạm
-                    const localUser = localDB.users.find(u => u.email && u.email.toLowerCase() === email);
-                    if (localUser) {
-                        const effectiveRole = email === PROJECT_ADMIN_EMAIL ? 'admin' : (localUser.role || 'member');
-                        session = { id: cred.user.uid, name: localUser.name, email: email, role: effectiveRole, dept: localUser.dept || '', phone: localUser.phone || '', school: localUser.school || '', className: localUser.className || '', interest: localUser.interest || '', intro: localUser.intro || '' };
-                    } else {
-                        const effectiveRole = email === PROJECT_ADMIN_EMAIL ? 'admin' : 'member';
-                        session = { id: cred.user.uid, name: cred.user.displayName || email, email: email, role: effectiveRole, dept: '' };
-                    }
-                    sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                    renderNav();
-                    updateStageDisplay();
-                    openDash();
+                    // onAuthStateChanged sẽ xử lý session + UI sau khi đăng nhập Firebase thành công
                 } else {
                     const u = localDB.users.find(u => u.email === email && u.pass === pass);
                     if (!u) return m.textContent = 'Sai tài khoản hoặc mật khẩu!';
@@ -3236,7 +3210,7 @@
                 showToast('Vui lòng nhập email trước.', "info");
                 return;
             }
-            if (!useFirebase) {
+            if (!authInstance) {
                 showToast('Tính năng này cần kết nối Firebase.', "info");
                 return;
             }
@@ -3259,7 +3233,7 @@
                 showToast('Vui lòng nhập email trước.', "info");
                 return;
             }
-            if (!useFirebase) {
+            if (!authInstance) {
                 showToast('Tính năng này cần kết nối Firebase.', "info");
                 return;
             }

@@ -1100,12 +1100,21 @@
 
         /* PRIZE POOL WIDGET */
         .prize-pool {
-            background: linear-gradient(135deg, rgba(228,184,102,0.12) 0%, rgba(228,184,102,0.04) 100%);
-            border: 1px solid rgba(228,184,102,0.2);
-            border-radius: 20px; padding: 28px 32px;
-            max-width: 700px; margin: 0 auto;
+            background: linear-gradient(135deg, rgba(228,184,102,0.15) 0%, rgba(18,36,56,0.65) 100%);
+            border: 1px solid rgba(228,184,102,0.25);
+            border-radius: 20px; padding: 24px 30px;
+            max-width: 700px; margin: 20px auto;
             text-align: center;
             position: relative; overflow: hidden;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(228, 184, 102, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .prize-pool:hover {
+            transform: translateY(-2px);
+            border-color: rgba(228,184,102,0.45);
+            box-shadow: 0 16px 40px rgba(228,184,102,0.12), 0 12px 32px rgba(0, 0, 0, 0.4);
         }
         .prize-pool::before {
             content: ''; position: absolute; top: -50%; left: -50%;
@@ -1718,8 +1727,10 @@
                 </div>
             </div>
 
+
             <!-- PRIZE POOL WIDGET -->
-            <div id="prizePoolHome" style="margin-top: 10px; margin-bottom: 40px"></div>
+            <div id="prizePoolHome" style="margin-top: 40px; margin-bottom: 40px"></div>
+
 
             <!-- EVENTS ONGOING/UPCOMING -->
             <section id="events">
@@ -1749,7 +1760,7 @@
                     <div class="card">
                         <!-- Sửa chi phí vận hành btc dùng chung chi phí giải thưởng + ghi 5k/thí sinh -->
                         <h3>🤝 Phi lợi nhuận & Minh bạch</h3>
-                        <p>100% minh bạch tài chính. Lệ phí tham gia là 5.000đ cho 1 thí sinh khi tham gia 1 sự kiện. Số lượng thí sinh tham gia càng đông, giải thưởng càng lớn.</p>
+                        <p>100% minh bạch tài chính. Khoản góp quỹ dự án là 5.000đ/thí sinh khi đăng ký tham gia sự kiện. Trong đó, 70% đóng góp trực tiếp vào Quỹ giải thưởng, 30% còn lại dùng làm chi phí duy trì, vận hành dự án.</p>
                     </div>
                 </div>
 
@@ -1799,7 +1810,7 @@
                         <div class="card">
                             <span class="pill">Thành viên dự án</span>
                             <h3>Tạo tài khoản để tham gia cộng đồng</h3>
-                            <p>Thành viên đăng ký bằng Gmail, bổ sung thông tin học tập/liên hệ và xác thực email trước khi vào khu vực nội bộ. Phí tham gia dự kiến 5.000đ sẽ được dùng cho quỹ giải thưởng và vận hành minh bạch.</p>
+                            <p>Thành viên đăng ký bằng Gmail, bổ sung thông tin học tập/liên hệ và xác thực email trước khi vào khu vực nội bộ. Khoản góp quỹ 5.000đ (với 70% cộng vào Quỹ giải thưởng và 30% dành cho chi phí duy trì dự án) giúp đảm bảo sự minh bạch và bền vững của sân chơi.</p>
                             <button class="btn btn-line" style="margin-top:20px" onclick="openModal('authModal');toggleAuth(false)">Tạo Tài Khoản</button>
                         </div>
                     </div>
@@ -4404,8 +4415,8 @@
                             <span>Mục tiêu: ${fmt(pp.target)}</span>
                         </div>
                     </div>
-                    <div style="margin-top:14px;font-size:0.8rem;color:var(--text-muted)">
-                        📌 Mỗi lượt đăng ký & bình chọn (5.000đ) đều được cộng trực tiếp vào quỹ giải thưởng
+                    <div style="margin-top:14px;font-size:0.82rem;color:var(--gold-light);line-height:1.4">
+                        📌 <b>Góp quỹ dự án & Bình chọn (5.000đ/lượt):</b> 70% (3.500đ) cộng trực tiếp vào Quỹ giải thưởng, 30% (1.500đ) phục vụ chi phí duy trì hoạt động dự án.
                     </div>
                 </div>
             `;
@@ -4423,7 +4434,7 @@
             const memo = type === 'registration' ? 'Lephidangky' : 'Vote_' + (extra?.submissionId || '');
             const qrUrl = 'https://api.vietqr.io/image/970422-0337957054-RsBLi8C.jpg?accountName=NGUYEN%20MINH%20HOANG&amount=' + fee + '&addInfo=' + memo;
             modal.innerHTML = `
-                <h3 style="margin-bottom:16px">💳 Thanh toán phí ${type === 'registration' ? 'đăng ký' : 'bình chọn'}</h3>
+                <h3 style="margin-bottom:16px">💳 Thanh toán ${type === 'registration' ? 'khoản góp quỹ tham gia' : 'lượt bình chọn'}</h3>
                 <div class="qr-box">
                     <div class="qr-amount">${fee.toLocaleString('vi-VN')}đ</div>
                     <div class="qr-info">Quét mã QR bằng app ngân hàng để chuyển khoản</div>
@@ -4437,6 +4448,9 @@
                     <div id="qrCountdown" class="qr-countdown">⏳ Chờ xác nhận... 05:00</div>
                     <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
                         Sau khi chuyển khoản, admin sẽ xác nhận trong thời gian sớm nhất.
+                        <div style="margin-top:8px;color:var(--gold-light);line-height:1.4">
+                            * Khoản đóng góp (5.000đ) sẽ được phân bổ: 70% (3.500đ) trực tiếp vào Quỹ giải thưởng và 30% (1.500đ) cho chi phí duy trì hoạt động dự án.
+                        </div>
                         ${type === 'vote' ? '<br>👉 <b>Lưu ý:</b> Bạn cần <a onclick="openModal(\'authModal\');toggleAuth(true)" style="cursor:pointer;color:var(--gold);font-weight:600">đăng nhập</a> để vote được ghi nhận!' : ''}
                     </div>
                 </div>
@@ -4488,10 +4502,10 @@
             const tx = (localDB.transactions || []).find(t => String(t.id) === String(txId));
             if (!tx) return alert('Không tìm thấy giao dịch.');
             tx.status = 'confirmed';
-            // Cập nhật prize pool
+            // Cập nhật prize pool (70% vào giải thưởng, 30% duy trì)
             const cfg = localDB.config || {};
             if (!cfg.prizePool) cfg.prizePool = { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
-            cfg.prizePool.total = (cfg.prizePool.total || 0) + (tx.amount || 5000);
+            cfg.prizePool.total = (cfg.prizePool.total || 0) + Math.round((tx.amount || 5000) * 0.7);
             if (localDB.config) localDB.config = cfg;
             if (useFirebase) {
                 try {

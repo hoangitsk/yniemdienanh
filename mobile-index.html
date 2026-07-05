@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        (function () {
+            if (typeof window.zaloJSV2 !== 'undefined') return;
+
+            var noop = function () { return undefined; };
+            window.zaloJSV2 = typeof Proxy === 'function'
+                ? new Proxy(noop, {
+                    get: function (_target, prop) {
+                        if (prop === 'then') return undefined;
+                        return window.zaloJSV2;
+                    },
+                    apply: noop
+                })
+                : {
+                    init: noop,
+                    ready: noop,
+                    share: noop,
+                    postMessage: noop
+                };
+        })();
+    </script>
     
     <!-- Firebase Compat SDKs (Hoạt động trực tiếp qua CDN, không cần cài đặt node_modules phức tạp) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -758,6 +780,21 @@
             color: var(--ok);
         }
 
+        .feedback-fab {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 90;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35), var(--glow);
+        }
+
+        .feedback-meta {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
         /* Form validation error feedback states */
         input.invalid, select.invalid, textarea.invalid {
             border-color: var(--danger) !important;
@@ -1063,12 +1100,21 @@
 
         /* PRIZE POOL WIDGET */
         .prize-pool {
-            background: linear-gradient(135deg, rgba(228,184,102,0.12) 0%, rgba(228,184,102,0.04) 100%);
-            border: 1px solid rgba(228,184,102,0.2);
-            border-radius: 20px; padding: 28px 32px;
-            max-width: 700px; margin: 0 auto;
+            background: linear-gradient(135deg, rgba(228,184,102,0.15) 0%, rgba(18,36,56,0.65) 100%);
+            border: 1px solid rgba(228,184,102,0.25);
+            border-radius: 20px; padding: 24px 30px;
+            max-width: 700px; margin: 20px auto;
             text-align: center;
             position: relative; overflow: hidden;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(228, 184, 102, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .prize-pool:hover {
+            transform: translateY(-2px);
+            border-color: rgba(228,184,102,0.45);
+            box-shadow: 0 16px 40px rgba(228,184,102,0.12), 0 12px 32px rgba(0, 0, 0, 0.4);
         }
         .prize-pool::before {
             content: ''; position: absolute; top: -50%; left: -50%;
@@ -1371,6 +1417,255 @@
                 font-size: clamp(2.8rem, 14vw, 5rem);
             }
         }
+
+        /* ================= NEW PREMIUM RESPONSIVE MOBILE STYLES ================= */
+        @media (max-width: 900px) {
+            .poster {
+                min-height: auto !important;
+                padding: 30px 20px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 24px !important;
+            }
+            .poster img {
+                position: static !important;
+                width: 90% !important;
+                max-width: 280px !important;
+                height: auto !important;
+                margin: 0 auto !important;
+            }
+            .poster .frame {
+                position: static !important;
+                width: 100% !important;
+                border-top: 1px solid var(--line) !important;
+                padding-top: 20px !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav .links {
+                display: flex !important;
+                position: absolute !important;
+                top: 100% !important;
+                left: 0 !important;
+                right: 0 !important;
+                background: rgba(5, 12, 20, 0.98) !important;
+                backdrop-filter: blur(20px) !important;
+                -webkit-backdrop-filter: blur(20px) !important;
+                flex-direction: column !important;
+                padding: 24px !important;
+                gap: 16px !important;
+                border-bottom: 1.5px solid rgba(224, 178, 98, 0.25) !important;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
+                align-items: stretch !important;
+                text-align: center !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                transform: translateY(-10px) !important;
+                pointer-events: none !important;
+                transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s !important;
+            }
+
+            nav .links.open {
+                opacity: 1 !important;
+                visibility: visible !important;
+                transform: translateY(0) !important;
+                pointer-events: auto !important;
+            }
+
+            /* Responsive Dashboard Side Menu */
+            .side {
+                flex-direction: row !important;
+                overflow-x: auto !important;
+                padding: 10px !important;
+                border-right: none !important;
+                border-bottom: 1px solid rgba(228, 184, 102, 0.15) !important;
+                white-space: nowrap !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .side::-webkit-scrollbar {
+                display: none !important;
+            }
+            .side a {
+                padding: 8px 14px !important;
+                font-size: 0.85rem !important;
+                border-radius: 20px !important;
+                border-bottom: none !important;
+            }
+            .side a.active {
+                background: rgba(228, 184, 102, 0.15) !important;
+                border-bottom-color: transparent !important;
+                color: var(--gold-light) !important;
+            }
+
+            /* Mobile Kanban Board */
+            .kanban-tabs-mobile {
+                display: flex !important;
+            }
+            .kanban {
+                display: block !important;
+            }
+            .kcol {
+                display: none !important;
+                margin-bottom: 0 !important;
+            }
+            .kcol.active-mobile {
+                display: block !important;
+            }
+
+            /* Responsive Tables for Mobile */
+            .table-wrap {
+                border: none !important;
+                background: transparent !important;
+            }
+            .table-wrap table, 
+            .table-wrap tbody, 
+            .table-wrap tr, 
+            .table-wrap td {
+                display: block !important;
+                width: 100% !important;
+            }
+            .table-wrap th {
+                display: none !important;
+            }
+            .table-wrap tr {
+                background: var(--navy-card) !important;
+                border: 1px solid rgba(228, 184, 102, 0.15) !important;
+                border-radius: 14px !important;
+                padding: 12px 16px !important;
+                margin-bottom: 16px !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            }
+            .table-wrap td {
+                border: none !important;
+                border-bottom: 1px dashed rgba(255, 255, 255, 0.05) !important;
+                padding: 10px 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                text-align: right !important;
+                font-size: 0.88rem !important;
+            }
+            .table-wrap td:last-child {
+                border-bottom: none !important;
+            }
+            .table-wrap td::before {
+                content: attr(data-label) !important;
+                font-weight: 700 !important;
+                color: var(--gold-light) !important;
+                text-align: left !important;
+                font-size: 0.78rem !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.5px !important;
+            }
+            .table-wrap td > select,
+            .table-wrap td > input,
+            .table-wrap td > button {
+                margin: 0 !important;
+                max-width: 60% !important;
+                text-align-last: right !important;
+            }
+            .table-wrap td > .btn {
+                width: auto !important;
+                display: inline-flex !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .prize-pool {
+                padding: 20px 16px !important;
+                border-radius: 16px !important;
+            }
+            .prize-pool .pp-amount {
+                font-size: 2.2rem !important;
+            }
+            .modal-box {
+                padding: 24px 16px !important;
+                border-radius: 16px !important;
+                max-height: 90vh !important;
+            }
+            label {
+                margin: 12px 0 4px !important;
+            }
+            .post-card {
+                padding: 16px 12px !important;
+                border-radius: 12px !important;
+                margin-bottom: 12px !important;
+            }
+            .post-header {
+                gap: 8px !important;
+            }
+            .chat-box {
+                padding: 12px 10px !important;
+                height: 350px !important;
+            }
+            .chat-msg {
+                max-width: 90% !important;
+                padding: 8px 12px !important;
+            }
+        }
+
+        /* Segmented Controls for Tabs */
+        .community-tabs {
+            display: flex;
+            background: rgba(13, 32, 52, 0.6);
+            border: 1px solid rgba(228, 184, 102, 0.15);
+            border-radius: 12px;
+            padding: 4px;
+            max-width: 480px;
+            margin: 0 auto 32px;
+            gap: 4px;
+        }
+        .community-tabs button {
+            flex: 1;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .community-tabs button.active {
+            background: var(--grad);
+            color: #050c14;
+            box-shadow: 0 4px 12px rgba(224, 178, 98, 0.2);
+        }
+
+        /* Mobile Kanban tabs */
+        .kanban-tabs-mobile {
+            display: none;
+            background: rgba(13, 32, 52, 0.6);
+            border: 1px solid rgba(228, 184, 102, 0.15);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 20px;
+        }
+        .kanban-tabs-mobile button {
+            flex: 1;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .kanban-tabs-mobile button.active {
+            background: var(--grad);
+            color: #050c14;
+            box-shadow: 0 4px 12px rgba(224, 178, 98, 0.2);
+        }
     </style>
 </head>
 
@@ -1432,8 +1727,10 @@
                 </div>
             </div>
 
+
             <!-- PRIZE POOL WIDGET -->
-            <div id="prizePoolHome" style="margin-top: 10px; margin-bottom: 40px"></div>
+            <div id="prizePoolHome" style="margin-top: 40px; margin-bottom: 40px"></div>
+
 
             <!-- EVENTS ONGOING/UPCOMING -->
             <section id="events">
@@ -1463,7 +1760,7 @@
                     <div class="card">
                         <!-- Sửa chi phí vận hành btc dùng chung chi phí giải thưởng + ghi 5k/thí sinh -->
                         <h3>🤝 Phi lợi nhuận & Minh bạch</h3>
-                        <p>100% minh bạch tài chính. Lệ phí tham gia là 5.000đ cho 1 thí sinh khi tham gia 1 sự kiện. Số lượng thí sinh tham gia càng đông, giải thưởng càng lớn.</p>
+                        <p>100% minh bạch tài chính. Khoản góp quỹ dự án là 5.000đ/thí sinh khi đăng ký tham gia sự kiện. Trong đó, 70% đóng góp trực tiếp vào Quỹ giải thưởng, 30% còn lại dùng làm chi phí duy trì, vận hành dự án.</p>
                     </div>
                 </div>
 
@@ -1513,7 +1810,7 @@
                         <div class="card">
                             <span class="pill">Thành viên dự án</span>
                             <h3>Tạo tài khoản để tham gia cộng đồng</h3>
-                            <p>Thành viên đăng ký bằng Gmail, bổ sung thông tin học tập/liên hệ và xác thực email trước khi vào khu vực nội bộ. Phí tham gia dự kiến 5.000đ sẽ được dùng cho quỹ giải thưởng và vận hành minh bạch.</p>
+                            <p>Thành viên đăng ký bằng Gmail, bổ sung thông tin học tập/liên hệ và xác thực email trước khi vào khu vực nội bộ. Khoản góp quỹ 5.000đ (với 70% cộng vào Quỹ giải thưởng và 30% dành cho chi phí duy trì dự án) giúp đảm bảo sự minh bạch và bền vững của sân chơi.</p>
                             <button class="btn btn-line" style="margin-top:20px" onclick="openModal('authModal');toggleAuth(false)">Tạo Tài Khoản</button>
                         </div>
                     </div>
@@ -1550,10 +1847,10 @@
                 <h2>🌐 Cộng đồng Ý Niệm Điện Ảnh</h2>
                 <p>Kết nối, chia sẻ và cùng nhau phát triển đam mê điện ảnh.</p>
             </div>
-            <div class="community-tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:32px;flex-wrap:wrap">
-                <button class="btn btn-gold btn-sm" onclick="showCommunityTab('feed')" id="ctab-feed">📰 Bảng tin</button>
-                <button class="btn btn-line btn-sm" onclick="showCommunityTab('chat')" id="ctab-chat">💬 Chat</button>
-                <button class="btn btn-line btn-sm" onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người</button>
+            <div class="community-tabs">
+                <button class="active" onclick="showCommunityTab('feed')" id="ctab-feed">📰 Bảng tin</button>
+                <button onclick="showCommunityTab('chat')" id="ctab-chat">💬 Chat</button>
+                <button onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người</button>
             </div>
             <div id="community-content">
                 <div id="communityFeed">
@@ -1607,6 +1904,8 @@
             <p>Ý Niệm Điện Ảnh là dự án phi lợi nhuận dành cho thế hệ trẻ. "Nơi những khung hình đầu tiên cất lời" ✨</p>
         </footer>
     </div>
+
+    <button class="btn btn-gold feedback-fab" onclick="openFeedback()">Góp ý / báo lỗi</button>
 
     <!-- ============ AUTHENTICATION MODAL (ĐĂNG NHẬP / ĐĂNG KÝ) ============ -->
     <div class="modal" id="authModal">
@@ -1765,6 +2064,36 @@
         </div>
     </div>
 
+    <!-- ============ FEEDBACK MODAL ============ -->
+    <div class="modal" id="feedbackModal">
+        <div class="modal-box">
+            <span class="close-x" onclick="closeModal('feedbackModal')">✕</span>
+            <h3>Góp ý / báo lỗi</h3>
+
+            <label for="fbType">Loại phản hồi *</label>
+            <select id="fbType">
+                <option value="bug">Báo lỗi website</option>
+                <option value="idea">Góp ý cải thiện</option>
+                <option value="content">Góp ý nội dung</option>
+                <option value="other">Khác</option>
+            </select>
+
+            <label for="fbName">Tên của bạn</label>
+            <input id="fbName" placeholder="Có thể bỏ trống">
+
+            <label for="fbContact">Email / Zalo liên hệ</label>
+            <input id="fbContact" placeholder="Có thể bỏ trống nếu không cần phản hồi">
+
+            <label for="fbMessage">Nội dung *</label>
+            <textarea id="fbMessage" placeholder="Mô tả lỗi bạn gặp, góp ý của bạn, hoặc điều bạn muốn đội ngũ cải thiện..."></textarea>
+            <div class="error-hint">Nội dung feedback cần có ít nhất 10 ký tự.</div>
+
+            <div class="feedback-meta">Hệ thống sẽ lưu kèm đường dẫn trang hiện tại và thời điểm gửi để BTC dễ kiểm tra lỗi.</div>
+            <div class="form-msg" id="fbMsg"></div>
+            <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitFeedback()">Gửi phản hồi</button>
+        </div>
+    </div>
+
     <!-- PROFILE MODAL -->
     <div class="modal" id="profileModal">
         <div class="modal-box" style="max-width:560px">
@@ -1844,6 +2173,7 @@
                     { id: 3, title: "Chuyến tàu lúc hoàng hôn", team: "Nhóm Hạt Cát", votes: 35, url: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
                 ],
                 votes: [],
+                feedback: [],
                 config: { stage: 'Xây dựng đội ngũ' },
                 seq: 100
             };
@@ -1875,7 +2205,7 @@
                 useFirebase = false;
             }
 
-            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], messages: [], posts: [], comments: [], transactions: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 } }, seq: 100 };
+            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 } }, seq: 100 };
 
             if (useFirebase) {
                 try {
@@ -1889,17 +2219,21 @@
                     // Lắng nghe auth state để tải các dữ liệu nội bộ sau khi đăng nhập thành công
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
-                            if (!firebaseUser.emailVerified && firebaseUser.email.toLowerCase() !== PROJECT_ADMIN_EMAIL) {
-                                await authInstance.signOut();
-                                return;
-                            }
                             document.getElementById('loadingOverlay').style.display = 'flex';
                             try {
+                                const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
+                                const userData = userDoc.exists ? userDoc.data() : null;
+                                const isAdminApproved = userData?.emailVerified === true;
+                                if (!firebaseUser.emailVerified && !isAdminApproved && firebaseUser.email.toLowerCase() !== PROJECT_ADMIN_EMAIL) {
+                                    await authInstance.signOut();
+                                    document.getElementById('loadingOverlay').style.display = 'none';
+                                    return;
+                                }
+
                                 await loadInternalDataFromFirestore(firebaseUser.uid);
                                 
-                                const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
                                 if (userDoc.exists) {
-                                    const u = userDoc.data();
+                                    const u = userData;
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
                                     session = { id: firebaseUser.uid, name: u.name, email: u.email, role: u.role, dept: u.dept, phone: u.phone, school: u.school, className: u.className, interest: u.interest, intro: u.intro };
                                     session.role = effectiveRole;
@@ -1970,6 +2304,7 @@
                 if (!localDB.submissions) localDB.submissions = getMockData().submissions;
                 if (!localDB.votes) localDB.votes = [];
                 if (!localDB.messages) localDB.messages = [];
+                if (!localDB.feedback) localDB.feedback = [];
                 
                 localDB.users = localDB.users.filter(u => !['admin@ynda.vn', 'harlan@ynda.vn'].includes(String(u.email || '').toLowerCase()));
                 const hasProjectAdmin = localDB.users.some(u => u.email && u.email.toLowerCase() === 'yniemdienanh@gmail.com');
@@ -2009,7 +2344,7 @@
         }
 
         async function loadInternalDataFromFirestore(uid) {
-            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'messages', 'posts', 'comments', 'transactions'];
+            const collections = ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await dbInstance.collection(col).get();
@@ -2100,10 +2435,35 @@
             }, 80); 
         }
         function toggleMobileMenu() {
-            document.getElementById('navLinks').classList.toggle('open');
+            const navLinks = document.getElementById('navLinks');
+            const toggleBtn = document.querySelector('.menu-toggle');
+            navLinks.classList.toggle('open');
+            if (toggleBtn) {
+                toggleBtn.textContent = navLinks.classList.contains('open') ? '✕' : '☰';
+            }
         }
         function closeMobileMenu() {
-            document.getElementById('navLinks').classList.remove('open');
+            const navLinks = document.getElementById('navLinks');
+            const toggleBtn = document.querySelector('.menu-toggle');
+            if (navLinks) navLinks.classList.remove('open');
+            if (toggleBtn) toggleBtn.textContent = '☰';
+        }
+
+        // Chuyển tab Kanban trên giao diện di động
+        function switchKanbanMobile(statusKey) {
+            window.currentKanbanMobileTab = statusKey;
+            ['todo', 'doing', 'done'].forEach(s => {
+                const btn = document.getElementById('ktab-' + s);
+                const col = document.getElementById('kcol-' + s);
+                if (btn) {
+                    if (s === statusKey) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+                if (col) {
+                    if (s === statusKey) col.classList.add('active-mobile');
+                    else col.classList.remove('active-mobile');
+                }
+            });
         }
 
         // Cập nhật hiển thị Giai đoạn
@@ -2352,7 +2712,16 @@
             try {
                 if (useFirebase) {
                     const cred = await authInstance.signInWithEmailAndPassword(email, pass);
+                    let isAdminApproved = false;
                     if (!cred.user.emailVerified && email !== PROJECT_ADMIN_EMAIL) {
+                        try {
+                            const userDoc = await dbInstance.collection('users').doc(cred.user.uid).get();
+                            isAdminApproved = userDoc.exists && userDoc.data().emailVerified === true;
+                        } catch (verifyErr) {
+                            console.warn('Không thể kiểm tra xác thực admin:', verifyErr);
+                        }
+                    }
+                    if (!cred.user.emailVerified && !isAdminApproved && email !== PROJECT_ADMIN_EMAIL) {
                         await cred.user.sendEmailVerification();
                         await authInstance.signOut();
                         alert('📧 EMAIL CHƯA XÁC THỰC!\n\nMột email xác thực mới đã được gửi đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực (kiểm tra cả Spam) rồi đăng nhập lại.');
@@ -2702,9 +3071,81 @@
             }
         }
 
+        function openFeedback() {
+            const msg = document.getElementById('fbMsg');
+            const messageEl = document.getElementById('fbMessage');
+            if (msg) {
+                msg.className = 'form-msg';
+                msg.textContent = '';
+            }
+            if (messageEl) messageEl.classList.remove('invalid');
+            if (session) {
+                const nameEl = document.getElementById('fbName');
+                const contactEl = document.getElementById('fbContact');
+                if (nameEl && !nameEl.value) nameEl.value = session.name || '';
+                if (contactEl && !contactEl.value) contactEl.value = session.email || '';
+            }
+            openModal('feedbackModal');
+        }
+
+        async function submitFeedback() {
+            const typeEl = document.getElementById('fbType');
+            const nameEl = document.getElementById('fbName');
+            const contactEl = document.getElementById('fbContact');
+            const messageEl = document.getElementById('fbMessage');
+            const msg = document.getElementById('fbMsg');
+
+            msg.className = 'form-msg err';
+            msg.textContent = '';
+            messageEl.classList.remove('invalid');
+
+            const message = messageEl.value.trim();
+            if (message.length < 10) {
+                messageEl.classList.add('invalid');
+                msg.textContent = 'Vui lòng nhập nội dung feedback ít nhất 10 ký tự.';
+                return;
+            }
+
+            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const item = {
+                id,
+                type: typeEl.value,
+                name: nameEl.value.trim() || 'Ẩn danh',
+                contact: contactEl.value.trim(),
+                message,
+                page: window.location.href,
+                userAgent: navigator.userAgent,
+                userId: session?.id || '',
+                userEmail: session?.email || '',
+                status: 'new',
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                localDB.feedback = localDB.feedback || [];
+                localDB.feedback.push(item);
+                if (useFirebase) {
+                    await dbInstance.collection('feedback').doc(String(item.id)).set(item);
+                } else {
+                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
+                }
+
+                msg.className = 'form-msg ok';
+                msg.textContent = 'Đã gửi phản hồi. Cảm ơn bạn đã giúp website tốt hơn!';
+                messageEl.value = '';
+                setTimeout(() => {
+                    closeModal('feedbackModal');
+                    msg.textContent = '';
+                }, 2200);
+            } catch (e) {
+                localDB.feedback = (localDB.feedback || []).filter(x => x.id !== item.id);
+                msg.textContent = 'Có lỗi khi gửi phản hồi: ' + (e.message || 'Không xác định');
+            }
+        }
+
         // Bổ sung listener lắng nghe sự kiện nhập liệu để tự động xóa lỗi viền đỏ khi người dùng gõ
         setTimeout(() => {
-            ['apName', 'apEmail', 'apPhone', 'apIntro'].forEach(id => {
+            ['apName', 'apEmail', 'apPhone', 'apIntro', 'fbMessage'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.addEventListener('input', () => el.classList.remove('invalid'));
@@ -2723,6 +3164,7 @@
             announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'member'] },
             budget: { icon: '💰', label: 'Sổ tay Tài chính', roles: ['admin', 'organizer'] },
             transactions: { icon: '💳', label: 'Giao dịch & Quỹ', roles: ['admin', 'organizer'] },
+            feedback: { icon: '💬', label: 'Feedback & Báo lỗi', roles: ['admin', 'organizer'] },
             docs: { icon: '📁', label: 'Thư viện Tài liệu', roles: ['admin', 'organizer', 'member'] },
             accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
         };
@@ -2832,6 +3274,8 @@
                 tasks() {
                     const cols = { todo: '📋 Cần thực hiện', doing: '⚙️ Đang tiến hành', done: '✔️ Hoàn thành' };
                     const userOpts = d.users.map(u => `<option>${esc(u.name)}</option>`).join('');
+                    const activeCol = window.currentKanbanMobileTab || 'todo';
+                    window.currentKanbanMobileTab = activeCol;
                     
                     main.innerHTML = `
                         <h2>✅ Bảng công việc (Kanban)</h2>
@@ -2860,11 +3304,17 @@
                             </div>
                         ` : ''}
                         
+                        <div class="kanban-tabs-mobile">
+                            <button id="ktab-todo" class="${activeCol === 'todo' ? 'active' : ''}" onclick="switchKanbanMobile('todo')">📋 Cần làm</button>
+                            <button id="ktab-doing" class="${activeCol === 'doing' ? 'active' : ''}" onclick="switchKanbanMobile('doing')">⚙️ Đang chạy</button>
+                            <button id="ktab-done" class="${activeCol === 'done' ? 'active' : ''}" onclick="switchKanbanMobile('done')">✔️ Đã xong</button>
+                        </div>
+                        
                         <div class="kanban">
                             ${Object.entries(cols).map(([statusKey, label]) => {
                                 const listInStatus = d.tasks.filter(t => t.status === statusKey);
                                 return `
-                                    <div class="kcol" ondragover="allowDrop(event)" ondrop="drop(event, '${statusKey}')">
+                                    <div class="kcol ${statusKey === activeCol ? 'active-mobile' : ''}" id="kcol-${statusKey}" ondragover="allowDrop(event)" ondrop="drop(event, '${statusKey}')">
                                         <h4>${label} <span>${listInStatus.length}</span></h4>
                                         ${listInStatus.map(t => `
                                             <div class="task pr-${t.priority}" draggable="true" ondragstart="drag(event, ${t.id})" id="task-card-${t.id}">
@@ -2951,17 +3401,17 @@
                                 </tr>
                                 ${d.events.map(e => `
                                     <tr>
-                                        <td><b>${esc(e.title)}</b></td>
-                                        <td>${e.date}</td>
-                                        <td>${esc(e.loc)}</td>
-                                        <td>
+                                        <td data-label="Tên chương trình"><b>${esc(e.title)}</b></td>
+                                        <td data-label="Ngày tổ chức">${e.date}</td>
+                                        <td data-label="Địa điểm">${esc(e.loc)}</td>
+                                        <td data-label="Trạng thái">
                                             <select style="padding:6px;font-size:0.85rem" onchange="updateEventStatus(${e.id}, this.value)">
                                                 <option value="soon" ${e.status === 'soon' ? 'selected' : ''}>Sắp diễn ra</option>
                                                 <option value="live" ${e.status === 'live' ? 'selected' : ''}>Đang diễn ra</option>
                                                 <option value="done" ${e.status === 'done' ? 'selected' : ''}>Đã kết thúc</option>
                                             </select>
                                         </td>
-                                        <td>
+                                        <td data-label="Hành động">
                                             <button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteEventItem(${e.id})">🗑 Xóa</button>
                                         </td>
                                     </tr>
@@ -2990,12 +3440,12 @@
                                     </tr>
                                     ${pendings.map(a => `
                                         <tr>
-                                            <td><span class="chip">${a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'}</span></td>
-                                            <td><b>${esc(a.name)}</b></td>
-                                            <td style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
-                                            <td>${esc(a.dept) || 'Cộng đồng'}</td>
-                                            <td style="font-size:0.82rem;color:var(--text-muted)">${esc(a.intro)}</td>
-                                            <td>
+                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'}</span></td>
+                                            <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
+                                            <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
+                                            <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'}</td>
+                                            <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">${esc(a.intro)}</td>
+                                            <td data-label="Quyết định">
                                                 <button class="btn btn-gold btn-sm" onclick="approveApplication(${a.id})">✔ Duyệt</button>
                                                 <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication(${a.id})">✕ Từ chối</button>
                                             </td>
@@ -3045,9 +3495,9 @@
                                     </tr>
                                     ${d.users.map(u => `
                                         <tr>
-                                            <td><b>${esc(u.name)}</b></td>
-                                            <td>${esc(u.email)}</td>
-                                            <td>
+                                            <td data-label="Họ và tên"><b>${esc(u.name)}</b></td>
+                                            <td data-label="Email">${esc(u.email)}</td>
+                                            <td data-label="Phân quyền truy cập">
                                                 ${(session.role === 'admin' && String(u.id) !== String(session.id)) ? `
                                                     <select style="padding:6px" onchange="updateUserRole('${u.id}', this.value)">
                                                         <option value="member" ${u.role === 'member' ? 'selected' : ''}>Thành viên</option>
@@ -3056,25 +3506,25 @@
                                                     </select>
                                                 ` : u.role === 'admin' ? '👑 Quản trị viên (Admin)' : u.role === 'organizer' ? '💼 Ban Tổ Chức' : '🍿 Thành viên tham gia'}
                                             </td>
-                                <td>
-                                                    ${(session.role === 'admin' && String(u.id) !== String(session.id)) ? `
-                                                        <select style="padding:6px" onchange="updateUserDept('${u.id}', this.value)">
-                                                            <option value="">Không có</option>
-                                                            <option value="Nội dung & Chuyên môn" ${u.dept === 'Nội dung & Chuyên môn' ? 'selected' : ''}>Nội dung</option>
-                                                            <option value="Truyền thông & Sáng tạo" ${u.dept === 'Truyền thông & Sáng tạo' ? 'selected' : ''}>Truyền thông</option>
-                                                            <option value="Đối ngoại & Tài trợ" ${u.dept === 'Đối ngoại & Tài trợ' ? 'selected' : ''}>Đối ngoại</option>
-                                                            <option value="Kỹ thuật & Vận hành" ${u.dept === 'Kỹ thuật & Vận hành' ? 'selected' : ''}>Kỹ thuật</option>
-                                                            <option value="Nhân sự & Vận hành" ${u.dept === 'Nhân sự & Vận hành' ? 'selected' : ''}>Nhân sự</option>
-                                                            <option value="Tài chính - Minh bạch" ${u.dept === 'Tài chính - Minh bạch' ? 'selected' : ''}>Tài chính</option>
-                                                        </select>
-                                                    ` : esc(u.dept) || '—'}
-                                                </td>
-                                                <td style="font-size:0.8rem">
-                                                    ${renderEvalBadge(u)}
-                                                    ${isOrg ? `<button class="btn btn-sm" style="margin-top:4px;padding:3px 8px;font-size:0.7rem;background:rgba(228,184,102,0.15);color:var(--gold-light);border:1px solid rgba(228,184,102,0.2);border-radius:6px;cursor:pointer" onclick="openRateModal('${u.id}')">⭐ Đánh giá</button>` : ''}
-                                                </td>
-                                            </tr>
-                                        `).join('')}
+                                            <td data-label="Phòng ban phụ trách">
+                                                ${(session.role === 'admin' && String(u.id) !== String(session.id)) ? `
+                                                    <select style="padding:6px" onchange="updateUserDept('${u.id}', this.value)">
+                                                        <option value="">Không có</option>
+                                                        <option value="Nội dung & Chuyên môn" ${u.dept === 'Nội dung & Chuyên môn' ? 'selected' : ''}>Nội dung</option>
+                                                        <option value="Truyền thông & Sáng tạo" ${u.dept === 'Truyền thông & Sáng tạo' ? 'selected' : ''}>Truyền thông</option>
+                                                        <option value="Đối ngoại & Tài trợ" ${u.dept === 'Đối ngoại & Tài trợ' ? 'selected' : ''}>Đối ngoại</option>
+                                                        <option value="Kỹ thuật & Vận hành" ${u.dept === 'Kỹ thuật & Vận hành' ? 'selected' : ''}>Kỹ thuật</option>
+                                                        <option value="Nhân sự & Vận hành" ${u.dept === 'Nhân sự & Vận hành' ? 'selected' : ''}>Nhân sự</option>
+                                                        <option value="Tài chính - Minh bạch" ${u.dept === 'Tài chính - Minh bạch' ? 'selected' : ''}>Tài chính</option>
+                                                    </select>
+                                                ` : esc(u.dept) || '—'}
+                                            </td>
+                                            <td data-label="Đánh giá" style="font-size:0.8rem">
+                                                ${renderEvalBadge(u)}
+                                                ${isOrg ? `<button class="btn btn-sm" style="margin-top:4px;padding:3px 8px;font-size:0.7rem;background:rgba(228,184,102,0.15);color:var(--gold-light);border:1px solid rgba(228,184,102,0.2);border-radius:6px;cursor:pointer" onclick="openRateModal('${u.id}')">⭐ Đánh giá</button>` : ''}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
                                     </table>
                                 </div>
                             </div>
@@ -3127,12 +3577,12 @@
                                     <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>
                                     ${pending.map(t => `
                                         <tr>
-                                            <td><b>${esc(t.userName)}</b></td>
-                                            <td>${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
-                                            <td style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
-                                            <td style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
-                                            <td style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
-                                            <td><button class="btn btn-gold btn-sm" onclick="confirmTx(${t.id})">✔ Xác nhận</button></td>
+                                            <td data-label="Người dùng"><b>${esc(t.userName)}</b></td>
+                                            <td data-label="Loại giao dịch">${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
+                                            <td data-label="Số tiền" style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
+                                            <td data-label="Memo" style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
+                                            <td data-label="Thời gian" style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
+                                            <td data-label="Thao tác"><button class="btn btn-gold btn-sm" onclick="confirmTx(${t.id})">✔ Xác nhận</button></td>
                                         </tr>
                                     `).join('')}
                                 </table>
@@ -3146,12 +3596,12 @@
                                     <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th>Memo</th><th>Thời gian</th></tr>
                                     ${[...txs].reverse().map(t => `
                                         <tr>
-                                            <td><b>${esc(t.userName)}</b></td>
-                                            <td>${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
-                                            <td style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
-                                            <td>${t.status === 'confirmed' ? '<span style="color:#63d19e">✔ Đã xác nhận</span>' : '<span style="color:#fbbf24">⏳ Chờ</span>'}</td>
-                                            <td style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
-                                            <td style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
+                                            <td data-label="Người dùng"><b>${esc(t.userName)}</b></td>
+                                            <td data-label="Loại giao dịch">${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
+                                            <td data-label="Số tiền" style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
+                                            <td data-label="Trạng thái">${t.status === 'confirmed' ? '<span style="color:#63d19e">✔ Đã xác nhận</span>' : '<span style="color:#fbbf24">⏳ Chờ</span>'}</td>
+                                            <td data-label="Memo" style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
+                                            <td data-label="Thời gian" style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
                                         </tr>
                                     `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có giao dịch nào.</td></tr>'}
                                 </table>
@@ -3198,11 +3648,11 @@
                                 </tr>
                                 ${[...d.budget].reverse().map(b => `
                                     <tr>
-                                        <td>${b.date}</td>
-                                        <td>${esc(b.label)}</td>
-                                        <td>${b.type === 'in' ? `<span style="color:var(--ok);font-weight:600">Thu quỹ</span>` : `<span style="color:var(--danger);font-weight:600">Chi phí</span>`}</td>
-                                        <td>${money(b.amount)}</td>
-                                        <td><button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteBudgetLedger(${b.id})">🗑</button></td>
+                                        <td data-label="Thời gian">${b.date}</td>
+                                        <td data-label="Nội dung thu chi">${esc(b.label)}</td>
+                                        <td data-label="Loại hình">${b.type === 'in' ? `<span style="color:var(--ok);font-weight:600">Thu quỹ</span>` : `<span style="color:var(--danger);font-weight:600">Chi phí</span>`}</td>
+                                        <td data-label="Số tiền giao dịch">${money(b.amount)}</td>
+                                        <td data-label="Xóa"><button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteBudgetLedger(${b.id})">🗑</button></td>
                                     </tr>
                                 `).join('')}
                             </table>
@@ -3239,6 +3689,43 @@
                     `;
                 },
 
+                feedback() {
+                    const items = [...(d.feedback || [])].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+                    const typeLabel = { bug: 'Báo lỗi', idea: 'Góp ý cải thiện', content: 'Góp ý nội dung', other: 'Khác' };
+                    const newCount = items.filter(f => (f.status || 'new') === 'new').length;
+                    main.innerHTML = `
+                        <h2>💬 Feedback & Báo lỗi</h2>
+                        <div class="stats">
+                            <div class="stat"><div class="num">${items.length}</div><div class="lbl">Tổng phản hồi</div></div>
+                            <div class="stat"><div class="num" style="color:var(--gold-light)">${newCount}</div><div class="lbl">Chưa xử lý</div></div>
+                            <div class="stat"><div class="num" style="color:var(--ok)">${items.length - newCount}</div><div class="lbl">Đã xem</div></div>
+                        </div>
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">Danh sách phản hồi mới nhất</h3>
+                            ${items.map(f => `
+                                <div style="padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+                                    <div style="display:flex;gap:10px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap">
+                                        <div>
+                                            <span class="chip">${typeLabel[f.type] || 'Feedback'}</span>
+                                            ${(f.status || 'new') === 'new' ? '<span class="chip" style="color:var(--gold-light);margin-left:6px">Mới</span>' : '<span class="chip" style="color:var(--ok);margin-left:6px">Đã xem</span>'}
+                                        </div>
+                                        <span style="color:var(--text-muted);font-size:0.78rem">${f.createdAt ? new Date(f.createdAt).toLocaleString('vi-VN') : ''}</span>
+                                    </div>
+                                    <p style="margin-top:10px;color:#e2e8f0;white-space:pre-wrap">${esc(f.message || '')}</p>
+                                    <div class="feedback-meta">
+                                        Người gửi: ${esc(f.name || 'Ẩn danh')}${f.contact ? ` · Liên hệ: ${esc(f.contact)}` : ''}${f.userEmail ? ` · Tài khoản: ${esc(f.userEmail)}` : ''}<br>
+                                        Trang: ${f.page ? `<a href="${esc(f.page)}" target="_blank" style="color:var(--gold-light)">${esc(f.page)}</a>` : 'Không rõ'}
+                                    </div>
+                                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                                        ${(f.status || 'new') === 'new' ? `<button class="btn btn-gold btn-sm" onclick="markFeedbackSeen('${esc(f.id)}')">Đánh dấu đã xem</button>` : ''}
+                                        <button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteFeedbackItem('${esc(f.id)}')">Xóa</button>
+                                    </div>
+                                </div>
+                            `).join('') || '<p style="color:var(--text-muted)">Chưa có feedback nào.</p>'}
+                        </div>
+                    `;
+                },
+
                 accounts() {
                     main.innerHTML = `
                         <h2>🔐 Quản lý tài khoản</h2>
@@ -3257,13 +3744,13 @@
                                     </tr>
                                     ${d.users.map(u => `
                                         <tr>
-                                            <td>${u.id}</td>
-                                            <td><b>${esc(u.name || 'N/A')}</b></td>
-                                            <td>${esc(u.email)}</td>
-                                            <td>${u.role === 'admin' ? '👑 Admin' : u.role === 'organizer' ? '💼 BTC' : '👤 Thành viên'}</td>
-                                            <td>${esc(u.dept) || '—'}</td>
-                                            <td>${u.emailVerified ? '<span style="color:var(--ok)">✅ Đã XT</span>' : '<span style="color:var(--danger)">⏳ Chưa XT</span>'}</td>
-                                            <td>
+                                            <td data-label="ID">${u.id}</td>
+                                            <td data-label="Họ tên"><b>${esc(u.name || 'N/A')}</b></td>
+                                            <td data-label="Email">${esc(u.email)}</td>
+                                            <td data-label="Vai trò">${u.role === 'admin' ? '👑 Admin' : u.role === 'organizer' ? '💼 BTC' : '👤 Thành viên'}</td>
+                                            <td data-label="Phòng ban">${esc(u.dept) || '—'}</td>
+                                            <td data-label="Xác thực">${u.emailVerified ? '<span style="color:var(--ok)">✅ Đã XT</span>' : '<span style="color:var(--danger)">⏳ Chưa XT</span>'}</td>
+                                            <td data-label="Thao tác">
                                                 ${String(u.id) !== String(session.id) ? `
                                                     <button class="btn btn-line btn-sm" style="font-size:0.7rem;padding:4px 8px" onclick="adminResetPass('${esc(u.email)}')">🔑 Reset Pass</button>
                                                     <button class="btn btn-line btn-sm" style="font-size:0.7rem;padding:4px 8px;color:var(--ok);border-color:var(--ok)" onclick="adminVerifyUser('${u.id}')">✅ Xác thực</button>
@@ -3297,6 +3784,21 @@
         }
 
         // ================= DASHBOARD ACTIONS =================
+        async function markFeedbackSeen(id) {
+            const item = (localDB.feedback || []).find(f => String(f.id) === String(id));
+            if (!item) return;
+            item.status = 'seen';
+            item.seenAt = new Date().toISOString();
+            await saveItem('feedback', item);
+            renderTab('feedback');
+        }
+
+        async function deleteFeedbackItem(id) {
+            if (!confirm('Xóa feedback này?')) return;
+            await deleteItemFromDB('feedback', id);
+            renderTab('feedback');
+        }
+
         async function addTask() {
             const title = document.getElementById('tkTitle').value.trim();
             const assignee = document.getElementById('tkAss').value;
@@ -3777,7 +4279,10 @@
             ['feed', 'chat', 'members'].forEach(t => {
                 const btn = document.getElementById('ctab-' + t);
                 const pane = document.getElementById('community' + t.charAt(0).toUpperCase() + t.slice(1));
-                if (btn) btn.className = t === tab ? 'btn btn-gold btn-sm' : 'btn btn-line btn-sm';
+                if (btn) {
+                    if (t === tab) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
                 if (pane) pane.style.display = t === tab ? 'block' : 'none';
             });
             if (tab === 'feed') renderFeed();
@@ -3910,8 +4415,8 @@
                             <span>Mục tiêu: ${fmt(pp.target)}</span>
                         </div>
                     </div>
-                    <div style="margin-top:14px;font-size:0.8rem;color:var(--text-muted)">
-                        📌 Mỗi lượt đăng ký & bình chọn (5.000đ) đều được cộng trực tiếp vào quỹ giải thưởng
+                    <div style="margin-top:14px;font-size:0.82rem;color:var(--gold-light);line-height:1.4">
+                        📌 <b>Góp quỹ dự án & Bình chọn (5.000đ/lượt):</b> 70% (3.500đ) cộng trực tiếp vào Quỹ giải thưởng, 30% (1.500đ) phục vụ chi phí duy trì hoạt động dự án.
                     </div>
                 </div>
             `;
@@ -3929,7 +4434,7 @@
             const memo = type === 'registration' ? 'Lephidangky' : 'Vote_' + (extra?.submissionId || '');
             const qrUrl = 'https://api.vietqr.io/image/970422-0337957054-RsBLi8C.jpg?accountName=NGUYEN%20MINH%20HOANG&amount=' + fee + '&addInfo=' + memo;
             modal.innerHTML = `
-                <h3 style="margin-bottom:16px">💳 Thanh toán phí ${type === 'registration' ? 'đăng ký' : 'bình chọn'}</h3>
+                <h3 style="margin-bottom:16px">💳 Thanh toán ${type === 'registration' ? 'khoản góp quỹ tham gia' : 'lượt bình chọn'}</h3>
                 <div class="qr-box">
                     <div class="qr-amount">${fee.toLocaleString('vi-VN')}đ</div>
                     <div class="qr-info">Quét mã QR bằng app ngân hàng để chuyển khoản</div>
@@ -3943,6 +4448,9 @@
                     <div id="qrCountdown" class="qr-countdown">⏳ Chờ xác nhận... 05:00</div>
                     <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
                         Sau khi chuyển khoản, admin sẽ xác nhận trong thời gian sớm nhất.
+                        <div style="margin-top:8px;color:var(--gold-light);line-height:1.4">
+                            * Khoản đóng góp (5.000đ) sẽ được phân bổ: 70% (3.500đ) trực tiếp vào Quỹ giải thưởng và 30% (1.500đ) cho chi phí duy trì hoạt động dự án.
+                        </div>
                         ${type === 'vote' ? '<br>👉 <b>Lưu ý:</b> Bạn cần <a onclick="openModal(\'authModal\');toggleAuth(true)" style="cursor:pointer;color:var(--gold);font-weight:600">đăng nhập</a> để vote được ghi nhận!' : ''}
                     </div>
                 </div>
@@ -3994,10 +4502,10 @@
             const tx = (localDB.transactions || []).find(t => String(t.id) === String(txId));
             if (!tx) return alert('Không tìm thấy giao dịch.');
             tx.status = 'confirmed';
-            // Cập nhật prize pool
+            // Cập nhật prize pool (70% vào giải thưởng, 30% duy trì)
             const cfg = localDB.config || {};
             if (!cfg.prizePool) cfg.prizePool = { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
-            cfg.prizePool.total = (cfg.prizePool.total || 0) + (tx.amount || 5000);
+            cfg.prizePool.total = (cfg.prizePool.total || 0) + Math.round((tx.amount || 5000) * 0.7);
             if (localDB.config) localDB.config = cfg;
             if (useFirebase) {
                 try {

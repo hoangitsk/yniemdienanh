@@ -4,3 +4,7 @@ __pycache__/
 Thumbs.db
 .env
 *.egg-info/
+demo payos/
+*.zip
+*.7z
+*.rar

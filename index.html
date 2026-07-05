@@ -2529,6 +2529,17 @@
 
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
+                            if (!useFirebase) {
+                                const localUser = localDB.users.find(u => u.email && u.email.toLowerCase() === firebaseUser.email.toLowerCase());
+                                if (localUser) {
+                                    session = { id: firebaseUser.uid, name: localUser.name, email: firebaseUser.email, role: localUser.role || 'member', dept: localUser.dept || '' };
+                                } else {
+                                    session = { id: firebaseUser.uid, name: firebaseUser.displayName || 'Thành viên mới', email: firebaseUser.email, role: 'member', dept: '' };
+                                }
+                                sessionStorage.setItem('ynda_user', JSON.stringify(session));
+                                renderNav(); renderFeed(); renderPublicChat(); renderAllPrizePools(); updateStageDisplay(); renderAllContent();
+                                return;
+                            }
                             document.getElementById('loadingOverlay').style.display = 'flex';
                             const loadingTimeout = setTimeout(() => {
                                 document.getElementById('loadingOverlay').style.display = 'none';
@@ -2546,7 +2557,7 @@
                                 const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
                                 const userData = userDoc.exists ? userDoc.data() : null;
 
-                                await loadInternalDataFromFirestore(firebaseUser.uid, session.role);
+                                await loadInternalDataFromFirestore(firebaseUser.uid, session ? session.role : 'member');
 
                                 if (userDoc.exists) {
                                     const u = userData;
@@ -2648,29 +2659,39 @@
         }
 
         async function loadPublicEventsFromFirestore() {
-            const snap = await firestoreWithTimeout(dbInstance.collection('events').get());
-            localDB.events = [];
-            snap.forEach(doc => {
-                let docData = doc.data();
-                if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
-                    docData.id = parseInt(docData.id);
-                }
-                localDB.events.push(docData);
-            });
+            if (!useFirebase || !dbInstance) return;
+            try {
+                const snap = await firestoreWithTimeout(dbInstance.collection('events').get());
+                localDB.events = [];
+                snap.forEach(doc => {
+                    let docData = doc.data();
+                    if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
+                        docData.id = parseInt(docData.id);
+                    }
+                    localDB.events.push(docData);
+                });
+            } catch (e) {
+                console.warn('Không thể đọc sự kiện:', e.message || e);
+            }
         }
 
         async function loadPublicSubmissionsFromFirestore() {
-            const snap = await firestoreWithTimeout(dbInstance.collection('submissions').get());
-            localDB.submissions = [];
-            snap.forEach(doc => {
-                let docData = doc.data();
-                if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
-                    docData.id = parseInt(docData.id);
+            if (!useFirebase || !dbInstance) return;
+            try {
+                const snap = await firestoreWithTimeout(dbInstance.collection('submissions').get());
+                localDB.submissions = [];
+                snap.forEach(doc => {
+                    let docData = doc.data();
+                    if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
+                        docData.id = parseInt(docData.id);
+                    }
+                    localDB.submissions.push(docData);
+                });
+                if (localDB.submissions.length === 0) {
+                    localDB.submissions = getMockData().submissions;
                 }
-                localDB.submissions.push(docData);
-            });
-            if (localDB.submissions.length === 0) {
-                localDB.submissions = getMockData().submissions;
+            } catch (e) {
+                console.warn('Không thể đọc bài dự thi:', e.message || e);
             }
         }
 
@@ -2682,6 +2703,9 @@
         }
 
         async function loadInternalDataFromFirestore(uid, role) {
+            if (!useFirebase || !dbInstance) {
+                return;
+            }
             const isOrg = ['admin', 'organizer'].includes(role);
             const collections = isOrg 
                 ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations']
@@ -2704,11 +2728,13 @@
             });
             await Promise.all(promises);
 
-            try {
-                const seqDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('sequence').get());
-                localDB.seq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
-            } catch (e) {
-                console.warn('Không thể đọc sequence, giữ giá trị cũ:', e.message);
+            if (useFirebase && dbInstance) {
+                try {
+                    const seqDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('sequence').get());
+                    localDB.seq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
+                } catch (e) {
+                    console.warn('Không thể đọc sequence, giữ giá trị cũ:', e.message);
+                }
             }
 
             // Sao lưu dữ liệu xuống localStorage để phòng khi mất kết nối Firebase

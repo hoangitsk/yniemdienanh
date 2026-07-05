@@ -1,9 +1,7 @@
 import os
-import json
 import logging
 import time as time_module
 from pathlib import Path
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -86,19 +84,19 @@ async def payos_webhook(req: Request):
 
 @app.get("/payment-success")
 def payment_success(orderCode: str = ""):
-    return FileResponse(BASE_DIR / "index.html")
+    return FileResponse(BASE_DIR / "index.html", media_type="text/html")
 
 
 @app.get("/payment-cancel")
 def payment_cancel(orderCode: str = ""):
-    return FileResponse(BASE_DIR / "index.html")
+    return FileResponse(BASE_DIR / "index.html", media_type="text/html")
 
 
 @app.get("/")
 def index():
-    return FileResponse(BASE_DIR / "index.html")
+    return FileResponse(BASE_DIR / "index.html", media_type="text/html")
 
 
 @app.get("/{path:path}")
 def spa_fallback(path: str):
-    return FileResponse(BASE_DIR / "index.html")
+    return FileResponse(BASE_DIR / "index.html", media_type="text/html")

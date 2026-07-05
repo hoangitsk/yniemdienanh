@@ -9,8 +9,11 @@
     <meta property="og:title" content="Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh">
     <meta property="og:description" content="Cuộc thi làm phim ngắn cho học sinh, sinh viên yêu thích điện ảnh.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yniemdienanh.com">
+    <meta property="og:image" content="https://yniemdienanh.com/Logo/avtar.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh">
+    <meta name="twitter:image" content="https://yniemdienanh.com/Logo/avtar.png">
     <title>Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -3263,7 +3266,7 @@
                             </div>
                         </div>
                         
-                        <button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id})">🗳 Bình chọn</button>
+                        <button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>
                         <button class="btn btn-line btn-sm" style="width:100%; margin-top:6px" onclick="openBuyVoteModal(${s.id}, '${esc(s.title)}')">⭐ Mua vote 5k</button>
                         <div style="display:flex;gap:8px;margin-top:10px">
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${s.id}, '${esc(s.title)}')">📤 Share Facebook</button>
@@ -3275,7 +3278,7 @@
         }
 
         // Chức năng bình chọn chống gian lận (quét IP thiết bị và chặn cookie/localstorage)
-        async function castVote(id) {
+        async function castVote(id, e) {
             const vOpen = isVoteOpen();
             if (!vOpen.open) return showToast(vOpen.msg, 'info');
             // 1. Kiểm tra nhanh thiết bị qua LocalStorage để chặn bình chọn nhiều lần trên cùng 1 trình duyệt
@@ -3283,7 +3286,7 @@
                 return showToast("Thiết bị đã vote tác phẩm này rồi!", "info");
             }
             
-            const btn = event?.target;
+            const btn = e?.target;
             if (btn) btn.disabled = true;
             
             try {
@@ -4496,7 +4499,7 @@
             a.status = 'approved';
             await saveItem('applications', a);
             
-            // Tự động kiểm tra / tạo tài khoản
+            // Tự động tạo tài khoản & gửi email đặt mật khẩu
             const userEmail = a.email.toLowerCase();
             let matchedUser = localDB.users.find(u => u.email === userEmail);
             if (!matchedUser) {
@@ -4509,6 +4512,20 @@
                     dept: a.dept
                 };
                 await saveItem('users', newUser);
+                if (useFirebase) {
+                    try {
+                        const tempPass = Math.random().toString(36).slice(2, 14) + 'A1!';
+                        const cred = await authInstance.createUserWithEmailAndPassword(userEmail, tempPass);
+                        await cred.user.sendEmailVerification();
+                        await authInstance.sendPasswordResetEmail(userEmail);
+                        showToast(`Đã tạo tài khoản & gửi email đặt mật khẩu đến ${userEmail}!`, 'success');
+                    } catch (e) {
+                        console.warn('Auth skip:', e.message);
+                        if (e.code === 'auth/email-already-in-use') {
+                            showToast('Email đã có tài khoản Firebase.', 'info');
+                        }
+                    }
+                }
             }
             showToast(`Đã duyệt đơn cho ${a.name}!`, 'success');
             renderTab('members');
@@ -4558,6 +4575,7 @@
 
             try {
                 if (useFirebase) {
+                    const cred = await authInstance.createUserWithEmailAndPassword(email, pass);
                     const nextId = String(await getNextId());
                     const newUser = { id: nextId, name, email, role, dept };
                     await saveItem('users', newUser);
@@ -4838,7 +4856,7 @@
                     <h3>${esc(u.name)}</h3>
                     <div class="role-badge" style="background:${roleBg};color:${roleColor}">${roleLabel}</div>
                     ${(u.evaluations || []).length > 0 ? `<div style="margin-top:8px">${renderEvalBadge(u)}</div>` : ''}
-                    ${u.school ? `<p style="margin-top:8px;color:var(--text-muted);font-size:0.85rem">${esc(u.school)}${u.gclass ? ' — ' + esc(u.gclass) : ''}</p>` : ''}
+                    ${u.school ? `<p style="margin-top:8px;color:var(--text-muted);font-size:0.85rem">${esc(u.school)}${u.className ? ' — ' + esc(u.className) : ''}</p>` : ''}
                     ${u.intro ? `<p style="margin-top:6px;color:var(--text-muted);font-size:0.85rem;font-style:italic">"${esc(u.intro)}"</p>` : ''}
                     <p style="margin-top:6px;color:var(--text-muted);font-size:0.75rem">Tham gia từ: ${u.createdAt || 'Không rõ'}</p>
                 </div>

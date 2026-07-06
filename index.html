@@ -84,6 +84,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
 
     <style>
         :root {
@@ -2856,8 +2857,15 @@
                 <label>Họ tên *</label>
                 <input id="epName" type="text" placeholder="Nhập họ tên">
                 
-                <label>Ảnh đại diện (URL)</label>
-                <input id="epPhotoUrl" type="text" placeholder="https://example.com/avatar.jpg">
+                <label>Ảnh đại diện</label>
+                <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+                    <div id="epAvatarPreview" style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.05);border:2px dashed rgba(228,184,102,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;flex-shrink:0">📷</div>
+                    <label class="btn btn-line btn-sm" style="cursor:pointer;padding:8px 16px">
+                        Chọn ảnh
+                        <input id="epPhotoFile" type="file" accept="image/*" style="display:none" onchange="previewAvatar(event)">
+                    </label>
+                    <span id="epFileName" style="font-size:0.8rem;color:var(--text-muted)"></span>
+                </div>
                 
                 <label>Số điện thoại / Zalo *</label>
                 <input id="epPhone" type="text" placeholder="Nhập số điện thoại">
@@ -2930,6 +2938,7 @@
         let dbInstance = null;
         let authInstance = null;
         let rtdbInstance = null;
+        let storageInstance = null;
 
         // Cơ sở dữ liệu in-memory
         let localDB = null;
@@ -3195,6 +3204,12 @@
                     } catch (rtdbErr) {
                         console.warn("RTDB init failed, continuing without:", rtdbErr.message || rtdbErr);
                         useRTDB = false;
+                    }
+                    try {
+                        storageInstance = firebase.storage();
+                    } catch (stErr) {
+                        console.warn("Storage init failed:", stErr.message || stErr);
+                        storageInstance = null;
                     }
                     console.log("Firebase initialized. Cloud sync activated!");
                 } catch (e) {
@@ -6728,20 +6743,51 @@
             if (!u) return showToast('Không tìm thấy thông tin hồ sơ.', 'error');
             
             document.getElementById('epName').value = u.name || '';
-            document.getElementById('epPhotoUrl').value = u.photoUrl || '';
             document.getElementById('epPhone').value = u.phone || '';
             document.getElementById('epSchool').value = u.school || '';
             document.getElementById('epClass').value = u.className || '';
             document.getElementById('epInterest').value = u.interest || '';
             document.getElementById('epIntro').value = u.intro || '';
             document.getElementById('epMsg').textContent = '';
+            document.getElementById('epPhotoFile').value = '';
+            document.getElementById('epFileName').textContent = '';
+            const preview = document.getElementById('epAvatarPreview');
+            if (u.photoUrl) {
+                preview.innerHTML = `<img src="${esc(u.photoUrl)}" style="width:100%;height:100%;object-fit:cover">`;
+            } else {
+                preview.innerHTML = '📷';
+                preview.style.background = 'rgba(255,255,255,0.05)';
+            }
             
             openModal('editProfileModal');
         }
 
+        function previewAvatar(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const preview = document.getElementById('epAvatarPreview');
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                preview.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+                preview.style.background = 'none';
+            };
+            reader.readAsDataURL(file);
+            document.getElementById('epFileName').textContent = file.name;
+        }
+
+        async function uploadAvatarFile(file) {
+            if (!storageInstance) throw new Error('Firebase Storage chưa sẵn sàng.');
+            const userId = session.id;
+            const ext = file.name.split('.').pop() || 'jpg';
+            const path = `avatars/${userId}.${ext}`;
+            const ref = storageInstance.ref(path);
+            const snap = await ref.put(file);
+            const url = await snap.ref.getDownloadURL();
+            return url;
+        }
+
         async function saveProfile() {
             const name = document.getElementById('epName').value.trim();
-            const photoUrl = document.getElementById('epPhotoUrl').value.trim();
             const phone = document.getElementById('epPhone').value.trim();
             const school = document.getElementById('epSchool').value.trim();
             const className = document.getElementById('epClass').value.trim();
@@ -6761,6 +6807,18 @@
                 const u = localDB.users.find(x => String(x.id) === String(session.id));
                 if (!u) throw new Error('Không tìm thấy tài khoản người dùng.');
                 
+                const fileInput = document.getElementById('epPhotoFile');
+                const file = fileInput.files[0];
+                let photoUrl = u.photoUrl || '';
+                if (file) {
+                    try {
+                        photoUrl = await uploadAvatarFile(file);
+                    } catch (uploadErr) {
+                        console.warn('Avatar upload failed:', uploadErr);
+                        showToast('Không thể tải ảnh lên, đã bỏ qua ảnh đại diện.', 'warning');
+                    }
+                }
+                
                 u.name = name;
                 u.photoUrl = photoUrl;
                 u.phone = phone;
@@ -6778,6 +6836,7 @@
                 session.className = className;
                 session.interest = interest;
                 session.intro = intro;
+                session.photoUrl = photoUrl;
                 sessionStorage.setItem('ynda_user', JSON.stringify(session));
                 
                 hideLoadingToast(lt);

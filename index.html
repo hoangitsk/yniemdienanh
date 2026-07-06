@@ -5885,7 +5885,7 @@
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Không thể tạo liên kết thanh toán');
                 // Chỉ tạo giao dịch khi API thanh toán thành công
-                await addTransaction(type, extra?.submissionId, description, extra);
+                await addTransaction(type, extra?.submissionId, description, extra, orderCode);
                 const area = document.getElementById('payosPaymentArea');
                 const status = document.getElementById('payosStatus');
                 if (area) {
@@ -5925,7 +5925,7 @@
             openPaymentModal('vote', { submissionId, submissionTitle });
         }
 
-        async function addTransaction(type, submissionId, memo, extra) {
+        async function addTransaction(type, submissionId, memo, extra, orderCode) {
             if (!session) {
                 showToast('Vui lòng đăng nhập!', 'error');
                 return;
@@ -5935,6 +5935,7 @@
             const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
             const tx = { 
                 id: nextId, 
+                orderCode: orderCode || null,
                 userId: session.id, 
                 userName: session.name, 
                 type, 

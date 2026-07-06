@@ -4580,7 +4580,10 @@
                                             <td data-label="Số tiền" style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
                                             <td data-label="Memo" style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
                                             <td data-label="Thời gian" style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
-                                            <td data-label="Thao tác"><button class="btn btn-gold btn-sm" onclick="confirmTx(${t.id})">✔ Xác nhận</button></td>
+                                            <td data-label="Thao tác">
+                                                <button class="btn btn-gold btn-sm" onclick="confirmTx(${t.id})">✔ Xác nhận</button>
+                                                <button class="btn btn-line btn-sm" style="background:#ef4444;color:#fff;border-color:#ef4444;margin-left:6px" onclick="deleteTx(${t.id})">🗑 Xoá</button>
+                                            </td>
                                         </tr>
                                     `).join('')}
                                 </table>
@@ -4591,7 +4594,7 @@
                             <h3 style="color:var(--gold-light);margin-bottom:14px">📋 Lịch sử giao dịch (${txs.length})</h3>
                             <div class="table-wrap">
                                 <table>
-                                    <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th>Memo</th><th>Thời gian</th></tr>
+                                    <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>
                                     ${[...txs].reverse().map(t => `
                                         <tr>
                                             <td data-label="Người dùng"><b>${esc(t.userName)}</b></td>
@@ -4600,8 +4603,11 @@
                                             <td data-label="Trạng thái">${t.status === 'confirmed' ? '<span style="color:#63d19e">✔ Đã xác nhận</span>' : '<span style="color:#fbbf24">⏳ Chờ</span>'}</td>
                                             <td data-label="Memo" style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
                                             <td data-label="Thời gian" style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
+                                            <td data-label="Thao tác">
+                                                <button class="btn btn-line btn-sm" style="background:#ef4444;color:#fff;border-color:#ef4444" onclick="deleteTx(${t.id})">🗑 Xoá</button>
+                                            </td>
                                         </tr>
-                                    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có giao dịch nào.</td></tr>'}
+                                    `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Chưa có giao dịch nào.</td></tr>'}
                                 </table>
                             </div>
                         </div>
@@ -6027,6 +6033,49 @@
             renderEvents();
             renderVoting();
             renderTab('transactions');
+        }
+
+        async function deleteTx(txId) {
+            if (!confirm('Bạn có chắc chắn muốn xoá giao dịch này? Hành động này sẽ gỡ bỏ cả lượt đăng ký/vote và trừ tiền trong quỹ tương ứng.')) return;
+            const tx = (localDB.transactions || []).find(t => String(t.id) === String(txId));
+            if (!tx) return showToast('Không tìm thấy giao dịch.', 'error');
+            
+            const lt = showLoadingToast('Đang xoá giao dịch...');
+            try {
+                // 1. Trừ tiền khỏi prize pool nếu giao dịch đã được xác nhận
+                if (tx.status === 'confirmed') {
+                    const cfg = localDB.config || {};
+                    if (cfg.prizePool) {
+                        cfg.prizePool.total = Math.max(0, (cfg.prizePool.total || 0) - Math.round((tx.amount || 5000) * 0.7));
+                        if (useFirebase) {
+                            await dbInstance.collection('config').doc('prizePool').set(cfg.prizePool, { merge: true });
+                        }
+                    }
+                }
+                
+                // 2. Gỡ lượt đăng ký nếu là giao dịch đăng ký sự kiện
+                if (tx.type === 'registration') {
+                    const reg = (localDB.registrations || []).find(r => String(r.userId) === String(tx.userId) && String(r.eventId) === String(tx.eventId));
+                    if (reg) {
+                        await deleteItemFromDB('registrations', reg.id);
+                    }
+                }
+                
+                // 3. Xoá giao dịch khỏi DB
+                await deleteItemFromDB('transactions', txId);
+                
+                hideLoadingToast(lt);
+                showToast('🗑 Xoá giao dịch thành công!', 'success');
+                
+                // 4. Cập nhật lại UI
+                renderAllPrizePools();
+                renderEvents();
+                renderVoting();
+                renderTab('transactions');
+            } catch (err) {
+                hideLoadingToast(lt);
+                showToast('Lỗi khi xoá: ' + err.message, 'error');
+            }
         }
 
         // ================= ADMIN ACCOUNT MANAGEMENT =================

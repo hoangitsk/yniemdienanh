@@ -83,16 +83,42 @@ async function fbFetch(body) {
     }
 }
 
-// Email API endpoints (defined BEFORE proxy to avoid being forwarded to Python)
+// Email API endpoints
 app.post('/api/email/send-verification', async (req, res) => {
     try {
         const { idToken, email } = req.body;
         if (!idToken || !email) return res.status(400).json({ error: 'Missing idToken or email' });
 
-        const fbData = await fbFetch({ requestType: 'VERIFY_EMAIL', idToken, returnOobLink: true });
-        if (!fbData.oobLink) {
-            console.error('Firebase OOB error:', JSON.stringify(fbData));
-            return res.status(500).json({ error: 'Firebase OOB link failed', detail: fbData });
+        let oobLink = null;
+        let adminErrDetail = null;
+
+        // Try using Firebase Admin SDK first
+        if (admin.apps.length && db) {
+            try {
+                oobLink = await admin.auth().generateEmailVerificationLink(email);
+                console.log('Admin SDK generated verification link for', email);
+            } catch (adminErr) {
+                adminErrDetail = adminErr.message || String(adminErr);
+                console.warn('Firebase Admin generate link failed, falling back:', adminErr.message || adminErr);
+            }
+        }
+
+        // Fallback to public Identity Toolkit REST API
+        if (!oobLink) {
+            const fbData = await fbFetch({ requestType: 'VERIFY_EMAIL', idToken, returnOobLink: true });
+            if (fbData.oobLink) {
+                oobLink = fbData.oobLink;
+            } else {
+                console.error('Firebase REST OOB error:', JSON.stringify(fbData));
+                return res.status(500).json({ 
+                    error: 'Firebase OOB link failed', 
+                    detail: fbData,
+                    adminError: adminErrDetail,
+                    adminInitError: admin.apps.length ? null : 'Admin SDK not initialized',
+                    adminAppsLength: admin.apps.length,
+                    hasServiceAccountEnv: !!process.env.FIREBASE_SERVICE_ACCOUNT
+                });
+            }
         }
 
         await transporter.sendMail({
@@ -104,7 +130,7 @@ app.post('/api/email/send-verification', async (req, res) => {
                     <h2 style="color:#d4380d">Xác thực tài khoản</h2>
                     <p>Cảm ơn bạn đã đăng ký tại <strong>Ý Niệm Điện Ảnh</strong>!</p>
                     <p>Vui lòng bấm nút bên dưới để xác thực email của bạn:</p>
-                    <a href="${fbData.oobLink}" style="display:inline-block;padding:12px 24px;background:#d4380d;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold">Xác thực tài khoản</a>
+                    <a href="${oobLink}" style="display:inline-block;padding:12px 24px;background:#d4380d;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold">Xác thực tài khoản</a>
                     <p style="margin-top:20px;font-size:13px;color:#888">Nếu bạn không đăng ký, vui lòng bỏ qua email này.</p>
                 </div>
             `,

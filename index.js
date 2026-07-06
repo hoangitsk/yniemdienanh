@@ -206,28 +206,30 @@ app.post('/api/payos-webhook', async (req, res) => {
 
             // Perform transaction to update status and other tables
             await db.runTransaction(async (t) => {
-                let nextRegId = null;
                 const seqRef = db.collection('config').doc('sequence');
-                
-                // If it is a registration, increment seq
+                const ppRef = db.collection('config').doc('prizePool');
+
+                // 1. Thực hiện toàn bộ lệnh READ trước
+                const seqDoc = await t.get(seqRef);
+                const ppDoc = await t.get(ppRef);
+
+                // 2. Tính toán và thực hiện toàn bộ lệnh WRITE sau
+                let nextRegId = null;
                 if (tx.type === 'registration') {
-                    const seqDoc = await t.get(seqRef);
                     const currentSeq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
                     nextRegId = currentSeq + 1;
                     t.set(seqRef, { val: nextRegId });
                 }
 
-                // Get and update prize pool
-                const ppRef = db.collection('config').doc('prizePool');
-                const ppDoc = await t.get(ppRef);
+                // Cập nhật prize pool
                 const currentTotal = ppDoc.exists ? (ppDoc.data().total || 0) : 0;
                 const addedAmount = Math.round((tx.amount || 5000) * 0.7);
                 t.set(ppRef, { total: currentTotal + addedAmount }, { merge: true });
 
-                // Update transaction status
+                // Cập nhật trạng thái giao dịch
                 t.update(txDoc.ref, { status: 'confirmed' });
 
-                // Create registration if needed
+                // Tạo đăng ký mới nếu cần
                 if (tx.type === 'registration') {
                     const regRef = db.collection('registrations').doc(String(nextRegId));
                     const newReg = {

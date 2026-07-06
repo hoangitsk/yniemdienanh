@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 
+// Trigger Vercel rebuild to apply new environment variables
 // Initialize Firebase Admin if not already initialized
 let adminInitError = null;
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;

@@ -2880,6 +2880,26 @@
         </div>
     </div>
 
+    <!-- CHANGE EMAIL MODAL -->
+    <div class="modal" id="changeEmailModal">
+        <div class="modal-box" style="max-width:460px">
+            <span class="close-x" onclick="closeModal('changeEmailModal')" aria-label="Đóng" role="button">✕</span>
+            <h3>📧 Đổi email tài khoản</h3>
+            <p style="color:var(--text-muted);font-size:0.85rem;margin-top:6px">Email hiện tại: <strong id="ceCurrentEmail" style="color:#e2e8f0"></strong></p>
+            <div style="margin-top:16px">
+                <label>Email mới *</label>
+                <input id="ceNewEmail" type="email" placeholder="Nhập email Gmail mới">
+
+                <label>Mật khẩu hiện tại *</label>
+                <input id="cePassword" type="password" placeholder="Nhập mật khẩu để xác nhận">
+                <p style="color:var(--text-muted);font-size:0.75rem;margin:4px 0 8px">Cần nhập mật khẩu để bảo mật thao tác này.</p>
+
+                <div class="form-msg" id="ceMsg" style="margin-top:6px"></div>
+                <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="changeEmail()">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+
     <script>
 
 
@@ -4912,7 +4932,13 @@
                                 </div>
                             </div>
                             <div class="row" style="margin-bottom:10px">
-                                <div><label>Email</label><p style="color:#e2e8f0;font-size:0.9rem">${esc(u.email)}</p></div>
+                                <div>
+                                    <label>Email</label>
+                                    <p style="color:#e2e8f0;font-size:0.9rem;display:flex;align-items:center;gap:8px">
+                                        ${esc(u.email)}
+                                        <button class="btn btn-line btn-sm" style="padding:2px 10px;font-size:0.75rem" onclick="openChangeEmailModal()">✎ Đổi email</button>
+                                    </p>
+                                </div>
                                 <div><label>Điện thoại / Zalo</label><p style="color:#e2e8f0;font-size:0.9rem">${esc(u.phone || '—')}</p></div>
                             </div>
                             <div class="row" style="margin-bottom:10px">
@@ -6752,6 +6778,103 @@
             } catch (err) {
                 hideLoadingToast(lt);
                 msg.textContent = 'Lỗi: ' + err.message;
+            }
+        }
+
+        function openChangeEmailModal() {
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
+            if (!authInstance) return showToast('Tính năng đổi email cần kết nối Firebase.', 'error');
+            const u = localDB.users.find(x => String(x.id) === String(session.id));
+            if (!u) return showToast('Không tìm thấy thông tin hồ sơ.', 'error');
+            document.getElementById('ceCurrentEmail').textContent = u.email;
+            document.getElementById('ceNewEmail').value = '';
+            document.getElementById('cePassword').value = '';
+            document.getElementById('ceMsg').textContent = '';
+            openModal('changeEmailModal');
+        }
+
+        async function changeEmail() {
+            const newEmail = document.getElementById('ceNewEmail').value.trim().toLowerCase();
+            const password = document.getElementById('cePassword').value;
+            const msg = document.getElementById('ceMsg');
+            msg.className = 'form-msg err';
+            msg.textContent = '';
+
+            if (!newEmail) return msg.textContent = 'Vui lòng nhập email mới.';
+            if (!/^[^\s@]+@gmail\.com$/i.test(newEmail)) return msg.textContent = 'Vui lòng nhập địa chỉ Gmail hợp lệ.';
+            if (!password) return msg.textContent = 'Vui lòng nhập mật khẩu để xác nhận.';
+
+            const lt = showLoadingToast('Đang xử lý...');
+            try {
+                const firebaseUser = authInstance.currentUser;
+                if (!firebaseUser) throw new Error('Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.');
+
+                const credential = firebase.auth.EmailAuthProvider.credential(firebaseUser.email, password);
+                await firebaseUser.reauthenticateWithCredential(credential);
+
+                await firebaseUser.updateEmail(newEmail);
+
+                // Cập nhật localDB
+                const u = localDB.users.find(x => String(x.id) === String(session.id));
+                if (u) {
+                    u.email = newEmail;
+                    await saveItem('users', u);
+                }
+
+                // Cập nhật Firestore
+                if (useFirebase && dbInstance) {
+                    try {
+                        await dbInstance.collection('users').doc(firebaseUser.uid).set({ email: newEmail }, { merge: true });
+                    } catch (e) {
+                        console.warn('Firestore update email failed:', e);
+                    }
+                }
+
+                // Cập nhật session
+                session.email = newEmail;
+                sessionStorage.setItem('ynda_user', JSON.stringify(session));
+
+                // Gửi email xác thực đến email mới
+                try {
+                    const idToken = await firebaseUser.getIdToken();
+                    const ctrl = new AbortController();
+                    const timer = setTimeout(() => ctrl.abort(), 10000);
+                    await fetch('/api/email/send-verification', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ idToken, email: newEmail }),
+                        signal: ctrl.signal,
+                    });
+                    clearTimeout(timer);
+                    await firebaseUser.sendEmailVerification();
+                } catch (e) {
+                    console.warn('Send verification to new email failed:', e);
+                }
+
+                hideLoadingToast(lt);
+                showToast('✅ Đã đổi email thành công! Vui lòng kiểm tra Gmail mới để xác thực.', 'success');
+                closeModal('changeEmailModal');
+
+                await authInstance.signOut();
+                session = null;
+                sessionStorage.removeItem('ynda_user');
+                renderNav();
+                updateStageDisplay();
+                showPage('home');
+                setTimeout(() => {
+                    showToast('🔐 Vui lòng đăng nhập lại bằng email mới.', 'info');
+                }, 500);
+            } catch (err) {
+                hideLoadingToast(lt);
+                if (err.code === 'auth/wrong-password') {
+                    msg.textContent = 'Mật khẩu không đúng. Vui lòng thử lại.';
+                } else if (err.code === 'auth/email-already-in-use') {
+                    msg.textContent = 'Email này đã được sử dụng bởi tài khoản khác.';
+                } else if (err.code === 'auth/requires-recent-login') {
+                    msg.textContent = 'Vui lòng đăng xuất và đăng nhập lại trước khi đổi email.';
+                } else {
+                    msg.textContent = 'Lỗi: ' + (err.message || 'Không thể đổi email.');
+                }
             }
         }
 

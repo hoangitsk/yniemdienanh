@@ -2691,7 +2691,7 @@
                     <option value="Workshop / Học hỏi">Workshop / Học hỏi</option>
                     <option value="Cộng đồng yêu điện ảnh">Cộng đồng yêu điện ảnh</option>
                 </select>
-                <label>Giới thiệu ngắn</label>
+                <label>Giới thiệu ngắn (Không bắt buộc)</label>
                 <textarea id="rgIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
                 <p style="font-size:0.78rem;color:var(--text-muted);margin-top:6px">Sau khi tạo tài khoản, hệ thống sẽ gửi email xác thực. Nếu chưa thấy email, hãy kiểm tra cả hòm thư rác/spam.</p>
                 <label>Mật khẩu (Tối thiểu 6 ký tự)</label>
@@ -4125,10 +4125,9 @@
             const m = document.getElementById('rgMsg'); 
             m.className = 'form-msg err'; m.textContent = '';
             
-            if (!name || !email || !phone || !school || !className || !interest || !intro || !pass) return m.textContent = 'Vui lòng điền đủ tất cả các trường!';
+            if (!name || !email || !phone || !school || !className || !interest || !pass) return m.textContent = 'Vui lòng điền đủ tất cả các trường bắt buộc!';
             if (!/^[^\s@]+@gmail\.com$/i.test(email)) return m.textContent = 'Vui lòng đăng ký bằng địa chỉ Gmail hợp lệ.';
             if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
-            if (intro.length < 20) return m.textContent = 'Giới thiệu ngắn cần tối thiểu 20 ký tự.';
             if (pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
             
             try {
@@ -4161,13 +4160,13 @@
                             if (!r.ok) {
                                 const ed = await r.json().catch(() => ({}));
                                 console.warn('Email API error:', ed);
-                                if (ed.adminError || ed.adminInitError) {
-                                    emailErrorText = `Admin SDK: ${ed.adminError || ''} | Init: ${ed.adminInitError || ''}`;
-                                } else if (ed.detail && ed.detail.error) {
-                                    emailErrorText = `REST: ${ed.detail.error.message || JSON.stringify(ed.detail.error)}`;
-                                } else {
-                                    emailErrorText = JSON.stringify(ed);
-                                }
+                                emailErrorText = JSON.stringify({
+                                    adminErr: ed.adminError,
+                                    initErr: ed.adminInitError,
+                                    appsLen: ed.adminAppsLength,
+                                    hasEnv: ed.hasServiceAccountEnv,
+                                    restErr: ed.detail?.error?.message
+                                });
                             }
                         } catch (e) {
                             console.warn('Email skip:', e.message);

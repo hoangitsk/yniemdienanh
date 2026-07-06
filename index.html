@@ -2686,12 +2686,21 @@
                 <label>Lớp / khoa / năm học</label>
                 <input id="rgClass" placeholder="Ví dụ: 11A1, Khoa Truyền thông, Năm 1">
                 <label>Vai trò quan tâm</label>
-                <select id="rgInterest">
-                    <option value="Thí sinh làm phim">Thí sinh làm phim</option>
-                    <option value="Chụp ảnh / Media">Chụp ảnh / Media</option>
-                    <option value="Workshop / Học hỏi">Workshop / Học hỏi</option>
-                    <option value="Cộng đồng yêu điện ảnh">Cộng đồng yêu điện ảnh</option>
+                <select id="rgInterest" onchange="toggleInterestOther('rgInterest','rgInterestOther')">
+                    <option value="Độc lập làm video">Độc lập làm video</option>
+                    <option value="Fulltask (làm hết mọi thứ)">Fulltask (làm hết mọi thứ)</option>
+                    <option value="Đạo diễn">Đạo diễn</option>
+                    <option value="Quay phim">Quay phim</option>
+                    <option value="Dựng phim / Editor">Dựng phim / Editor</option>
+                    <option value="Kịch bản">Kịch bản</option>
+                    <option value="Diễn viên">Diễn viên</option>
+                    <option value="Thiết kế / Design">Thiết kế / Design</option>
+                    <option value="Âm thanh / Nhạc">Âm thanh / Nhạc</option>
+                    <option value="Tổ chức / Sự kiện">Tổ chức / Sự kiện</option>
+                    <option value="Truyền thông / Media">Truyền thông / Media</option>
+                    <option value="Khác (nhập bên dưới)">Khác (nhập bên dưới)</option>
                 </select>
+                <input id="rgInterestOther" type="text" placeholder="Nhập vai trò khác..." style="display:none;margin-top:6px">
                 <label>Giới thiệu ngắn (Không bắt buộc)</label>
                 <textarea id="rgIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
                 <p style="font-size:0.78rem;color:var(--text-muted);margin-top:6px">Sau khi tạo tài khoản, hệ thống sẽ gửi email xác thực. Nếu chưa thấy email, hãy kiểm tra cả hòm thư rác/spam.</p>
@@ -2735,12 +2744,21 @@
                 <label>Lớp / khoa / năm học</label>
                 <input id="ggClass" placeholder="Ví dụ: 11A1, Khoa Truyền thông, Năm 1">
                 <label>Vai trò quan tâm</label>
-                <select id="ggInterest">
-                    <option value="Thí sinh làm phim">Thí sinh làm phim</option>
-                    <option value="Chụp ảnh / Media">Chụp ảnh / Media</option>
-                    <option value="Workshop / Học hỏi">Workshop / Học hỏi</option>
-                    <option value="Cộng đồng yêu điện ảnh">Cộng đồng yêu điện ảnh</option>
+                <select id="ggInterest" onchange="toggleInterestOther('ggInterest','ggInterestOther')">
+                    <option value="Độc lập làm video">Độc lập làm video</option>
+                    <option value="Fulltask (làm hết mọi thứ)">Fulltask (làm hết mọi thứ)</option>
+                    <option value="Đạo diễn">Đạo diễn</option>
+                    <option value="Quay phim">Quay phim</option>
+                    <option value="Dựng phim / Editor">Dựng phim / Editor</option>
+                    <option value="Kịch bản">Kịch bản</option>
+                    <option value="Diễn viên">Diễn viên</option>
+                    <option value="Thiết kế / Design">Thiết kế / Design</option>
+                    <option value="Âm thanh / Nhạc">Âm thanh / Nhạc</option>
+                    <option value="Tổ chức / Sự kiện">Tổ chức / Sự kiện</option>
+                    <option value="Truyền thông / Media">Truyền thông / Media</option>
+                    <option value="Khác (nhập bên dưới)">Khác (nhập bên dưới)</option>
                 </select>
+                <input id="ggInterestOther" type="text" placeholder="Nhập vai trò khác..." style="display:none;margin-top:6px">
                 <label>Giới thiệu ngắn (Không bắt buộc)</label>
                 <textarea id="ggIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
                 <label>Mật khẩu <span style="color:var(--text-muted);font-size:0.75rem">(tùy chọn — để trống nếu chỉ muốn đăng nhập bằng Google)</span></label>
@@ -2876,8 +2894,22 @@
                 <label>Lớp / khoa *</label>
                 <input id="epClass" type="text" placeholder="Nhập tên lớp/khoa">
                 
-                <label>Vai trò / Kỹ năng chuyên môn (cách nhau bằng dấu phẩy) *</label>
-                <input id="epInterest" type="text" placeholder="Ví dụ: 🎥 Director, 🎬 Editor, 🎭 Actor">
+                <label>Vai trò quan tâm *</label>
+                <select id="epInterest" onchange="toggleInterestOther('epInterest','epInterestOther')">
+                    <option value="Độc lập làm video">Độc lập làm video</option>
+                    <option value="Fulltask (làm hết mọi thứ)">Fulltask (làm hết mọi thứ)</option>
+                    <option value="Đạo diễn">Đạo diễn</option>
+                    <option value="Quay phim">Quay phim</option>
+                    <option value="Dựng phim / Editor">Dựng phim / Editor</option>
+                    <option value="Kịch bản">Kịch bản</option>
+                    <option value="Diễn viên">Diễn viên</option>
+                    <option value="Thiết kế / Design">Thiết kế / Design</option>
+                    <option value="Âm thanh / Nhạc">Âm thanh / Nhạc</option>
+                    <option value="Tổ chức / Sự kiện">Tổ chức / Sự kiện</option>
+                    <option value="Truyền thông / Media">Truyền thông / Media</option>
+                    <option value="Khác (nhập bên dưới)">Khác (nhập bên dưới)</option>
+                </select>
+                <input id="epInterestOther" type="text" placeholder="Nhập vai trò khác..." style="display:none;margin-top:6px">
                 
                 <label>Giới thiệu bản thân</label>
                 <textarea id="epIntro" placeholder="Viết giới thiệu ngắn..." rows="3" style="width:100%;resize:none;padding:10px;border-radius:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(228,184,102,0.15);color:#e2e8f0;font-size:0.9rem;margin-bottom:8px"></textarea>
@@ -4050,7 +4082,7 @@
             const phone = document.getElementById('ggPhone').value.trim();
             const school = document.getElementById('ggSchool').value.trim();
             const className = document.getElementById('ggClass').value.trim();
-            const interest = document.getElementById('ggInterest').value;
+            const interest = getInterest('ggInterest', 'ggInterestOther');
             const intro = document.getElementById('ggIntro').value.trim();
             const pass = document.getElementById('ggPass').value;
             const m = document.getElementById('ggMsg');
@@ -4153,7 +4185,7 @@
             const phone = document.getElementById('rgPhone').value.trim();
             const school = document.getElementById('rgSchool').value.trim();
             const className = document.getElementById('rgClass').value.trim();
-            const interest = document.getElementById('rgInterest').value;
+            const interest = getInterest('rgInterest', 'rgInterestOther');
             const intro = document.getElementById('rgIntro').value.trim();
             const pass = document.getElementById('rgPass').value;
             const m = document.getElementById('rgMsg'); 
@@ -6738,6 +6770,25 @@
             }
         }
 
+        function toggleInterestOther(selectId, inputId) {
+            const sel = document.getElementById(selectId);
+            const inp = document.getElementById(inputId);
+            if (sel && inp) {
+                inp.style.display = sel.value === 'Khác (nhập bên dưới)' ? 'block' : 'none';
+                if (sel.value !== 'Khác (nhập bên dưới)') inp.value = '';
+            }
+        }
+
+        function getInterest(selectId, otherId) {
+            const sel = document.getElementById(selectId);
+            const other = document.getElementById(otherId);
+            if (!sel) return '';
+            if (sel.value === 'Khác (nhập bên dưới)' && other && other.value.trim()) {
+                return other.value.trim();
+            }
+            return sel.value;
+        }
+
         function openEditProfileModal() {
             if (!session) return showToast('Vui lòng đăng nhập!', 'error');
             const u = localDB.users.find(x => String(x.id) === String(session.id));
@@ -6747,11 +6798,22 @@
             document.getElementById('epPhone').value = u.phone || '';
             document.getElementById('epSchool').value = u.school || '';
             document.getElementById('epClass').value = u.className || '';
-            document.getElementById('epInterest').value = u.interest || '';
             document.getElementById('epIntro').value = u.intro || '';
             document.getElementById('epMsg').textContent = '';
             document.getElementById('epPhotoFile').value = '';
             document.getElementById('epFileName').textContent = '';
+            const epInterest = document.getElementById('epInterest');
+            const epInterestOther = document.getElementById('epInterestOther');
+            if (epInterest) {
+                const opts = [...epInterest.options].map(o => o.value);
+                if (opts.includes(u.interest || '')) {
+                    epInterest.value = u.interest || '';
+                    if (epInterestOther) epInterestOther.style.display = 'none';
+                } else {
+                    epInterest.value = 'Khác (nhập bên dưới)';
+                    if (epInterestOther) { epInterestOther.value = u.interest || ''; epInterestOther.style.display = 'block'; }
+                }
+            }
             const preview = document.getElementById('epAvatarPreview');
             if (u.photoUrl) {
                 preview.innerHTML = `<img src="${esc(u.photoUrl)}" style="width:100%;height:100%;object-fit:cover">`;
@@ -6792,7 +6854,7 @@
             const phone = document.getElementById('epPhone').value.trim();
             const school = document.getElementById('epSchool').value.trim();
             const className = document.getElementById('epClass').value.trim();
-            const interest = document.getElementById('epInterest').value.trim();
+            const interest = getInterest('epInterest', 'epInterestOther');
             const intro = document.getElementById('epIntro').value.trim();
             
             const msg = document.getElementById('epMsg');

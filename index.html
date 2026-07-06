@@ -5891,7 +5891,7 @@
                 if (area) {
                     area.innerHTML = `
                         <p style="margin-bottom:16px;color:var(--text-muted)">Quét mã QR bằng app ngân hàng hoặc bấm nút bên dưới:</p>
-                        ${data.qrCode ? `<img src="${data.qrCode}" alt="PayOS QR" style="max-width:240px;border-radius:12px;margin-bottom:16px;border:1px solid var(--line)">` : ''}
+                        ${data.qrCode ? `<img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.qrCode)}" alt="PayOS QR" style="max-width:240px;border-radius:12px;margin-bottom:16px;border:1px solid var(--line)">` : ''}
                         <div>
                             <a href="${data.checkoutUrl}" target="_blank" class="btn btn-gold" style="text-decoration:none">💳 Thanh toán ngay</a>
                         </div>

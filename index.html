@@ -6778,10 +6778,10 @@
         async function uploadAvatarFile(file) {
             if (!storageInstance) throw new Error('Firebase Storage chưa sẵn sàng.');
             const userId = session.id;
-            const ext = file.name.split('.').pop() || 'jpg';
-            const path = `avatars/${userId}.${ext}`;
+            const path = `avatars/${userId}/avatar`;
             const ref = storageInstance.ref(path);
-            const snap = await ref.put(file);
+            try { await ref.delete(); } catch (e) {}
+            const snap = await ref.put(file, { contentType: file.type || 'image/jpeg' });
             const url = await snap.ref.getDownloadURL();
             return url;
         }

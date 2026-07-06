@@ -1,4 +1,21 @@
 const nodemailer = require('nodemailer');
+const admin = require('firebase-admin');
+
+// Initialize Firebase Admin if not already initialized
+const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
+if (FIREBASE_SERVICE_ACCOUNT && !admin.apps.length) {
+    try {
+        const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+        if (serviceAccount.private_key) {
+            serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+        }
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (e) {
+        console.error("Firebase admin init failed:", e);
+    }
+}
 
 const FIREBASE_API_KEY = 'AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ';
 const FIREBASE_AUTH_URL = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${FIREBASE_API_KEY}`;
@@ -52,10 +69,26 @@ module.exports = async (req, res) => {
         const { idToken, email } = req.body;
         if (!idToken || !email) return res.status(400).json({ error: 'Missing idToken or email' });
 
-        const fbData = await fbFetch({ requestType: 'VERIFY_EMAIL', idToken, returnOobLink: true });
-        if (!fbData.oobLink) {
-            console.error('Firebase OOB error:', JSON.stringify(fbData));
-            return res.status(500).json({ error: 'Firebase OOB link failed', detail: fbData });
+        let oobLink = null;
+
+        // Try using Firebase Admin SDK first (more reliable, bypasses public API key restrictions)
+        if (admin.apps.length) {
+            try {
+                oobLink = await admin.auth().generateEmailVerificationLink(email);
+            } catch (adminErr) {
+                console.warn('Firebase Admin generate link failed, falling back:', adminErr.message || adminErr);
+            }
+        }
+
+        // Fallback to public Identity Toolkit REST API
+        if (!oobLink) {
+            const fbData = await fbFetch({ requestType: 'VERIFY_EMAIL', idToken, returnOobLink: true });
+            if (fbData.oobLink) {
+                oobLink = fbData.oobLink;
+            } else {
+                console.error('Firebase REST OOB error:', JSON.stringify(fbData));
+                return res.status(500).json({ error: 'Firebase OOB link failed', detail: fbData });
+            }
         }
 
         await transporter.sendMail({
@@ -67,7 +100,7 @@ module.exports = async (req, res) => {
                     <h2 style="color:#d4380d">Xác thực tài khoản</h2>
                     <p>Cảm ơn bạn đã đăng ký tại <strong>Ý Niệm Điện Ảnh</strong>!</p>
                     <p>Vui lòng bấm nút bên dưới để xác thực email của bạn:</p>
-                    <a href="${fbData.oobLink}" style="display:inline-block;padding:12px 24px;background:#d4380d;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold">Xác thực tài khoản</a>
+                    <a href="${oobLink}" style="display:inline-block;padding:12px 24px;background:#d4380d;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold">Xác thực tài khoản</a>
                     <p style="margin-top:20px;font-size:13px;color:#888">Nếu bạn không đăng ký, vui lòng bỏ qua email này.</p>
                 </div>
             `,

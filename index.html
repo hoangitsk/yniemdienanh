@@ -959,6 +959,39 @@
         @keyframes drawCheck {
             to { stroke-dashoffset: 0; }
         }
+        #successPopup.popup-error {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(239, 68, 68, 0.08);
+        }
+        #successPopup .error-circle {
+            stroke: #ef4444 !important;
+        }
+        #successPopup .error-path-1 {
+            fill: none;
+            stroke: #ef4444;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 29;
+            stroke-dashoffset: 29;
+            animation: drawCheck 0.3s 0.4s ease forwards;
+        }
+        #successPopup .error-path-2 {
+            fill: none;
+            stroke: #ef4444;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 29;
+            stroke-dashoffset: 29;
+            animation: drawCheck 0.3s 0.6s ease forwards;
+        }
+        #successPopup.popup-error h3 {
+            color: #ef4444;
+        }
+        #successPopup.popup-error .btn-success {
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
+        }
         #successPopup h3 {
             color: #63d19e;
             font-size: 1.6rem;
@@ -2338,16 +2371,23 @@
     <!-- Success popup -->
     <div id="successPopup">
         <div class="popup-box">
-            <div class="checkmark">
+            <div class="checkmark status-icon-success">
                 <svg viewBox="0 0 52 52" style="width:80px;height:80px">
                     <circle class="checkmark-circle" cx="26" cy="26" r="25"/>
                     <path class="checkmark-path" d="M14 27l7 7 16-16"/>
                 </svg>
             </div>
-            <h3>Thành công!</h3>
+            <div class="checkmark status-icon-error" style="display:none">
+                <svg viewBox="0 0 52 52" style="width:80px;height:80px">
+                    <circle class="checkmark-circle error-circle" cx="26" cy="26" r="25"/>
+                    <path class="checkmark-path error-path-1" d="M16 16 L36 36"/>
+                    <path class="checkmark-path error-path-2" d="M36 16 L16 36"/>
+                </svg>
+            </div>
+            <h3 id="successPopupTitle">Thành công!</h3>
             <p id="successPopupMsg">Đăng ký tài khoản thành công.</p>
             <p id="successSubMsg" style="font-size:0.82rem;color:var(--text-muted);margin:-12px 0 24px">📧 Mã xác nhận đã được gửi đến email của bạn</p>
-            <button class="btn-success" onclick="closeSuccessPopup()">Tiếp tục</button>
+            <button class="btn-success" id="successPopupBtn" onclick="closeSuccessPopup()">Tiếp tục</button>
         </div>
     </div>
 
@@ -3525,7 +3565,7 @@
             document.getElementById(id).classList.add('open');
         }
         function closeModal(id) { document.getElementById(id).classList.remove('open') }
-        function showSuccessPopup(msg, subMsg) {
+        function showSuccessPopup(msg, subMsg, isError) {
             document.getElementById('successPopupMsg').innerHTML = msg || 'Đăng ký tài khoản thành công.';
             const subEl = document.getElementById('successSubMsg');
             if (subMsg) {
@@ -3534,7 +3574,25 @@
             } else {
                 subEl.style.display = 'none';
             }
-            document.getElementById('successPopup').classList.add('open');
+            
+            const popup = document.getElementById('successPopup');
+            const successIcon = popup.querySelector('.status-icon-success');
+            const errorIcon = popup.querySelector('.status-icon-error');
+            const titleEl = document.getElementById('successPopupTitle');
+            
+            if (isError) {
+                popup.classList.add('popup-error');
+                successIcon.style.display = 'none';
+                errorIcon.style.display = 'block';
+                titleEl.textContent = 'Sự cố!';
+            } else {
+                popup.classList.remove('popup-error');
+                successIcon.style.display = 'block';
+                errorIcon.style.display = 'none';
+                titleEl.textContent = 'Thành công!';
+            }
+            
+            popup.classList.add('open');
         }
         function closeSuccessPopup() {
             document.getElementById('successPopup').classList.remove('open');
@@ -4163,7 +4221,8 @@
                     } else {
                         showSuccessPopup(
                             'Hệ thống gửi email xác thực đang gặp sự cố.',
-                            '⚠️ Vui lòng liên hệ Admin để được xác thực thủ công.'
+                            '⚠️ Vui lòng liên hệ Admin để được xác thực thủ công.',
+                            true
                         );
                     }
                 } else {

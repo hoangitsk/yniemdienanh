@@ -117,6 +117,7 @@ module.exports = async (req, res) => {
             from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
             to: email,
             subject: 'Xác thực tài khoản Ý Niệm Điện Ảnh',
+            text: `XÁC THỰC TÀI KHOẢN Ý NIỆM ĐIỆN ẢNH\n\nCảm ơn bạn đã đăng ký tại Ý Niệm Điện Ảnh!\n\nVui lòng bấm link bên dưới để xác thực email của bạn:\n${oobLink}\n\nNếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.\n\n© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh`,
             html: `
                 <div style="max-width:600px;margin:auto;background:#0d0d0d;padding:0;border-radius:12px;overflow:hidden;font-family:'Be Vietnam Pro',Helvetica,Arial,sans-serif">
                     <div style="background:linear-gradient(135deg,#1a1008 0%,#0d0d0d 50%,#1a1008 100%);padding:40px 30px 30px;text-align:center;border-bottom:2px solid rgba(228,184,102,0.2)">

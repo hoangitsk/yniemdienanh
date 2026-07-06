@@ -2318,6 +2318,7 @@
         let localDB = null;
         let session = JSON.parse(sessionStorage.getItem('ynda_user')) || null;
         let currentStage = 'Xây dựng đội ngũ';
+        let txFilter = 'all';
 
         const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
         const money = n => Number(n).toLocaleString('vi-VN') + 'đ';
@@ -2479,6 +2480,30 @@
                 showToast('ℹ️ Giao dịch thanh toán đã bị huỷ.', 'info', 5000);
                 window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
             }
+        }
+
+        function isExpiredTx(t) {
+            if (t.status !== 'pending') return false;
+            let txTime = null;
+            if (t.createdAt) {
+                txTime = new Date(t.createdAt);
+            } else if (t.time) {
+                try {
+                    const match = t.time.match(/(\d{2}):(\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
+                    if (match) {
+                        const [_, hour, minute, day, month, year] = match;
+                        txTime = new Date(year, month - 1, day, hour, minute);
+                    }
+                } catch(e) {}
+            }
+            if (!txTime || isNaN(txTime.getTime())) return false;
+            const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+            return (Date.now() - txTime.getTime()) > threeDaysMs;
+        }
+
+        function setTxFilter(filter) {
+            txFilter = filter;
+            renderTab('transactions');
         }
 
         // ================= DATABASE HANDLERS (HYBRID LOCAL/FIREBASE) =================
@@ -4556,9 +4581,19 @@
                 },
                 transactions() {
                     const txs = d.transactions || [];
-                    const pending = txs.filter(t => t.status === 'pending');
+                    const pending = txs.filter(t => t.status === 'pending' && !isExpiredTx(t));
                     const confirmed = txs.filter(t => t.status === 'confirmed');
                     const pp = (d.config && d.config.prizePool) || { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
+                    
+                    let filteredTxs = [...txs];
+                    if (txFilter === 'pending') {
+                        filteredTxs = filteredTxs.filter(t => t.status === 'pending' && !isExpiredTx(t));
+                    } else if (txFilter === 'success') {
+                        filteredTxs = filteredTxs.filter(t => t.status === 'confirmed');
+                    } else if (txFilter === 'failed') {
+                        filteredTxs = filteredTxs.filter(t => t.status === 'pending' && isExpiredTx(t));
+                    }
+
                     main.innerHTML = `
                         <h2>💳 Giao dịch & Quỹ giải thưởng</h2>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px">
@@ -4591,23 +4626,37 @@
                         </div>
                         ` : ''}
                         <div class="panel">
-                            <h3 style="color:var(--gold-light);margin-bottom:14px">📋 Lịch sử giao dịch (${txs.length})</h3>
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px">
+                                <h3 style="color:var(--gold-light);margin:0">📋 Lịch sử giao dịch (${filteredTxs.length})</h3>
+                                <div style="display:flex; gap:8px">
+                                    <button class="btn btn-sm ${txFilter === 'all' ? 'btn-gold' : 'btn-line'}" onclick="setTxFilter('all')">Tất cả</button>
+                                    <button class="btn btn-sm ${txFilter === 'pending' ? 'btn-gold' : 'btn-line'}" onclick="setTxFilter('pending')">Chờ duyệt</button>
+                                    <button class="btn btn-sm ${txFilter === 'success' ? 'btn-gold' : 'btn-line'}" onclick="setTxFilter('success')">Thành công</button>
+                                    <button class="btn btn-sm ${txFilter === 'failed' ? 'btn-gold' : 'btn-line'}" onclick="setTxFilter('failed')">Thất bại (Quá hạn)</button>
+                                </div>
+                            </div>
                             <div class="table-wrap">
                                 <table>
                                     <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>
-                                    ${[...txs].reverse().map(t => `
+                                    ${[...filteredTxs].reverse().map(t => `
                                         <tr>
                                             <td data-label="Người dùng"><b>${esc(t.userName)}</b></td>
                                             <td data-label="Loại giao dịch">${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
                                             <td data-label="Số tiền" style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
-                                            <td data-label="Trạng thái">${t.status === 'confirmed' ? '<span style="color:#63d19e">✔ Đã xác nhận</span>' : '<span style="color:#fbbf24">⏳ Chờ</span>'}</td>
+                                            <td data-label="Trạng thái">
+                                                ${t.status === 'confirmed' 
+                                                    ? '<span style="color:#63d19e;font-weight:600">✔ Thành công</span>' 
+                                                    : isExpiredTx(t)
+                                                        ? '<span style="color:#ef4444;font-weight:600">❌ Thất bại (Quá hạn)</span>' 
+                                                        : '<span style="color:#fbbf24;font-weight:600">⏳ Chờ duyệt</span>'}
+                                            </td>
                                             <td data-label="Memo" style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
                                             <td data-label="Thời gian" style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
                                             <td data-label="Thao tác">
                                                 <button class="btn btn-line btn-sm" style="background:#ef4444;color:#fff;border-color:#ef4444" onclick="deleteTx(${t.id})">🗑 Xoá</button>
                                             </td>
                                         </tr>
-                                    `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Chưa có giao dịch nào.</td></tr>'}
+                                    `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Không tìm thấy giao dịch phù hợp.</td></tr>'}
                                 </table>
                             </div>
                         </div>
@@ -5987,7 +6036,8 @@
                 amount: 5000, 
                 memo, 
                 status: 'pending', 
-                time: timeStr 
+                time: timeStr,
+                createdAt: Date.now()
             };
             await saveItem('transactions', tx);
             renderAllPrizePools();

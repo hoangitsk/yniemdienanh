@@ -6843,8 +6843,11 @@
             const userId = session.id;
             const path = `avatars/${userId}/avatar`;
             const ref = storageInstance.ref(path);
-            try { await ref.delete(); } catch (e) {}
-            const snap = await ref.put(file, { contentType: file.type || 'image/jpeg' });
+            try { await Promise.race([ref.delete(), new Promise((_,r) => setTimeout(r, 5000))]); } catch (e) {}
+            const snap = await Promise.race([
+                ref.put(file, { contentType: file.type || 'image/jpeg' }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Upload timeout')), 15000))
+            ]);
             const url = await snap.ref.getDownloadURL();
             return url;
         }

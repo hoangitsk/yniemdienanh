@@ -4,7 +4,14 @@ const admin = require('firebase-admin');
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
 if (FIREBASE_SERVICE_ACCOUNT && !admin.apps.length) {
     try {
-        const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+        let serviceAccountStr = FIREBASE_SERVICE_ACCOUNT.trim();
+        if (serviceAccountStr.startsWith('"') && serviceAccountStr.endsWith('"')) {
+            serviceAccountStr = serviceAccountStr.slice(1, -1);
+        }
+        let serviceAccount = JSON.parse(serviceAccountStr);
+        if (typeof serviceAccount === 'string') {
+            serviceAccount = JSON.parse(serviceAccount);
+        }
         if (serviceAccount.private_key) {
             serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
         }

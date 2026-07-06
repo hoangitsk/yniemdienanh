@@ -1,9 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const PayOS = require('@payos/node');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+
+const PAYOS_CLIENT_ID = process.env.PAYOS_CLIENT_ID || "";
+const PAYOS_API_KEY = process.env.PAYOS_API_KEY || "";
+const PAYOS_CHECKSUM_KEY = process.env.PAYOS_CHECKSUM_KEY || "";
+
+const PAYOS_ENABLED = !!(PAYOS_CLIENT_ID && PAYOS_API_KEY && PAYOS_CHECKSUM_KEY);
+const payos = PAYOS_ENABLED ? new PayOS(PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY) : null;
 
 const app = express();
 app.use(cors());
@@ -114,9 +121,57 @@ app.post('/api/email/send-password-reset', async (req, res) => {
     }
 });
 
-// Proxy /api/* and /health to Python backend
-app.use('/api', createProxyMiddleware({ target: `http://localhost:${PYTHON_PORT}`, changeOrigin: true }));
-app.use('/health', createProxyMiddleware({ target: `http://localhost:${PYTHON_PORT}`, changeOrigin: true }));
+// PayOS API endpoints (replacing Python FastAPI backend)
+app.post('/api/create-payment', async (req, res) => {
+    try {
+        if (!PAYOS_ENABLED) {
+            return res.status(400).json({ error: "PayOS chưa được cấu hình. Vui lòng thiết lập biến môi trường." });
+        }
+
+        const { amount, description, orderCode } = req.body;
+        const amountNum = parseInt(amount || 5000, 10);
+        const descStr = String(description || "Thanh toan").substring(0, 25);
+        const orderNum = parseInt(orderCode || Math.floor(Date.now() % 100000000), 10);
+
+        const paymentData = {
+            orderCode: orderNum,
+            amount: amountNum,
+            description: descStr,
+            cancelUrl: `${BASE_URL}/payment-cancel?orderCode=${orderNum}`,
+            returnUrl: `${BASE_URL}/payment-success?orderCode=${orderNum}`
+        };
+
+        const paymentLink = await payos.createPaymentLink(paymentData);
+        res.json({
+            checkoutUrl: paymentLink.checkoutUrl,
+            qrCode: paymentLink.qrCode,
+            orderCode: paymentLink.orderCode
+        });
+    } catch (err) {
+        console.error('PayOS create payment error:', err);
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.post('/api/payos-webhook', async (req, res) => {
+    try {
+        if (!PAYOS_ENABLED) {
+            return res.status(400).json({ error: "PayOS chưa được cấu hình." });
+        }
+
+        const webhookData = payos.verifyPaymentWebhookData(req.body);
+        console.log('PayOS webhook verified: orderCode =', webhookData.orderCode, 'amount =', webhookData.amount);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('PayOS webhook verification error:', err);
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.get('/health', (req, res) => {
+    res.json({ status: "ok" });
+});
+
 
 // Serve static files
 app.use('/Logo', express.static(path.join(__dirname, 'Logo')));
@@ -141,5 +196,5 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Node.js server running at ${BASE_URL}`);
-    console.log(`Proxying /api/* to Python backend at http://localhost:${PYTHON_PORT}`);
+    console.log(`PayOS is ${PAYOS_ENABLED ? "ENABLED" : "DISABLED (Check your env variables)"}`);
 });

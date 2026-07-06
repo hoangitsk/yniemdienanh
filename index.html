@@ -1307,6 +1307,13 @@
             display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
             align-items: flex-start;
         }
+        .award-tag {
+            display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+            border-radius: 20px; font-size: 0.7rem; font-weight: 600; white-space: nowrap;
+        }
+        .award-gold { background: linear-gradient(135deg,rgba(228,184,102,0.3),rgba(251,191,36,0.2)); color: #fbbf24; border: 1px solid rgba(228,184,102,0.3); }
+        .award-silver { background: linear-gradient(135deg,rgba(200,200,210,0.25),rgba(180,180,190,0.15)); color: #c0c0c0; border: 1px solid rgba(200,200,210,0.2); }
+        .award-bronze { background: linear-gradient(135deg,rgba(205,127,50,0.25),rgba(180,100,30,0.15)); color: #cd7f32; border: 1px solid rgba(205,127,50,0.2); }
 
         /* SOCIAL FEED & PROFILES */
         .avatar {
@@ -2277,6 +2284,8 @@
     </div>
 
     <script>
+
+
         // Bắt lỗi Javascript toàn cục hiển thị trực tiếp trên giao diện để debug dễ dàng
         window.onerror = function(message, source, lineno, colno, error) {
             const errDiv = document.createElement('div');
@@ -4470,7 +4479,11 @@
                                             </td>
                                             <td data-label="Đánh giá" style="font-size:0.8rem">
                                                 ${renderEvalBadge(u)}
-                                                ${isOrg ? `<button class="btn btn-sm" style="margin-top:4px;padding:3px 8px;font-size:0.7rem;background:rgba(228,184,102,0.15);color:var(--gold-light);border:1px solid rgba(228,184,102,0.2);border-radius:6px;cursor:pointer" onclick="openRateModal('${u.id}')">⭐ Đánh giá</button>` : ''}
+                                                ${(u.awards || []).length > 0 ? `<div style="margin-top:4px">${renderAwardTags(u)}</div>` : ''}
+                                                ${isOrg ? `
+                                                    <button class="btn btn-sm" style="margin-top:4px;padding:3px 8px;font-size:0.7rem;background:rgba(228,184,102,0.15);color:var(--gold-light);border:1px solid rgba(228,184,102,0.2);border-radius:6px;cursor:pointer" onclick="openRateModal('${u.id}')">⭐ Đánh giá</button>
+                                                    <button class="btn btn-sm" style="margin-top:4px;padding:3px 8px;font-size:0.7rem;background:rgba(99,209,158,0.15);color:var(--ok);border:1px solid rgba(99,209,158,0.2);border-radius:6px;cursor:pointer" onclick="openAwardModal('${u.id}')">🏆 Giải thưởng</button>
+                                                ` : ''}
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -5406,13 +5419,24 @@
                     ${u.intro ? `<p style="margin-top:6px;color:var(--text-muted);font-size:0.85rem;font-style:italic">"${esc(u.intro)}"</p>` : ''}
                     <p style="margin-top:6px;color:var(--text-muted);font-size:0.75rem">Tham gia từ: ${u.createdAt || 'Không rõ'}</p>
                 </div>
+                ${(u.awards || []).length > 0 ? `
+                    <div style="margin-bottom:16px;padding:0 4px">
+                        <h4 style="color:var(--text-muted);margin-bottom:8px">🏆 Giải thưởng</h4>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px">${renderAwardTags(u)}</div>
+                    </div>
+                ` : ''}
                 ${(u.evaluations || []).length > 0 ? `
                     <div style="margin-bottom:16px;padding:0 4px">
                         <h4 style="color:var(--text-muted);margin-bottom:8px">📋 Lịch sử đánh giá</h4>
                         ${renderFullEvalHistory(u)}
                     </div>
                 ` : ''}
-                ${isOrg ? `<div style="text-align:center;margin-bottom:16px"><button class="btn btn-gold btn-sm" onclick="closeModal('profileModal');setTimeout(()=>openRateModal('${userId}'),200)">⭐ Đánh giá thành viên này</button></div>` : ''}
+                ${isOrg ? `
+                    <div style="display:flex;gap:8px;margin-bottom:16px">
+                        <button class="btn btn-gold btn-sm" style="flex:1" onclick="closeModal('profileModal');setTimeout(()=>openRateModal('${userId}'),200)">⭐ Đánh giá</button>
+                        <button class="btn btn-sm" style="flex:1;background:rgba(228,184,102,0.15);color:var(--gold-light);border:1px solid rgba(228,184,102,0.2);border-radius:6px;cursor:pointer" onclick="closeModal('profileModal');setTimeout(()=>openAwardModal('${userId}'),200)">🏆 Thêm giải thưởng</button>
+                    </div>
+                ` : ''}
                 <h4 style="margin-bottom:12px;color:var(--text-muted)">Bài viết (${userPosts.length})</h4>
                 ${userPosts.length === 0 ? '<p style="text-align:center;color:var(--text-muted);padding:20px">Chưa có bài viết nào.</p>' :
                     userPosts.map(p => `
@@ -5608,6 +5632,7 @@
                         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
                             <span class="role-tag" style="background:${roleBg};color:${roleColor};font-size:0.7rem;padding:3px 10px;border-radius:20px;font-weight:600">${roleLabel}</span>
                             ${(u.evaluations || []).length > 0 ? renderEvalBadge(u) : ''}
+                            ${(u.awards || []).length > 0 ? `<span style="font-size:0.65rem;color:#fbbf24">🏆 ${u.awards.length} giải</span>` : ''}
                         </div>
                     </div>
                 `;
@@ -5620,20 +5645,21 @@
             const evals = u.evaluations || [];
             if (evals.length === 0) return '<span style="color:var(--text-muted);font-size:0.75rem">Chưa đánh giá</span>';
             const latest = evals[evals.length - 1];
-            const labels = { xuatsac: '⭐ Xuất sắc', gioi: '🌟 Giỏi', kha: '👍 Khá', trungbinh: '📌 Trung bình' };
-            const cls = { xuatsac: 'eval-xuatsac', gioi: 'eval-gioi', kha: 'eval-kha', trungbinh: 'eval-trungbinh' };
+            const labels = { hoanthanhxuatac: '⭐ Hoàn thành xuất sắc', hoanthanhtot: '🌟 Hoàn thành tốt', hoanthanhkha: '👍 Hoàn thành khá', cancoqang: '📌 Cần cố gắng' };
+            const cls = { hoanthanhxuatac: 'eval-xuatsac', hoanthanhtot: 'eval-gioi', hoanthanhkha: 'eval-kha', cancoqang: 'eval-trungbinh' };
             return `<span class="eval-badge ${cls[latest.rating] || ''}">${labels[latest.rating] || latest.rating}</span>`;
         }
 
         function renderFullEvalHistory(u) {
             const evals = u.evaluations || [];
             if (evals.length === 0) return '<p style="color:var(--text-muted);font-size:0.85rem;padding:10px 0">Chưa có đánh giá nào.</p>';
-            const labels = { xuatsac: '⭐ Xuất sắc', gioi: '🌟 Giỏi', kha: '👍 Khá', trungbinh: '📌 Trung bình' };
-            const cls = { xuatsac: 'eval-xuatsac', gioi: 'eval-gioi', kha: 'eval-kha', trungbinh: 'eval-trungbinh' };
+            const labels = { hoanthanhxuatac: '⭐ Hoàn thành xuất sắc', hoanthanhtot: '🌟 Hoàn thành tốt', hoanthanhkha: '👍 Hoàn thành khá', cancoqang: '📌 Cần cố gắng' };
+            const cls = { hoanthanhxuatac: 'eval-xuatsac', hoanthanhtot: 'eval-gioi', hoanthanhkha: 'eval-kha', cancoqang: 'eval-trungbinh' };
             return [...evals].reverse().map(e => `
                 <div class="eval-history-item">
                     <span class="eval-badge ${cls[e.rating] || ''}">${labels[e.rating] || e.rating}</span>
                     <div style="flex:1;font-size:0.82rem;color:var(--text-muted)">
+                        ${e.event ? `<div style="font-size:0.75rem;color:var(--gold);margin-bottom:2px">📋 ${esc(e.event)}</div>` : ''}
                         <div>${esc(e.comment || '')}</div>
                         <div style="font-size:0.7rem;margin-top:2px">bởi ${esc(e.evaluatedByName || 'QTV')} · ${e.time || ''}</div>
                     </div>
@@ -5645,25 +5671,34 @@
             const u = localDB.users.find(x => String(x.id) === String(userId));
             if (!u) return showToast('Không tìm thấy người dùng.', 'error');
             const modal = document.getElementById('profileModalBody');
+            const events = (localDB.events || []).filter(e => e.status === 'done');
             modal.innerHTML = `
                 <h3 style="margin-bottom:16px">⭐ Đánh giá: ${esc(u.name)}</h3>
                 <div style="margin-bottom:16px">
                     <label>Xếp loại *</label>
                     <select id="rateSelect" style="margin-top:4px">
-                        <option value="xuatsac">⭐ Xuất sắc</option>
-                        <option value="gioi">🌟 Giỏi</option>
-                        <option value="kha">👍 Khá</option>
-                        <option value="trungbinh">📌 Trung bình</option>
+                        <option value="hoanthanhxuatac">⭐ Hoàn thành xuất sắc nhiệm vụ tổ chức</option>
+                        <option value="hoanthanhtot">🌟 Hoàn thành tốt nhiệm vụ tổ chức</option>
+                        <option value="hoanthanhkha">👍 Hoàn thành khá</option>
+                        <option value="cancoqang">📌 Cần cố gắng hơn</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:16px">
+                    <label>Hoạt động / Sự kiện tham gia</label>
+                    <select id="rateEvent" style="margin-top:4px">
+                        <option value="">— Chọn hoạt động —</option>
+                        ${events.map(e => `<option value="${esc(e.title)}">${esc(e.title)}</option>`).join('')}
                     </select>
                 </div>
                 <div style="margin-bottom:16px">
                     <label>Nhận xét</label>
-                    <textarea id="rateComment" rows="3" placeholder="Nhận xét về thành viên này..." style="margin-top:4px;width:100%;resize:none;padding:10px;border-radius:12px;background:rgba(0,0,0,0.2);border:1px solid rgba(228,184,102,0.15);color:#e2e8f0;font-size:0.9rem"></textarea>
+                    <textarea id="rateComment" rows="3" placeholder="Nhận xét về mức độ hoàn thành..." style="margin-top:4px;width:100%;resize:none;padding:10px;border-radius:12px;background:rgba(0,0,0,0.2);border:1px solid rgba(228,184,102,0.15);color:#e2e8f0;font-size:0.9rem"></textarea>
                 </div>
-                <div style="margin-bottom:16px;max-height:200px;overflow-y:auto">
+                ${(u.evaluations || []).length > 0 ? `
+                <div style="margin-bottom:16px;max-height:150px;overflow-y:auto">
                     <label style="margin-bottom:6px;display:block">Lịch sử đánh giá</label>
                     ${renderFullEvalHistory(u)}
-                </div>
+                </div>` : ''}
                 <button class="btn btn-gold" style="width:100%" onclick="saveEvaluation('${userId}')">Lưu đánh giá</button>
             `;
             openModal('profileModal');
@@ -5671,6 +5706,7 @@
 
         async function saveEvaluation(userId) {
             const rating = document.getElementById('rateSelect')?.value;
+            const eventRef = document.getElementById('rateEvent')?.value || '';
             const comment = document.getElementById('rateComment')?.value.trim();
             if (!rating) return showToast('Vui lòng chọn xếp loại.', 'info');
             const u = localDB.users.find(x => String(x.id) === String(userId));
@@ -5679,7 +5715,7 @@
             if (!u.evaluations) u.evaluations = [];
             const now = new Date();
             const timeStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
-            u.evaluations.push({ rating, comment: comment || '', evaluatedBy: session.id, evaluatedByName: session.name, time: timeStr });
+            u.evaluations.push({ rating, event: eventRef, comment: comment || '', evaluatedBy: session.id, evaluatedByName: session.name, time: timeStr });
             if (useFirebase) {
                 try {
                     await dbInstance.collection('users').doc(String(userId)).set({ evaluations: u.evaluations }, { merge: true });
@@ -5689,6 +5725,96 @@
             hideLoadingToast(lt);
             closeModal('profileModal');
             renderTab('members');
+        }
+
+        // ================= AWARD MANAGEMENT =================
+
+        function renderAwardTags(u) {
+            const awards = u.awards || [];
+            if (awards.length === 0) return '';
+            return awards.map(a => {
+                const cls = a.prize === 'Giải nhất' ? 'award-gold' : a.prize === 'Giải nhì' ? 'award-silver' : a.prize === 'Giải ba' ? 'award-bronze' : 'award-tag';
+                return `<span class="award-tag ${cls}" title="${esc(a.event || '')}">🏆 ${esc(a.prize)}${a.event ? ' — ' + esc(a.event) : ''}</span>`;
+            }).join(' ');
+        }
+
+        function openAwardModal(userId) {
+            const u = localDB.users.find(x => String(x.id) === String(userId));
+            if (!u) return showToast('Không tìm thấy người dùng.', 'error');
+            const events = (localDB.events || []).filter(e => e.status === 'done');
+            const existing = renderAwardTags(u);
+            const modal = document.getElementById('profileModalBody');
+            modal.innerHTML = `
+                <h3 style="margin-bottom:16px">🏆 Thêm giải thưởng: ${esc(u.name)}</h3>
+                ${existing ? `<div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:6px">${existing}</div>` : ''}
+                <div style="margin-bottom:16px">
+                    <label>Giải thưởng *</label>
+                    <select id="awardPrize" style="margin-top:4px">
+                        <option value="Giải nhất">🥇 Giải nhất</option>
+                        <option value="Giải nhì">🥈 Giải nhì</option>
+                        <option value="Giải ba">🥉 Giải ba</option>
+                        <option value="Giải triển vọng">🌟 Giải triển vọng</option>
+                        <option value="Giải phong cách">✨ Giải phong cách</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:16px">
+                    <label>Sự kiện / Hoạt động</label>
+                    <select id="awardEvent" style="margin-top:4px">
+                        <option value="">— Chọn sự kiện —</option>
+                        ${events.map(e => `<option value="${esc(e.title)}">${esc(e.title)}</option>`).join('')}
+                    </select>
+                </div>
+                <div style="margin-bottom:16px">
+                    <label>Ghi chú</label>
+                    <input id="awardNote" placeholder="Ví dụ: Thể loại phim ngắn xuất sắc nhất" style="margin-top:4px;width:100%;padding:10px;border-radius:12px;background:rgba(0,0,0,0.2);border:1px solid rgba(228,184,102,0.15);color:#e2e8f0">
+                </div>
+                <button class="btn btn-gold" style="width:100%;margin-bottom:12px" onclick="saveAward('${userId}')">➕ Thêm giải thưởng</button>
+                ${(u.awards || []).length > 0 ? `
+                    <h4 style="color:var(--text-muted);margin-bottom:8px">Quản lý giải thưởng</h4>
+                    ${u.awards.map((a, i) => `
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                            <span style="font-size:0.85rem">🏆 ${esc(a.prize)}${a.event ? ' — ' + esc(a.event) : ''}</span>
+                            <button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger);padding:2px 8px;font-size:0.7rem" onclick="removeAward('${userId}',${i})">✕</button>
+                        </div>
+                    `).join('')}
+                ` : ''}
+            `;
+            openModal('profileModal');
+        }
+
+        async function saveAward(userId) {
+            const prize = document.getElementById('awardPrize')?.value;
+            const event = document.getElementById('awardEvent')?.value || '';
+            const note = document.getElementById('awardNote')?.value.trim() || '';
+            if (!prize) return showToast('Vui lòng chọn giải thưởng.', 'info');
+            const u = localDB.users.find(x => String(x.id) === String(userId));
+            if (!u) return showToast('Không tìm thấy người dùng.', 'error');
+            if (!u.awards) u.awards = [];
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('vi-VN');
+            u.awards.push({ prize, event, note, date: dateStr, addedBy: session.name });
+            if (useFirebase) {
+                try {
+                    await dbInstance.collection('users').doc(String(userId)).set({ awards: u.awards }, { merge: true });
+                } catch (e) { console.error(e); }
+            }
+            if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            openAwardModal(userId);
+            showToast('✅ Đã thêm giải thưởng!', 'success');
+        }
+
+        function removeAward(userId, idx) {
+            const u = localDB.users.find(x => String(x.id) === String(userId));
+            if (!u || !u.awards) return;
+            if (!confirm('Xóa giải thưởng này?')) return;
+            u.awards.splice(idx, 1);
+            if (useFirebase) {
+                try {
+                    dbInstance.collection('users').doc(String(userId)).set({ awards: u.awards }, { merge: true });
+                } catch (e) { console.error(e); }
+            }
+            if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            openAwardModal(userId);
         }
 
         // ================= PRIZE POOL & PAYMENT =================

@@ -15,26 +15,22 @@ if "%commit_msg%"=="" (
     set commit_msg=Update %dt% %tm%
 )
 
-echo [1/4] Git add...
+echo [1/3] Git add...
 git add -A
 if %errorlevel% neq 0 ( echo FAIL: git add failed & pause & exit /b 1 )
 
-echo [2/4] Git commit...
+echo [2/3] Git commit...
 git commit -m "%commit_msg%"
 if %errorlevel% neq 0 if %errorlevel% neq 1 ( echo FAIL: git commit failed & pause & exit /b 1 )
 
-echo [3/4] Push to GitHub...
+echo [3/3] Push to GitHub...
 git push origin main
 if %errorlevel% neq 0 ( echo FAIL: push to GitHub failed & pause & exit /b 1 )
 
-echo [4/4] Push to HuggingFace...
-git push hf main
-if %errorlevel% neq 0 ( echo FAIL: push to HuggingFace failed & pause & exit /b 1 )
-
 echo.
 echo ============================================
-echo   Deploy thanh cong!
+echo   Push len GitHub thanh cong!
+echo   Vercel se tu dong deploy tu repo nay.
 echo   GitHub: https://github.com/hoangitsk/yniemdienanh
-echo   HF:     https://huggingface.co/spaces/Harlanitsk/yniemdienanh
 echo ============================================
 pause

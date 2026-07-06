@@ -137,7 +137,7 @@ service cloud.firestore {
     }
 
     match /transactions/{docId} {
-      allow read: if isOrganizer();
+      allow read: if isOrganizer() || (signedIn() && resource.data.userId == request.auth.uid);
       allow create: if signedIn();
       allow update: if isOrganizer();
       allow delete: if isOrganizer();

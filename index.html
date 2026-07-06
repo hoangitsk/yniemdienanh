@@ -1439,7 +1439,18 @@
             width: 40px; height: 40px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 1rem; flex-shrink: 0;
-            background: var(--gold-dark); color: #fff;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+            color: #050c14;
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 10px rgba(228, 184, 102, 0.25);
+            text-shadow: 0 1px 1px rgba(255,255,255,0.4);
+            overflow: hidden;
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
         .avatar-sm { width: 32px; height: 32px; font-size: 0.8rem; }
         .avatar-lg { width: 64px; height: 64px; font-size: 1.5rem; }
@@ -1449,7 +1460,7 @@
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 16px;
-            max-width: 680px;
+            max-width: 820px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -1928,6 +1939,237 @@
             box-shadow: 0 4px 12px rgba(224, 178, 98, 0.2);
         }
 
+        /* ===== CREATIVE HUB COMMUNITY GRID ===== */
+        .community-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 28px;
+            max-width: 1200px;
+            margin: 0 auto;
+            align-items: start;
+            padding: 0 2%;
+        }
+
+        .community-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar-widget {
+            background: var(--navy-card);
+            border: 1px solid rgba(228, 184, 102, 0.15);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .sidebar-widget h4 {
+            color: var(--gold-light);
+            font-size: 1.05rem;
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding-bottom: 10px;
+        }
+
+        /* Sidebar Cards styling */
+        .sidebar-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(228, 184, 102, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            transition: all var(--duration-fast) ease;
+        }
+
+        .sidebar-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .card-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .bg-soon { background: rgba(228, 184, 102, 0.15); color: var(--gold-light); }
+        .bg-live { background: rgba(99, 209, 158, 0.15); color: var(--ok); }
+        .bg-btc { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+
+        .card-title {
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.92rem;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .card-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .card-btn {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--gold-light);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            transition: all var(--duration-fast) ease;
+        }
+
+        .card-btn:hover {
+            background: var(--grad);
+            color: #050c14;
+            border-color: var(--gold);
+        }
+
+        /* Progress Card widget */
+        .progress-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(228, 184, 102, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .progress-card .project-name {
+            font-weight: 600;
+            font-size: 0.92rem;
+            margin-bottom: 8px;
+            color: var(--text-light);
+        }
+        .progress-bar-wrap {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--grad);
+            border-radius: 4px;
+            box-shadow: 0 0 8px var(--gold);
+        }
+        .progress-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        /* Quick actions widget styling */
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .quick-actions-grid button {
+            background: rgba(228, 184, 102, 0.06);
+            border: 1px solid rgba(228, 184, 102, 0.2);
+            color: var(--gold-light);
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--duration-fast) ease;
+        }
+        .quick-actions-grid button:hover {
+            background: var(--grad);
+            color: #050c14;
+            border-color: var(--gold);
+            transform: translateY(-1px);
+        }
+
+        /* Active indicator badge */
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--ok);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 6px var(--ok);
+        }
+
+        @media (max-width: 990px) {
+            .community-grid {
+                grid-template-columns: 1fr;
+            }
+            .community-sidebar {
+                display: none;
+            }
+        }
+
+        /* Composer Mock actions & Sort Buttons styling */
+        .composer-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-muted);
+            font-size: 0.76rem;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all var(--duration-fast) ease;
+        }
+        .composer-btn:hover {
+            background: rgba(228, 184, 102, 0.08);
+            color: var(--gold-light);
+            border-color: rgba(228, 184, 102, 0.3);
+        }
+        .btn-sort {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(228, 184, 102, 0.1);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--duration-fast) ease;
+        }
+        .btn-sort:hover {
+            border-color: var(--gold);
+            color: var(--gold-light);
+        }
+        .btn-sort.active {
+            background: var(--grad);
+            color: #050c14;
+            border-color: var(--gold);
+        }
+        
+        /* Hashtag autocomplete suggestion items */
+        .hashtag-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            transition: background var(--duration-fast);
+        }
+        .hashtag-item:hover {
+            background: rgba(228, 184, 102, 0.1);
+            color: var(--gold-light);
+        }
+
         /* ===== TOAST NOTIFICATION ===== */
         #toastContainer {
             position: fixed;
@@ -2228,11 +2470,67 @@
             <div class="community-tabs">
                 <button class="active" onclick="showCommunityTab('feed')" id="ctab-feed">📰 Bảng tin</button>
                 <button onclick="showCommunityTab('chat')" id="ctab-chat">💬 Chat</button>
-                <button onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người</button>
+                <button onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người <span style="display:inline-block;padding:2px 6px;border-radius:10px;background:rgba(99,209,158,0.15);color:var(--ok);font-size:0.7rem;margin-left:4px;font-weight:700">8 ●</span></button>
             </div>
             <div id="community-content">
-                <div id="communityFeed">
-                    <div id="feedContainer"></div>
+                <div id="communityFeed" class="community-grid">
+                    <!-- Bảng tin (Cột trái) -->
+                    <div>
+                        <!-- Nơi hiển thị bài viết -->
+                        <div id="feedContainer"></div>
+                    </div>
+                    
+                    <!-- Sidebar widgets (Cột phải) -->
+                    <div class="community-sidebar">
+                        <!-- Quick Actions Widget (Only for Admin/BTC) -->
+                        <div id="sidebarQuickActions" class="sidebar-widget" style="display:none">
+                            <h4>⚡ Thao tác nhanh</h4>
+                            <div class="quick-actions-grid">
+                                <button onclick="triggerQuickAction('casting')">➕ Đăng casting</button>
+                                <button onclick="triggerQuickAction('workshop')">➕ Tạo workshop</button>
+                                <button onclick="triggerQuickAction('btc')">➕ Tuyển BTC</button>
+                                <button onclick="triggerQuickAction('project')">➕ Đăng tiến độ</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Pinned Projects Progress Widget -->
+                        <div class="sidebar-widget">
+                            <h4>🎬 Tiến độ dự án quay</h4>
+                            <div class="progress-card">
+                                <div class="project-name">Khung Hình Thứ 24</div>
+                                <div class="progress-bar-wrap">
+                                    <div class="progress-bar-fill" style="width:60%"></div>
+                                </div>
+                                <div class="progress-label">Tiến độ: 60% (Đang sản xuất hậu kỳ)</div>
+                            </div>
+                        </div>
+
+                        <!-- Active Listings Widget -->
+                        <div class="sidebar-widget">
+                            <h4>🔥 Hoạt động nổi bật</h4>
+                            
+                            <div class="sidebar-card">
+                                <span class="card-badge bg-soon">📅 Workshop</span>
+                                <div class="card-title">Kỹ thuật Ánh sáng điện ảnh</div>
+                                <div class="card-meta">15/08 · Offline Hà Nội</div>
+                                <button class="card-btn" onclick="goSection('events')">Đăng ký tham gia →</button>
+                            </div>
+
+                            <div class="sidebar-card">
+                                <span class="card-badge bg-live">🎬 Casting</span>
+                                <div class="card-title">Phim ngắn "Ký ức thứ 24"</div>
+                                <div class="card-meta">Nam chính (18-22 tuổi)</div>
+                                <button class="card-btn" onclick="goSection('events')">Xem chi tiết →</button>
+                            </div>
+
+                            <div class="sidebar-card">
+                                <span class="card-badge bg-btc">🔥 Tuyển dụng BTC</span>
+                                <div class="card-title">Ban Thiết kế & Truyền thông</div>
+                                <div class="card-meta">Tìm kiếm thành viên cốt lõi</div>
+                                <button class="card-btn" onclick="goSection('apply')">Ứng tuyển ngay →</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div id="communityChat" style="display:none;max-width:800px;margin:0 auto">
                     <div class="card" style="padding:24px">
@@ -2506,6 +2804,39 @@
         <div class="modal-box" style="max-width:560px">
             <span class="close-x" onclick="closeModal('profileModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
             <div id="profileModalBody"></div>
+        </div>
+    </div>
+
+    <!-- EDIT PROFILE MODAL -->
+    <div class="modal" id="editProfileModal">
+        <div class="modal-box" style="max-width:500px">
+            <span class="close-x" onclick="closeModal('editProfileModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
+            <h3>👤 Chỉnh sửa hồ sơ cá nhân</h3>
+            <div style="margin-top:16px">
+                <label>Họ tên *</label>
+                <input id="epName" type="text" placeholder="Nhập họ tên">
+                
+                <label>Ảnh đại diện (URL)</label>
+                <input id="epPhotoUrl" type="text" placeholder="https://example.com/avatar.jpg">
+                
+                <label>Số điện thoại / Zalo *</label>
+                <input id="epPhone" type="text" placeholder="Nhập số điện thoại">
+                
+                <label>Trường / đơn vị *</label>
+                <input id="epSchool" type="text" placeholder="Nhập tên trường/đơn vị">
+                
+                <label>Lớp / khoa *</label>
+                <input id="epClass" type="text" placeholder="Nhập tên lớp/khoa">
+                
+                <label>Vai trò / Kỹ năng chuyên môn (cách nhau bằng dấu phẩy) *</label>
+                <input id="epInterest" type="text" placeholder="Ví dụ: 🎥 Director, 🎬 Editor, 🎭 Actor">
+                
+                <label>Giới thiệu bản thân</label>
+                <textarea id="epIntro" placeholder="Viết giới thiệu ngắn..." rows="3" style="width:100%;resize:none;padding:10px;border-radius:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(228,184,102,0.15);color:#e2e8f0;font-size:0.9rem;margin-bottom:8px"></textarea>
+                
+                <div class="form-msg" id="epMsg" style="margin-top:6px"></div>
+                <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="saveProfile()">Lưu thay đổi</button>
+            </div>
         </div>
     </div>
 
@@ -3117,6 +3448,24 @@
                 }
             });
             await Promise.all(promises);
+
+            // Tải thêm các giao dịch cá nhân nếu không phải BTC/Admin (do phân quyền Security Rules)
+            if (useFirebase && dbInstance && !isOrg) {
+                try {
+                    const snap = await firestoreWithTimeout(dbInstance.collection('transactions').where('userId', '==', uid).get());
+                    localDB.transactions = [];
+                    snap.forEach(doc => {
+                        let docData = doc.data();
+                        if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
+                            docData.id = parseInt(docData.id);
+                        }
+                        localDB.transactions.push(docData);
+                    });
+                } catch (err) {
+                    console.warn("Không thể đọc transactions cá nhân:", err.message || err);
+                    localDB.transactions = localDB.transactions || [];
+                }
+            }
 
             if (useFirebase && dbInstance) {
                 try {
@@ -4487,10 +4836,11 @@
                         <h2>👤 Hồ sơ của tôi</h2>
                         <div class="card" style="padding:30px;max-width:600px">
                             <div style="display:flex;gap:20px;align-items:center;margin-bottom:24px">
-                                ${getAvatarHtml(u.name, 'lg')}
+                                ${getAvatarHtml(u.name, 'lg', u.photoUrl)}
                                 <div>
                                     <h3 style="color:var(--gold-light);margin-bottom:4px">${esc(u.name)}</h3>
-                                    <div class="role-badge" style="background:${roleBg};color:${roleColor};font-size:0.75rem;display:inline-block;padding:3px 12px;border-radius:20px;font-weight:600">${roleLabel}</div>
+                                    <div class="role-badge" style="background:${roleBg};color:${roleColor};font-size:0.75rem;display:inline-block;padding:3px 12px;border-radius:20px;font-weight:600;margin-bottom:6px">${roleLabel}</div>
+                                    ${u.interest ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${renderSkillTags(u.interest)}</div>` : ''}
                                     ${evals.length > 0 ? `<div style="margin-top:6px">${renderEvalBadge(u)}</div>` : ''}
                                     <p style="color:var(--text-muted);font-size:0.8rem;margin-top:6px">Tham gia từ: ${u.createdAt || 'Không rõ'}</p>
                                 </div>
@@ -4508,6 +4858,9 @@
                             </div>
                             <div style="margin-bottom:10px">
                                 <label>Giới thiệu</label><p style="color:var(--text-muted);font-size:0.9rem;font-style:italic">${u.intro ? '"' + esc(u.intro) + '"' : '—'}</p>
+                            </div>
+                            <div style="margin-top:20px;text-align:right">
+                                <button class="btn btn-gold btn-sm" onclick="openEditProfileModal()">📝 Chỉnh sửa hồ sơ</button>
                             </div>
                             ${evals.length > 0 ? `
                             <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06)">
@@ -5651,10 +6004,23 @@
         // ================= SUBMISSION MANAGEMENT =================
 
         function isRegistered(eventId) {
-            if (!eventId) {
-                return (localDB.registrations || []).some(r => String(r.userId) === String(session?.id));
-            }
-            return (localDB.registrations || []).some(r => String(r.userId) === String(session?.id) && String(r.eventId) === String(eventId));
+            if (!session) return false;
+            
+            // 1. Kiểm tra trong danh sách registrations
+            const hasRegDoc = (localDB.registrations || []).some(r => 
+                String(r.userId) === String(session.id) && 
+                (!eventId || String(r.eventId) === String(eventId))
+            );
+            if (hasRegDoc) return true;
+            
+            // 2. Dự phòng: Kiểm tra trong transactions nếu có giao dịch đăng ký đã xác nhận thành công
+            const hasConfirmedTx = (localDB.transactions || []).some(t => 
+                String(t.userId) === String(session.id) && 
+                t.type === 'registration' && 
+                t.status === 'confirmed' &&
+                (!eventId || String(t.eventId) === String(eventId))
+            );
+            return hasConfirmedTx;
         }
 
         function openRegisterEvent(eventId, eventTitle) {
@@ -5868,10 +6234,22 @@
 
         // ================= SOCIAL FEED & PROFILES =================
 
-        function getAvatarHtml(name, size) {
+        function getAvatarHtml(name, size, photoUrl) {
             const cls = size === 'lg' ? 'avatar avatar-lg' : size === 'sm' ? 'avatar avatar-sm' : 'avatar';
             const initial = (name || '?').charAt(0).toUpperCase();
-            return `<div class="${cls}" title="${esc(name)}">${initial}</div>`;
+            if (photoUrl && photoUrl.trim() !== '') {
+                return `<div class="${cls}" title="${esc(name)}">
+                            <img src="${esc(photoUrl)}" alt="${esc(name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <span style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">${initial}</span>
+                        </div>`;
+            }
+            return `<div class="${cls}" title="${esc(name)}"><span>${initial}</span></div>`;
+        }
+
+        function renderSkillTags(interestStr) {
+            if (!interestStr) return '';
+            const skills = interestStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            return skills.map(s => `<span class="chip" style="background:rgba(228,184,102,0.12);color:var(--gold-light);font-size:0.75rem;padding:3px 8px;border-radius:12px;display:inline-block;font-weight:600">${esc(s)}</span>`).join('');
         }
 
         function openProfile(userId) {
@@ -5884,15 +6262,25 @@
             const roleColor = u.role === 'admin' ? 'var(--gold)' : u.role === 'organizer' ? 'var(--ok)' : 'var(--text-muted)';
             const roleBg = u.role === 'admin' ? 'rgba(228,184,102,0.2)' : u.role === 'organizer' ? 'rgba(99,209,158,0.2)' : 'rgba(255,255,255,0.06)';
             const isOrg = session && ['admin', 'organizer'].includes(session.role);
+            
             modal.innerHTML = `
                 <div class="profile-cover">
-                    ${getAvatarHtml(u.name, 'lg')}
-                    <h3>${esc(u.name)}</h3>
+                    ${getAvatarHtml(u.name, 'lg', u.photoUrl)}
+                    <h3 style="margin-top:10px">${esc(u.name)}</h3>
                     <div class="role-badge" style="background:${roleBg};color:${roleColor}">${roleLabel}</div>
+                    
+                    ${u.interest ? `
+                        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center">
+                            ${renderSkillTags(u.interest)}
+                        </div>
+                    ` : ''}
+                    
                     ${(u.evaluations || []).length > 0 ? `<div style="margin-top:8px">${renderEvalBadge(u)}</div>` : ''}
                     ${u.school ? `<p style="margin-top:8px;color:var(--text-muted);font-size:0.85rem">${esc(u.school)}${u.className ? ' — ' + esc(u.className) : ''}</p>` : ''}
                     ${u.intro ? `<p style="margin-top:6px;color:var(--text-muted);font-size:0.85rem;font-style:italic">"${esc(u.intro)}"</p>` : ''}
                     <p style="margin-top:6px;color:var(--text-muted);font-size:0.75rem">Tham gia từ: ${u.createdAt || 'Không rõ'}</p>
+                    
+                    ${isOwn ? `<button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="closeModal('profileModal');openEditProfileModal()">📝 Chỉnh sửa hồ sơ</button>` : ''}
                 </div>
                 ${(u.awards || []).length > 0 ? `
                     <div style="margin-bottom:16px;padding:0 4px">
@@ -5925,6 +6313,12 @@
             openModal('profileModal');
         }
 
+        let feedSort = 'new';
+        function setFeedSort(sort) {
+            feedSort = sort;
+            renderFeed();
+        }
+
         function renderFeed() {
             const container = document.getElementById('feedContainer');
             if (!container) return;
@@ -5933,32 +6327,100 @@
             const allComments = localDB.comments || [];
 
             let html = '';
+            
+            // 1. RENDER COMPOSER
             if (session) {
+                const currentUser = users.find(x => String(x.id) === String(session.id));
                 html += `
                     <div class="post-card">
                         <div style="display:flex;gap:12px;align-items:flex-start">
-                            ${getAvatarHtml(session.name)}
-                            <div style="flex:1">
-                                <textarea id="newPostInput" placeholder="Bạn đang nghĩ gì về điện ảnh?..." rows="3" style="width:100%;resize:none;padding:10px;border-radius:12px;background:rgba(0,0,0,0.2);border:1px solid rgba(228,184,102,0.15);color:#e2e8f0;font-size:0.9rem"></textarea>
-                                <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="createPost()">📝 Đăng bài</button>
+                            ${getAvatarHtml(session.name, 'sm', currentUser?.photoUrl)}
+                            <div style="flex:1;position:relative">
+                                <textarea id="newPostInput" placeholder="Hôm nay bạn muốn chia sẻ gì về điện ảnh?..." rows="3" style="width:100%;resize:none;padding:12px;border-radius:12px;background:rgba(0,0,0,0.25);border:1px solid rgba(228,184,102,0.15);color:#e2e8f0;font-size:0.9rem;margin-bottom:8px" oninput="handlePostInput(this)"></textarea>
+                                
+                                <!-- Suggestions Autocomplete Panel -->
+                                <div id="hashtagSuggestions" style="display:none;position:absolute;z-index:100;background:#0d2034;border:1px solid var(--gold);border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.5);width:100%;max-height:150px;overflow-y:auto;top:70px"></div>
+                                
+                                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                                        <button class="composer-btn" onclick="triggerComposerAction('media')">📷 Ảnh/Video</button>
+                                        <button class="composer-btn" onclick="triggerComposerAction('loc')">📍 Địa điểm</button>
+                                        <button class="composer-btn" onclick="triggerComposerAction('project')">🎬 Dự án</button>
+                                        <button class="composer-btn" onclick="triggerComposerAction('file')">📎 Kịch bản/File</button>
+                                        <button class="composer-btn" onclick="triggerComposerAction('poll')">🗳️ Tạo Poll</button>
+                                    </div>
+                                    <button class="btn btn-gold btn-sm" onclick="createPost()">🚀 Đăng bài</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 `;
             }
 
-            if (posts.length === 0) {
-                html += '<div style="text-align:center;padding:40px;color:var(--text-muted)">Chưa có bài viết nào. Hãy là người đầu tiên chia sẻ! 🎬</div>';
+            // 2. RENDER SORT FILTERS
+            html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding:0 4px; flex-wrap:wrap; gap:10px">
+                    <span style="font-size:0.9rem; color:var(--text-muted); font-weight:600">Bảng tin cộng đồng</span>
+                    <div style="display:flex; gap:6px">
+                        <button class="btn-sort ${feedSort === 'new' ? 'active' : ''}" onclick="setFeedSort('new')">🆕 Mới nhất</button>
+                        <button class="btn-sort ${feedSort === 'hot' ? 'active' : ''}" onclick="setFeedSort('hot')">🔥 Hot</button>
+                        <button class="btn-sort ${feedSort === 'liked' ? 'active' : ''}" onclick="setFeedSort('liked')">❤️ Yêu thích</button>
+                        <button class="btn-sort ${feedSort === 'btc' ? 'active' : ''}" onclick="setFeedSort('btc')">📢 BTC</button>
+                    </div>
+                </div>
+            `;
+
+            // 3. SEPARATE AND SORT POSTS (PINNED FIRST)
+            const pinnedPosts = posts.filter(p => p.pinned);
+            let normalPosts = posts.filter(p => !p.pinned);
+
+            if (feedSort === 'new') {
+                normalPosts.sort((a, b) => b.id - a.id);
+            } else if (feedSort === 'hot') {
+                normalPosts.sort((a, b) => {
+                    const scoreA = (a.likes || []).length + (allComments.filter(c => String(c.postId) === String(a.id)).length * 2);
+                    const scoreB = (b.likes || []).length + (allComments.filter(c => String(c.postId) === String(b.id)).length * 2);
+                    return scoreB - scoreA;
+                });
+            } else if (feedSort === 'liked') {
+                normalPosts.sort((a, b) => (b.likes || []).length - (a.likes || []).length);
+            } else if (feedSort === 'btc') {
+                normalPosts = normalPosts.filter(p => p.userRole === 'admin' || p.userRole === 'organizer');
+                normalPosts.sort((a, b) => b.id - a.id);
+            }
+
+            pinnedPosts.sort((a, b) => b.id - a.id);
+            const displayPosts = [...pinnedPosts, ...normalPosts];
+
+            if (displayPosts.length === 0) {
+                // Beautiful empty state with helpful templates
+                html += `
+                    <div class="post-card" style="text-align:center;padding:40px 20px;border-style:dashed">
+                        <div style="font-size:2rem;margin-bottom:12px">📌</div>
+                        <h4 style="color:var(--gold-light);margin-bottom:8px">Hôm nay bạn muốn chia sẻ gì?</h4>
+                        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto">Cộng đồng điện ảnh đang chờ đón những góc nhìn độc đáo và tác phẩm sáng tạo từ bạn.</p>
+                        <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">
+                            <button class="composer-btn" onclick="quickFillPost('🎬 [Review Phim] ')">✍️ Đăng review phim</button>
+                            <button class="composer-btn" onclick="quickFillPost('📷 [Behind The Scene] ')">📷 Ảnh hậu trường</button>
+                            <button class="composer-btn" onclick="quickFillPost('📎 [Kịch Bản] ')">📖 Đăng kịch bản</button>
+                            <button class="composer-btn" onclick="quickFillPost('💼 [Casting] ')">👥 Đăng casting</button>
+                        </div>
+                    </div>
+                `;
             } else {
-                html += [...posts].reverse().map(p => {
+                html += displayPosts.map(p => {
                     const u = users.find(x => String(x.id) === String(p.userId));
                     const pComments = allComments.filter(c => String(c.postId) === String(p.id));
                     const hasLiked = session && (p.likes || []).some(l => String(l) === String(session.id));
                     const likeCount = (p.likes || []).length;
+                    const isPinned = !!p.pinned;
+                    const pinnedBadge = isPinned ? `<span class="chip chip-ok" style="background:rgba(228,184,102,0.15);color:var(--gold-light);font-size:0.75rem;padding:3px 8px;border-radius:12px;margin-bottom:10px;display:inline-block;font-weight:700">📌 ĐƯỢC GHIM</span>` : '';
+                    
                     return `
                         <div class="post-card">
+                            ${pinnedBadge}
                             <div class="post-header" onclick="openProfile('${p.userId}')">
-                                ${getAvatarHtml(p.userName)}
+                                ${getAvatarHtml(p.userName, null, u?.photoUrl)}
                                 <div>
                                     <div class="name">${esc(p.userName)}</div>
                                     <div class="time">${p.time || ''} · <span style="color:${p.userRole === 'admin' ? 'var(--gold)' : p.userRole === 'organizer' ? 'var(--ok)' : 'var(--text-muted)'}">${p.userRole === 'admin' ? 'Admin' : p.userRole === 'organizer' ? 'BTC' : 'Thành viên'}</span></div>
@@ -5972,18 +6434,21 @@
                             <div id="commentToggle_${p.id}" style="display:none">
                                 <div class="comment-box">
                                     ${pComments.length === 0 ? '<div style="color:var(--text-muted);font-size:0.8rem;margin-bottom:8px">Chưa có bình luận.</div>' :
-                                        pComments.map(c => `
-                                            <div class="comment-item">
-                                                ${getAvatarHtml(c.userName, 'sm')}
-                                                <div class="c-body">
-                                                    <div onclick="openProfile('${c.userId}')" style="cursor:pointer">
-                                                        <span class="c-name">${esc(c.userName)} <span style="color:${c.userRole === 'admin' ? 'var(--gold)' : c.userRole === 'organizer' ? 'var(--ok)' : 'var(--text-muted)'};font-weight:400;font-size:0.7rem">${c.userRole === 'admin' ? 'Admin' : c.userRole === 'organizer' ? 'BTC' : 'TV'}</span></span>
+                                        pComments.map(c => {
+                                            const commentUser = users.find(x => String(x.id) === String(c.userId));
+                                            return `
+                                                <div class="comment-item">
+                                                    ${getAvatarHtml(c.userName, 'sm', commentUser?.photoUrl)}
+                                                    <div class="c-body">
+                                                        <div onclick="openProfile('${c.userId}')" style="cursor:pointer">
+                                                            <span class="c-name">${esc(c.userName)} <span style="color:${c.userRole === 'admin' ? 'var(--gold)' : c.userRole === 'organizer' ? 'var(--ok)' : 'var(--text-muted)'};font-weight:400;font-size:0.7rem">${c.userRole === 'admin' ? 'Admin' : c.userRole === 'organizer' ? 'BTC' : 'TV'}</span></span>
+                                                        </div>
+                                                        <div>${esc(c.content)}</div>
+                                                        <div class="c-time">${c.time || ''}</div>
                                                     </div>
-                                                    <div>${esc(c.content)}</div>
-                                                    <div class="c-time">${c.time || ''}</div>
                                                 </div>
-                                            </div>
-                                        `).join('')
+                                            `;
+                                        }).join('')
                                     }
                                     ${session ? `
                                         <div class="comment-input-row">
@@ -6015,6 +6480,213 @@
             await saveItem('posts', post);
             hideLoadingToast(lt);
             renderFeed();
+        }
+
+        function quickFillPost(template) {
+            const textarea = document.getElementById('newPostInput');
+            if (textarea) {
+                textarea.value = template;
+                textarea.focus();
+                textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        const AVAILABLE_HASHTAGS = [
+            'yniemdienanh', 'creativehub', 'workshop', 'casting', 
+            'reviewphim', 'behindthescene', 'kichban', 'tester', 
+            'director', 'editor', 'cinematography', 'filmmaking'
+        ];
+
+        function handlePostInput(textarea) {
+            const popup = document.getElementById('hashtagSuggestions');
+            if (!popup) return;
+
+            const text = textarea.value;
+            const cursorPos = textarea.selectionStart;
+            const textBeforeCursor = text.substring(0, cursorPos);
+            
+            // Tìm từ đang gõ chứa dấu # ngay trước con trỏ
+            const match = textBeforeCursor.match(/#(\w*)$/);
+            
+            if (match) {
+                const query = match[1].toLowerCase();
+                const matchedTags = AVAILABLE_HASHTAGS.filter(tag => tag.startsWith(query));
+                
+                if (matchedTags.length > 0) {
+                    popup.innerHTML = matchedTags.map(tag => `
+                        <div class="hashtag-item" onclick="selectHashtag('${tag}', ${cursorPos - match[0].length}, ${cursorPos})">#${tag}</div>
+                    `).join('');
+                    popup.style.display = 'block';
+                    return;
+                }
+            }
+            popup.style.display = 'none';
+        }
+
+        function selectHashtag(tag, startIdx, endIdx) {
+            const textarea = document.getElementById('newPostInput');
+            if (!textarea) return;
+            
+            const text = textarea.value;
+            const replacement = '#' + tag + ' ';
+            textarea.value = text.substring(0, startIdx) + replacement + text.substring(endIdx);
+            
+            const popup = document.getElementById('hashtagSuggestions');
+            if (popup) popup.style.display = 'none';
+            
+            textarea.focus();
+        }
+
+        function triggerComposerAction(type) {
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
+            if (type === 'media') {
+                showToast('📷 Tính năng tải Ảnh/Video: Bạn có thể kéo thả hoặc dán link ảnh trực tiếp vào bài viết.', 'info', 5000);
+            } else if (type === 'loc') {
+                const loc = prompt('📍 Nhập địa điểm hoặc bối cảnh:');
+                if (loc) {
+                    const textarea = document.getElementById('newPostInput');
+                    if (textarea) textarea.value += ` 📍 Địa điểm: ${loc}`;
+                }
+            } else if (type === 'project') {
+                const proj = prompt('🎬 Nhập tên dự án điện ảnh liên kết:');
+                if (proj) {
+                    const textarea = document.getElementById('newPostInput');
+                    if (textarea) textarea.value += ` 🎬 Dự án: ${proj}`;
+                }
+            } else if (type === 'file') {
+                showToast('📎 Tính năng tải Kịch bản/Tài liệu: Hãy sử dụng tab Tài liệu trong Dashboard để lưu trữ tài liệu nhóm.', 'info', 5000);
+            } else if (type === 'poll') {
+                const question = prompt('🗳️ Nhập câu hỏi bình chọn (Poll):');
+                if (question) {
+                    const textarea = document.getElementById('newPostInput');
+                    if (textarea) textarea.value += `\n🗳️ [BÌNH CHỌN]: ${question}\n[ ] Lựa chọn 1\n[ ] Lựa chọn 2`;
+                }
+            }
+        }
+
+        function triggerQuickAction(action) {
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
+            if (!['admin', 'organizer'].includes(session.role)) {
+                return showToast('Chỉ có Ban tổ chức/Admin mới sử dụng được tính năng này!', 'error');
+            }
+            
+            if (action === 'casting') {
+                const title = prompt('🎬 Nhập tên phim/vai diễn cần casting:');
+                if (title) {
+                    const textarea = document.getElementById('newPostInput');
+                    showCommunityTab('feed');
+                    if (textarea) {
+                        textarea.value = `📢 [TIN CASTING] Phim: "${title}"\n🎭 Vai diễn cần tuyển: ...\n📅 Hạn đăng ký: ...\n👉 Bấm liên hệ để ứng tuyển!`;
+                        textarea.focus();
+                    }
+                }
+            } else if (action === 'workshop') {
+                showPage('dash');
+                setTimeout(() => {
+                    renderTab('events');
+                    showToast('👉 Hãy bấm nút "Tạo sự kiện" trong bảng điều khiển của bạn.', 'info');
+                }, 100);
+            } else if (action === 'btc') {
+                const dept = prompt('🔥 Bộ phận cần tuyển thành viên (ví dụ: Designer, Editor):');
+                if (dept) {
+                    const textarea = document.getElementById('newPostInput');
+                    showCommunityTab('feed');
+                    if (textarea) {
+                        textarea.value = `🔥 [TUYỂN THÀNH VIÊN BTC] Bộ phận: ${dept}\n📌 Mô tả công việc: ...\n✨ Yêu cầu: ...\n👉 Đăng ký tham gia ngay!`;
+                        textarea.focus();
+                    }
+                }
+            } else if (action === 'project') {
+                const name = prompt('🎬 Nhập tên dự án đang bấm máy:');
+                const pct = prompt('📊 Tiến độ dự án (%):', '60');
+                if (name && pct) {
+                    showToast(`🎬 Đã cập nhật tiến độ dự án "${name}" lên Sidebar!`, 'success');
+                    const bars = document.querySelectorAll('.progress-card');
+                    bars.forEach(bar => {
+                        const nameEl = bar.querySelector('.project-name');
+                        const fillEl = bar.querySelector('.progress-bar-fill');
+                        const labelEl = bar.querySelector('.progress-label');
+                        if (nameEl && fillEl && labelEl) {
+                            nameEl.textContent = name;
+                            fillEl.style.width = pct + '%';
+                            labelEl.textContent = `Tiến độ: ${pct}% (Đang cập nhật)`;
+                        }
+                    });
+                }
+            }
+        }
+
+        function openEditProfileModal() {
+            if (!session) return showToast('Vui lòng đăng nhập!', 'error');
+            const u = localDB.users.find(x => String(x.id) === String(session.id));
+            if (!u) return showToast('Không tìm thấy thông tin hồ sơ.', 'error');
+            
+            document.getElementById('epName').value = u.name || '';
+            document.getElementById('epPhotoUrl').value = u.photoUrl || '';
+            document.getElementById('epPhone').value = u.phone || '';
+            document.getElementById('epSchool').value = u.school || '';
+            document.getElementById('epClass').value = u.className || '';
+            document.getElementById('epInterest').value = u.interest || '';
+            document.getElementById('epIntro').value = u.intro || '';
+            document.getElementById('epMsg').textContent = '';
+            
+            openModal('editProfileModal');
+        }
+
+        async function saveProfile() {
+            const name = document.getElementById('epName').value.trim();
+            const photoUrl = document.getElementById('epPhotoUrl').value.trim();
+            const phone = document.getElementById('epPhone').value.trim();
+            const school = document.getElementById('epSchool').value.trim();
+            const className = document.getElementById('epClass').value.trim();
+            const interest = document.getElementById('epInterest').value.trim();
+            const intro = document.getElementById('epIntro').value.trim();
+            
+            const msg = document.getElementById('epMsg');
+            msg.className = 'form-msg err';
+            msg.textContent = '';
+            
+            if (!name || !phone || !school || !className || !interest) {
+                return msg.textContent = 'Vui lòng điền đầy đủ các trường bắt buộc (*).';
+            }
+            
+            const lt = showLoadingToast('Đang lưu thông tin...');
+            try {
+                const u = localDB.users.find(x => String(x.id) === String(session.id));
+                if (!u) throw new Error('Không tìm thấy tài khoản người dùng.');
+                
+                u.name = name;
+                u.photoUrl = photoUrl;
+                u.phone = phone;
+                u.school = school;
+                u.className = className;
+                u.interest = interest;
+                u.intro = intro;
+                
+                await saveItem('users', u);
+                
+                // Cập nhật session
+                session.name = name;
+                session.phone = phone;
+                session.school = school;
+                session.className = className;
+                session.interest = interest;
+                session.intro = intro;
+                sessionStorage.setItem('ynda_user', JSON.stringify(session));
+                
+                hideLoadingToast(lt);
+                showToast('🎉 Cập nhật hồ sơ thành công!', 'success');
+                closeModal('editProfileModal');
+                
+                // Refresh
+                renderFeed();
+                if (document.getElementById('dashboard').style.display === 'block') {
+                    renderTab('profile');
+                }
+            } catch (err) {
+                hideLoadingToast(lt);
+                msg.textContent = 'Lỗi: ' + err.message;
+            }
         }
 
         async function toggleLike(postId) {
@@ -6078,9 +6750,23 @@
                     if (t === tab) btn.classList.add('active');
                     else btn.classList.remove('active');
                 }
-                if (pane) pane.style.display = t === tab ? 'block' : 'none';
+                if (pane) {
+                    if (t === 'feed') {
+                        pane.style.display = t === tab ? 'grid' : 'none';
+                    } else {
+                        pane.style.display = t === tab ? 'block' : 'none';
+                    }
+                }
             });
-            if (tab === 'feed') renderFeed();
+            if (tab === 'feed') {
+                renderFeed();
+                // Hiển thị Thao tác nhanh cho Admin/BTC
+                const qaWidget = document.getElementById('sidebarQuickActions');
+                if (qaWidget) {
+                    const isOrg = session && ['admin', 'organizer'].includes(session.role);
+                    qaWidget.style.display = isOrg ? 'block' : 'none';
+                }
+            }
             if (tab === 'chat') renderPublicChat();
             if (tab === 'members') renderMemberList();
         }
@@ -6099,7 +6785,7 @@
                 const roleBg = u.role === 'admin' ? 'rgba(228,184,102,0.2)' : u.role === 'organizer' ? 'rgba(99,209,158,0.2)' : 'rgba(255,255,255,0.04)';
                 return `
                     <div style="display:flex;align-items:center;gap:14px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer" onclick="openProfile('${u.id}')">
-                        ${getAvatarHtml(u.name)}
+                        ${getAvatarHtml(u.name, null, u.photoUrl)}
                         <div style="flex:1">
                             <div style="font-weight:600;color:var(--gold-light)">${esc(u.name)}</div>
                             <div style="font-size:0.8rem;color:var(--text-muted)">${esc(u.school || '')}${u.school && u.className ? ' — ' : ''}${esc(u.className || '')}</div>

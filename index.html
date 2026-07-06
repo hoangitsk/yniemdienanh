@@ -2474,7 +2474,7 @@
                             setTimeout(async () => {
                                 const tx = (localDB.transactions || []).find(t => String(t.orderCode) === String(orderCode));
                                 if (tx && tx.status === 'pending') {
-                                    await confirmTx(tx.id);
+                                    await silentConfirmTx(tx.id);
                                 }
                             }, 1000);
                         } catch (e) {
@@ -2708,7 +2708,7 @@
                                         if (isLocal) {
                                             const tx = (localDB.transactions || []).find(t => String(t.orderCode) === String(orderCode));
                                             if (tx && tx.status === 'pending') {
-                                                await confirmTx(tx.id);
+                                                await silentConfirmTx(tx.id);
                                             }
                                         }
                                     }
@@ -6191,11 +6191,13 @@
             const tx = (localDB.transactions || []).find(t => String(t.id) === String(txId));
             if (!tx) return showToast('Không tìm thấy giao dịch.', 'error');
             tx.status = 'confirmed';
+            
             // Cập nhật prize pool (70% vào giải thưởng, 30% duy trì)
             const cfg = localDB.config || {};
             if (!cfg.prizePool) cfg.prizePool = { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
             cfg.prizePool.total = (cfg.prizePool.total || 0) + Math.round((tx.amount || 5000) * 0.7);
             if (localDB.config) localDB.config = cfg;
+            
             // Nếu là giao dịch đăng ký, thêm vào danh sách registrations
             if (tx.type === 'registration') {
                 if (!localDB.registrations) localDB.registrations = [];
@@ -6212,6 +6214,88 @@
                     await saveItem('registrations', newReg);
                 }
             }
+            
+            // Tự động ghi chép vào Số tay tài chính (budget)
+            if (!localDB.budget) localDB.budget = [];
+            const budgetId = await getNextId();
+            let label = '';
+            if (tx.type === 'registration') {
+                label = `Thu phí đăng ký: ${tx.eventTitle || tx.eventId} - ${tx.userName}`;
+            } else if (tx.type === 'vote') {
+                label = `Thu phí bình chọn: MS ${tx.submissionTitle || tx.submissionId} - ${tx.userName}`;
+            } else {
+                label = `Nhận tài trợ: Gói ủng hộ - ${tx.userName}`;
+            }
+            const newLedger = {
+                id: budgetId,
+                type: 'in',
+                label: label,
+                amount: tx.amount || 5000,
+                date: new Date().toISOString().slice(0, 10)
+            };
+            await saveItem('budget', newLedger);
+            
+            if (useFirebase) {
+                try {
+                    await dbInstance.collection('transactions').doc(String(txId)).set(tx, { merge: true });
+                    await dbInstance.collection('config').doc('prizePool').set(cfg.prizePool, { merge: true });
+                } catch (e) { console.error(e); }
+            }
+            if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            renderAllPrizePools();
+            renderEvents();
+            renderVoting();
+            renderTab('transactions');
+        }
+
+        async function silentConfirmTx(txId) {
+            const tx = (localDB.transactions || []).find(t => String(t.id) === String(txId));
+            if (!tx) return;
+            tx.status = 'confirmed';
+            
+            // Cập nhật prize pool (70% vào giải thưởng, 30% duy trì)
+            const cfg = localDB.config || {};
+            if (!cfg.prizePool) cfg.prizePool = { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
+            cfg.prizePool.total = (cfg.prizePool.total || 0) + Math.round((tx.amount || 5000) * 0.7);
+            if (localDB.config) localDB.config = cfg;
+            
+            // Nếu là giao dịch đăng ký, thêm vào danh sách registrations
+            if (tx.type === 'registration') {
+                if (!localDB.registrations) localDB.registrations = [];
+                if (!localDB.registrations.some(r => String(r.userId) === String(tx.userId) && String(r.eventId) === String(tx.eventId))) {
+                    const nextId = await getNextId();
+                    const newReg = { 
+                        id: nextId,
+                        userId: tx.userId, 
+                        userName: tx.userName, 
+                        eventId: String(tx.eventId || ''), 
+                        eventTitle: tx.eventTitle || '', 
+                        date: new Date().toISOString().slice(0, 10) 
+                    };
+                    await saveItem('registrations', newReg);
+                }
+            }
+            
+            // Tự động ghi chép vào Số tay tài chính (budget)
+            if (!localDB.budget) localDB.budget = [];
+            const budgetId = await getNextId();
+            let label = '';
+            if (tx.type === 'registration') {
+                label = `Thu phí đăng ký: ${tx.eventTitle || tx.eventId} - ${tx.userName}`;
+            } else if (tx.type === 'vote') {
+                label = `Thu phí bình chọn: MS ${tx.submissionTitle || tx.submissionId} - ${tx.userName}`;
+            } else {
+                label = `Nhận tài trợ: Gói ủng hộ - ${tx.userName}`;
+            }
+            const newLedger = {
+                id: budgetId,
+                type: 'in',
+                label: label,
+                amount: tx.amount || 5000,
+                date: new Date().toISOString().slice(0, 10)
+            };
+            await saveItem('budget', newLedger);
+            
             if (useFirebase) {
                 try {
                     await dbInstance.collection('transactions').doc(String(txId)).set(tx, { merge: true });

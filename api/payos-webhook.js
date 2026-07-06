@@ -87,23 +87,13 @@ module.exports = async (req, res) => {
                 const ppDoc = await t.get(ppRef);
 
                 // 2. Tính toán và thực hiện toàn bộ lệnh WRITE sau
+                let currentSeq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
+                
                 let nextRegId = null;
                 if (tx.type === 'registration') {
-                    const currentSeq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
-                    nextRegId = currentSeq + 1;
-                    t.set(seqRef, { val: nextRegId });
-                }
-
-                // Cập nhật prize pool
-                const currentTotal = ppDoc.exists ? (ppDoc.data().total || 0) : 0;
-                const addedAmount = Math.round((tx.amount || 5000) * 0.7);
-                t.set(ppRef, { total: currentTotal + addedAmount }, { merge: true });
-
-                // Cập nhật trạng thái giao dịch
-                t.update(txDoc.ref, { status: 'confirmed' });
-
-                // Tạo đăng ký mới nếu cần
-                if (tx.type === 'registration') {
+                    currentSeq = currentSeq + 1;
+                    nextRegId = currentSeq;
+                    // Tạo đăng ký mới
                     const regRef = db.collection('registrations').doc(String(nextRegId));
                     const newReg = {
                         id: nextRegId,
@@ -115,6 +105,40 @@ module.exports = async (req, res) => {
                     };
                     t.set(regRef, newReg);
                 }
+
+                // Tự động ghi chép vào Số tay tài chính (budget)
+                currentSeq = currentSeq + 1;
+                const budgetId = currentSeq;
+                
+                let label = '';
+                if (tx.type === 'registration') {
+                    label = `Thu phí đăng ký: ${tx.eventTitle || tx.eventId} - ${tx.userName}`;
+                } else if (tx.type === 'vote') {
+                    label = `Thu phí bình chọn: MS ${tx.submissionTitle || tx.submissionId} - ${tx.userName}`;
+                } else {
+                    label = `Nhận tài trợ: Gói ủng hộ - ${tx.userName}`;
+                }
+                
+                const budgetRef = db.collection('budget').doc(String(budgetId));
+                const newLedger = {
+                    id: budgetId,
+                    type: 'in',
+                    label: label,
+                    amount: tx.amount || 5000,
+                    date: new Date().toISOString().slice(0, 10)
+                };
+                t.set(budgetRef, newLedger);
+
+                // Cập nhật lại số sequence cuối cùng
+                t.set(seqRef, { val: currentSeq });
+
+                // Cập nhật prize pool
+                const currentTotal = ppDoc.exists ? (ppDoc.data().total || 0) : 0;
+                const addedAmount = Math.round((tx.amount || 5000) * 0.7);
+                t.set(ppRef, { total: currentTotal + addedAmount }, { merge: true });
+
+                // Cập nhật trạng thái giao dịch
+                t.update(txDoc.ref, { status: 'confirmed' });
             });
 
             console.log(`Database updated successfully for orderCode ${orderNum}.`);

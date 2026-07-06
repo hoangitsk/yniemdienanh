@@ -2641,8 +2641,10 @@
 
                     await loadPublicEventsFromFirestore();
                     await loadPublicSubmissionsFromFirestore();
+                    await loadPublicConfigFromFirestore();
                     renderEvents();
                     renderVoting();
+                    renderAllPrizePools();
 
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
@@ -2838,6 +2840,25 @@
             }
         }
 
+        async function loadPublicConfigFromFirestore() {
+            if (!useFirebase || !dbInstance) return;
+            try {
+                if (!localDB.config) localDB.config = {};
+                // Tải config/prizePool
+                const ppDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('prizePool').get());
+                if (ppDoc.exists) {
+                    localDB.config.prizePool = ppDoc.data();
+                }
+                // Tải config/stage
+                const stageDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('stage').get());
+                if (stageDoc.exists) {
+                    localDB.config.stage = stageDoc.data().stage || 'Xây dựng đội ngũ';
+                }
+            } catch (e) {
+                console.warn('Không thể đọc public config:', e.message || e);
+            }
+        }
+
         function firestoreWithTimeout(query, ms = 8000) {
             return Promise.race([
                 query,
@@ -2875,6 +2896,7 @@
                 try {
                     const seqDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('sequence').get());
                     localDB.seq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
+                    await loadPublicConfigFromFirestore();
                 } catch (e) {
                     console.warn('Không thể đọc sequence, giữ giá trị cũ:', e.message);
                 }

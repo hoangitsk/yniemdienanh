@@ -2453,6 +2453,31 @@
             };
         }
 
+        function checkPaymentRedirect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const path = window.location.pathname;
+            const status = urlParams.get('status');
+            const code = urlParams.get('code');
+            const cancel = urlParams.get('cancel');
+            
+            if (path.includes('/payment-success') || status === 'PAID') {
+                if (code === '00' || status === 'PAID' || status === 'SUCCESS') {
+                    showToast('🎉 Đóng góp quỹ thành công! Cảm ơn sự hỗ trợ của bạn.', 'success', 6000);
+                    setTimeout(() => {
+                        showPage('dash');
+                        try { renderTab('transactions'); } catch(e) {}
+                    }, 1200);
+                } else {
+                    showToast('❌ Thanh toán không thành công.', 'error', 5000);
+                }
+                // Dọn dẹp URL để F5 không bị lặp lại thông báo
+                window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+            } else if (path.includes('/payment-cancel') || cancel === 'true') {
+                showToast('ℹ️ Giao dịch thanh toán đã bị huỷ.', 'info', 5000);
+                window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+            }
+        }
+
         // ================= DATABASE HANDLERS (HYBRID LOCAL/FIREBASE) =================
         async function initDatabase() {
             const isLocalFile = window.location.protocol === 'file:';
@@ -2634,6 +2659,13 @@
                 }
             } else {
                 loadLocalStorage();
+            }
+
+            // Kiểm tra và hiển thị kết quả redirect thanh toán từ PayOS
+            try {
+                checkPaymentRedirect();
+            } catch (e) {
+                console.warn("Lỗi check redirect thanh toán:", e);
             }
         }
 

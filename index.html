@@ -7490,14 +7490,26 @@
             if (!confirm('⚠️ Bạn có chắc muốn XÓA tài khoản này?\nHành động này không thể hoàn tác!')) return;
             const u = localDB.users.find(x => String(x.id) === String(id));
             if (u) {
-                if (useFirebase) {
+                const lt = showLoadingToast('Đang xóa tài khoản...');
+                if (useFirebase && authInstance.currentUser) {
                     try {
-                        await dbInstance.collection('users').doc(String(id)).delete();
+                        const idToken = await authInstance.currentUser.getIdToken();
+                        const r = await fetch('/api/admin/delete-user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ idToken, targetUid: String(id) })
+                        });
+                        if (!r.ok) {
+                            const errData = await r.json().catch(() => ({}));
+                            console.warn('API delete error:', errData);
+                        }
                     } catch (e) {
-                        console.error(e);
+                        console.error('Delete call failed:', e);
                     }
                 }
                 await deleteItemFromDB('users', id);
+                localDB.users = localDB.users.filter(x => String(x.id) !== String(id));
+                hideLoadingToast(lt);
                 renderTab('accounts');
                 showToast(`✅ Đã xoá tài khoản ${esc(u.name)}.`, 'success');
             }

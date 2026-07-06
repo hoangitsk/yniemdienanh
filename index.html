@@ -4607,11 +4607,17 @@
                             <h3 style="color:var(--gold-light);margin-bottom:14px">⏳ Giao dịch chờ xác nhận (${pending.length})</h3>
                             <div class="table-wrap">
                                 <table>
-                                    <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>
+                                    <tr><th>Người dùng</th><th>Nội dung</th><th>Số tiền</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>
                                     ${pending.map(t => `
                                         <tr>
                                             <td data-label="Người dùng"><b>${esc(t.userName)}</b></td>
-                                            <td data-label="Loại giao dịch">${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
+                                            <td data-label="Nội dung">
+                                                ${t.type === 'registration' 
+                                                    ? `📋 Đăng ký: <span style="color:var(--gold-light)">${esc(t.eventTitle || t.eventId)}</span>` 
+                                                    : t.type === 'sponsor'
+                                                        ? `💖 Tài trợ`
+                                                        : `🗳 Vote: <span style="color:var(--gold-light)">MS ${esc(t.submissionTitle || t.submissionId)}</span>`}
+                                            </td>
                                             <td data-label="Số tiền" style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
                                             <td data-label="Memo" style="font-size:0.8rem;color:var(--text-muted)">${esc(t.memo||'')}</td>
                                             <td data-label="Thời gian" style="font-size:0.8rem;color:var(--text-muted)">${t.time||''}</td>
@@ -4637,11 +4643,17 @@
                             </div>
                             <div class="table-wrap">
                                 <table>
-                                    <tr><th>Người dùng</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>
+                                    <tr><th>Người dùng</th><th>Nội dung</th><th>Số tiền</th><th>Trạng thái</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>
                                     ${[...filteredTxs].reverse().map(t => `
                                         <tr>
                                             <td data-label="Người dùng"><b>${esc(t.userName)}</b></td>
-                                            <td data-label="Loại giao dịch">${t.type === 'registration' ? '📋 Đăng ký' : '🗳 Vote'}</td>
+                                            <td data-label="Nội dung">
+                                                ${t.type === 'registration' 
+                                                    ? `📋 Đăng ký: <span style="color:var(--gold-light)">${esc(t.eventTitle || t.eventId)}</span>` 
+                                                    : t.type === 'sponsor'
+                                                        ? `💖 Tài trợ`
+                                                        : `🗳 Vote: <span style="color:var(--gold-light)">MS ${esc(t.submissionTitle || t.submissionId)}</span>`}
+                                            </td>
                                             <td data-label="Số tiền" style="color:var(--gold-light);font-weight:600">${(t.amount||0).toLocaleString('vi-VN')}đ</td>
                                             <td data-label="Trạng thái">
                                                 ${t.status === 'confirmed' 
@@ -5932,6 +5944,11 @@
                     </div>
                     <div style="margin-top:14px;font-size:0.82rem;color:var(--gold-light);line-height:1.4">
                         📌 <b>Góp quỹ dự án (5.000đ/lượt đăng ký):</b> 70% (3.500đ) cộng trực tiếp vào Quỹ giải thưởng, 30% (1.500đ) phục vụ chi phí duy trì hoạt động dự án.
+                        <br>
+                        <span style="display:inline-block;margin-top:6px;font-size:0.8rem">
+                            ☕ Bạn muốn đồng hành cùng chúng tôi? 
+                            <a href="#" onclick="openSponsorModal(event)" style="color:var(--gold);text-decoration:underline;font-weight:600">Đồng hành & Ủng hộ dự án</a>
+                        </span>
                     </div>
                 </div>
             `;
@@ -5944,8 +5961,8 @@
 
         function openPaymentModal(type, extra) {
             const modal = document.getElementById('profileModalBody');
-            const fee = 5000;
-            const memo = type === 'registration' ? ('Reg_' + (extra?.eventId || '')) : 'Vote_' + (extra?.submissionId || '');
+            const fee = extra?.customAmount || 5000;
+            const memo = type === 'registration' ? ('Reg_' + (extra?.eventId || '')) : type === 'sponsor' ? 'Sponsor' : 'Vote_' + (extra?.submissionId || '');
             modal.innerHTML = `
                 <h3 style="margin-bottom:16px">💳 Thanh toán khoản góp quỹ tham gia: ${esc(extra?.eventTitle || 'Dự án')}</h3>
                 <div class="qr-box">
@@ -5955,7 +5972,7 @@
                         <div class="toast-spinner" style="margin:20px auto"></div>
                     </div>
                     <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
-                        Khoản đóng góp (5.000đ) được phân bổ: 70% (3.500đ) vào Quỹ giải thưởng, 30% (1.500đ) cho chi phí duy trì.
+                        Khoản đóng góp (${fee.toLocaleString('vi-VN')}đ) được phân bổ: 70% (${Math.round(fee * 0.7).toLocaleString('vi-VN')}đ) vào Quỹ giải thưởng, 30% (${Math.round(fee * 0.3).toLocaleString('vi-VN')}đ) cho chi phí duy trì.
                     </div>
                 </div>
             `;
@@ -6031,9 +6048,10 @@
                 userName: session.name, 
                 type, 
                 submissionId: submissionId || '', 
+                submissionTitle: extra?.submissionTitle || '',
                 eventId: extra?.eventId || '',
                 eventTitle: extra?.eventTitle || '',
-                amount: 5000, 
+                amount: extra?.customAmount || 5000, 
                 memo, 
                 status: 'pending', 
                 time: timeStr,
@@ -6127,6 +6145,53 @@
                 showToast('Lỗi khi xoá: ' + err.message, 'error');
             }
         }
+
+        function openSponsorModal(event) {
+            if (event) event.preventDefault();
+            if (!session) return showToast('Vui lòng đăng nhập để đồng hành cùng dự án!', 'error');
+            const modal = document.getElementById('profileModalBody');
+            modal.innerHTML = `
+                <h3 style="margin-bottom:16px">💖 Đồng hành & Tài trợ dự án</h3>
+                <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:20px;line-height:1.4">
+                    Ý Niệm Điện Ảnh là dự án phi lợi nhuận. Khoản tài trợ của bạn sẽ được phân bổ: 70% cộng vào Quỹ giải thưởng cho các thí sinh xuất sắc, 30% dùng để duy trì máy chủ & vận hành dự án.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(10000)">☕ 10.000đ (1 Cafe)</button>
+                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(20000)">☕☕ 20.000đ (2 Cafe)</button>
+                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(50000)">🥤 50.000đ (1 Trà sữa)</button>
+                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(100000)">🌟 100.000đ (Đồng hành lớn)</button>
+                </div>
+                <div style="text-align:center;border-top:1px solid var(--line);padding-top:16px">
+                    <label style="display:block;margin-bottom:8px;font-size:0.85rem;color:var(--gold-light)">Hoặc nhập số tiền tùy chọn (VND):</label>
+                    <div style="display:flex;gap:8px;justify-content:center">
+                        <input type="number" id="customSponsorAmount" min="5000" step="5000" placeholder="Ví dụ: 15000" class="input" style="max-width:180px;text-align:center;background:rgba(0,0,0,0.2)">
+                        <button class="btn btn-gold" onclick="triggerCustomSponsor()">Xác nhận</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('profileModal').querySelector('.modal-box').style.maxWidth = '460px';
+            openModal('profileModal');
+        }
+
+        window.openSponsorModal = openSponsorModal;
+
+        function triggerSponsor(amount) {
+            if (amount < 5000) return showToast('Số tiền tối thiểu là 5.000đ', 'error');
+            openPaymentModal('sponsor', { eventId: 'sponsor', eventTitle: 'Tài trợ dự án', customAmount: amount });
+        }
+
+        window.triggerSponsor = triggerSponsor;
+
+        function triggerCustomSponsor() {
+            const input = document.getElementById('customSponsorAmount');
+            const amount = parseInt(input?.value);
+            if (isNaN(amount) || amount < 5000) {
+                return showToast('Vui lòng nhập số tiền hợp lệ (tối thiểu 5.000đ)', 'error');
+            }
+            triggerSponsor(amount);
+        }
+
+        window.triggerCustomSponsor = triggerCustomSponsor;
 
         // ================= ADMIN ACCOUNT MANAGEMENT =================
         async function adminResetPass(email) {

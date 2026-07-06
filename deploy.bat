@@ -2,7 +2,7 @@
 title Deploy Y Niem Dien Anh
 
 echo ============================================
-echo   Deploy Y Niem Dien Anh - GitHub + HuggingFace
+echo   Deploy Y Niem Dien Anh - GitHub + Vercel
 echo ============================================
 echo.
 

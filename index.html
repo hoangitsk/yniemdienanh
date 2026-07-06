@@ -106,6 +106,67 @@
             --panel: rgba(12, 29, 45, 0.78);
             --line: rgba(229, 184, 103, 0.25);
             --shadow-card: 0 18px 44px rgba(0, 0, 0, 0.22);
+            
+            /* Design Tokens */
+            --color-primary: var(--gold);
+            --color-primary-light: var(--gold-light);
+            --color-primary-dark: var(--gold-dark);
+            --color-bg: var(--navy-darkest);
+            --color-surface: var(--navy-card);
+            --color-surface-light: var(--navy-light);
+            --color-text: var(--text-light);
+            --color-text-muted: var(--text-muted);
+            
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 40px;
+            --spacing-xl: 64px;
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 24px;
+            --radius-full: 9999px;
+
+            --duration-fast: 180ms;
+            --duration-normal: 320ms;
+            --duration-slow: 500ms;
+            --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
+            
+            --shadow-soft: var(--shadow-card);
+            --shadow-glow: var(--glow);
+            --shadow-glow-active: 0 0 24px rgba(228, 184, 102, 0.35);
+        }
+
+        /* ===== KEYBOARD ACCESSIBILITY FOCUS STATES ===== */
+        :focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: 3px;
+            box-shadow: var(--shadow-glow-active) !important;
+        }
+
+        /* ===== REDUCED MOTION ===== */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-delay: 0s !important;
+                animation-duration: 0s !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0s !important;
+                scroll-behavior: auto !important;
+                transform: none !important;
+            }
+            .intro-item {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+            .intro-title {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+            .scroll-reveal {
+                opacity: 1 !important;
+                transform: none !important;
+            }
         }
 
         * {
@@ -183,9 +244,29 @@
             align-items: center;
             justify-content: space-between;
             padding: 16px 5%;
-            background: rgba(5, 12, 20, 0.85);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(224, 178, 98, 0.2);
+            background: rgba(5, 12, 20, 0.80);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(224, 178, 98, 0.18);
+            transition: background var(--duration-normal) ease, 
+                        backdrop-filter var(--duration-normal) ease, 
+                        border-color var(--duration-normal) ease, 
+                        box-shadow var(--duration-normal) ease,
+                        padding var(--duration-normal) ease;
+        }
+
+        nav.scrolled {
+            background: rgba(5, 12, 20, 0.92);
+            backdrop-filter: blur(10px);
+            border-bottom-color: rgba(224, 178, 98, 0.35);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        @media (min-width: 1400px) {
+            nav {
+                padding-left: calc((100vw - 1200px) / 2);
+                padding-right: calc((100vw - 1200px) / 2);
+            }
         }
 
         .logo {
@@ -245,6 +326,9 @@
             color: var(--gold);
             cursor: pointer;
             user-select: none;
+            padding: 8px 12px;
+            margin-right: -12px;
+            transition: color var(--duration-fast) ease;
         }
 
         @media (max-width: 768px) {
@@ -303,20 +387,34 @@
             font-family: inherit;
             font-weight: 600;
             font-size: 0.9rem;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform var(--duration-fast) var(--ease-out-cubic), 
+                        background var(--duration-fast) ease, 
+                        box-shadow var(--duration-fast) ease, 
+                        border-color var(--duration-fast) ease,
+                        color var(--duration-fast) ease;
             text-align: center;
+            position: relative;
         }
 
         .btn-gold {
             background: var(--grad);
             color: #050c14;
-            box-shadow: 0 4px 15px rgba(224, 178, 98, 0.2);
+            box-shadow: var(--shadow-glow);
         }
 
         .btn-gold:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 22px rgba(224, 178, 98, 0.4);
-            background: linear-gradient(135deg, #fff, var(--gold-light), var(--gold));
+            box-shadow: var(--shadow-glow-active);
+            background: linear-gradient(135deg, #ffffff, var(--gold-light) 40%, var(--gold));
+        }
+
+        .btn-gold .arrow {
+            transition: transform var(--duration-fast) var(--ease-out-cubic);
+            display: inline-block;
+        }
+
+        .btn-gold:hover .arrow {
+            transform: translateX(3px);
         }
 
         .btn-line {
@@ -326,7 +424,7 @@
         }
 
         .btn-line:hover {
-            background: rgba(224, 178, 98, 0.1);
+            background: rgba(224, 178, 98, 0.08);
             color: var(--gold-light);
             border-color: var(--gold-light);
             transform: translateY(-2px);
@@ -387,16 +485,17 @@
         .eyebrow {
             color: var(--gold-light);
             font-weight: 800;
-            letter-spacing: 0.16em;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
             font-size: 0.78rem;
+            margin-bottom: 6px;
         }
 
         .hero h1 {
             font-family: 'Playfair Display', serif;
-            font-size: clamp(3.2rem, 8vw, 6.5rem);
-            line-height: 0.9;
-            margin: 14px 0 22px;
+            font-size: clamp(2.8rem, 7.5vw, 6rem);
+            line-height: 0.95;
+            margin: 10px 0 18px;
             background: var(--grad);
             -webkit-background-clip: text;
             background-clip: text;
@@ -428,6 +527,15 @@
             box-shadow: var(--shadow-card);
             background: linear-gradient(160deg, rgba(247,240,223,.07), rgba(228,184,102,.05)), var(--panel);
             border-radius: 12px;
+            transition: transform var(--duration-normal) var(--ease-out-cubic), 
+                        border-color var(--duration-normal) ease, 
+                        box-shadow var(--duration-normal) ease;
+        }
+
+        .poster:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: rgba(229, 184, 103, 0.45);
+            box-shadow: 0 22px 50px rgba(0, 0, 0, 0.35), var(--shadow-glow-active);
         }
 
         .poster img {
@@ -461,11 +569,25 @@
             padding-bottom: 12px;
             color: #d9e4ef;
             font-size: 0.92rem;
+            align-items: center;
+        }
+
+        .ticker strong {
+            flex-shrink: 0;
+            white-space: nowrap;
+            width: 38%;
+            color: var(--text-light);
+            font-weight: 700;
         }
 
         .ticker span {
             color: var(--gold-light);
             font-weight: 800;
+            text-align: right;
+            width: 62%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* ===== CONTENT SECTIONS ===== */
@@ -1854,7 +1976,112 @@
             border-top: 2px solid var(--gold);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            flex-shrink: 0;
+        /* ===== STAGGERED INTRO ANIMATION ===== */
+        .intro-hero {
+            transform: scale(1.015);
+            animation: heroZoomIn 0.8s var(--ease-out-cubic) forwards;
+        }
+
+        .intro-item {
+            opacity: 0;
+            transform: translateY(12px);
+            animation: itemFadeIn 0.6s var(--ease-out-cubic) forwards;
+        }
+
+        .intro-title {
+            opacity: 0;
+            transform: translateY(12px);
+            animation: titleGlow 1.0s var(--ease-out-cubic) forwards;
+        }
+
+        @keyframes heroZoomIn {
+            to { transform: scale(1); }
+        }
+
+        @keyframes itemFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes titleGlow {
+            0% {
+                opacity: 0;
+                transform: translateY(12px);
+                text-shadow: 0 0 0px rgba(228, 184, 102, 0);
+            }
+            50% {
+                text-shadow: 0 0 15px rgba(228, 184, 102, 0.45);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+                text-shadow: 0 0 4px rgba(228, 184, 102, 0.12);
+            }
+        }
+
+        /* Stagger delays */
+        .delay-logo { animation-delay: 120ms; }
+        .delay-eyebrow { animation-delay: 260ms; }
+        .delay-title { animation-delay: 430ms; }
+        .delay-lead { animation-delay: 620ms; }
+        .delay-actions { animation-delay: 760ms; }
+        .delay-poster { animation-delay: 820ms; }
+
+        /* ===== SCROLL REVEAL ANIMATIONS ===== */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.6s ease, transform 0.6s var(--ease-out-cubic);
+        }
+
+        .scroll-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== MOBILE FLOATING FAB & OVERRIDES ===== */
+        .feedback-fab .fab-icon {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .feedback-fab {
+                width: 48px !important;
+                height: 48px !important;
+                border-radius: 50% !important;
+                padding: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 1.4rem !important;
+                bottom: 16px !important;
+                right: 16px !important;
+            }
+            .feedback-fab .fab-text {
+                display: none !important;
+            }
+            .feedback-fab .fab-icon {
+                display: inline !important;
+            }
+
+            .hero-actions {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+                margin-top: 10px !important;
+            }
+            .hero-actions .btn {
+                width: 100% !important;
+                padding: 12px 24px !important;
+            }
+
+            .hero .lead {
+                font-weight: 450 !important;
+                line-height: 1.62 !important;
+                margin-bottom: 24px !important;
+            }
         }
     </style>
 </head>
@@ -1889,18 +2116,17 @@
 
         <!-- ============ HEADER / NAVBAR ============ -->
         <nav>
-            <div class="logo" onclick="showPage('home');scrollTo(0,0)">
-                <img src="Logo/avtar.png" alt="Ý Niệm Điện Ảnh" style="height: 48px; width: 48px; object-fit: cover; border-radius: 8px;">
+            <div class="logo intro-item delay-logo" onclick="showPage('home');scrollTo(0,0)" aria-label="Trang chủ Ý Niệm Điện Ảnh">
+                <img src="Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh" style="height: 48px; width: 48px; object-fit: cover; border-radius: 8px;">
                 <span class="logo-wordmark">Ý Niệm Điện Ảnh<small>Film community</small></span>
             </div>
-            <div class="menu-toggle" onclick="toggleMobileMenu()">☰</div>
+            <div class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu điều hướng" role="button">☰</div>
             <div class="links" id="navLinks">
                 <a onclick="showPage('home');scrollTo(0,0);closeMobileMenu()">Trang chủ</a>
                 <a onclick="goSection('events');closeMobileMenu()">Sự kiện</a>
                 <a onclick="showPage('voting');closeMobileMenu()">Bình chọn</a>
                 <a onclick="showPage('community');closeMobileMenu()">Cộng đồng</a>
                 <a onclick="goSection('apply');closeMobileMenu()">Tuyển dụng</a>
-                <a onclick="goSection('about');closeMobileMenu()">Về dự án</a>
                 <span id="navAuth"></span>
             </div>
         </nav>
@@ -1909,25 +2135,25 @@
         <div id="page-home">
             
             <!-- HERO ZONE (2-column layout) -->
-            <div class="hero">
+            <div class="hero intro-hero">
                 <div class="hero-grid">
                     <div id="heroContent">
-                        <div class="eyebrow">Dự án phi lợi nhuận về điện ảnh</div>
-                        <h1>Ý Niệm<br>Điện Ảnh</h1>
-                        <p class="lead">Nơi những khung hình đầu tiên cất lời — Kiến tạo sân chơi sáng tạo và bệ phóng cho các nhà làm phim học sinh, sinh viên trên toàn quốc. Kết nối đam mê điện ảnh qua workshop, làm phim và chụp ảnh giải đấu phim ngắn.</p>
-                        <div class="hero-actions">
-                            <button class="btn btn-gold" onclick="goSection('events')">🎬 Khám phá sự kiện</button>
-                            <button class="btn btn-line" onclick="goSection('apply')">✨ Đăng ký tham gia</button>
+                        <div class="eyebrow intro-item delay-eyebrow">Dự án phi lợi nhuận về điện ảnh</div>
+                        <h1 class="intro-title delay-title">Ý Niệm<br>Điện Ảnh</h1>
+                        <p class="lead intro-item delay-lead">Nơi những khung hình đầu tiên cất lời.<br>Kiến tạo sân chơi sáng tạo dành cho học sinh – sinh viên trên toàn quốc.<br>Cùng xây dựng cộng đồng điện ảnh ngay từ những viên gạch đầu tiên.</p>
+                        <div class="hero-actions intro-item delay-actions">
+                            <button class="btn btn-gold" onclick="goSection('apply')">✨ Đăng ký tham gia <span class="arrow">→</span></button>
+                            <button class="btn btn-line" onclick="goSection('about')">🎬 Tìm hiểu dự án</button>
                         </div>
                     </div>
-                    <aside class="poster">
-                        <img class="poster-brand" src="Logo/logo ngang.png" alt="Ý Niệm Điện Ảnh" style="object-fit: contain; height: 42%; width: 90%; top: 7%;">
+                    <aside class="poster intro-item delay-poster">
+                        <img class="poster-brand" src="Logo/logo ngang.png" alt="Banner Ý Niệm Điện Ảnh" style="object-fit: contain; height: 42%; width: 90%; top: 7%;">
                         <div class="frame">
                             <!-- Click để sửa giai đoạn (Chỉ Admin) -->
-                            <div class="ticker"><strong>Giai đoạn</strong><span id="currentStage" style="cursor:pointer; color:var(--gold-light); font-weight:800;" onclick="editStage()">Xây dựng đội ngũ</span></div>
-                            <div class="ticker"><strong>Đối tượng</strong><span id="heroTarget">Học sinh — Sinh viên</span></div>
-                            <div class="ticker"><strong>Minh bạch</strong><span id="heroTransparency">Quỹ giải thưởng & hoạt động</span></div>
-                            <div class="ticker"><strong>Mục tiêu</strong><span id="heroGoal">Sân chơi lành mạnh cho học sinh, sinh viên</span></div>
+                            <div class="ticker"><strong>Giai đoạn</strong><span id="currentStage" style="cursor:pointer; color:var(--gold-light); font-weight:800;" onclick="editStage()">Xây dựng đội ngũ cốt lõi</span></div>
+                            <div class="ticker"><strong>Cơ hội</strong><span>Đồng kiến tạo cộng đồng điện ảnh</span></div>
+                            <div class="ticker"><strong>Đặc quyền</strong><span>Thành viên sáng lập đặt nền móng</span></div>
+                            <div class="ticker"><strong>Lộ trình</strong><span>T7: Khởi động · T8: Tuyển BTC · T9: Workshop</span></div>
                         </div>
                     </aside>
                 </div>
@@ -1935,11 +2161,11 @@
 
 
             <!-- PRIZE POOL WIDGET -->
-            <div id="prizePoolHome" style="margin-top: 40px; margin-bottom: 40px"></div>
+            <div id="prizePoolHome" class="scroll-reveal" style="margin-top: 40px; margin-bottom: 40px"></div>
 
 
             <!-- EVENTS ONGOING/UPCOMING -->
-            <section id="events">
+            <section id="events" class="scroll-reveal">
                 <div class="section-head" id="eventsHeading">
                     <h2 id="eventsTitle">Sự kiện đang & sắp diễn ra</h2>
                     <p id="eventsDesc">Nơi hội ngộ của những tâm hồn say mê điện ảnh. Theo dõi các hoạt động mới nhất từ dự án.</p>
@@ -1948,7 +2174,7 @@
             </section>
 
             <!-- ABOUT THE PROJECT (Chi tiết từ Word Kế hoạch) -->
-            <section id="about">
+            <section id="about" class="scroll-reveal">
                 <div class="section-head" id="aboutHeading">
                     <h2 id="aboutTitle">Về Dự Án</h2>
                     <p id="aboutDesc">Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án phi lợi nhuận, minh bạch 100%.</p>
@@ -1957,7 +2183,7 @@
                 <div class="grid grid-3" id="aboutCards"></div>
 
                 <!-- Quy chế & Tiêu chí chấm điểm chính thức -->
-                <div class="rules-wrapper" id="rulesContent">
+                <div class="rules-wrapper scroll-reveal" id="rulesContent">
                     <h2 class="sec-title" style="font-size:1.8rem;margin-bottom:10px">Thể Lệ & Tiêu Chí Chấm Giải</h2>
                     <p class="sec-sub" style="margin-bottom:30px">Thông tin kỹ thuật và nguyên tắc đánh giá từ Hội đồng chuyên môn</p>
                     
@@ -1985,7 +2211,7 @@
             </section>
 
             <!-- RECRUITMENT / APPLY SECTION (2 cột) -->
-            <section id="apply">
+            <section id="apply" class="scroll-reveal">
                 <div class="section-head" id="applyHeading">
                     <h2 id="applyTitle">Đồng hành cùng dự án</h2>
                     <p id="applyDesc">Chọn vai trò của bạn để cùng thắp sáng đam mê điện ảnh.</p>
@@ -2058,19 +2284,22 @@
         <!-- ============ FOOTER ============ -->
         <footer>
             <div class="logo" style="justify-content:center;margin-bottom:12px">
-                <img src="Logo/avtar.png" alt="Ý Niệm Điện Ảnh" style="height: 52px; width: 52px; object-fit: cover; border-radius: 8px;">
+                <img src="Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh" style="height: 52px; width: 52px; object-fit: cover; border-radius: 8px;">
             </div>
             <p id="footerText">Ý Niệm Điện Ảnh là dự án phi lợi nhuận dành cho thế hệ trẻ. "Nơi những khung hình đầu tiên cất lời" ✨</p>
         </footer>
     </div>
 
     <div id="toastContainer"></div>
-    <button class="btn btn-gold feedback-fab" onclick="openFeedback()">Góp ý / báo lỗi</button>
+    <button class="btn btn-gold feedback-fab" onclick="openFeedback()" aria-label="Góp ý và báo lỗi">
+        <span class="fab-text">Góp ý / báo lỗi</span>
+        <span class="fab-icon">💬</span>
+    </button>
 
     <!-- ============ AUTHENTICATION MODAL (ĐĂNG NHẬP / ĐĂNG KÝ) ============ -->
     <div class="modal" id="authModal">
         <div class="modal-box">
-            <span class="close-x" onclick="closeModal('authModal')">✕</span>
+            <span class="close-x" onclick="closeModal('authModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
             
             <!-- Login Form -->
             <div id="loginForm">
@@ -2189,7 +2418,7 @@
     <!-- ============ APPLICATION FORM MODAL (ĐƠN APPLY) ============ -->
     <div class="modal" id="applyModal">
         <div class="modal-box">
-            <span class="close-x" onclick="closeModal('applyModal')">✕</span>
+            <span class="close-x" onclick="closeModal('applyModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
             <h3 id="applyTitle">Apply Đơn Tuyển Dụng</h3>
             
             <label for="apName">Họ và tên *</label>
@@ -2228,7 +2457,7 @@
     <!-- ============ SUBMIT FILM MODAL ============ -->
     <div class="modal" id="submitModal">
         <div class="modal-box">
-            <span class="close-x" onclick="closeModal('submitModal')">✕</span>
+            <span class="close-x" onclick="closeModal('submitModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
             <h3>📤 Nộp bài dự thi</h3>
             <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">Gửi tác phẩm của bạn đến BTC. Bài dự thi sẽ được kiểm duyệt trước khi hiển thị công khai.</p>
             <label>Dự án / Hoạt động đăng ký *</label>
@@ -2248,7 +2477,7 @@
     <!-- ============ FEEDBACK MODAL ============ -->
     <div class="modal" id="feedbackModal">
         <div class="modal-box">
-            <span class="close-x" onclick="closeModal('feedbackModal')">✕</span>
+            <span class="close-x" onclick="closeModal('feedbackModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
             <h3>Góp ý / báo lỗi</h3>
 
             <label for="fbType">Loại phản hồi *</label>
@@ -2278,7 +2507,7 @@
     <!-- PROFILE MODAL -->
     <div class="modal" id="profileModal">
         <div class="modal-box" style="max-width:560px">
-            <span class="close-x" onclick="closeModal('profileModal')">✕</span>
+            <span class="close-x" onclick="closeModal('profileModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
             <div id="profileModalBody"></div>
         </div>
     </div>
@@ -3499,6 +3728,7 @@
             if (pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
             
             try {
+                let emailSent = false;
                 if (authInstance) {
                     const cred = await authInstance.createUserWithEmailAndPassword(email, pass);
                     await cred.user.updateProfile({ displayName: name });
@@ -3510,7 +3740,7 @@
                     if (isAdmin) {
                         role = 'admin';
                     } else {
-                        let emailSent = false;
+                        emailSent = false;
                         try {
                             const idToken = await cred.user.getIdToken();
                             const ctrl = new AbortController();
@@ -6604,8 +6834,10 @@
                 c.width = window.innerWidth;
                 c.height = window.innerHeight;
                 
-                // Giảm nhẹ số sao xuống 60 để tăng hiệu năng tối đa cho Mac/Điện thoại yếu
-                stars = Array.from({ length: 60 }, () => {
+                // Mật độ sao theo diện tích màn hình: min 15, max 80, 1 sao cho mỗi 25000px diện tích
+                const starCount = Math.min(80, Math.max(15, Math.floor((c.width * c.height) / 25000)));
+                
+                stars = Array.from({ length: starCount }, () => {
                     const r = Math.random();
                     let type = 0; // Mặc định điểm sáng tròn
                     if (r > 0.75) type = 1;      // 25% sao 4 cánh
@@ -6654,6 +6886,58 @@
                 }
             });
         })();
+
+        // ================= SCROLL AND REVEAL EFFECTS =================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Viewport scroll reveal observer
+            const revealObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        observer.unobserve(entry.target); // Trigger once
+                    }
+                });
+            }, { threshold: 0.08 });
+            
+            document.querySelectorAll('.scroll-reveal').forEach(el => revealObserver.observe(el));
+        });
+
+        // Navbar and FAB scroll listener
+        let lastScrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            const fab = document.querySelector('.feedback-fab');
+            const currentScrollY = window.scrollY;
+            
+            // Navbar scrolled class toggle
+            if (nav) {
+                if (currentScrollY > 50) {
+                    nav.classList.add('scrolled');
+                } else {
+                    nav.classList.remove('scrolled');
+                }
+            }
+            
+            // FAB mobile hide on scroll down, show on scroll up
+            if (fab) {
+                if (window.innerWidth <= 768) {
+                    if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                        fab.style.transform = 'translateY(100px)';
+                        fab.style.opacity = '0';
+                        fab.style.pointerEvents = 'none';
+                    } else {
+                        fab.style.transform = 'translateY(0)';
+                        fab.style.opacity = '1';
+                        fab.style.pointerEvents = 'auto';
+                    }
+                } else {
+                    fab.style.transform = '';
+                    fab.style.opacity = '';
+                    fab.style.pointerEvents = '';
+                }
+            }
+            lastScrollY = currentScrollY;
+        }, { passive: true });
 
         // ================= CONTEXT INITS =================
         initDatabase();

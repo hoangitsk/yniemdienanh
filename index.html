@@ -4770,8 +4770,54 @@
                     `;
                 },
                 budget() {
-                    const totalIn = d.budget.filter(b => b.type === 'in').reduce((sum, b) => sum + b.amount, 0);
-                    const totalOut = d.budget.filter(b => b.type === 'out').reduce((sum, b) => sum + b.amount, 0);
+                    const parseDateStr = (str) => {
+                        if (!str) return new Date(0);
+                        if (str.includes('/')) {
+                            const parts = str.split('/');
+                            return new Date(parts[2], parts[1] - 1, parts[0]);
+                        }
+                        return new Date(str);
+                    };
+
+                    // 1. Tự động lấy tất cả các giao dịch đã được xác nhận thành công
+                    const autoEntries = (d.transactions || [])
+                        .filter(t => t.status === 'confirmed')
+                        .map(t => {
+                            let label = '';
+                            if (t.type === 'registration') {
+                                label = `Thu phí đăng ký: ${t.eventTitle || t.eventId} - ${t.userName}`;
+                            } else if (t.type === 'vote') {
+                                label = `Thu phí bình chọn: MS ${t.submissionTitle || t.submissionId} - ${t.userName}`;
+                            } else {
+                                label = `Nhận tài trợ: Gói ủng hộ - ${t.userName}`;
+                            }
+                            
+                            let dateStr = '';
+                            if (t.time) {
+                                const parts = t.time.split(' ');
+                                dateStr = parts[1] || parts[0];
+                            } else {
+                                dateStr = new Date(t.createdAt || Date.now()).toLocaleDateString('vi-VN');
+                            }
+
+                            return {
+                                id: 'tx_' + t.id,
+                                type: 'in',
+                                label: label,
+                                amount: t.amount || 5000,
+                                date: dateStr,
+                                isAuto: true
+                            };
+                        });
+
+                    // 2. Trộn các bản ghi tự động và bản ghi thủ công
+                    const allLedgers = [...(d.budget || []), ...autoEntries];
+                    
+                    // Sắp xếp giảm dần theo ngày (mới nhất lên đầu)
+                    allLedgers.sort((a, b) => parseDateStr(b.date) - parseDateStr(a.date));
+
+                    const totalIn = allLedgers.filter(b => b.type === 'in').reduce((sum, b) => sum + b.amount, 0);
+                    const totalOut = allLedgers.filter(b => b.type === 'out').reduce((sum, b) => sum + b.amount, 0);
                     const balance = totalIn - totalOut;
                     
                     main.innerHTML = `
@@ -4806,13 +4852,17 @@
                                     <th>Số tiền giao dịch</th>
                                     <th>Xóa</th>
                                 </tr>
-                                ${[...d.budget].reverse().map(b => `
+                                ${allLedgers.map(b => `
                                     <tr>
                                         <td data-label="Thời gian">${b.date}</td>
                                         <td data-label="Nội dung thu chi">${esc(b.label)}</td>
                                         <td data-label="Loại hình">${b.type === 'in' ? `<span style="color:var(--ok);font-weight:600">Thu quỹ</span>` : `<span style="color:var(--danger);font-weight:600">Chi phí</span>`}</td>
                                         <td data-label="Số tiền giao dịch">${money(b.amount)}</td>
-                                        <td data-label="Xóa"><button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteBudgetLedger(${b.id})">🗑</button></td>
+                                        <td data-label="Xóa">
+                                            ${b.isAuto 
+                                                ? `<span style="font-size:0.8rem;color:var(--text-muted)">Hệ thống</span>` 
+                                                : `<button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteBudgetLedger(${b.id})">🗑</button>`}
+                                        </td>
                                     </tr>
                                 `).join('')}
                             </table>

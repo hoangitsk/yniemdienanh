@@ -4133,6 +4133,7 @@
             
             try {
                 let emailSent = false;
+                let emailErrorText = '';
                 if (authInstance) {
                     const cred = await authInstance.createUserWithEmailAndPassword(email, pass);
                     await cred.user.updateProfile({ displayName: name });
@@ -4160,9 +4161,17 @@
                             if (!r.ok) {
                                 const ed = await r.json().catch(() => ({}));
                                 console.warn('Email API error:', ed);
+                                if (ed.adminError || ed.adminInitError) {
+                                    emailErrorText = `Admin SDK: ${ed.adminError || ''} | Init: ${ed.adminInitError || ''}`;
+                                } else if (ed.detail && ed.detail.error) {
+                                    emailErrorText = `REST: ${ed.detail.error.message || JSON.stringify(ed.detail.error)}`;
+                                } else {
+                                    emailErrorText = JSON.stringify(ed);
+                                }
                             }
                         } catch (e) {
                             console.warn('Email skip:', e.message);
+                            emailErrorText = 'Network: ' + e.message;
                         }
                         try {
                             const snap = await dbInstance.collection('users').where('email', '==', email).get();
@@ -4221,7 +4230,7 @@
                     } else {
                         showSuccessPopup(
                             'Hệ thống gửi email xác thực đang gặp sự cố.',
-                            '⚠️ Vui lòng liên hệ Admin để được xác thực thủ công.',
+                            '⚠️ Chi tiết lỗi: ' + (emailErrorText || 'Vui lòng liên hệ Admin để được xác thực thủ công.'),
                             true
                         );
                     }

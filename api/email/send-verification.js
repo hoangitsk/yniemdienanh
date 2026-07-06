@@ -2,12 +2,16 @@ const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 
 // Initialize Firebase Admin if not already initialized
+let adminInitError = null;
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
 if (FIREBASE_SERVICE_ACCOUNT && !admin.apps.length) {
     try {
         let serviceAccountStr = FIREBASE_SERVICE_ACCOUNT.trim();
         if (serviceAccountStr.startsWith('"') && serviceAccountStr.endsWith('"')) {
             serviceAccountStr = serviceAccountStr.slice(1, -1);
+        }
+        if (serviceAccountStr.includes('\\"')) {
+            serviceAccountStr = serviceAccountStr.replace(/\\"/g, '"');
         }
         let serviceAccount = JSON.parse(serviceAccountStr);
         if (typeof serviceAccount === 'string') {
@@ -20,6 +24,7 @@ if (FIREBASE_SERVICE_ACCOUNT && !admin.apps.length) {
             credential: admin.credential.cert(serviceAccount)
         });
     } catch (e) {
+        adminInitError = e.message || String(e);
         console.error("Firebase admin init failed:", e);
     }
 }
@@ -77,12 +82,14 @@ module.exports = async (req, res) => {
         if (!idToken || !email) return res.status(400).json({ error: 'Missing idToken or email' });
 
         let oobLink = null;
+        let adminErrDetail = null;
 
         // Try using Firebase Admin SDK first (more reliable, bypasses public API key restrictions)
         if (admin.apps.length) {
             try {
                 oobLink = await admin.auth().generateEmailVerificationLink(email);
             } catch (adminErr) {
+                adminErrDetail = adminErr.message || String(adminErr);
                 console.warn('Firebase Admin generate link failed, falling back:', adminErr.message || adminErr);
             }
         }
@@ -94,7 +101,14 @@ module.exports = async (req, res) => {
                 oobLink = fbData.oobLink;
             } else {
                 console.error('Firebase REST OOB error:', JSON.stringify(fbData));
-                return res.status(500).json({ error: 'Firebase OOB link failed', detail: fbData });
+                return res.status(500).json({ 
+                    error: 'Firebase OOB link failed', 
+                    detail: fbData,
+                    adminError: adminErrDetail,
+                    adminInitError: adminInitError,
+                    adminAppsLength: admin.apps.length,
+                    hasServiceAccountEnv: !!FIREBASE_SERVICE_ACCOUNT
+                });
             }
         }
 

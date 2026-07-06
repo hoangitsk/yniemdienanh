@@ -6151,10 +6151,14 @@
             if (!session) return showToast('Vui lòng đăng nhập để đồng hành cùng dự án!', 'error');
             const modal = document.getElementById('profileModalBody');
             modal.innerHTML = `
-                <h3 style="margin-bottom:16px">💖 Đồng hành & Tài trợ dự án</h3>
-                <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:20px;line-height:1.4">
+                <h3 style="margin-bottom:12px">💖 Đồng hành & Tài trợ dự án</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:14px;line-height:1.4">
                     Ý Niệm Điện Ảnh là dự án phi lợi nhuận. Khoản tài trợ của bạn sẽ được phân bổ: 70% cộng vào Quỹ giải thưởng cho các thí sinh xuất sắc, 30% dùng để duy trì máy chủ & vận hành dự án.
                 </p>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;border:1px solid var(--line);line-height:1.4">
+                    <div style="margin-bottom:6px">🌱 <b>Gói dưới 100k (Cơ bản/Đồng hành/Phát triển):</b> Vinh danh tại Bảng vàng trên Website.</div>
+                    <div>👑 <b>Gói từ 100k trở lên (Vàng/Bạch kim/Kim cương):</b> Ghi danh lên Banner dự án & Website (BTC sẽ liên hệ để nhận Logo và Tên hiển thị của bạn).</div>
+                </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
                     <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(10000)">🌱 Gói Cơ bản (10.000đ)</button>
                     <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(20000)">🤝 Gói Đồng hành (20.000đ)</button>

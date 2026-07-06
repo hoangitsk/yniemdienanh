@@ -2696,6 +2696,25 @@
                                 }
                                 sessionStorage.setItem('ynda_user', JSON.stringify(session));
                                 syncUserToRTDB(session);
+
+                                // Tự động xác nhận giao dịch local khi redirect thành công
+                                try {
+                                    const urlParams = new URLSearchParams(window.location.search);
+                                    const orderCode = urlParams.get('orderCode');
+                                    const code = urlParams.get('code');
+                                    const status = urlParams.get('status');
+                                    if (orderCode && (code === '00' || status === 'PAID' || status === 'SUCCESS')) {
+                                        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                                        if (isLocal) {
+                                            const tx = (localDB.transactions || []).find(t => String(t.orderCode) === String(orderCode));
+                                            if (tx && tx.status === 'pending') {
+                                                await confirmTx(tx.id);
+                                            }
+                                        }
+                                    }
+                                } catch (errRedirect) {
+                                    console.warn("Lỗi auto confirm redirect:", errRedirect);
+                                }
                             } catch (e) {
                                 console.error("Firestore không khả dụng, dùng dữ liệu local:", e.message || e);
                                 const localUser = localDB.users.find(u => u.email && u.email.toLowerCase() === firebaseUser.email.toLowerCase());

@@ -4561,7 +4561,7 @@
                             </div>
                         </div>
                         
-                        <button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>
+                        ${session ? `<button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>` : `<div style="text-align:center;margin-top:16px"><p style="color:var(--text-muted);font-size:0.85rem"><a onclick="openModal('authModal');toggleAuth(false)" style="color:var(--gold);cursor:pointer;font-weight:600">Đăng ký / Đăng nhập</a> để bình chọn</p></div>`}
                         <div style="display:flex;gap:8px;margin-top:10px">
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${s.id}, '${esc(s.title)}')">📤 Share Facebook</button>
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="copyVoteLink(${s.id})">🔗 Copy link</button>
@@ -4573,6 +4573,7 @@
 
         // Chức năng bình chọn chống gian lận (quét IP thiết bị và chặn cookie/localstorage)
         async function castVote(id, e) {
+            if (!session) { openModal('authModal'); toggleAuth(false); return showToast('Vui lòng đăng ký / đăng nhập để bình chọn!', 'info'); }
             const vOpen = isVoteOpen();
             if (!vOpen.open) return showToast(vOpen.msg, 'info');
             // 1. Kiểm tra nhanh thiết bị qua LocalStorage để chặn bình chọn nhiều lần trên cùng 1 trình duyệt

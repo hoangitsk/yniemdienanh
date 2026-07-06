@@ -2740,7 +2740,7 @@
                     <option value="Workshop / Học hỏi">Workshop / Học hỏi</option>
                     <option value="Cộng đồng yêu điện ảnh">Cộng đồng yêu điện ảnh</option>
                 </select>
-                <label>Giới thiệu ngắn</label>
+                <label>Giới thiệu ngắn (Không bắt buộc)</label>
                 <textarea id="ggIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
                 <label>Mật khẩu <span style="color:var(--text-muted);font-size:0.75rem">(tùy chọn — để trống nếu chỉ muốn đăng nhập bằng Google)</span></label>
                 <input id="ggPass" type="password" placeholder="Nhập mật khẩu nếu muốn đăng nhập bằng email">
@@ -4021,9 +4021,8 @@
             const m = document.getElementById('ggMsg');
             m.className = 'form-msg err'; m.textContent = '';
 
-            if (!name || !phone || !school || !className || !interest || !intro) return m.textContent = 'Vui lòng điền đủ tất cả các trường!';
+            if (!name || !phone || !school || !className || !interest) return m.textContent = 'Vui lòng điền đủ tất cả các trường bắt buộc!';
             if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
-            if (intro.length < 20) return m.textContent = 'Giới thiệu ngắn cần tối thiểu 20 ký tự.';
             if (pass && pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
 
             let role = 'member';

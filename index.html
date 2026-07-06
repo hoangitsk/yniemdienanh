@@ -2463,9 +2463,12 @@
             if (path.includes('/payment-success') || status === 'PAID') {
                 if (code === '00' || status === 'PAID' || status === 'SUCCESS') {
                     showToast('🎉 Đóng góp quỹ thành công! Cảm ơn sự hỗ trợ của bạn.', 'success', 6000);
+                    curTab = 'transactions';
                     setTimeout(() => {
                         showPage('dash');
-                        try { renderTab('transactions'); } catch(e) {}
+                        if (session) {
+                            try { renderTab('transactions'); } catch(e) {}
+                        }
                     }, 1200);
                 } else {
                     showToast('❌ Thanh toán không thành công.', 'error', 5000);
@@ -4074,6 +4077,7 @@
         }
 
         function renderTab(tab) {
+            if (!session) return;
             curTab = tab;
             renderSideMenu();
             const d = localDB;

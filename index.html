@@ -6017,6 +6017,48 @@
             const modal = document.getElementById('profileModalBody');
             const fee = extra?.customAmount || 5000;
             const memo = type === 'registration' ? ('Reg_' + (extra?.eventId || '')) : type === 'sponsor' ? 'Sponsor' : 'Vote_' + (extra?.submissionId || '');
+            
+            // Tìm giao dịch chờ duyệt chưa hết hạn trùng khớp để tái sử dụng
+            const existingTx = (localDB.transactions || []).find(t => 
+                t.userId === session?.id && 
+                t.status === 'pending' && 
+                t.type === type &&
+                (type === 'registration' ? String(t.eventId) === String(extra.eventId) : 
+                 type === 'sponsor' ? t.amount === fee : 
+                 String(t.submissionId) === String(extra.submissionId)) &&
+                !isExpiredTx(t) &&
+                t.checkoutUrl && 
+                t.qrCode
+            );
+            
+            if (existingTx) {
+                // Tái sử dụng QR và link thanh toán cũ
+                modal.innerHTML = `
+                    <h3 style="margin-bottom:16px">💳 Thanh toán khoản góp quỹ tham gia: ${esc(extra?.eventTitle || 'Dự án')}</h3>
+                    <div class="qr-box">
+                        <div class="qr-amount">${existingTx.amount.toLocaleString('vi-VN')}đ</div>
+                        <div class="qr-info" id="payosStatus">✅ Chọn phương thức thanh toán:</div>
+                        <div id="payosPaymentArea" style="text-align:center;padding:10px 0">
+                            <p style="margin-bottom:16px;color:var(--text-muted)">Quét mã QR bằng app ngân hàng hoặc bấm nút bên dưới:</p>
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(existingTx.qrCode)}" alt="PayOS QR" style="max-width:240px;border-radius:12px;margin-bottom:16px;border:1px solid var(--line)">
+                            <div>
+                                <a href="${existingTx.checkoutUrl}" target="_blank" class="btn btn-gold" style="text-decoration:none">💳 Thanh toán ngay</a>
+                            </div>
+                            <p style="margin-top:16px;font-size:0.82rem;color:var(--text-muted)">Sau khi thanh toán, quay lại trang này. Admin sẽ xác nhận trong thời gian sớm nhất.</p>
+                        </div>
+                        <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
+                            Khoản đóng góp (${existingTx.amount.toLocaleString('vi-VN')}đ) được phân bổ: 70% (${Math.round(existingTx.amount * 0.7).toLocaleString('vi-VN')}đ) vào Quỹ giải thưởng, 30% (${Math.round(existingTx.amount * 0.3).toLocaleString('vi-VN')}đ) cho chi phí duy trì.
+                        </div>
+                    </div>
+                `;
+                document.getElementById('profileModal').querySelector('.modal-box').style.maxWidth = '440px';
+                openModal('profileModal');
+                try {
+                    startPaymentPolling(existingTx.orderCode);
+                } catch(e) {}
+                return;
+            }
+            
             modal.innerHTML = `
                 <h3 style="margin-bottom:16px">💳 Thanh toán khoản góp quỹ tham gia: ${esc(extra?.eventTitle || 'Dự án')}</h3>
                 <div class="qr-box">
@@ -6047,7 +6089,7 @@
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Không thể tạo liên kết thanh toán');
                 // Chỉ tạo giao dịch khi API thanh toán thành công
-                await addTransaction(type, extra?.submissionId, description, extra, orderCode);
+                await addTransaction(type, extra?.submissionId, description, extra, orderCode, data.checkoutUrl, data.qrCode);
                 try {
                     startPaymentPolling(orderCode);
                 } catch (e) {
@@ -6092,7 +6134,7 @@
             openPaymentModal('vote', { submissionId, submissionTitle });
         }
 
-        async function addTransaction(type, submissionId, memo, extra, orderCode) {
+        async function addTransaction(type, submissionId, memo, extra, orderCode, checkoutUrl, qrCode) {
             if (!session) {
                 showToast('Vui lòng đăng nhập!', 'error');
                 return;
@@ -6114,7 +6156,9 @@
                 memo, 
                 status: 'pending', 
                 time: timeStr,
-                createdAt: Date.now()
+                createdAt: Date.now(),
+                checkoutUrl: checkoutUrl || null,
+                qrCode: qrCode || null
             };
             await saveItem('transactions', tx);
             renderAllPrizePools();

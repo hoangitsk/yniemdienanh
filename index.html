@@ -4415,11 +4415,22 @@
 
         function renderNav() {
             const el = document.getElementById('navAuth');
+            const navLinks = document.getElementById('navLinks');
+            let profileLink = navLinks ? navLinks.querySelector('.nav-profile-link') : null;
             if (session) {
+                if (!profileLink && navLinks) {
+                    const a = document.createElement('a');
+                    a.className = 'nav-profile-link';
+                    a.onclick = function(){ var r=session?.role; if(r==='member')openProfilePage(); else openDash(); closeMobileMenu(); };
+                    a.textContent = '👤 Hồ sơ';
+                    navLinks.insertBefore(a, navLinks.lastElementChild);
+                }
+                const isMember = session.role === 'member';
                 el.innerHTML = `<span class="chip" style="margin-right:10px">👤 ${esc(session.name)} (${session.role === 'admin' ? 'Admin' : session.role === 'organizer' ? 'BTC' : 'Thành viên'})</span>
-                                <button class="btn btn-gold btn-sm" onclick="openDash()">Khu vực nội bộ</button>
+                                <button class="btn btn-gold btn-sm" onclick="${isMember ? "openProfilePage()" : "openDash()"}">${isMember ? '👤 Hồ sơ' : '🔐 Khu vực nội bộ'}</button>
                                 <button class="btn btn-line btn-sm" style="margin-left:8px" onclick="logout()">Thoát</button>`;
             } else {
+                if (profileLink) profileLink.remove();
                 el.innerHTML = `<button class="btn btn-gold btn-sm" onclick="openApply('organizer')" style="margin-right:6px">🔥 Apply BTC</button>
                                 <button class="btn btn-line btn-sm" onclick="openModal('authModal');toggleAuth(false)" style="margin-right:6px">Tạo Tài Khoản</button>
                                 <a onclick="openModal('authModal');toggleAuth(true)" style="font-size:0.85rem;color:var(--text-muted);cursor:pointer;font-weight:500">Đăng nhập</a>`;
@@ -4849,6 +4860,14 @@
             showPage('dash');
             renderSideMenu();
             renderTab(curTab);
+        }
+
+        function openProfilePage() {
+            if (!session) return openModal('authModal');
+            curTab = 'profile';
+            showPage('dash');
+            renderSideMenu();
+            renderTab('profile');
         }
 
         function renderSideMenu() {

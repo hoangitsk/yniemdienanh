@@ -46,8 +46,32 @@ if (FIREBASE_SERVICE_ACCOUNT) {
 }
 
 const app = express();
-app.use(cors());
+var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.com';
+app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
 app.use(express.json());
+
+// Simple in-memory rate limiter
+var rateLimitStore = {};
+function rateLimit(limit, windowMs) {
+    return function(req, res, next) {
+        var key = req.ip + ':' + req.path;
+        var now = Date.now();
+        if (!rateLimitStore[key] || rateLimitStore[key].resetAt < now) {
+            rateLimitStore[key] = { count: 0, resetAt: now + windowMs };
+        }
+        rateLimitStore[key].count++;
+        if (rateLimitStore[key].count > limit) {
+            return res.status(429).json({ error: 'Qua nhieu yeu cau. Vui long thu lai sau.' });
+        }
+        next();
+    };
+}
+
+// Apply rate limiting to sensitive endpoints
+app.use('/api/email/', rateLimit(5, 60000));       // 5 requests per minute for email
+app.use('/api/create-payment', rateLimit(10, 60000)); // 10 per minute for payments
+app.use('/api/verify-turnstile', rateLimit(20, 60000)); // 20 per minute for turnstile
+app.use('/api/admin/', rateLimit(10, 60000));       // 10 per minute for admin APIs
 
 const PORT = process.env.PORT || 24687;
 const PYTHON_PORT = process.env.PYTHON_PORT || 8000;
@@ -404,6 +428,59 @@ app.post('/api/payos-webhook', async (req, res) => {
     } catch (err) {
         console.error('PayOS webhook verification error:', err);
         res.status(400).json({ error: err.message });
+    }
+});
+
+// API: Send notification email (support questions, deadline extensions, etc.)
+app.post('/api/send-notification-email', async (req, res) => {
+    try {
+        const { to, subject, html } = req.body;
+        if (!to || !subject || !html) return res.status(400).json({ error: 'Missing required fields' });
+        await transporter.sendMail({
+            from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
+            to,
+            subject,
+            html: `
+                <div style="max-width:600px;margin:auto;background:#0d0d0d;padding:0;border-radius:12px;overflow:hidden;font-family:'Be Vietnam Pro',Helvetica,Arial,sans-serif">
+                    <div style="background:linear-gradient(135deg,#1a1008 0%,#0d0d0d 50%,#1a1008 100%);padding:20px;text-align:center;border-bottom:2px solid rgba(228,184,102,0.2)">
+                        <img src="https://yniemdienanh.com/Logo/logo%20ngang.png" alt="Ý Niệm Điện Ảnh" style="max-height:40px">
+                    </div>
+                    <div style="padding:30px;color:#e2e8f0;font-size:14px;line-height:1.7">${html}</div>
+                    <div style="background:#0a0a0a;padding:20px;text-align:center;border-top:1px solid rgba(228,184,102,0.08)">
+                        <p style="color:#555;font-size:12px;margin:0">© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</p>
+                    </div>
+                </div>
+            `
+        });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Send notification email error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API: Generate certificate data (for PDF generation in future)
+app.post('/api/generate-certificate', async (req, res) => {
+    try {
+        const { userId, name, type, achievement, certId } = req.body;
+        if (!userId || !name) return res.status(400).json({ error: 'Missing required fields' });
+        // Generate certificate verification code
+        const verificationCode = 'YNDA-' + (certId || Date.now().toString(36).toUpperCase());
+        res.json({
+            success: true,
+            certificate: {
+                id: verificationCode,
+                userId,
+                name,
+                type: type || 'participation',
+                achievement: achievement || '',
+                issuedAt: new Date().toISOString(),
+                verifyUrl: `https://yniemdienanh.com/verify?code=${verificationCode}`
+            }
+        });
+    } catch (err) {
+        console.error('Generate certificate error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 

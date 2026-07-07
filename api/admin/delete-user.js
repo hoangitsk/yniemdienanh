@@ -24,9 +24,8 @@ if (FIREBASE_SERVICE_ACCOUNT && !admin.apps.length) {
 }
 
 module.exports = async (req, res) => {
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.com';
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',

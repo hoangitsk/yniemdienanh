@@ -1,5 +1,6 @@
 module.exports = async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.com';
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
     res.setHeader('Cache-Control', 'public, max-age=300');
 
     res.json({

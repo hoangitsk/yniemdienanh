@@ -72,7 +72,7 @@ service cloud.firestore {
 
     match /votes/{docId} {
       allow read: if isOrganizer();
-      allow create: if true;
+      allow create: if signedIn();
       allow update, delete: if false;
     }
 
@@ -89,7 +89,7 @@ service cloud.firestore {
     }
 
     match /applications/{docId} {
-      allow create: if true;
+      allow create: if signedIn();
       allow read, update, delete: if isOrganizer();
     }
 
@@ -126,7 +126,7 @@ service cloud.firestore {
     match /posts/{docId} {
       allow read: if true;
       allow create: if signedIn();
-      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer()) && (!('userRole' in request.resource.data) || request.resource.data.userRole == resource.data.userRole) && (!('pinned' in request.resource.data) || request.resource.data.pinned == resource.data.pinned) && (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId);
       allow delete: if isOrganizer();
     }
 
@@ -144,9 +144,316 @@ service cloud.firestore {
     }
 
     match /registrations/{docId} {
-      allow read: if signedIn();
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isOrganizer());
       allow create: if signedIn();
       allow update, delete: if isOrganizer();
+    }
+
+    // === NEW FEATURE COLLECTIONS ===
+
+    match /support_questions/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if isOrganizer();
+    }
+
+    match /support_faq/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /onboarding_checklists/{docId} {
+      allow read: if signedIn();
+      allow write: if isOrganizer();
+    }
+
+    match /onboarding_progress/{userId} {
+      allow read: if request.auth.uid == userId || isOrganizer();
+      allow write: if request.auth.uid == userId || isOrganizer();
+    }
+
+    match /calendar_events/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+      allow delete: if isOrganizer();
+    }
+
+    match /notifications/{docId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || resource.data.targetAll == true || isOrganizer());
+      allow create: if signedIn();
+      allow update: if signedIn() && (resource.data.userId == request.auth.uid || isOrganizer());
+      allow delete: if isOrganizer();
+    }
+
+    match /deadline_extensions/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+    }
+
+    match /teams/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.leaderId) || isOrganizer());
+      allow delete: if isOrganizer();
+    }
+
+    match /team_members/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+      allow delete: if signedIn() || isOrganizer();
+    }
+
+    match /production_handbooks/{docId} {
+      allow read: if signedIn();
+      allow write: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+    }
+
+    match /crew_finder/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+      allow delete: if isOrganizer();
+    }
+
+    match /crew_applications/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+    }
+
+    match /talent_profiles/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+      allow delete: if isOrganizer();
+    }
+
+    match /film_locations/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+      allow delete: if isOrganizer();
+    }
+
+    match /equipment/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+      allow delete: if isOrganizer();
+    }
+
+    match /equipment_requests/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+    }
+
+    match /film_ideas/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+      allow delete: if isOrganizer();
+    }
+
+    match /idea_comments/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() && isOwner(resource.data.userId);
+      allow delete: if isOrganizer();
+    }
+
+    match /peer_reviews/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn() && isOwner(resource.data.userId);
+      allow delete: if isOrganizer();
+    }
+
+    match /production_diaries/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+      allow delete: if isOrganizer();
+    }
+
+    match /risk_reports/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+    }
+
+    match /trailers/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+      allow delete: if isOrganizer();
+    }
+
+    match /brand_kits/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /media_tasks/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
+    }
+
+    match /surveys/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+      allow delete: if isOrganizer();
+    }
+
+    match /survey_responses/{docId} {
+      allow read: if isOrganizer();
+      allow create: if signedIn();
+      allow update: if false;
+    }
+
+    match /alumni/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /community_map/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /seasons/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /season_themes/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /workshops/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+      allow delete: if isOrganizer();
+    }
+
+    match /workshop_registrations/{docId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isOrganizer());
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+    }
+
+    match /mentors/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /mentor_questions/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+    }
+
+    match /competition_categories/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /production_progress/{docId} {
+      allow read: if signedIn();
+      allow write: if signedIn();
+    }
+
+    match /mini_challenges/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /mini_challenge_submissions/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if isOrganizer();
+    }
+
+    match /judging/{docId} {
+      allow read: if isOrganizer();
+      allow write: if isOrganizer();
+    }
+
+    match /judging_scores/{docId} {
+      allow read: if isOrganizer();
+      allow write: if isOrganizer();
+    }
+
+    match /leaderboard/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /gala/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /certificates/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /partners/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /ambassadors/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /ambassador_referrals/{docId} {
+      allow read: if isOrganizer();
+      allow create: if signedIn();
+    }
+
+    match /school_partners/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /kpi/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /film_archive/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /learning_library/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /music_library/{docId} {
+      allow read: if true;
+      allow write: if isOrganizer();
+    }
+
+    match /learning_progress/{docId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isOrganizer());
+      allow write: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /student_portfolios/{docId} {
+      allow read: if true;
+      allow write: if signedIn() && (isOwner(resource.data.userId) || isOrganizer());
     }
 
     match /{document=**} {

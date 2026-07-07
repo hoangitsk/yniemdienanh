@@ -18,7 +18,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/Logo/avtar.png">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>window.turnstileWidgetReady=function(){_turnstileReady=true;_renderTurnstileWidgets();};</script>
+    <script>window.turnstileWidgetReady=function(){window.isTurnstileApiReady=true;if(typeof _renderTurnstileWidgets==='function'){_renderTurnstileWidgets();}};</script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=turnstileWidgetReady" async defer></script>
     <script>
         // Core navigation functions – defined early so onclick attributes work
@@ -3211,14 +3211,13 @@
 
         // Cloudflare Turnstile — chống spam
         const TURNSTILE_SITE_KEY = '0x4AAAAAADw_SmO-52a3NWoG';
-        let _turnstileReady = false;
         let _turnstileConfigLoaded = false;
         async function _loadTurnstileConfig() {
             _turnstileConfigLoaded = true;
             _renderTurnstileWidgets();
         }
         function _renderTurnstileWidgets() {
-            if (!_turnstileReady || !_turnstileConfigLoaded || typeof turnstile === 'undefined') return;
+            if (!window.isTurnstileApiReady || !_turnstileConfigLoaded || typeof turnstile === 'undefined') return;
             const key = TURNSTILE_SITE_KEY;
             ['turnstile-register','turnstile-feedback'].forEach(id => {
                 const el = document.getElementById(id);

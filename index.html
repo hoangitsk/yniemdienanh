@@ -3212,6 +3212,7 @@
         // Cloudflare Turnstile — chống spam
         const TURNSTILE_SITE_KEY = '0x4AAAAAADw_SmO-52a3NWoG';
         let _turnstileConfigLoaded = false;
+        let _turnstileWidgetIds = {};
         async function _loadTurnstileConfig() {
             _turnstileConfigLoaded = true;
             _renderTurnstileWidgets();
@@ -3222,7 +3223,8 @@
             ['turnstile-register','turnstile-feedback'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el && !el.hasAttribute('data-turnstile-rendered')) {
-                    turnstile.render(el, { sitekey: key });
+                    const widgetId = turnstile.render(el, { sitekey: key });
+                    _turnstileWidgetIds[id] = widgetId;
                     el.setAttribute('data-turnstile-rendered', '1');
                 }
             });
@@ -3301,7 +3303,8 @@
         const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
 
         // turnstileWidgetReady defined in head for early availability
-        async function verifyTurnstile(widgetId) {
+        async function verifyTurnstile(containerId) {
+            const widgetId = _turnstileWidgetIds[containerId];
             const widget = widgetId ? turnstile.getResponse(widgetId) : turnstile?.getResponse();
             const token = typeof widget === 'string' ? widget : '';
             if (!token) return false;

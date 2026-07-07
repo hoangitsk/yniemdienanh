@@ -34,12 +34,12 @@ const FIREBASE_API_KEY = 'AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ';
 const FIREBASE_AUTH_URL = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${FIREBASE_API_KEY}`;
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
+    host: 'smtp-relay.brevo.com',
     port: 587,
     secure: false,
     auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASS,
+        user: process.env.BREVO_SMTP_LOGIN,
+        pass: process.env.BREVO_SMTP_KEY,
     },
 });
 
@@ -119,7 +119,7 @@ module.exports = async (req, res) => {
         }
 
         await transporter.sendMail({
-            from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
+            from: `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`,
             to: email,
             subject: 'Xác thực tài khoản Ý Niệm Điện Ảnh',
             text: `XÁC THỰC TÀI KHOẢN Ý NIỆM ĐIỆN ẢNH\n\nCảm ơn bạn đã đăng ký tại Ý Niệm Điện Ảnh!\n\nVui lòng bấm link bên dưới để xác thực email của bạn:\n${oobLink}\n\nNếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.\n\n© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh`,

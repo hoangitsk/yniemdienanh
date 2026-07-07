@@ -77,14 +77,14 @@ const PORT = process.env.PORT || 24687;
 const PYTHON_PORT = process.env.PYTHON_PORT || 8000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
-// Gmail SMTP transporter
+// Brevo SMTP transporter
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
+    host: 'smtp-relay.brevo.com',
     port: 587,
     secure: false,
     auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASS,
+        user: process.env.BREVO_SMTP_LOGIN,
+        pass: process.env.BREVO_SMTP_KEY,
     },
 });
 
@@ -168,7 +168,7 @@ app.post('/api/email/send-verification', async (req, res) => {
         const currentYear = new Date().getFullYear();
 
         await transporter.sendMail({
-            from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
+            from: `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`,
             to: email,
             subject: `Xác thực tài khoản Ý Niệm Điện Ảnh — ${displayName}`,
             text: `XÁC THỰC TÀI KHOẢN Ý NIỆM ĐIỆN ẢNH
@@ -260,7 +260,7 @@ app.post('/api/email/send-password-reset', async (req, res) => {
         const currentYear = new Date().getFullYear();
 
         await transporter.sendMail({
-            from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
+            from: `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`,
             to: email,
             subject: 'Đặt lại mật khẩu Ý Niệm Điện Ảnh',
             text: `ĐẶT LẠI MẬT KHẨU Ý NIỆM ĐIỆN ẢNH\n\nBạn vừa yêu cầu đặt lại mật khẩu cho tài khoản Ý Niệm Điện Ảnh.\n\nBấm link bên dưới để tạo mật khẩu mới:\n${oobLink}\n\nLink có hiệu lực trong 1 giờ. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n\n© ${currentYear} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh`,
@@ -437,7 +437,7 @@ app.post('/api/send-notification-email', async (req, res) => {
         const { to, subject, html } = req.body;
         if (!to || !subject || !html) return res.status(400).json({ error: 'Missing required fields' });
         await transporter.sendMail({
-            from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
+            from: `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`,
             to,
             subject,
             html: `

@@ -2,15 +2,7 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/terms",
-      "destination": "/terms.html"
-    },
-    {
-      "source": "/privacy",
-      "destination": "/privacy.html"
-    },
-    {
-      "source": "/((?!api|.*\\.).*)",
+      "source": "/((?!api|privacy|terms|.*\\.).*)",
       "destination": "/index.html"
     }
   ],

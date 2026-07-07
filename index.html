@@ -2493,6 +2493,10 @@
         .form-row .f-group label { font-size:0.78rem; color:var(--text-muted); }
         .form-row .f-group input,.form-row .f-group select,.form-row .f-group textarea { padding:8px 12px; border-radius:6px; border:1px solid rgba(228,184,102,0.12); background:var(--navy-card); color:var(--text-light); font-size:0.85rem; }
         .form-row .f-group textarea { min-height:70px; }
+        .footer-social-links { display:flex; justify-content:center; gap:16px; margin: 16px 0; }
+        .footer-social-link { color:var(--text-muted); transition:all .2s ease; display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.03); border:1px solid rgba(228,184,102,0.1); }
+        .footer-social-link:hover { color:var(--gold); border-color:var(--gold); background:rgba(228,184,102,0.05); transform:translateY(-2px); }
+        .footer-social-link svg { width:18px; height:18px; fill:currentColor; }
     </style>
 </head>
 
@@ -2758,6 +2762,17 @@
         <footer>
             <div class="logo" style="justify-content:center;margin-bottom:12px">
                 <img src="Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh" style="height: 52px; width: 52px; object-fit: cover; border-radius: 8px;">
+            </div>
+            <div class="footer-social-links">
+                <a href="https://www.facebook.com/yniemdienanh" target="_blank" rel="noopener noreferrer" class="footer-social-link" title="Facebook">
+                    <svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1V12h3v3h-3v6.8c4.56-.93 8-4.96 8-9.8z"/></svg>
+                </a>
+                <a href="https://www.instagram.com/ynemdienanh/" target="_blank" rel="noopener noreferrer" class="footer-social-link" title="Instagram">
+                    <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                </a>
+                <a href="https://www.tiktok.com/@yniemdienanh1" target="_blank" rel="noopener noreferrer" class="footer-social-link" title="TikTok">
+                    <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.01 1.63 4.13 1.13.99 2.62 1.51 4.12 1.58v3.83c-1.85-.02-3.66-.75-4.97-2.07-.3-.27-.56-.57-.79-.89v7.92c.04 3.49-2.31 6.76-5.73 7.42-3.32.74-6.84-.96-8.15-4.1C1.03 14.59 2.5 10.74 5.92 9.4c1.11-.47 2.33-.59 3.52-.37v3.9c-.83-.24-1.74-.11-2.48.33-.94.51-1.46 1.56-1.39 2.62.06 1.34 1.25 2.43 2.59 2.37 1.36-.01 2.47-1.16 2.47-2.52V.02z"/></svg>
+                </a>
             </div>
             <p id="footerText">Ý Niệm Điện Ảnh là dự án phi lợi nhuận dành cho thế hệ trẻ. "Nơi những khung hình đầu tiên cất lời" ✨</p>
         </footer>

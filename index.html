@@ -6794,39 +6794,56 @@
                 myteam() {
                     var teams = d.teams||[];
                     var teamMembers = d.teamMembers||[];
-                    var myTeam = teams.find(function(t){return t.leaderId===session.id||teamMembers.some(function(m){return m.teamId===t.id&&m.userId===session.id;});});
+                    var allMyTeams = teams.filter(function(t){return t.leaderId===session.id||teamMembers.some(function(m){return m.teamId===t.id&&m.userId===session.id;});});
+                    var subTab = sessionStorage.getItem('myteamSubTab')||'list';
                     main.innerHTML = `
                         <h2>👥 Đội thi của tôi</h2>
-                        ${!myTeam ? `
-                        <div class="panel">
-                            <h3 style="color:var(--gold-light);margin-bottom:12px">Bạn chưa có đội thi</h3>
-                            <p style="color:var(--text-muted);margin-bottom:16px">Tạo đội mới hoặc tham gia đội có sẵn.</p>
-                            <div class="two-col">
-                                <div style="padding:16px;background:var(--navy-card);border-radius:12px">
-                                    <h4 style="color:var(--gold-light)">➕ Tạo đội mới</h4>
-                                    <div class="inline-form" style="padding:8px 0">
-                                        <div class="field" style="flex:2"><label>Tên đội</label><input id="newTeamName" placeholder="Tên đội của bạn"></div>
-                                        <button class="btn btn-gold" onclick="createTeam()">Tạo đội</button>
-                                    </div>
+                        <div class="tab-nav">
+                            <button class="tab-btn ${subTab==='list'?'active':''}" onclick="sessionStorage.setItem('myteamSubTab','list');renderTab('myteam')">📋 Đội của tôi</button>
+                            <button class="tab-btn ${subTab==='create'?'active':''}" onclick="sessionStorage.setItem('myteamSubTab','create');renderTab('myteam')">➕ Tạo/Tham gia</button>
+                            <button class="tab-btn ${subTab==='register'?'active':''}" onclick="sessionStorage.setItem('myteamSubTab','register');renderTab('myteam')">📝 Đăng ký thi</button>
+                        </div>
+                        ${subTab==='list' ? `
+                        <div class="feature-grid">${allMyTeams.length===0 ? '<p style="color:var(--text-muted)">Bạn chưa có đội thi nào. Vào tab "Tạo/Tham gia" để bắt đầu.</p>' : allMyTeams.map(function(t){var members=teamMembers.filter(function(m){return m.teamId===t.id;});var isLeader=t.leaderId===session.id;return '<div class="feature-card"><h4>🎬 '+esc(t.name)+'</h4><div class="meta"><span class="badge badge-gold">'+(isLeader?'Trưởng nhóm':'Thành viên')+'</span><span class="badge badge-blue">'+members.length+' TV</span></div><div style="margin-top:8px;font-size:0.85rem">'+members.map(function(m){var u=d.users.find(function(x){return String(x.id)===String(m.userId);});return '<div>'+(u?esc(u.name):'')+' <span style="color:var(--text-muted);font-size:0.75rem">('+esc(m.role||'TV')+')</span></div>';}).join('')+'</div>'+(isLeader?'<div class="meta" style="margin-top:8px"><strong style="color:var(--gold-light);font-size:0.8rem">Mã mời: </strong><code style="font-size:0.75rem">'+esc(t.inviteCode||'')+'</code></div>':'')+'</div>';}).join('')}</div>` : subTab==='create' ? `
+                        <div class="two-col">
+                            <div class="panel">
+                                <h4 style="color:var(--gold-light);margin-bottom:12px">➕ Tạo đội mới</h4>
+                                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:8px">Bạn có thể tạo và tham gia nhiều đội cùng lúc.</p>
+                                <div class="inline-form" style="padding:0">
+                                    <div class="field" style="flex:2"><label>Tên đội</label><input id="newTeamName" placeholder="Tên đội của bạn"></div>
+                                    <button class="btn btn-gold" onclick="createTeam()">Tạo đội</button>
                                 </div>
-                                <div style="padding:16px;background:var(--navy-card);border-radius:12px">
-                                    <h4 style="color:var(--gold-light)">🔍 Tham gia đội</h4>
-                                    <p style="color:var(--text-muted);font-size:0.85rem">Liên hệ trưởng nhóm để được mời vào đội.</p>
-                                    <div style="margin-top:8px"><input id="inviteCode" placeholder="Nhập mã mời..." style="padding:8px;border-radius:6px;border:1px solid rgba(228,184,102,0.12);background:var(--navy-card);color:var(--text-light);width:100%"></div>
-                                    <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="joinTeam()">Tham gia</button>
+                            </div>
+                            <div class="panel">
+                                <h4 style="color:var(--gold-light);margin-bottom:12px">🔍 Tham gia đội</h4>
+                                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:8px">Nhập mã mời từ trưởng nhóm.</p>
+                                <div style="display:flex;gap:8px;align-items:end">
+                                    <div class="field" style="flex:2"><label>Mã mời</label><input id="inviteCode" placeholder="VD: ABC123"></div>
+                                    <button class="btn btn-gold" onclick="joinTeam()">Tham gia</button>
                                 </div>
                             </div>
                         </div>` : `
                         <div class="panel">
-                            <div style="display:flex;justify-content:space-between;align-items:center">
-                                <h3 style="color:var(--gold-light)">🎬 ${esc(myTeam.name)}</h3>
-                                <span class="badge badge-gold">${myTeam.leaderId===session.id?'Trưởng nhóm':'Thành viên'}</span>
+                            <h3 style="color:var(--gold-light);margin-bottom:16px">📝 Đăng ký tham gia cuộc thi</h3>
+                            ${allMyTeams.length===0 ? '<p style="color:var(--text-muted)">Bạn cần có đội thi trước khi đăng ký. Hãy tạo đội trước.</p>' : `
+                            <div class="form-row">
+                                <div class="f-group"><label>Chọn đội thi</label><select id="regTeam">${allMyTeams.map(function(t){var members=teamMembers.filter(function(m){return m.teamId===t.id;});return '<option value="'+t.id+'">'+esc(t.name)+' ('+members.length+' thành viên)</option>';}).join('')}</select></div>
+                                <div class="f-group"><label>Tên bài dự thi</label><input id="regSubTitle" placeholder="Tên phim của bạn"></div>
                             </div>
-                            <p style="color:var(--text-muted);font-size:0.85rem;margin-top:8px">${esc(myTeam.desc||'')}</p>
-                            <div style="margin-top:12px"><strong style="color:var(--gold-light)">Mã mời: </strong><code style="color:var(--gold);background:rgba(228,184,102,0.1);padding:2px 8px;border-radius:4px">${myTeam.inviteCode||'N/A'}</code></div>
-                        </div>
-                        <div class="progress-section"><h4>Thành viên (${teamMembers.filter(function(m){return m.teamId===myTeam.id}).length})</h4>
-                            ${teamMembers.filter(function(m){return m.teamId===myTeam.id}).map(function(m){var u=d.users.find(function(x){return String(x.id)===String(m.userId);});return '<div class="list-item"><div class="info"><div class="title">'+(u?esc(u.name):m.userId)+'</div><div class="sub">'+esc(m.role||'Thành viên')+'</div></div></div>';}).join('')||'<p style="color:var(--text-muted);font-size:0.85rem">Chưa có thành viên.</p>'}
+                            <div id="regFeeDisplay" style="background:var(--navy-dark);border-radius:10px;padding:16px;margin-bottom:16px">
+                                <h4 style="color:var(--gold-light)">💰 Phí đăng ký đội</h4>
+                                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:8px">
+                                    <div class="stat-box"><div class="num" id="regMemberCount">0</div><div class="lbl">Thành viên</div></div>
+                                    <div class="stat-box"><div class="num" id="regBaseFee">0đ</div><div class="lbl">× 5.000đ/người</div></div>
+                                    <div class="stat-box"><div class="num" id="regFinalFee" style="color:var(--ok)">0đ</div><div class="lbl">Giảm 20% = Tổng</div></div>
+                                </div>
+                                <p style="color:var(--text-muted);font-size:0.82rem;margin-top:8px">🎯 Mỗi thành viên trong đội sẽ nhận được <strong style="color:var(--gold-light)">chứng chỉ bằng khen riêng</strong> sau khi hoàn thành. Nếu đăng ký cá nhân, chỉ người đăng ký nhận bằng.</p>
+                            </div>
+                            <button class="btn btn-gold" onclick="registerTeamForCompetition()">📝 Đăng ký & Thanh toán</button>
+                            <script>
+                                document.getElementById('regTeam').addEventListener('change',function(){updateRegFee();});setTimeout(updateRegFee,100);
+                            <\/script>
+                            `}
                         </div>`}
                     `;
                 },
@@ -7422,15 +7439,32 @@
                 },
                 certificates() {
                     var certs = d.certificates||[];
+                    var subTab = sessionStorage.getItem('certSubTab')||'list';
+                    var myCerts = certs.filter(function(c){return c.userId===session.id;});
                     main.innerHTML = `
                         <h2>📜 Chứng nhận / Certificate</h2>
-                        <div class="inline-form">
-                            <div class="field"><label>Người nhận</label><select id="certUser">${d.users.map(function(u){return '<option value="'+u.id+'">'+esc(u.name)+'</option>';}).join('')}</select></div>
-                            <div class="field"><label>Loại</label><select id="certType"><option value="participation">Tham gia</option><option value="finalist">Finalist</option><option value="winner">Giải thưởng</option></select></div>
-                            <div class="field"><label>Thành tích</label><input id="certAchievement" placeholder="VD: Giải Nhất"></div>
-                            <button class="btn btn-gold" onclick="issueCertificate()">📜 Cấp chứng nhận</button>
+                        <div class="tab-nav">
+                            <button class="tab-btn ${subTab==='list'?'active':''}" onclick="sessionStorage.setItem('certSubTab','list');renderTab('certificates')">📜 Danh sách</button>
+                            <button class="tab-btn ${subTab==='my'?'active':''}" onclick="sessionStorage.setItem('certSubTab','my');renderTab('certificates')">👤 Của tôi (${myCerts.length})</button>
+                            ${isOrg ? '<button class="tab-btn ${subTab==='issue'?'active':''}" onclick="sessionStorage.setItem('certSubTab','issue');renderTab('certificates')">📝 Cấp mới</button>' : ''}
                         </div>
-                        <div class="feature-grid">${certs.length===0 ? '<p style="color:var(--text-muted)">Chưa có chứng nhận nào.</p>' : certs.map(function(c){var u=d.users.find(function(x){return String(x.id)===String(c.userId);});return '<div class="cert-card"><div class="cert-title">Ý Niệm Điện Ảnh</div><div class="cert-name">'+(u?esc(u.name):'')+'</div><div class="cert-desc">'+(c.type==='participation'?'Đã tham gia':c.type==='finalist'?'Finalist':'Giải thưởng')+' · '+esc(c.achievement||'')+'</div><div class="cert-id">Mã: YNDA-'+esc(c.id)+'</div></div>';}).join('')}</div>
+                        ${subTab==='list' ? `
+                        <div class="filter-bar">
+                            <button class="filter-btn" onclick="filterCerts('all')">Tất cả (${certs.length})</button>
+                            <button class="filter-btn" onclick="filterCerts('team')">Theo đội</button>
+                            <button class="filter-btn" onclick="filterCerts('individual')">Cá nhân</button>
+                        </div>
+                        <div class="feature-grid">${certs.length===0 ? '<p style="color:var(--text-muted)">Chưa có chứng nhận nào.</p>' : certs.map(function(c){var u=d.users.find(function(x){return String(x.id)===String(c.userId);});var isTeam=c.teamId?true:false;return '<div class="cert-card" style="'+(isTeam?'border-color:#64b4ff':'')+'"><div class="cert-title">Ý Niệm Điện Ảnh</div><div class="cert-name">'+(u?esc(u.name):'')+'</div>'+(isTeam?'<div class="meta" style="justify-content:center;margin:6px 0"><span class="badge badge-blue">Đội: '+esc(c.teamName||'')+'</span><span class="badge badge-gold">'+esc(c.role||'Thành viên')+'</span></div>':'')+'<div class="cert-desc">'+(c.type==='participation'?'Đã tham gia':c.type==='finalist'?'Finalist':'Giải thưởng')+' · '+esc(c.achievement||'')+'</div><div class="cert-id">Mã: YNDA-'+esc(c.id)+'</div></div>';}).join('')}</div>` : subTab==='my' ? `
+                        <div class="feature-grid">${myCerts.length===0 ? '<p style="color:var(--text-muted)">Bạn chưa có chứng nhận nào.</p>' : myCerts.map(function(c){return '<div class="cert-card"><div class="cert-title">Ý Niệm Điện Ảnh</div><div class="cert-name">'+esc(session.name)+'</div>'+(c.teamId?'<div class="meta" style="justify-content:center;margin:6px 0"><span class="badge badge-blue">Đội: '+esc(c.teamName||'')+'</span><span class="badge badge-gold">'+esc(c.role||'')+'</span></div>':'')+'<div class="cert-desc">'+esc(c.achievement||'')+'</div><div class="cert-id">Mã: YNDA-'+esc(c.id)+'</div></div>';}).join('')}</div>` : `
+                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">📝 Cấp chứng nhận cho cá nhân</h4>
+                            <div class="inline-form">
+                                <div class="field"><label>Người nhận</label><select id="certUser">${d.users.map(function(u){return '<option value="'+u.id+'">'+esc(u.name)+'</option>';}).join('')}</select></div>
+                                <div class="field"><label>Loại</label><select id="certType"><option value="participation">Tham gia</option><option value="finalist">Finalist</option><option value="winner">Giải thưởng</option></select></div>
+                                <div class="field"><label>Thành tích</label><input id="certAchievement" placeholder="VD: Giải Nhất"></div>
+                                <button class="btn btn-gold" onclick="issueCertificate()">📜 Cấp</button>
+                            </div>
+                            <p style="color:var(--text-muted);font-size:0.82rem;margin-top:8px">💡 Đăng ký theo đội: chứng chỉ tự động cấp cho <strong>tất cả thành viên</strong> trong đội (xem tab "Danh sách").</p>
+                        </div>`}
                     `;
                 },
                 partners() {
@@ -10566,12 +10600,74 @@
             var team = (localDB.teams||[]).find(function(t){return t.inviteCode===code.value.trim().toUpperCase();});
             if (!team) return showToast('Không tìm thấy đội với mã này','error');
             if (!localDB.teamMembers) localDB.teamMembers = [];
+            // Allow 1 person in MULTIPLE teams - just check they're not already in THIS specific team
             if (localDB.teamMembers.some(function(m){return m.teamId===team.id&&m.userId===session.id;})) return showToast('Bạn đã ở trong đội này rồi','error');
             localDB.teamMembers.push({id:genId(),teamId:team.id,userId:session.id,role:'Thành viên'});
             code.value='';
             await saveItem('teamMembers', localDB.teamMembers);
             renderTab('myteam');
-            showToast('Đã tham gia đội '+team.name+'!','success');
+            showToast('Đã tham gia đội '+team.name+'! Bạn có thể tham gia nhiều đội cùng lúc.','success');
+        }
+        function updateRegFee() {
+            var sel = document.getElementById('regTeam');
+            if (!sel) return;
+            var teamId = sel.value;
+            var members = (localDB.teamMembers||[]).filter(function(m){return m.teamId===teamId;});
+            var count = members.length + 1; // +1 for the leader
+            var baseFee = count * 5000;
+            var finalFee = Math.round(baseFee * 0.8); // 20% discount for team
+            var elCount = document.getElementById('regMemberCount');
+            var elBase = document.getElementById('regBaseFee');
+            var elFinal = document.getElementById('regFinalFee');
+            if (elCount) elCount.textContent = count;
+            if (elBase) elBase.textContent = baseFee.toLocaleString('vi-VN')+'đ';
+            if (elFinal) elFinal.textContent = finalFee.toLocaleString('vi-VN')+'đ';
+        }
+        async function registerTeamForCompetition() {
+            var sel = document.getElementById('regTeam');
+            var title = document.getElementById('regSubTitle');
+            if (!sel||!sel.value) return showToast('Vui lòng chọn đội thi','error');
+            if (!title||!title.value.trim()) return showToast('Vui lòng nhập tên bài dự thi','error');
+            var team = (localDB.teams||[]).find(function(t){return t.id===sel.value;});
+            if (!team) return showToast('Không tìm thấy đội','error');
+            var members = (localDB.teamMembers||[]).filter(function(m){return m.teamId===team.id;});
+            var totalMembers = members.length + 1;
+            var fee = Math.round(totalMembers * 5000 * 0.8);
+            // Generate certificates for ALL members (including leader) upfront
+            var certIds = [];
+            var allMemberIds = [{id:team.leaderId,role:'Trưởng nhóm'}];
+            members.forEach(function(m){allMemberIds.push({id:m.userId,role:m.role||'Thành viên'});});
+            if (!localDB.certificates) localDB.certificates = [];
+            allMemberIds.forEach(function(member){
+                var u = localDB.users.find(function(x){return String(x.id)===String(member.id);});
+                if (!u) return;
+                var certId = (localDB.certificates.length+1001).toString();
+                localDB.certificates.push({
+                    id:certId, userId:member.id, userName:u.name,
+                    type:'participation', achievement:'Tham gia cuộc thi - '+esc(team.name),
+                    teamId:team.id, teamName:team.name, role:member.role,
+                    issuedAt:new Date().toISOString()
+                });
+                certIds.push(certId);
+            });
+            // Save submission
+            if (!localDB.submissions) localDB.submissions = [];
+            localDB.submissions.push({
+                id:genId(), title:title.value.trim(), teamId:team.id, teamName:team.name,
+                userId:team.leaderId, userName:session.name,
+                status:'pending', fee:fee, memberCount:totalMembers,
+                certIssued:true, certCount:allMemberIds.length,
+                createdAt:new Date().toISOString()
+            });
+            persistDB();
+            showToast('🎉 Đăng ký thành công! Phí: '+fee.toLocaleString('vi-VN')+'đ ('+totalMembers+' TV × 5.000 × 80%). '+allMemberIds.length+' chứng chỉ đã được tạo.','success',6000);
+            renderTab('myteam');
+            // If fee > 0, trigger payment via existing PayOS flow
+            if (fee > 0 && typeof openPaymentModal === 'function') {
+                var orderCode = Math.floor(Date.now() % 100000000);
+                var txData = { teamId: team.id, teamName: team.name, memberCount: totalMembers, certCount: allMemberIds.length };
+                openPaymentModal('team_registration', { eventId: team.id, eventTitle: 'Đăng ký đội '+team.name, customAmount: fee, orderCode: orderCode, extra: txData });
+            }
         }
 
         // --- HANDBOOK ---
@@ -11069,11 +11165,13 @@
             var userId=document.getElementById('certUser');var type=document.getElementById('certType');var achievement=document.getElementById('certAchievement');
             if (!localDB.certificates) localDB.certificates = [];
             var certId = (localDB.certificates.length+1001).toString();
-            localDB.certificates.push({id:certId,userId:userId.value,type:type.value,achievement:achievement.value.trim(),issuedAt:new Date().toISOString()});
+            var u = localDB.users.find(function(x){return String(x.id)===String(userId.value);});
+            localDB.certificates.push({id:certId,userId:userId.value,userName:u?u.name:'',type:type.value,achievement:achievement.value.trim(),issuedAt:new Date().toISOString()});
             achievement.value='';
             await saveItem('certificates', localDB.certificates);
-            renderTab('certificates');showToast('Đã cấp chứng nhận! Mã: YNDA-'+certId,'success');
+            renderTab('certificates');showToast('Đã cấp chứng nhận cho '+(u?u.name:'')+'! Mã: YNDA-'+certId,'success');
         }
+        function filterCerts(type) { sessionStorage.setItem('certFilter',type); renderTab('certificates'); }
 
         // --- PARTNERS ---
         async function addPartner() {

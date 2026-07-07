@@ -2,8 +2,14 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/((?!api|privacy|terms|.*\\.).*)",
-      "destination": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html",
+      "not": [
+        { "source": "/privacy" },
+        { "source": "/terms" },
+        { "source": "/api(/.*)?" },
+        { "source": "/:path(.*\\..*)" }
+      ]
     }
   ],
   "headers": [

@@ -2673,6 +2673,7 @@
                                 <button onclick="triggerQuickAction('workshop')">➕ Tạo workshop</button>
                                 <button onclick="triggerQuickAction('btc')">➕ Tuyển BTC</button>
                                 <button onclick="triggerQuickAction('project')">➕ Đăng tiến độ</button>
+                                <button onclick="triggerQuickAction('featured')">🔥 Thêm hoạt động nổi bật</button>
                             </div>
                         </div>
                         
@@ -2691,27 +2692,7 @@
                         <!-- Active Listings Widget -->
                         <div class="sidebar-widget">
                             <h4>🔥 Hoạt động nổi bật</h4>
-                            
-                            <div class="sidebar-card">
-                                <span class="card-badge bg-soon">📅 Workshop</span>
-                                <div class="card-title">Kỹ thuật Ánh sáng điện ảnh</div>
-                                <div class="card-meta">15/08 · Offline Hà Nội</div>
-                                <button class="card-btn" onclick="goSection('events')">Đăng ký tham gia →</button>
-                            </div>
-
-                            <div class="sidebar-card">
-                                <span class="card-badge bg-live">🎬 Casting</span>
-                                <div class="card-title">Phim ngắn "Ký ức thứ 24"</div>
-                                <div class="card-meta">Nam chính (18-22 tuổi)</div>
-                                <button class="card-btn" onclick="goSection('events')">Xem chi tiết →</button>
-                            </div>
-
-                            <div class="sidebar-card">
-                                <span class="card-badge bg-btc">🔥 Tuyển dụng BTC</span>
-                                <div class="card-title">Ban Thiết kế & Truyền thông</div>
-                                <div class="card-meta">Tìm kiếm thành viên cốt lõi</div>
-                                <button class="card-btn" onclick="goSection('apply')">Ứng tuyển ngay →</button>
-                            </div>
+                            <div id="featuredListingsContainer"></div>
                         </div>
                     </div>
                 </div>
@@ -3923,8 +3904,8 @@
             }
             const isOrg = ['admin', 'organizer'].includes(role);
             const collections = isOrg 
-                ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations']
-                : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations'];
+                ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations', 'featuredListings']
+                : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations', 'featuredListings'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await firestoreWithTimeout(dbInstance.collection(col).get());
@@ -6671,6 +6652,13 @@
                             <input id="cFooterText" value="${esc(c.footer.text)}">
                         </div>
 
+                        <!-- FEATURED LISTINGS -->
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">🔥 Hoạt động nổi bật</h3>
+                            <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px">Các mục hiển thị trong sidebar "Hoạt động nổi bật". Click "➕ Thêm hoạt động nổi bật" ở sidebar Cộng đồng.</p>
+                            <div id="dashFeaturedList">${(d.featuredListings||[]).map(function(f){return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span class="card-badge '+(f.badgeClass||'bg-soon')+'">'+(f.badge||'')+'</span><strong style="flex:1">'+esc(f.title)+'</strong><span style="color:var(--text-muted);font-size:0.8rem">'+esc(f.meta||'')+'</span></div>';}).join('')||'<p style="color:var(--text-muted);font-size:0.85rem">Chưa có hoạt động nào.</p>'}</div>
+                        </div>
+
                         <button class="btn btn-gold" style="margin-top:20px" onclick="saveContentFromDash()">💾 Lưu tất cả nội dung</button>
                         <div id="cSaveMsg" style="margin-top:10px;font-size:0.9rem;min-height:1.2em"></div>
                     `;
@@ -9026,6 +9014,22 @@
                         }
                     });
                 }
+            } else if (action === 'featured') {
+                var badge = await showPromptModal('🏷️ Badge (VD: 📅 Workshop, 🎬 Casting, 🔥 Tuyển dụng):');
+                if (!badge) return;
+                var title = await showPromptModal('📌 Tiêu đề:');
+                if (!title) return;
+                var meta = await showPromptModal('📋 Mô tả ngắn (VD: 15/08 · Offline Hà Nội):');
+                if (meta === null) return;
+                var btnLabel = await showPromptModal('🔘 Nhãn nút (VD: Đăng ký tham gia →):');
+                if (!btnLabel) return;
+                var btnAction = await showPromptModal('📍 Hành động (VD: goSection(\'events\')):', "goSection('events')");
+                if (!btnAction) return;
+                var badgeClasses = ['bg-soon','bg-live','bg-btc'];
+                var badgeClass = await showPromptModal('🎨 Màu badge (bg-soon=gold, bg-live=xanh, bg-btc=xanh dương):', 'bg-soon');
+                if (!badgeClass || badgeClasses.indexOf(badgeClass) === -1) badgeClass = 'bg-soon';
+                await addFeaturedListing({badge:badge,badgeClass:badgeClass,title:title,meta:meta||'',btnLabel:btnLabel,btnAction:btnAction});
+                showToast('🔥 Đã thêm hoạt động nổi bật!','success');
             }
         }
 
@@ -9373,6 +9377,7 @@
                     const isOrg = session && ['admin', 'organizer'].includes(session.role);
                     qaWidget.style.display = isOrg ? 'block' : 'none';
                 }
+                ensureFeaturedListings().then(renderFeaturedListings);
             }
             if (tab === 'chat') renderPublicChat();
             if (tab === 'members') renderMemberList();
@@ -11060,6 +11065,50 @@
             localDB.workshopRegistrations.push({id:genId(),workshopId:wsId,userId:session.id,userName:session.name,createdAt:new Date().toISOString()});
             await saveItem('workshopRegistrations', localDB.workshopRegistrations);
             renderTab('workshops');showToast('Đã đăng ký workshop!','success');
+        }
+
+        // --- FEATURED LISTINGS ---
+        async function ensureFeaturedListings() {
+            if (!localDB.featuredListings || localDB.featuredListings.length === 0) {
+                localDB.featuredListings = [
+                    {id:genId(),badge:'📅 Workshop',badgeClass:'bg-soon',title:'Kỹ thuật Ánh sáng điện ảnh',meta:'15/08 · Offline Hà Nội',btnLabel:'Đăng ký tham gia →',btnAction:"goSection('events')"},
+                    {id:genId(),badge:'🎬 Casting',badgeClass:'bg-live',title:'Phim ngắn "Ký ức thứ 24"',meta:'Nam chính (18-22 tuổi)',btnLabel:'Xem chi tiết →',btnAction:"goSection('events')"},
+                    {id:genId(),badge:'🔥 Tuyển dụng BTC',badgeClass:'bg-btc',title:'Ban Thiết kế & Truyền thông',meta:'Tìm kiếm thành viên cốt lõi',btnLabel:'Ứng tuyển ngay →',btnAction:"goSection('apply')"}
+                ];
+                await saveItem('featuredListings', localDB.featuredListings);
+            }
+        }
+        function renderFeaturedListings() {
+            var container = document.getElementById('featuredListingsContainer');
+            if (!container) return;
+            var items = localDB.featuredListings || [];
+            var isOrg = session && ['admin', 'organizer'].includes(session.role);
+            container.innerHTML = items.length === 0
+                ? '<p style="color:var(--text-muted);font-size:0.85rem">Chưa có hoạt động nào.</p>'
+                : items.map(function(f) {
+                    var delBtn = isOrg
+                        ? '<button class="btn btn-line btn-sm" onclick="deleteFeaturedListing(\''+f.id+'\')" style="position:absolute;top:6px;right:6px;padding:2px 6px;font-size:0.65rem;color:var(--danger);border-color:var(--danger);line-height:1">🗑</button>'
+                        : '';
+                    return '<div class="sidebar-card" style="position:relative">'
+                        + delBtn
+                        + '<span class="card-badge '+(f.badgeClass||'bg-soon')+'">'+(f.badge||'')+'</span>'
+                        + '<div class="card-title">'+esc(f.title)+'</div>'
+                        + '<div class="card-meta">'+esc(f.meta||'')+'</div>'
+                        + '<button class="card-btn" onclick="'+(f.btnAction||'')+'">'+(f.btnLabel||'')+'</button>'
+                        + '</div>';
+                }).join('');
+        }
+        async function addFeaturedListing(data) {
+            if (!localDB.featuredListings) localDB.featuredListings = [];
+            localDB.featuredListings.push({id:genId(),badge:data.badge,badgeClass:data.badgeClass||'bg-soon',title:data.title,meta:data.meta||'',btnLabel:data.btnLabel,btnAction:data.btnAction,createdAt:new Date().toISOString()});
+            await saveItem('featuredListings', localDB.featuredListings);
+            renderFeaturedListings();
+        }
+        async function deleteFeaturedListing(id) {
+            if (!confirm('Xóa hoạt động này?')) return;
+            localDB.featuredListings = (localDB.featuredListings||[]).filter(function(f){return f.id!==id;});
+            await saveItem('featuredListings', localDB.featuredListings);
+            renderFeaturedListings();
         }
 
         // --- MENTORS ---

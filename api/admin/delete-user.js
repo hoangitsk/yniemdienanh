@@ -75,7 +75,12 @@ module.exports = async (req, res) => {
         try {
             await admin.auth().deleteUser(targetUid);
         } catch (authErr) {
-            console.warn('User not found in Firebase Auth or failed to delete:', authErr.message || authErr);
+            console.error('Failed to delete user from Firebase Auth:', authErr.message || authErr);
+            return res.status(500).json({
+                success: false,
+                error: 'Không thể xoá tài khoản khỏi Firebase Authentication. Vui lòng thử lại hoặc xoá thủ công trên Firebase Console.',
+                detail: authErr.message
+            });
         }
 
         // 2. Delete from Firestore users collection

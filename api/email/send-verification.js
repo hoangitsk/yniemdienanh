@@ -82,12 +82,17 @@ module.exports = async (req, res) => {
         const { idToken, email } = req.body;
         if (!idToken || !email) return res.status(400).json({ error: 'Missing idToken or email' });
 
+        // Verify idToken belongs to the claimed email (security: prevent email spoofing)
         let oobLink = null;
         let adminErrDetail = null;
 
         // Try using Firebase Admin SDK first (more reliable, bypasses public API key restrictions)
         if (admin.apps.length) {
             try {
+                const decoded = await admin.auth().verifyIdToken(idToken);
+                if (decoded.email !== email) {
+                    return res.status(403).json({ error: 'Email không khớp với token.' });
+                }
                 oobLink = await admin.auth().generateEmailVerificationLink(email);
             } catch (adminErr) {
                 adminErrDetail = adminErr.message || String(adminErr);
@@ -95,7 +100,7 @@ module.exports = async (req, res) => {
             }
         }
 
-        // Fallback to public Identity Toolkit REST API
+        // Fallback to public Identity Toolkit REST API (REST API verifies idToken internally)
         if (!oobLink) {
             const fbData = await fbFetch({ requestType: 'VERIFY_EMAIL', idToken, returnOobLink: true });
             if (fbData.oobLink) {

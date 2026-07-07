@@ -10,6 +10,8 @@ const PAYOS_CLIENT_ID = process.env.PAYOS_CLIENT_ID || "";
 const PAYOS_API_KEY = process.env.PAYOS_API_KEY || "";
 const PAYOS_CHECKSUM_KEY = process.env.PAYOS_CHECKSUM_KEY || "";
 
+const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY || "";
+
 const PAYOS_ENABLED = !!(PAYOS_CLIENT_ID && PAYOS_API_KEY && PAYOS_CHECKSUM_KEY);
 const payos = PAYOS_ENABLED ? new PayOS(PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY) : null;
 
@@ -86,15 +88,22 @@ async function fbFetch(body) {
 // Email API endpoints
 app.post('/api/email/send-verification', async (req, res) => {
     try {
-        const { idToken, email } = req.body;
+        const { idToken, email, userName } = req.body;
         if (!idToken || !email) return res.status(400).json({ error: 'Missing idToken or email' });
 
+        const displayName = (userName || '').trim() || 'bạn';
+
+        // Verify idToken belongs to the claimed email (security: prevent email spoofing)
         let oobLink = null;
         let adminErrDetail = null;
 
         // Try using Firebase Admin SDK first
         if (admin.apps.length && db) {
             try {
+                const decoded = await admin.auth().verifyIdToken(idToken);
+                if (decoded.email !== email) {
+                    return res.status(403).json({ error: 'Email không khớp với token.' });
+                }
                 oobLink = await admin.auth().generateEmailVerificationLink(email);
                 console.log('Admin SDK generated verification link for', email);
             } catch (adminErr) {
@@ -103,7 +112,7 @@ app.post('/api/email/send-verification', async (req, res) => {
             }
         }
 
-        // Fallback to public Identity Toolkit REST API
+        // Fallback to public Identity Toolkit REST API (REST API verifies idToken internally)
         if (!oobLink) {
             const fbData = await fbFetch({ requestType: 'VERIFY_EMAIL', idToken, returnOobLink: true });
             if (fbData.oobLink) {
@@ -121,11 +130,32 @@ app.post('/api/email/send-verification', async (req, res) => {
             }
         }
 
+        // Lấy STT người đăng ký
+        let regNo = '';
+        try {
+            if (db) {
+                const usersSnap = await db.collection('users').count().get();
+                regNo = String((usersSnap.data().count || 0) + 1);
+            }
+        } catch (e) {
+            regNo = String(Math.floor(Date.now() / 1000) % 100000);
+        }
+
+        const currentYear = new Date().getFullYear();
+
         await transporter.sendMail({
             from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
             to: email,
-            subject: 'Xác thực tài khoản Ý Niệm Điện Ảnh',
-            text: `XÁC THỰC TÀI KHOẢN Ý NIỆM ĐIỆN ẢNH\n\nCảm ơn bạn đã đăng ký tại Ý Niệm Điện Ảnh!\n\nVui lòng bấm link bên dưới để xác thực email của bạn:\n${oobLink}\n\nNếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.\n\n© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh`,
+            subject: `Xác thực tài khoản Ý Niệm Điện Ảnh — ${displayName}`,
+            text: `XÁC THỰC TÀI KHOẢN Ý NIỆM ĐIỆN ẢNH
+            \nXin chào ${displayName},
+            \nCảm ơn bạn đã đăng ký tại Ý Niệm Điện Ảnh!
+            \nMã số đăng ký của bạn: #YNDA-${regNo}
+            \nVui lòng bấm link bên dưới để xác thực email:
+            \n${oobLink}
+            \nSau khi xác thực, bạn có thể đăng nhập và tham gia cộng đồng điện ảnh.
+            \nNếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.
+            \n© ${currentYear} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh`,
             html: `
                 <div style="max-width:600px;margin:auto;background:#0d0d0d;padding:0;border-radius:12px;overflow:hidden;font-family:'Be Vietnam Pro',Helvetica,Arial,sans-serif">
                     <div style="background:linear-gradient(135deg,#1a1008 0%,#0d0d0d 50%,#1a1008 100%);padding:40px 30px 30px;text-align:center;border-bottom:2px solid rgba(228,184,102,0.2)">
@@ -135,22 +165,42 @@ app.post('/api/email/send-verification', async (req, res) => {
                         <div style="text-align:center;margin-bottom:28px">
                             <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#e4b866,#cc9d4f);display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:16px;box-shadow:0 4px 20px rgba(228,184,102,0.3)">🎬</div>
                             <h2 style="color:#f3dba3;font-size:22px;margin:0 0 8px;font-weight:700;letter-spacing:0.5px">Xác thực tài khoản</h2>
-                            <p style="color:#a0a0a0;font-size:14px;line-height:1.7;margin:0">Cảm ơn bạn đã đăng ký tại <strong style="color:#e4b866">Ý Niệm Điện Ảnh</strong>!<br>Bấm nút bên dưới để hoàn tất xác thực email:</p>
+                            <p style="color:#a0a0a0;font-size:14px;line-height:1.7;margin:0">
+                                Xin chào <strong style="color:#e4b866">${displayName}</strong>,
+                                <br>Cảm ơn bạn đã đăng ký tại <strong style="color:#e4b866">Ý Niệm Điện Ảnh</strong>!
+                            </p>
+                        </div>
+                        <div style="background:rgba(228,184,102,0.05);border:1px solid rgba(228,184,102,0.15);border-radius:10px;padding:16px 20px;margin-bottom:24px">
+                            <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c0c0c0">
+                                <tr>
+                                    <td style="padding:6px 0;color:#888;width:100px">Mã số ĐK</td>
+                                    <td style="padding:6px 0;color:#f3dba3;font-weight:700;font-family:monospace">#YNDA-${regNo}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:6px 0;color:#888">Email</td>
+                                    <td style="padding:6px 0;color:#e2e8f0">${email}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:6px 0;color:#888">Trạng thái</td>
+                                    <td style="padding:6px 0"><span style="display:inline-block;padding:2px 10px;border-radius:20px;background:rgba(251,191,36,0.15);color:#fbbf24;font-size:12px;font-weight:600">Chờ xác thực</span></td>
+                                </tr>
+                            </table>
                         </div>
                         <div style="text-align:center;margin:28px 0">
                             <a href="${oobLink}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#e4b866,#cc9d4f);color:#0d0d0d;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;letter-spacing:0.5px;box-shadow:0 4px 15px rgba(228,184,102,0.25)">Xác thực tài khoản</a>
                         </div>
-                        <p style="color:#666;font-size:12px;line-height:1.6;text-align:center;margin-top:24px">Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>
+                        <p style="color:#666;font-size:12px;line-height:1.6;text-align:center;margin-top:24px">Sau khi xác thực, bạn có thể đăng nhập và tham gia cộng đồng điện ảnh.</p>
+                        <p style="color:#555;font-size:11px;line-height:1.5;text-align:center;margin-top:12px;border-top:1px solid rgba(255,255,255,0.04);padding-top:16px">Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>
                     </div>
                     <div style="background:#0a0a0a;padding:20px 35px;text-align:center;border-top:1px solid rgba(228,184,102,0.08)">
-                        <p style="color:#555;font-size:12px;margin:0 0 4px">© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</p>
+                        <p style="color:#555;font-size:12px;margin:0 0 4px">© ${currentYear} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</p>
                         <p style="color:#444;font-size:11px;margin:0">Email này được gửi tự động, vui lòng không trả lời.</p>
                     </div>
                 </div>
             `,
         });
 
-        console.log('Verification email sent to', email);
+        console.log('Verification email sent to', email, 'for user', displayName);
         res.json({ success: true });
     } catch (err) {
         console.error('Send verification error:', err);
@@ -183,11 +233,13 @@ app.post('/api/email/send-password-reset', async (req, res) => {
             }
         }
 
+        const currentYear = new Date().getFullYear();
+
         await transporter.sendMail({
             from: `"Ý Niệm Điện Ảnh" <${process.env.GMAIL_USER}>`,
             to: email,
             subject: 'Đặt lại mật khẩu Ý Niệm Điện Ảnh',
-            text: `ĐẶT LẠI MẬT KHẨU Ý NIỆM ĐIỆN ẢNH\n\nBạn vừa yêu cầu đặt lại mật khẩu cho tài khoản Ý Niệm Điện Ảnh.\n\nBấm link bên dưới để tạo mật khẩu mới:\n${oobLink}\n\nNếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n\n© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh`,
+            text: `ĐẶT LẠI MẬT KHẨU Ý NIỆM ĐIỆN ẢNH\n\nBạn vừa yêu cầu đặt lại mật khẩu cho tài khoản Ý Niệm Điện Ảnh.\n\nBấm link bên dưới để tạo mật khẩu mới:\n${oobLink}\n\nLink có hiệu lực trong 1 giờ. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n\n© ${currentYear} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh`,
             html: `
                 <div style="max-width:600px;margin:auto;background:#0d0d0d;padding:0;border-radius:12px;overflow:hidden;font-family:'Be Vietnam Pro',Helvetica,Arial,sans-serif">
                     <div style="background:linear-gradient(135deg,#1a1008 0%,#0d0d0d 50%,#1a1008 100%);padding:40px 30px 30px;text-align:center;border-bottom:2px solid rgba(228,184,102,0.2)">
@@ -202,10 +254,10 @@ app.post('/api/email/send-password-reset', async (req, res) => {
                         <div style="text-align:center;margin:28px 0">
                             <a href="${oobLink}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#e4b866,#cc9d4f);color:#0d0d0d;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;letter-spacing:0.5px;box-shadow:0 4px 15px rgba(228,184,102,0.25)">Đặt lại mật khẩu</a>
                         </div>
-                        <p style="color:#666;font-size:12px;line-height:1.6;text-align:center;margin-top:24px">Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
+                        <p style="color:#777;font-size:11px;line-height:1.5;text-align:center;margin-top:16px">🔒 Link có hiệu lực trong <strong style="color:#aaa">1 giờ</strong>. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
                     </div>
                     <div style="background:#0a0a0a;padding:20px 35px;text-align:center;border-top:1px solid rgba(228,184,102,0.08)">
-                        <p style="color:#555;font-size:12px;margin:0 0 4px">© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</p>
+                        <p style="color:#555;font-size:12px;margin:0 0 4px">© ${currentYear} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</p>
                         <p style="color:#444;font-size:11px;margin:0">Email này được gửi tự động, vui lòng không trả lời.</p>
                     </div>
                 </div>
@@ -352,6 +404,28 @@ app.post('/api/payos-webhook', async (req, res) => {
     } catch (err) {
         console.error('PayOS webhook verification error:', err);
         res.status(400).json({ error: err.message });
+    }
+});
+
+app.post('/api/verify-turnstile', async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) return res.status(400).json({ success: false, error: 'Missing token' });
+        if (!TURNSTILE_SECRET_KEY) {
+            return res.json({ success: true, devMode: true });
+        }
+        const formData = new URLSearchParams();
+        formData.append('secret', TURNSTILE_SECRET_KEY);
+        formData.append('response', token);
+        const cfRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            body: formData
+        });
+        const cfData = await cfRes.json();
+        res.json({ success: cfData.success === true });
+    } catch (err) {
+        console.error('Turnstile verify error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

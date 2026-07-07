@@ -16,7 +16,7 @@
     <meta name="twitter:image" content="https://yniemdienanh.com/Logo/avtar.png">
     <title>Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=turnstileWidgetReady" async defer></script>
     <script>
         // Core navigation functions – defined early so onclick attributes work
         function showPage(p) {
@@ -2707,6 +2707,7 @@
                 <label>Mật khẩu (Tối thiểu 6 ký tự)</label>
                 <input id="rgPass" type="password" placeholder="••••••">
                 <div class="form-msg" id="rgMsg"></div>
+                <div id="turnstile-register" style="margin-top:16px;display:flex;justify-content:center"></div>
                 <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="doRegister()">Tạo tài khoản</button>
                 
                 <div style="display:flex; align-items:center; margin: 16px 0 8px 0;">
@@ -2854,6 +2855,7 @@
 
             <div class="feedback-meta">Hệ thống sẽ lưu kèm đường dẫn trang hiện tại và thời điểm gửi để BTC dễ kiểm tra lỗi.</div>
             <div class="form-msg" id="fbMsg"></div>
+            <div id="turnstile-feedback" style="margin-top:16px;display:flex;justify-content:center"></div>
             <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitFeedback()">Gửi phản hồi</button>
         </div>
     </div>
@@ -2965,6 +2967,27 @@
           measurementId: "G-YN751MBNH0"
         };
 
+        // Cloudflare Turnstile — chống spam
+        const TURNSTILE_SITE_KEY = '0x4AAAAAADw_SmO-52a3NWoG';
+        let _turnstileReady = false;
+        let _turnstileConfigLoaded = false;
+        async function _loadTurnstileConfig() {
+            _turnstileConfigLoaded = true;
+            _renderTurnstileWidgets();
+        }
+        function _renderTurnstileWidgets() {
+            if (!_turnstileReady || !_turnstileConfigLoaded || typeof turnstile === 'undefined') return;
+            const key = TURNSTILE_SITE_KEY;
+            ['turnstile-register','turnstile-feedback'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !el.hasAttribute('data-turnstile-rendered')) {
+                    turnstile.render(el, { sitekey: key });
+                    el.setAttribute('data-turnstile-rendered', '1');
+                }
+            });
+        }
+        _loadTurnstileConfig();
+
         let useFirebase = false;
         let useRTDB = false;
         let dbInstance = null;
@@ -3016,6 +3039,29 @@
         }
 
         const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
+
+        window.turnstileWidgetReady = function () {
+            _turnstileReady = true;
+            _renderTurnstileWidgets();
+        };
+        async function verifyTurnstile(widgetId) {
+            const widget = widgetId ? turnstile.getResponse(widgetId) : turnstile?.getResponse();
+            const token = typeof widget === 'string' ? widget : '';
+            if (!token) return false;
+            try {
+                const r = await fetch('/api/verify-turnstile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await r.json();
+                const ok = data.success === true;
+                try { if (widgetId) turnstile.reset(widgetId); } catch (e) {}
+                return ok;
+            } catch {
+                return false;
+            }
+        }
 
         // Dữ liệu mặc định tạo ban đầu
         function getMockData() {
@@ -4196,6 +4242,9 @@
             if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
             if (pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
             
+            const turnstileOk = await verifyTurnstile('turnstile-register');
+            if (!turnstileOk) return m.textContent = 'Vui lòng hoàn tất xác thực bảo mật.';
+            
             try {
                 let emailSent = false;
                 let emailErrorText = '';
@@ -4218,7 +4267,7 @@
                             const r = await fetch('/api/email/send-verification', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idToken, email }),
+                                body: JSON.stringify({ idToken, email, userName: name }),
                                 signal: ctrl.signal,
                             });
                             clearTimeout(timer);
@@ -4341,12 +4390,14 @@
                     if (!cred.user.emailVerified && !isAdminApproved && email !== PROJECT_ADMIN_EMAIL) {
                         try {
                             const idToken = await cred.user.getIdToken();
+                            const userDoc2 = await dbInstance.collection('users').doc(cred.user.uid).get().catch(() => null);
+                            const loginName = userDoc2?.data()?.name || email.split('@')[0];
                             const ctrl = new AbortController();
                             const timer = setTimeout(() => ctrl.abort(), 10000);
                             await fetch('/api/email/send-verification', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idToken, email }),
+                                body: JSON.stringify({ idToken, email, userName: loginName }),
                                 signal: ctrl.signal,
                             });
                             clearTimeout(timer);
@@ -4821,6 +4872,12 @@
             if (message.length < 10) {
                 messageEl.classList.add('invalid');
                 msg.textContent = 'Vui lòng nhập nội dung feedback ít nhất 10 ký tự.';
+                return;
+            }
+
+            const turnstileOk = await verifyTurnstile('turnstile-feedback');
+            if (!turnstileOk) {
+                msg.textContent = 'Vui lòng hoàn tất xác thực bảo mật.';
                 return;
             }
 
@@ -5978,7 +6035,7 @@
                             await fetch('/api/email/send-verification', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idToken, email: userEmail }),
+                                body: JSON.stringify({ idToken, email: userEmail, userName: a.name }),
                                 signal: ctrl1.signal,
                             });
                             clearTimeout(t1);
@@ -6981,7 +7038,7 @@
                     await fetch('/api/email/send-verification', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ idToken, email: newEmail }),
+                        body: JSON.stringify({ idToken, email: newEmail, userName: session?.name || '' }),
                         signal: ctrl.signal,
                     });
                     clearTimeout(timer);
@@ -7768,12 +7825,16 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ idToken, targetUid: String(id) })
                         });
-                        if (!r.ok) {
-                            const errData = await r.json().catch(() => ({}));
-                            console.warn('API delete error:', errData);
+                        const data = await r.json().catch(() => ({}));
+                        if (!r.ok || !data.success) {
+                            hideLoadingToast(lt);
+                            showToast('❌ Xoá thất bại: ' + (data.error || 'Lỗi không xác định từ server. Vui lòng thử lại hoặc xoá thủ công trên Firebase Console.'), 'error');
+                            return;
                         }
                     } catch (e) {
-                        console.error('Delete call failed:', e);
+                        hideLoadingToast(lt);
+                        showToast('❌ Không thể kết nối server: ' + e.message, 'error');
+                        return;
                     }
                 }
                 await deleteItemFromDB('users', id);

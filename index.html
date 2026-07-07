@@ -18,6 +18,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/Logo/avtar.png">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.turnstileWidgetReady=function(){_turnstileReady=true;_renderTurnstileWidgets();};</script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=turnstileWidgetReady" async defer></script>
     <script>
         // Core navigation functions – defined early so onclick attributes work
@@ -3281,10 +3282,7 @@
 
         const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
 
-        window.turnstileWidgetReady = function () {
-            _turnstileReady = true;
-            _renderTurnstileWidgets();
-        };
+        // turnstileWidgetReady defined in head for early availability
         async function verifyTurnstile(widgetId) {
             const widget = widgetId ? turnstile.getResponse(widgetId) : turnstile?.getResponse();
             const token = typeof widget === 'string' ? widget : '';
@@ -6724,7 +6722,7 @@
                         <div class="tab-nav">
                             <button class="tab-btn ${subTab==='student'?'active':''}" onclick="sessionStorage.setItem('checklistSubTab','student');renderTab('checklist')">🎓 Thí sinh</button>
                             <button class="tab-btn ${subTab==='btc'?'active':''}" onclick="sessionStorage.setItem('checklistSubTab','btc');renderTab('checklist')">👔 BTC</button>
-                            ${isOrg ? '<button class="tab-btn ${subTab==='manage'?'active':''}" onclick="sessionStorage.setItem('checklistSubTab','manage');renderTab('checklist')">⚙️ Quản lý</button>' : ''}
+                            ${isOrg ? '<button class="tab-btn '+(subTab==='manage'?'active':'')+'" onclick="sessionStorage.setItem(\'checklistSubTab\',\'manage\');renderTab(\'checklist\')">⚙️ Quản lý</button>' : ''}
                         </div>
                         ${subTab==='student' ? `
                         <div class="progress-section">
@@ -7065,7 +7063,7 @@
                             <button class="tab-btn ${subTab==='browse'?'active':''}" onclick="sessionStorage.setItem('learningSubTab','browse');renderTab('learning')">📖 Bài học</button>
                             <button class="tab-btn ${subTab==='checklist'?'active':''}" onclick="sessionStorage.setItem('learningSubTab','checklist');renderTab('learning')">✅ Checklist</button>
                             <button class="tab-btn ${subTab==='samples'?'active':''}" onclick="sessionStorage.setItem('learningSubTab','samples');renderTab('learning')">📋 Mẫu</button>
-                            ${isOrg ? '<button class="tab-btn ${subTab==='manage'?'active':''}" onclick="sessionStorage.setItem('learningSubTab','manage');renderTab('learning')">⚙️ QL</button>' : ''}
+                            ${isOrg ? '<button class="tab-btn '+(subTab==='manage'?'active':'')+'" onclick="sessionStorage.setItem(\'learningSubTab\',\'manage\');renderTab(\'learning\')">⚙️ QL</button>' : ''}
                         </div>
                         ${subTab==='browse' ? `
                         <div class="filter-bar">${cats.map(function(c){return '<button class="filter-btn" onclick="filterLearning(\''+c+'\')">'+(catLabels2[c]||c)+'</button>';}).join('')}<button class="filter-btn" onclick="filterLearning('all')">Tất cả</button></div>
@@ -7105,7 +7103,7 @@
                         <h2>🎵 Thư viện Nhạc / SFX hợp lệ bản quyền</h2>
                         <div class="tab-nav">
                             <button class="tab-btn ${subTab==='browse'?'active':''}" onclick="sessionStorage.setItem('musicSubTab','browse');renderTab('musiclib')">🎶 Danh sách</button>
-                            ${isOrg ? '<button class="tab-btn ${subTab==='add'?'active':''}" onclick="sessionStorage.setItem('musicSubTab','add');renderTab('musiclib')">➕ Thêm</button>' : ''}
+                            ${isOrg ? '<button class="tab-btn '+(subTab==='add'?'active':'')+'" onclick="sessionStorage.setItem(\'musicSubTab\',\'add\');renderTab(\'musiclib\')">➕ Thêm</button>' : ''}
                         </div>
                         ${subTab==='browse' ? `
                         <div class="filter-bar">
@@ -7200,7 +7198,7 @@
                         <h2>📊 Khảo sát</h2>
                         <div class="tab-nav">
                             <button class="tab-btn ${subTab==='list'?'active':''}" onclick="sessionStorage.setItem('surveySubTab','list');renderTab('surveys')">📋 Khảo sát</button>
-                            ${isOrg ? '<button class="tab-btn ${subTab==='manage'?'active':''}" onclick="sessionStorage.setItem('surveySubTab','manage');renderTab('surveys')">⚙️ Quản lý</button>' : ''}
+                            ${isOrg ? '<button class="tab-btn '+(subTab==='manage'?'active':'')+'" onclick="sessionStorage.setItem(\'surveySubTab\',\'manage\');renderTab(\'surveys\')">⚙️ Quản lý</button>' : ''}
                         </div>
                         ${subTab==='list' ? `
                         <div class="feature-grid">${surveys.length===0 ? '<p style="color:var(--text-muted)">Chưa có khảo sát nào.</p>' : surveys.filter(function(s){return s.active!==false;}).map(function(s){var done=responses.some(function(r){return r.surveyId===s.id&&r.userId===session.id;});return '<div class="feature-card"><h4>'+esc(s.title)+'</h4><p>'+esc(s.desc||'')+'</p><div class="meta">'+(done?'<span class="badge badge-green">✅ Đã tham gia</span>':'<span class="badge badge-gold">⏳ Chưa tham gia</span>')+'</div>'+(done?'':'<button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="takeSurvey(\''+s.id+'\')">📝 Tham gia</button>')+'</div>';}).join('')}</div>` : `
@@ -7222,7 +7220,7 @@
                         <h2>🎓 Cựu thí sinh (Alumni)</h2>
                         <div class="tab-nav">
                             <button class="tab-btn ${subTab==='list'?'active':''}" onclick="sessionStorage.setItem('alumniSubTab','list');renderTab('alumnis')">🌟 Cựu thí sinh</button>
-                            ${isOrg ? '<button class="tab-btn ${subTab==='manage'?'active':''}" onclick="sessionStorage.setItem('alumniSubTab','manage');renderTab('alumnis')">⚙️ Quản lý</button>' : ''}
+                            ${isOrg ? '<button class="tab-btn '+(subTab==='manage'?'active':'')+'" onclick="sessionStorage.setItem(\'alumniSubTab\',\'manage\');renderTab(\'alumnis\')">⚙️ Quản lý</button>' : ''}
                         </div>
                         ${subTab==='list' ? `
                         <div class="feature-grid">${alumni.length===0 ? '<p style="color:var(--text-muted)">Chưa có cựu thí sinh nào.</p>' : alumni.map(function(a){var u=d.users.find(function(x){return String(x.id)===String(a.userId);});return '<div class="feature-card"><h4>'+(u?esc(u.name):'')+'</h4><p>'+esc(a.achievement||'')+'</p><div class="meta"><span class="badge badge-gold">Mùa '+esc(a.season||'')+'</span>'+(a.role?'<span class="badge badge-purple">'+esc(a.role)+'</span>':'')+'</div></div>';}).join('')}</div>` : `
@@ -7446,7 +7444,7 @@
                         <div class="tab-nav">
                             <button class="tab-btn ${subTab==='list'?'active':''}" onclick="sessionStorage.setItem('certSubTab','list');renderTab('certificates')">📜 Danh sách</button>
                             <button class="tab-btn ${subTab==='my'?'active':''}" onclick="sessionStorage.setItem('certSubTab','my');renderTab('certificates')">👤 Của tôi (${myCerts.length})</button>
-                            ${isOrg ? '<button class="tab-btn ${subTab==='issue'?'active':''}" onclick="sessionStorage.setItem('certSubTab','issue');renderTab('certificates')">📝 Cấp mới</button>' : ''}
+                            ${isOrg ? '<button class="tab-btn '+(subTab==='issue'?'active':'')+'" onclick="sessionStorage.setItem(\'certSubTab\',\'issue\');renderTab(\'certificates\')">📝 Cấp mới</button>' : ''}
                         </div>
                         ${subTab==='list' ? `
                         <div class="filter-bar">

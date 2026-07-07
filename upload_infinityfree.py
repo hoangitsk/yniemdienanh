@@ -13,11 +13,19 @@ REMOTE_ROOT = "/yniemdienanh.gt.tc/htdocs"
 # Files relative to the project root
 UPLOAD_FILES = [
     "index.html",
+    "manifest.json",
+    "sw.js",
+    "robots.txt",
+    "sitemap.xml",
+    "privacy.html",
+    "terms.html",
+    "favicon.ico",
 ]
 
 # Directories relative to the project root
 UPLOAD_DIRS = [
     "Logo",
+    "api",
 ]
 
 def make_dirs(ftp, path):

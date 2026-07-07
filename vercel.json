@@ -2,7 +2,7 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/((?!api|.*\\.).*)",
+      "source": "/((?!api|privacy|terms|.*\\.).*)",
       "destination": "/index.html"
     }
   ],

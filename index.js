@@ -484,6 +484,17 @@ app.post('/api/generate-certificate', async (req, res) => {
     }
 });
 
+// API: Admin delete user (Firebase Auth + Firestore)
+const deleteUserHandler = require('./api/admin/delete-user');
+app.post('/api/admin/delete-user', async (req, res) => {
+    try {
+        await deleteUserHandler(req, res);
+    } catch (err) {
+        console.error('Delete user error:', err);
+        if (!res.headersSent) res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/verify-turnstile', async (req, res) => {
     try {
         const { token } = req.body;

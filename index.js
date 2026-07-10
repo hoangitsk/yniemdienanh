@@ -464,8 +464,10 @@ app.post('/api/send-notification-email', async (req, res) => {
 // API: Generate certificate data (for PDF generation in future)
 app.post('/api/generate-certificate', async (req, res) => {
     try {
-        const { userId, name, type, achievement, certId } = req.body;
+        const { userId, name, type, achievement, certId, season, tier, eventCount, kpiPercent } = req.body;
         if (!userId || !name) return res.status(400).json({ error: 'Missing required fields' });
+        const parsedKpi = Number(kpiPercent ?? 80);
+        if (parsedKpi < 80) return res.status(400).json({ error: 'Certificate requires at least 80% KPI completion' });
         // Generate certificate verification code
         const verificationCode = 'YNDA-' + (certId || Date.now().toString(36).toUpperCase());
         res.json({
@@ -476,6 +478,11 @@ app.post('/api/generate-certificate', async (req, res) => {
                 name,
                 type: type || 'participation',
                 achievement: achievement || '',
+                season: season || '',
+                tier: tier || 'tier1',
+                eventCount: Number(eventCount || 1),
+                kpiPercent: parsedKpi,
+                kpiPassed: true,
                 issuedAt: new Date().toISOString(),
                 verifyUrl: `https://yniemdienanh.vercel.app/verify?code=${verificationCode}`
             }

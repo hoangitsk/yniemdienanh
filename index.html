@@ -9,11 +9,11 @@
     <meta property="og:title" content="Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh">
     <meta property="og:description" content="Cuộc thi làm phim ngắn cho học sinh, sinh viên yêu thích điện ảnh.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://yniemdienanh.com">
-    <meta property="og:image" content="https://yniemdienanh.com/Logo/avtar.png">
+    <meta property="og:url" content="https://yniemdienanh.vercel.app">
+    <meta property="og:image" content="https://yniemdienanh.vercel.app/Logo/avtar.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh">
-    <meta name="twitter:image" content="https://yniemdienanh.com/Logo/avtar.png">
+    <meta name="twitter:image" content="https://yniemdienanh.vercel.app/Logo/avtar.png">
     <title>Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/Logo/avtar.png">
@@ -1556,6 +1556,20 @@
         }
         .post-actions button:hover { background: rgba(255,255,255,0.05); color: var(--gold-light); }
         .post-actions button.liked { color: var(--danger); }
+        .social-post-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;
+            font-weight: 600; margin-bottom: 10px;
+        }
+        .social-post-badge.youtube { background: rgba(255,0,0,0.12); color: #ff4444; }
+        .social-post-badge.instagram { background: rgba(225,48,108,0.12); color: #e1306c; }
+        .social-post-badge.tiktok { background: rgba(0,0,0,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.15); }
+        .social-post-badge svg { width: 14px; height: 14px; fill: currentColor; }
+        .social-media { width: 100%; border-radius: 12px; margin: 10px 0; overflow: hidden; }
+        .social-media iframe { width: 100%; aspect-ratio: 16/9; border: none; border-radius: 12px; }
+        .social-media img { width: 100%; border-radius: 12px; object-fit: cover; max-height: 480px; }
+        .social-media-link { display: inline-flex; align-items: center; gap: 6px; color: var(--gold); font-size: 0.85rem; text-decoration: none; margin-top: 8px; }
+        .social-media-link:hover { text-decoration: underline; }
         .comment-box {
             border-top: 1px solid rgba(255,255,255,0.06);
             padding-top: 12px; margin-top: 8px;
@@ -3333,59 +3347,7 @@
                 votes: [],
                 feedback: [],
                 config: { stage: 'Xây dựng đội ngũ', voteStart: '', voteEnd: '' },
-                content: {
-                    hero: {
-                        eyebrow: 'Dự án phi lợi nhuận về điện ảnh',
-                        title: 'Ý Niệm<br>Điện Ảnh',
-                        lead: 'Nơi những khung hình đầu tiên cất lời — Kiến tạo sân chơi sáng tạo và bệ phóng cho các nhà làm phim học sinh, sinh viên trên toàn quốc. Kết nối đam mê điện ảnh qua workshop, làm phim và chụp ảnh giải đấu phim ngắn.',
-                        target: 'Học sinh — Sinh viên',
-                        transparency: 'Quỹ giải thưởng & hoạt động',
-                        goal: 'Sân chơi lành mạnh cho học sinh, sinh viên'
-                    },
-                    events: {
-                        title: 'Sự kiện đang & sắp diễn ra',
-                        desc: 'Nơi hội ngộ của những tâm hồn say mê điện ảnh. Theo dõi các hoạt động mới nhất từ dự án.'
-                    },
-                    about: {
-                        title: 'Về Dự Án',
-                        desc: 'Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án phi lợi nhuận, minh bạch 100%.',
-                        cards: [
-                            { title: '🎥 Sứ mệnh', text: 'Xây dựng sân chơi sáng tạo, thực chiến và bài bản, giúp người trẻ (15–22 tuổi) tiếp cận ngôn ngữ điện ảnh dễ hiểu, không phụ thuộc thiết bị hay địa lý.' },
-                            { title: '🏆 Quy mô 3 năm', text: 'Từ giải đấu thuần trực tuyến kết nối 63 tỉnh thành, hướng đến tổ chức chuỗi Gala offline khu vực và tiến tới Liên hoan phim ngắn học đường toàn quốc.' },
-                            { title: '🤝 Phi lợi nhuận & Minh bạch', text: '100% minh bạch tài chính. Khoản góp quỹ dự án là 5.000đ/thí sinh khi đăng ký tham gia sự kiện. Trong đó, 70% đóng góp trực tiếp vào Quỹ giải thưởng, 30% còn lại dùng làm chi phí duy trì, vận hành dự án.' }
-                        ]
-                    },
-                    rules: {
-                        title: 'Thể Lệ & Tiêu Chí Chấm Giải',
-                        subtitle: 'Thông tin kỹ thuật và nguyên tắc đánh giá từ Hội đồng chuyên môn',
-                        col1Title: 'Phân hạng Thiết bị Công bằng',
-                        col1Items: [
-                            '<b>Hạng mục Ống Kính Di Động (Mobile):</b> Dành riêng cho phim quay bằng điện thoại, độ phân giải tối thiểu 1080p. Khuyến khích sự sáng tạo không giới hạn thiết bị.',
-                            '<b>Hạng mục Ống Kính Điện Ảnh (Camera):</b> Dành cho máy ảnh, máy quay chuyên dụng (Mirrorless, DSLR...). Yêu cầu kỹ thuật tối thiểu 1080p, khuyến khích 4K.',
-                            '<b>Thời lượng tác phẩm:</b> Từ 3 đến 7 phút (tính cả credit đầu/cuối), nộp bài qua liên kết Drive hoặc Youtube ẩn.'
-                        ],
-                        col2Title: 'Hình thức chấm điểm',
-                        col2Text: 'Điểm đánh giá các tác phẩm dự thi được quyết định 100% bằng lượt **Bình chọn trực tuyến** từ cộng đồng.<br><br>Để đảm bảo tính công bằng tối đa và tránh gian lận vote, hệ thống tích hợp công nghệ quét địa chỉ IP và mã thiết bị đặc biệt. Mỗi địa chỉ IP hoặc thiết bị chỉ được bình chọn 1 lần duy nhất cho mỗi tác phẩm.'
-                    },
-                    apply: {
-                        title: 'Đồng hành cùng dự án',
-                        desc: 'Chọn vai trò của bạn để cùng thắp sáng đam mê điện ảnh.',
-                        orgTitle: 'Điều phối, truyền thông, nội dung, hậu cần, tài chính',
-                        orgText: 'Cơ hội lên kế hoạch, trực tiếp vận hành dự án. Phù hợp các ban: Nội dung, Truyền thông, Hậu cần, Đối ngoại, Kỹ thuật/Media, Nhân sự, Tài chính.',
-                        memberTitle: 'Tạo tài khoản để tham gia cộng đồng',
-                        memberText: 'Thành viên đăng ký bằng Gmail, bổ sung thông tin học tập/liên hệ và xác thực email trước khi vào khu vực nội bộ. Khoản góp quỹ 5.000đ (với 70% cộng vào Quỹ giải thưởng và 30% dành cho chi phí duy trì dự án) giúp đảm bảo sự minh bạch và bền vững của sân chơi.',
-                        processTitle: 'Quy trình tuyển dụng',
-                        steps: [
-                            { num: '1', title: 'BTC điền đơn ứng tuyển', desc: 'Chọn phân ban phù hợp, điền thông tin và giới thiệu bản thân.' },
-                            { num: '2', title: 'BTC xét duyệt đơn', desc: 'Đội ngũ nội bộ sẽ xem xét và phản hồi trong 2–3 ngày làm việc.' },
-                            { num: '3', title: 'Thành viên tạo tài khoản', desc: 'Thành viên đăng ký Gmail, xác thực email và cập nhật đầy đủ thông tin cá nhân.' },
-                            { num: '4', title: 'Bắt đầu hoạt động', desc: 'Tham gia các công việc, sự kiện và cùng xây dựng cộng đồng điện ảnh!' }
-                        ]
-                    },
-                    footer: {
-                        text: 'Ý Niệm Điện Ảnh là dự án phi lợi nhuận dành cho thế hệ trẻ. "Nơi những khung hình đầu tiên cất lời" ✨'
-                    }
-                },
+                content: { hero: { eyebrow: '', title: 'Ý Niệm<br>Điện Ảnh', lead: '', target: '', transparency: '', goal: '' }, events: { title: '', desc: '' }, about: { title: '', desc: '', cards: [] }, rules: { title: '', subtitle: '', col1Title: '', col1Items: [], col2Title: '', col2Text: '' }, apply: { title: '', desc: '', orgTitle: '', orgText: '', memberTitle: '', memberText: '', processTitle: 'Quy trình tuyển dụng', steps: [] }, footer: { text: '' } },
                 seq: 100
             };
         }
@@ -3465,12 +3427,15 @@
                         const tx = txDoc.data();
                         if (tx.status === 'confirmed') {
                             clearInterval(paymentPollInterval);
-                            closeModal('profileModal');
-                            showToast('🎉 Thanh toán thành công! Hệ thống đã nhận được tiền.', 'success', 5000);
                             
                             const lt = showLoadingToast('Đang cập nhật dữ liệu...');
                             await loadInternalDataFromFirestore(session.id, session.role);
                             hideLoadingToast(lt);
+
+                            // Giữ hoá đơn đang mở và đổi trạng thái ngay khi webhook xác nhận.
+                            const confirmedTx = (localDB.transactions || []).find(t => String(t.orderCode) === String(orderCode)) || { ...tx, status: 'confirmed' };
+                            showPaymentReceipt({ ...confirmedTx, status: 'confirmed' });
+                            showToast('🎉 Thanh toán thành công! Hệ thống đã nhận được tiền.', 'success', 5000);
                             
                             renderAllPrizePools();
                             renderEvents();
@@ -3572,6 +3537,12 @@
                 } catch (e) { console.warn('Không thể đọc backup:', e); }
             }
 
+            // Tải nội dung từ file JSON trước (AI có thể chỉnh sửa file này)
+            const fileContent = await loadContentFromFile();
+            if (fileContent) {
+                localDB.content = fileContent;
+            }
+
             renderEvents();
             renderVoting();
             renderNav();
@@ -3587,7 +3558,10 @@
                     localDB.config.stage = stageDoc.exists ? stageDoc.data().val : 'Xây dựng đội ngũ';
                     try {
                         const contentSnap = await dbInstance.collection('config').doc('content').get();
-                        if (contentSnap.exists) localDB.content = { ...getMockData().content, ...contentSnap.data() };
+                        if (contentSnap.exists) {
+                            // Firestore ghi đè lên nội dung từ file (ưu tiên Firestore)
+                            localDB.content = { ...(localDB.content || getMockData().content), ...contentSnap.data() };
+                        }
                     } catch (e) { console.warn('Content load error:', e); }
                     updateStageDisplay();
                     renderAllContent();
@@ -4249,12 +4223,41 @@
         }
 
         // ================= CONTENT MANAGEMENT (DYNAMIC CONTENT FROM DB) =================
+        let _contentFileFallback = null;
+
+        async function loadContentFromFile() {
+            try {
+                const resp = await fetch('/api/homepage-content');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data) {
+                        _contentFileFallback = data;
+                        return data;
+                    }
+                }
+            } catch (e) {
+                console.warn('Không thể tải nội dung từ file, dùng fallback inline:', e);
+            }
+            return null;
+        }
+
         function getContent() {
-            return localDB.content || getMockData().content;
+            return localDB.content || _contentFileFallback || getMockData().content;
         }
 
         async function saveContentToDB(newContent) {
             localDB.content = newContent;
+            _contentFileFallback = newContent;
+            // Lưu xuống file JSON để AI deploy không ghi đè
+            try {
+                await fetch('/api/homepage-content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newContent)
+                });
+            } catch (e) {
+                console.warn('Không thể lưu nội dung xuống file:', e);
+            }
             if (useFirebase) {
                 try {
                     await dbInstance.collection('config').doc('content').set(newContent, { merge: true });
@@ -5614,7 +5617,7 @@
                             </div>
                             <div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid var(--line)">
                                 <label style="font-size:0.8rem;color:var(--text-muted)">🔗 Link hồ sơ công khai</label>
-                                <p style="font-size:0.85rem;color:var(--gold-light);word-break:break-all">https://yniemdienanh.com/?profile=${esc(session.id)}</p>
+                                <p style="font-size:0.85rem;color:var(--gold-light);word-break:break-all">https://yniemdienanh.vercel.app/?profile=${esc(session.id)}</p>
                             </div>
                             ${evals.length > 0 ? `
                             <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06)">
@@ -6641,13 +6644,6 @@
                             <h3 style="color:var(--gold-light);margin-bottom:14px">🔻 Footer</h3>
                             <label>Nội dung footer</label>
                             <input id="cFooterText" value="${esc(c.footer.text)}">
-                        </div>
-
-                        <!-- FEATURED LISTINGS -->
-                        <div class="panel">
-                            <h3 style="color:var(--gold-light);margin-bottom:14px">🔥 Hoạt động nổi bật</h3>
-                            <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px">Các mục hiển thị trong sidebar "Hoạt động nổi bật". Click "➕ Thêm hoạt động nổi bật" ở sidebar Cộng đồng.</p>
-                            <div id="dashFeaturedList">${(d.featuredListings||[]).map(function(f){return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span class="card-badge '+(f.badgeClass||'bg-soon')+'">'+(f.badge||'')+'</span><strong style="flex:1">'+esc(f.title)+'</strong><span style="color:var(--text-muted);font-size:0.8rem">'+esc(f.meta||'')+'</span></div>';}).join('')||'<p style="color:var(--text-muted);font-size:0.85rem">Chưa có hoạt động nào.</p>'}</div>
                         </div>
 
                         <button class="btn btn-gold" style="margin-top:20px" onclick="saveContentFromDash()">💾 Lưu tất cả nội dung</button>
@@ -8679,9 +8675,78 @@
             renderFeed();
         }
 
+        // Social post icon SVGs
+        var _socialIcons = {
+            youtube: '<svg viewBox="0 0 24 24"><path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.38.55A3.02 3.02 0 00.5 6.19 31.6 31.6 0 000 12a31.6 31.6 0 00.5 5.81 3.02 3.02 0 002.12 2.14c1.88.55 9.38.55 9.38.55s7.5 0 9.38-.55a3.02 3.02 0 002.12-2.14A31.6 31.6 0 0024 12a31.6 31.6 0 00-.5-5.81zM9.55 15.57V8.43L16 12l-6.45 3.57z"/></svg>',
+            instagram: '<svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>',
+            tiktok: '<svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.01 1.63 4.13 1.13.99 2.62 1.51 4.12 1.58v3.83c-1.85-.02-3.66-.75-4.97-2.07-.3-.27-.56-.57-.79-.89v7.92c.04 3.49-2.31 6.76-5.73 7.42-3.32.74-6.84-.96-8.15-4.1C1.03 14.59 2.5 10.74 5.92 9.4c1.11-.47 2.33-.59 3.52-.37v3.9c-.83-.24-1.74-.11-2.48.33-.94.51-1.46 1.56-1.39 2.62.06 1.34 1.25 2.43 2.59 2.37 1.36-.01 2.47-1.16 2.47-2.52V.02z"/></svg>',
+        };
+        var _socialPostsCache = null;
+        async function refreshSocialFeed() {
+            _socialPostsCache = null;
+            await fetchSocialPosts();
+            renderFeed();
+        }
+        async function fetchSocialPosts() {
+            try {
+                // Try API; fallback to static JSON if server is unavailable
+                const base = window.location.origin;
+                const res = await fetch(base + '/api/social-posts');
+                if (res.ok) {
+                    const data = await res.json();
+                    _socialPostsCache = data.posts || [];
+                } else {
+                    _socialPostsCache = [];
+                }
+            } catch (e) {
+                // If API fails (e.g. static hosting on Vercel), try social-posts.json
+                try {
+                    const fallback = await fetch('/social-posts.json');
+                    if (fallback.ok) _socialPostsCache = await fallback.json();
+                    else _socialPostsCache = [];
+                } catch (e2) { _socialPostsCache = []; }
+            }
+            return _socialPostsCache;
+        }
+
+        function renderSocialPost(sp) {
+            var platform = sp.platform;
+            var cap = (sp.description || sp.title || '').substring(0, 280);
+            if ((sp.description || '').length > 280) cap += '…';
+            var badgeHtml = '<span class="social-post-badge ' + platform + '">' + (_socialIcons[platform] || '') + ' ' + platform.charAt(0).toUpperCase() + platform.slice(1) + '</span>';
+            var mediaHtml = '';
+            if (platform === 'youtube' && sp.embedUrl) {
+                mediaHtml = '<div class="social-media"><iframe src="' + esc(sp.embedUrl) + '" allowfullscreen loading="lazy"></iframe></div>';
+            } else if ((platform === 'instagram' || platform === 'tiktok') && sp.thumbnailUrl) {
+                mediaHtml = '<div class="social-media"><img src="' + esc(sp.thumbnailUrl) + '" alt="' + esc(sp.title || '') + '" loading="lazy"></div>';
+            }
+            var timeAgo = sp.publishedAt ? new Date(sp.publishedAt).toLocaleDateString('vi-VN', { year:'numeric', month:'long', day:'numeric' }) : '';
+            return '<div class="post-card" style="border-color: ' + (platform === 'youtube' ? 'rgba(255,0,0,0.2)' : platform === 'instagram' ? 'rgba(225,48,108,0.2)' : 'rgba(255,255,255,0.1)') + '">' +
+                badgeHtml +
+                '<div class="post-header" style="cursor:default">' +
+                    '<div style="width:36px;height:36px;border-radius:50%;background:var(--navy-light);display:flex;align-items:center;justify-content:center;font-size:0.9rem">' + (_socialIcons[platform] || '🌐') + '</div>' +
+                    '<div>' +
+                        '<div class="name" style="font-size:0.85rem">' + esc(sp.authorName || (platform.charAt(0).toUpperCase() + platform.slice(1))) + '</div>' +
+                        '<div class="time">' + timeAgo + '</div>' +
+                    '</div>' +
+                '</div>' +
+                (sp.title ? '<div class="post-content" style="font-weight:600;font-size:1rem">' + esc(sp.title) + '</div>' : '') +
+                (cap ? '<div class="post-content">' + esc(cap) + '</div>' : '') +
+                mediaHtml +
+                '<a href="' + esc(sp.url || '#') + '" target="_blank" rel="noopener noreferrer" class="social-media-link">' + (_socialIcons[platform] || '') + ' Xem trên ' + platform.charAt(0).toUpperCase() + platform.slice(1) + ' →</a>' +
+            '</div>';
+        }
+
         function renderFeed() {
             const container = document.getElementById('feedContainer');
             if (!container) return;
+
+            // Lazy-load social posts if not fetched yet
+            if (_socialPostsCache === null) {
+                fetchSocialPosts().then(function() { renderFeed(); });
+                container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">⏳ Đang tải bảng tin...</div>';
+                return;
+            }
             const posts = localDB.posts || [];
             const users = localDB.users || [];
             const allComments = localDB.comments || [];
@@ -8726,6 +8791,7 @@
                         <button class="btn-sort ${feedSort === 'hot' ? 'active' : ''}" onclick="setFeedSort('hot')">🔥 Hot</button>
                         <button class="btn-sort ${feedSort === 'liked' ? 'active' : ''}" onclick="setFeedSort('liked')">❤️ Yêu thích</button>
                         <button class="btn-sort ${feedSort === 'btc' ? 'active' : ''}" onclick="setFeedSort('btc')">📢 BTC</button>
+                        <button class="btn-sort" onclick="refreshSocialFeed()" title="Đồng bộ bài đăng từ MXH">🔄 MXH</button>
                     </div>
                 </div>
             `;
@@ -8751,6 +8817,24 @@
 
             pinnedPosts.sort((a, b) => b.id - a.id);
 
+            // Merge social posts into feed (every 3rd user post, insert a social post)
+            var socialPosts = _socialPostsCache || [];
+            if (socialPosts.length > 0 && feedSort !== 'btc') {
+                var merged = [];
+                var si = 0;
+                for (var i = 0; i < normalPosts.length; i++) {
+                    if (i > 0 && i % 3 === 0 && si < socialPosts.length) {
+                        merged.push({ _social: true, _data: socialPosts[si++] });
+                    }
+                    merged.push(normalPosts[i]);
+                }
+                // Append remaining social posts at the end
+                while (si < socialPosts.length) {
+                    merged.push({ _social: true, _data: socialPosts[si++] });
+                }
+                normalPosts = merged;
+            }
+
             var feedPage = window._feedPage || 1;
             var feedPResult = paginateList(normalPosts, feedPage, 10);
             window._pgCallback = function(np) { window._feedPage = np; renderFeed(); };
@@ -8774,6 +8858,9 @@
                 `;
             } else {
                 html += paginatedPosts.map(p => {
+                    // Social post rendering
+                    if (p._social) return renderSocialPost(p._data);
+
                     const u = users.find(x => String(x.id) === String(p.userId));
                     const pComments = allComments.filter(c => String(c.postId) === String(p.id));
                     const hasLiked = session && (p.likes || []).some(l => String(l) === String(session.id));
@@ -9361,7 +9448,7 @@
                 }
             });
             if (tab === 'feed') {
-                renderFeed();
+                fetchSocialPosts().then(function() { renderFeed(); });
                 // Hiển thị Thao tác nhanh cho Admin/BTC
                 const qaWidget = document.getElementById('sidebarQuickActions');
                 if (qaWidget) {
@@ -9787,6 +9874,9 @@
         function showPaymentReceipt(tx) {
             const modal = document.getElementById('profileModal');
             const body = document.getElementById('profileModalBody');
+            const isConfirmed = tx.status === 'confirmed';
+            const statusLabel = isConfirmed ? '✅ Đã thanh toán' : 'Chờ thanh toán';
+            const statusColor = isConfirmed ? '#22c55e' : '#fbbf24';
             body.innerHTML = `
                 <h3 style="margin-bottom:16px">🧾 Hoá đơn thanh toán</h3>
                 <div style="background:rgba(255,255,255,0.03);padding:20px;border-radius:12px;border:1px solid var(--line)">
@@ -9804,16 +9894,16 @@
                     </div>
                     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
                         <span style="color:var(--text-muted)">Trạng thái</span>
-                        <span style="color:#fbbf24;font-weight:600">Chờ thanh toán</span>
+                        <span style="color:${statusColor};font-weight:600">${statusLabel}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;padding:8px 0">
                         <span style="color:var(--text-muted)">Nội dung</span>
                         <span>${esc(tx.memo || '')}</span>
                     </div>
                 </div>
-                ${tx.checkoutUrl ? `<div style="margin-top:16px;text-align:center"><a href="${tx.checkoutUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-gold" style="text-decoration:none">💳 Thanh toán ngay</a></div>` : ''}
+                ${!isConfirmed && tx.checkoutUrl ? `<div style="margin-top:16px;text-align:center"><a href="${tx.checkoutUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-gold" style="text-decoration:none">💳 Thanh toán ngay</a></div>` : ''}
                 <div style="margin-top:12px;text-align:center;font-size:0.8rem;color:var(--text-muted)">
-                    Vui lòng thanh toán trong vòng 24h. Giao dịch sẽ tự động hết hạn sau 3 ngày.
+                    ${isConfirmed ? 'Giao dịch đã được xác nhận. Cảm ơn bạn đã thanh toán!' : 'Vui lòng thanh toán trong vòng 24h. Giao dịch sẽ tự động hết hạn sau 3 ngày.'}
                 </div>
             `;
             modal.querySelector('.modal-box').style.maxWidth = '460px';

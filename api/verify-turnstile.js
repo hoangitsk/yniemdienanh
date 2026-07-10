@@ -1,5 +1,5 @@
 module.exports = async (req, res) => {
-    var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.com';
+    var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
     res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
     res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

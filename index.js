@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const { execSync } = require('child_process');
 const PayOS = require('@payos/node');
 const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
@@ -46,7 +48,7 @@ if (FIREBASE_SERVICE_ACCOUNT) {
 }
 
 const app = express();
-var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.com';
+var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
 app.use(express.json());
 
@@ -183,7 +185,7 @@ app.post('/api/email/send-verification', async (req, res) => {
             html: `
                 <div style="max-width:600px;margin:auto;background:#0d0d0d;padding:0;border-radius:12px;overflow:hidden;font-family:'Be Vietnam Pro',Helvetica,Arial,sans-serif">
                     <div style="background:linear-gradient(135deg,#1a1008 0%,#0d0d0d 50%,#1a1008 100%);padding:40px 30px 30px;text-align:center;border-bottom:2px solid rgba(228,184,102,0.2)">
-                        <img src="https://yniemdienanh.com/Logo/logo%20ngang.png" alt="Ý Niệm Điện Ảnh" style="max-height:56px;margin-bottom:8px">
+                        <img src="https://yniemdienanh.vercel.app/Logo/logo%20ngang.png" alt="Ý Niệm Điện Ảnh" style="max-height:56px;margin-bottom:8px">
                     </div>
                     <div style="background:#0d0d0d;padding:30px 35px">
                         <div style="text-align:center;margin-bottom:28px">
@@ -267,7 +269,7 @@ app.post('/api/email/send-password-reset', async (req, res) => {
             html: `
                 <div style="max-width:600px;margin:auto;background:#0d0d0d;padding:0;border-radius:12px;overflow:hidden;font-family:'Be Vietnam Pro',Helvetica,Arial,sans-serif">
                     <div style="background:linear-gradient(135deg,#1a1008 0%,#0d0d0d 50%,#1a1008 100%);padding:40px 30px 30px;text-align:center;border-bottom:2px solid rgba(228,184,102,0.2)">
-                        <img src="https://yniemdienanh.com/Logo/logo%20ngang.png" alt="Ý Niệm Điện Ảnh" style="max-height:56px;margin-bottom:8px">
+                        <img src="https://yniemdienanh.vercel.app/Logo/logo%20ngang.png" alt="Ý Niệm Điện Ảnh" style="max-height:56px;margin-bottom:8px">
                     </div>
                     <div style="background:#0d0d0d;padding:30px 35px">
                         <div style="text-align:center;margin-bottom:28px">
@@ -443,7 +445,7 @@ app.post('/api/send-notification-email', async (req, res) => {
             html: `
                 <div style="max-width:600px;margin:auto;background:#0d0d0d;padding:0;border-radius:12px;overflow:hidden;font-family:'Be Vietnam Pro',Helvetica,Arial,sans-serif">
                     <div style="background:linear-gradient(135deg,#1a1008 0%,#0d0d0d 50%,#1a1008 100%);padding:20px;text-align:center;border-bottom:2px solid rgba(228,184,102,0.2)">
-                        <img src="https://yniemdienanh.com/Logo/logo%20ngang.png" alt="Ý Niệm Điện Ảnh" style="max-height:40px">
+                        <img src="https://yniemdienanh.vercel.app/Logo/logo%20ngang.png" alt="Ý Niệm Điện Ảnh" style="max-height:40px">
                     </div>
                     <div style="padding:30px;color:#e2e8f0;font-size:14px;line-height:1.7">${html}</div>
                     <div style="background:#0a0a0a;padding:20px;text-align:center;border-top:1px solid rgba(228,184,102,0.08)">
@@ -475,7 +477,7 @@ app.post('/api/generate-certificate', async (req, res) => {
                 type: type || 'participation',
                 achievement: achievement || '',
                 issuedAt: new Date().toISOString(),
-                verifyUrl: `https://yniemdienanh.com/verify?code=${verificationCode}`
+                verifyUrl: `https://yniemdienanh.vercel.app/verify?code=${verificationCode}`
             }
         });
     } catch (err) {
@@ -521,6 +523,116 @@ app.get('/health', (req, res) => {
     res.json({ status: "ok" });
 });
 
+// Homepage content API — single source of truth for AI + manual edits
+const CONTENT_FILE = path.join(__dirname, 'homepage-content.json');
+
+app.get('/api/homepage-content', (req, res) => {
+    try {
+        if (fs.existsSync(CONTENT_FILE)) {
+            const data = fs.readFileSync(CONTENT_FILE, 'utf-8');
+            res.json(JSON.parse(data));
+        } else {
+            res.json(null);
+        }
+    } catch (err) {
+        console.error('Error reading homepage content file:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/homepage-content', express.json({ limit: '1mb' }), (req, res) => {
+    try {
+        const content = req.body;
+        if (!content || typeof content !== 'object') {
+            return res.status(400).json({ error: 'Invalid content' });
+        }
+        fs.writeFileSync(CONTENT_FILE, JSON.stringify(content, null, 2), 'utf-8');
+        console.log('Homepage content saved to file');
+
+        // Auto-commit to Git so AI can pull the latest
+        try {
+            const repoDir = __dirname;
+            execSync('git add homepage-content.json', { cwd: repoDir, stdio: 'pipe' });
+            const diff = execSync('git diff --cached --stat', { cwd: repoDir, encoding: 'utf-8', stdio: 'pipe' });
+            if (diff.trim()) {
+                execSync('git commit -m "auto: update homepage content [skip ci]"', { cwd: repoDir, stdio: 'pipe' });
+                execSync('git push origin main', { cwd: repoDir, stdio: 'pipe' });
+                console.log('Committed and pushed homepage-content.json to GitHub');
+            } else {
+                console.log('No changes to commit (homepage-content.json unchanged)');
+            }
+        } catch (gitErr) {
+            console.warn('Git auto-commit/push failed (non-blocking):', gitErr.message || gitErr);
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error saving homepage content:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ================= SOCIAL MEDIA SYNC API =================
+const socialSync = require('./api/sync/social-sync');
+
+// GET /api/social-posts — lấy danh sách bài đã đồng bộ từ MXH
+app.get('/api/social-posts', (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 0;
+        const platform = req.query.platform;
+        let posts = socialSync.getPosts(limit);
+        if (platform) posts = posts.filter(p => p.platform === platform);
+        res.json({ success: true, posts });
+    } catch (err) {
+        console.error('Error reading social posts:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/sync/trigger — kích hoạt đồng bộ thủ công (yêu cầu admin key)
+const SYNC_ADMIN_KEY = process.env.SYNC_ADMIN_KEY || '';
+app.post('/api/sync/trigger', async (req, res) => {
+    try {
+        const auth = req.headers['x-sync-key'] || req.body?.key || '';
+        if (SYNC_ADMIN_KEY && auth !== SYNC_ADMIN_KEY) {
+            return res.status(403).json({ error: 'Invalid sync key' });
+        }
+        const syncConfig = {
+            youtube: {
+                enabled: !!(process.env.YT_API_KEY && (process.env.YT_CHANNEL_ID || process.env.YT_HANDLE)),
+                apiKey: process.env.YT_API_KEY || '',
+                channelId: process.env.YT_CHANNEL_ID || '',
+                channelHandle: process.env.YT_HANDLE || '',
+            },
+            instagram: {
+                enabled: !!(process.env.IG_ACCESS_TOKEN),
+                accessToken: process.env.IG_ACCESS_TOKEN || '',
+                userId: process.env.IG_USER_ID || 'me',
+            },
+            tiktok: {
+                enabled: !!(process.env.TT_ACCESS_TOKEN && process.env.TT_OPEN_ID),
+                accessToken: process.env.TT_ACCESS_TOKEN || '',
+                openId: process.env.TT_OPEN_ID || '',
+            },
+            _db: db,
+        };
+        const result = await socialSync.syncAll(syncConfig);
+        res.json({ success: true, ...result });
+    } catch (err) {
+        console.error('Sync trigger error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/sync/status — kiểm tra trạng thái cấu hình đồng bộ
+app.get('/api/sync/status', (req, res) => {
+    res.json({
+        youtube: !!(process.env.YT_API_KEY && (process.env.YT_CHANNEL_ID || process.env.YT_HANDLE)),
+        instagram: !!(process.env.IG_ACCESS_TOKEN),
+        tiktok: !!(process.env.TT_ACCESS_TOKEN && process.env.TT_OPEN_ID),
+        totalPosts: socialSync.getPosts().length,
+    });
+});
 
 // Serve static files
 app.use('/Logo', express.static(path.join(__dirname, 'Logo')));
@@ -554,4 +666,64 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Node.js server running at ${BASE_URL}`);
     console.log(`PayOS is ${PAYOS_ENABLED ? "ENABLED" : "DISABLED (Check your env variables)"}`);
+
+    // Auto sync every 30 minutes if any platform is configured
+    const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL_MINUTES || '30') * 60 * 1000;
+    const hasAnySync = process.env.YT_API_KEY || process.env.IG_ACCESS_TOKEN || process.env.TT_ACCESS_TOKEN;
+    if (hasAnySync && SYNC_INTERVAL > 0) {
+        console.log(`[SocialSync] Auto-sync enabled, running every ${SYNC_INTERVAL / 60000} minutes`);
+
+        // Run first sync after 10 seconds delay
+        setTimeout(async () => {
+            try {
+                const syncConfig = {
+                    youtube: {
+                        enabled: !!(process.env.YT_API_KEY && (process.env.YT_CHANNEL_ID || process.env.YT_HANDLE)),
+                        apiKey: process.env.YT_API_KEY || '',
+                        channelId: process.env.YT_CHANNEL_ID || '',
+                        channelHandle: process.env.YT_HANDLE || '',
+                    },
+                    instagram: {
+                        enabled: !!(process.env.IG_ACCESS_TOKEN),
+                        accessToken: process.env.IG_ACCESS_TOKEN || '',
+                        userId: process.env.IG_USER_ID || 'me',
+                    },
+                    tiktok: {
+                        enabled: !!(process.env.TT_ACCESS_TOKEN && process.env.TT_OPEN_ID),
+                        accessToken: process.env.TT_ACCESS_TOKEN || '',
+                        openId: process.env.TT_OPEN_ID || '',
+                    },
+                    _db: db,
+                };
+                await socialSync.syncAll(syncConfig);
+            } catch (e) { console.warn('[SocialSync] Initial sync failed:', e.message); }
+        }, 10000);
+
+        setInterval(async () => {
+            try {
+                const syncConfig = {
+                    youtube: {
+                        enabled: !!(process.env.YT_API_KEY && (process.env.YT_CHANNEL_ID || process.env.YT_HANDLE)),
+                        apiKey: process.env.YT_API_KEY || '',
+                        channelId: process.env.YT_CHANNEL_ID || '',
+                        channelHandle: process.env.YT_HANDLE || '',
+                    },
+                    instagram: {
+                        enabled: !!(process.env.IG_ACCESS_TOKEN),
+                        accessToken: process.env.IG_ACCESS_TOKEN || '',
+                        userId: process.env.IG_USER_ID || 'me',
+                    },
+                    tiktok: {
+                        enabled: !!(process.env.TT_ACCESS_TOKEN && process.env.TT_OPEN_ID),
+                        accessToken: process.env.TT_ACCESS_TOKEN || '',
+                        openId: process.env.TT_OPEN_ID || '',
+                    },
+                    _db: db,
+                };
+                await socialSync.syncAll(syncConfig);
+            } catch (e) { console.warn('[SocialSync] Auto sync failed:', e.message); }
+        }, SYNC_INTERVAL);
+    } else {
+        console.log('[SocialSync] Auto-sync disabled. Set YT_API_KEY, IG_ACCESS_TOKEN, or TT_ACCESS_TOKEN to enable.');
+    }
 });

@@ -43,7 +43,7 @@ cp .env.example .env
 | `TURNSTILE_SITE_KEY` | Site Key từ Cloudflare Turnstile |
 | `TURNSTILE_SECRET_KEY` | Secret Key từ Cloudflare Turnstile |
 | `FIREBASE_SERVICE_ACCOUNT` | Service Account JSON (dạng string) |
-| `CORS_ORIGIN` | Origin được phép CORS (mặc định https://yniemdienanh.com) |
+| `CORS_ORIGIN` | Origin được phép CORS (mặc định https://yniemdienanh.vercel.app) |
 
 ## Chạy local
 

@@ -4310,7 +4310,83 @@
         }
 
         function getContent() {
-            return localDB.content || _contentFileFallback || getMockData().content;
+            function getDefaultContent() {
+                return {
+                    hero: {
+                        eyebrow: "Dự án phi lợi nhuận về điện ảnh",
+                        title: "Ý Niệm<br>Điện Ảnh",
+                        lead: "Nơi những khung hình đầu tiên cất lời.<br>Kiến tạo sân chơi sáng tạo dành cho học sinh – sinh viên trên toàn quốc.<br>Cùng xây dựng cộng đồng điện ảnh ngay từ những viên gạch đầu tiên.",
+                        target: "Xây dựng đội ngũ cốt lõi",
+                        transparency: "Đồng kiến tạo cộng đồng điện ảnh",
+                        goal: "Thành viên sáng lập đặt nền móng"
+                    },
+                    events: {
+                        title: "Sự kiện đang & sắp diễn ra",
+                        desc: "Nơi hội ngộ của những tâm hồn say mê điện ảnh. Theo dõi các hoạt động mới nhất từ dự án."
+                    },
+                    about: {
+                        title: "Về Dự Án",
+                        desc: "Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án phi lợi nhuận, minh bạch 100%.",
+                        cards: [
+                            { title: "Sứ mệnh", text: "Kiến tạo bệ phóng cho thế hệ làm phim trẻ tuổi tài năng." },
+                            { title: "Tầm nhìn", text: "Trở thành cộng đồng điện ảnh học sinh - sinh viên lớn nhất Việt Nam." },
+                            { title: "Giá trị cốt lõi", text: "Sáng tạo tự do, minh bạch 100%, kết nối và sẻ chia." }
+                        ]
+                    },
+                    rules: {
+                        title: "Thể Lệ & Tiêu Chí Chấm Giải",
+                        subtitle: "Thông tin kỹ thuật và nguyên tắc đánh giá từ Hội đồng chuyên môn",
+                        col1Title: "Phân hạng Thiết bị Công bằng",
+                        col1Items: [
+                            "<b>Hạng mục Ống Kính Di Động (Mobile):</b> Dành riêng cho phim quay bằng điện thoại, độ phân giải tối thiểu 1080p. Khuyến khích sự sáng tạo không giới hạn thiết bị.",
+                            "<b>Hạng mục Ống Kính Điện Ảnh (Camera):</b> Dành cho máy ảnh, máy quay chuyên dụng (Mirrorless, DSLR...). Yêu cầu kỹ thuật tối thiểu 1080p, khuyến khích 4K.",
+                            "<b>Thời lượng tác phẩm:</b> Từ 3 đến 7 phút (tính cả credit đầu/cuối), nộp bài qua liên kết Drive hoặc Youtube ẩn."
+                        ],
+                        col2Title: "Hình thức chấm điểm",
+                        col2Text: "Điểm đánh giá các tác phẩm dự thi được quyết định 100% bằng lượt **Bình chọn trực tuyến** từ cộng đồng.<br><br>Để đảm bảo tính công bằng tối đa và tránh gian lận vote, hệ thống tích hợp công nghệ quét địa chỉ IP và mã thiết bị đặc biệt. Mỗi địa chỉ IP hoặc thiết bị chỉ được bình chọn 1 lần duy nhất cho mỗi tác phẩm."
+                    },
+                    apply: {
+                        title: "Đồng hành cùng dự án",
+                        desc: "Chọn vai trò của bạn để cùng thắp sáng đam mê điện ảnh.",
+                        orgTitle: "Ban Tổ Chức Mùa 1",
+                        orgText: "Tham gia ban nội dung, truyền thông, hậu cần hoặc thiết kế.",
+                        memberTitle: "Thành viên Cộng đồng",
+                        memberText: "Đăng ký tài khoản để bình chọn, tham gia thảo luận và gửi phim.",
+                        processTitle: "Quy trình tuyển dụng",
+                        steps: [
+                            { num: "1", title: "Nộp đơn trực tuyến", desc: "Điền thông tin và gửi CV/Portfolio." },
+                            { num: "2", title: "Phỏng vấn", desc: "Trò chuyện trực tiếp cùng Ban điều hành." },
+                            { num: "3", title: "Thử thách", desc: "Thực hiện bài test nhỏ tùy vị trí." },
+                            { num: "4", title: "Onboarding", desc: "Gia nhập đội ngũ cốt lõi." }
+                        ]
+                    },
+                    footer: {
+                        text: "© 2026 Ý Niệm Điện Ảnh. Tất cả quyền được bảo lưu."
+                    }
+                };
+            }
+
+            function deepMerge(target, source) {
+                if (!source) return target;
+                const result = { ...target };
+                for (const key in source) {
+                    if (source.hasOwnProperty(key)) {
+                        if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                            result[key] = deepMerge(target[key] || {}, source[key]);
+                        } else if (Array.isArray(source[key])) {
+                            if (source[key].length > 0) {
+                                result[key] = source[key];
+                            }
+                        } else if (source[key] !== undefined && source[key] !== null && source[key] !== '') {
+                            result[key] = source[key];
+                        }
+                    }
+                }
+                return result;
+            }
+
+            const raw = localDB.content || _contentFileFallback || getMockData().content;
+            return deepMerge(getDefaultContent(), raw);
         }
 
         async function saveContentToDB(newContent) {

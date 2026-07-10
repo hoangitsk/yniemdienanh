@@ -2515,6 +2515,67 @@
         .footer-social-link { color:var(--text-muted); transition:all .2s ease; display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.03); border:1px solid rgba(228,184,102,0.1); }
         .footer-social-link:hover { color:var(--gold); border-color:var(--gold); background:rgba(228,184,102,0.05); transform:translateY(-2px); }
         .footer-social-link svg { width:18px; height:18px; fill:currentColor; }
+
+        /* Roadmap Styling */
+        .roadmap-timeline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .roadmap-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(228, 184, 102, 0.08);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .roadmap-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .roadmap-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(228, 184, 102, 0.3);
+            background: rgba(228, 184, 102, 0.03);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+        .roadmap-card:hover::before {
+            opacity: 1;
+        }
+        .roadmap-month {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--gold-light);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+        .roadmap-card h3 {
+            font-size: 1.15rem;
+            color: #fff;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .roadmap-card p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
     </style>
 </head>
 
@@ -2589,10 +2650,11 @@
                         <img class="poster-brand" src="Logo/logo ngang.png" alt="Banner Ý Niệm Điện Ảnh" style="object-fit: contain; height: 42%; width: 90%; top: 7%;">
                         <div class="frame">
                             <!-- Click để sửa giai đoạn (Chỉ Admin) -->
-                            <div class="ticker"><strong>Giai đoạn</strong><span id="currentStage" style="cursor:pointer; color:var(--gold-light); font-weight:800;" onclick="editStage()">Xây dựng đội ngũ cốt lõi</span></div>
-                            <div class="ticker"><strong>Cơ hội</strong><span>Đồng kiến tạo cộng đồng điện ảnh</span></div>
-                            <div class="ticker"><strong>Đặc quyền</strong><span>Thành viên sáng lập đặt nền móng</span></div>
-                            <div class="ticker"><strong>Lộ trình</strong><span>T7: Khởi động · T8: Tuyển BTC · T9: Workshop</span></div>
+                            <div class="ticker"><strong>Giai đoạn</strong><span id="currentStage" style="cursor:pointer; color:var(--gold-light); font-weight:800;" onclick="editStage()">Khởi động & Tuyển BTC</span></div>
+                            <div class="ticker"><strong>Cơ hội</strong><span id="heroTransparency">Đồng kiến tạo cộng đồng điện ảnh</span></div>
+                            <div class="ticker"><strong>Đặc quyền</strong><span id="heroGoal">Thành viên sáng lập đặt nền móng</span></div>
+                            <div class="ticker"><strong>Đối tượng</strong><span id="heroTarget">Học sinh - Sinh viên toàn quốc</span></div>
+                            <div class="ticker"><strong>Lộ trình</strong><span>T7: Tuyển BTC · T8: Giải đấu 1 · T9: Workshop · T10: Giải đấu 2 · T11: Chấm giải · T12: Gala tổng kết</span></div>
                         </div>
                     </aside>
                 </div>
@@ -2645,6 +2707,52 @@
                                 Để đảm bảo tính công bằng tối đa và tránh gian lận vote, hệ thống tích hợp công nghệ quét địa chỉ IP và mã thiết bị đặc biệt. Mỗi địa chỉ IP hoặc thiết bị chỉ được bình chọn 1 lần duy nhất cho mỗi tác phẩm.
                             </p>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ROADMAP SECTION -->
+            <section id="roadmap" class="scroll-reveal" style="margin-top: 80px; margin-bottom: 80px;">
+                <div class="section-head" style="text-align: center; margin-bottom: 50px;">
+                    <h2 style="font-size: 2.2rem; color: var(--gold-light); margin-bottom: 12px; font-weight: 800; letter-spacing: -0.5px;">Lộ Trình Hành Trình 6 Tháng</h2>
+                    <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto;">Đồng hành cùng các nhà làm phim học sinh, sinh viên trên toàn quốc từ bước khởi đầu đến bệ phóng vinh quang.</p>
+                </div>
+                
+                <div class="roadmap-timeline">
+                    <div class="roadmap-card">
+                        <div class="roadmap-month">Tháng 7</div>
+                        <h3>Khởi động & Tuyển BTC</h3>
+                        <p>Khởi động dự án & Mở đơn tuyển Ban tổ chức (Core Member) để cùng đặt những viên gạch đầu tiên.</p>
+                    </div>
+                    
+                    <div class="roadmap-card">
+                        <div class="roadmap-month">Tháng 8</div>
+                        <h3>🎬 PHÁT ĐỘNG GIẢI ĐẤU 1</h3>
+                        <p>Giải khởi động - Sân chơi làm phim ngắn/concept nhanh giúp các bạn trẻ thử sức và cọ xát thực tế.</p>
+                    </div>
+                    
+                    <div class="roadmap-card">
+                        <div class="roadmap-month">Tháng 9</div>
+                        <h3>Chấm giải 1 & Workshop</h3>
+                        <p>Đóng cổng, chấm giải & Công bố kết quả Giải đấu 1, đồng thời mở chuỗi Workshop bổ trợ kỹ năng điện ảnh.</p>
+                    </div>
+                    
+                    <div class="roadmap-card">
+                        <div class="roadmap-month">Tháng 10</div>
+                        <h3>🏆 BÙNG NỔ GIẢI ĐẤU 2</h3>
+                        <p>Giải đấu chính thức - Quy mô toàn quốc với thể lệ nâng cao, thử thách tay nghề của các đoàn làm phim trẻ.</p>
+                    </div>
+                    
+                    <div class="roadmap-card">
+                        <div class="roadmap-month">Tháng 11</div>
+                        <h3>Tiếp nhận bài & Chấm giải 2</h3>
+                        <p>Tiếp nhận các tác phẩm dự thi và bắt đầu quá trình đánh giá kỹ lưỡng từ Hội đồng nghệ thuật uy tín.</p>
+                    </div>
+                    
+                    <div class="roadmap-card">
+                        <div class="roadmap-month">Tháng 12</div>
+                        <h3>Gala trao giải & Công chiếu</h3>
+                        <p>Đêm Gala tổng kết, trao giải vinh quang và công chiếu các tác phẩm xuất sắc nhất từ cả hai giải đấu.</p>
                     </div>
                 </div>
             </section>
@@ -3165,6 +3273,16 @@
         </div>
     </div>
 
+    <!-- TEASER MODAL -->
+    <div class="modal" id="teaserModal">
+        <div class="modal-box" style="width:min(800px,95%); padding:0; background:#000; border:2px solid var(--gold); border-radius:12px; overflow:hidden; position:relative;">
+            <span class="close-x" onclick="closeTeaserModal()" style="top:10px; right:15px; font-size:1.8rem; z-index:10000; color:#fff; cursor:pointer;">✕</span>
+            <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%;">
+                <iframe id="teaserIframe" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" src="" title="Ý Niệm Điện Ảnh Teaser" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
     <script>
 
 
@@ -3322,12 +3440,12 @@
                     { id: 2, title: 'Soạn thảo thư ngỏ gửi phụ huynh & nhà trường', assignee: 'Admin Ý Niệm Điện Ảnh', dept: 'Ban Nội Dung', deadline: '2026-07-12', priority: 'med', status: 'todo' }
                 ],
                 plans: [
-                    { id: 1, title: 'Mở đơn tuyển thành viên & BTC', date: '2026-07-03', note: 'Giai đoạn xây dựng lực lượng nòng cốt' },
-                    { id: 2, title: 'Công bố chủ đề & Khai mạc Mùa 1', date: '2026-07-15', note: 'Khởi động cổng đăng ký tác phẩm' },
-                    { id: 3, title: 'Chuỗi Workshop Đào tạo online', date: '2026-08-01', note: 'Mời đạo diễn, biên kịch đứng lớp hướng dẫn học sinh' },
-                    { id: 4, title: 'Hạn chót nộp bài dự thi', date: '2026-08-30', note: 'Thí sinh nộp link phim ngắn 3-7 phút' },
-                    { id: 5, title: 'Chấm giải & Bình chọn cộng đồng', date: '2026-09-10', note: 'Vòng loại & điểm từ giám khảo chuyên môn' },
-                    { id: 6, title: 'Gala trao giải vinh danh tác phẩm', date: '2026-09-20', note: 'Công chiếu trực tuyến/trực tiếp' }
+                    { id: 1, title: 'Tuyển BTC Core Member', date: '2026-07-10', note: 'Khởi động dự án & Mở đơn tuyển Ban tổ chức Core Member đặt nền móng' },
+                    { id: 2, title: '🎬 Phát động Giải đấu 1', date: '2026-08-01', note: 'Giải khởi động - Sân chơi làm phim ngắn/concept nhanh' },
+                    { id: 3, title: 'Chấm giải 1 & Mở Workshop', date: '2026-09-01', note: 'Đóng cổng, chấm giải & Công bố kết quả Giải đấu 1, đồng thời mở chuỗi Workshop bổ trợ' },
+                    { id: 4, title: '🏆 Bùng nổ Giải đấu 2', date: '2026-10-01', note: 'Giải đấu chính thức - Quy mô toàn quốc với thể lệ và chuyên môn nâng cao' },
+                    { id: 5, title: 'Tiếp nhận tác phẩm & Chấm giải 2', date: '2026-11-01', note: 'Tiếp nhận các tác phẩm dự thi & Hội đồng nghệ thuật bắt đầu chấm giải' },
+                    { id: 6, title: 'Gala trao giải tổng kết & Công chiếu', date: '2026-12-20', note: 'Tổ chức đêm Gala tổng kết & Công chiếu các tác phẩm xuất sắc nhất từ cả 2 giải đấu' }
                 ],
                 announcements: [
                     { id: 1, title: 'Website quản trị nội bộ chính thức hoạt động!', content: 'Chào mừng tất cả mọi người đã tham gia Ban tổ chức Dự án Ý niệm điện ảnh. Vui lòng cập nhật thông tin và kiểm tra mục bảng Công việc được phân công nhé.', date: '2026-07-03' }
@@ -4315,10 +4433,11 @@
                     hero: {
                         eyebrow: "Dự án phi lợi nhuận về điện ảnh",
                         title: "Ý Niệm<br>Điện Ảnh",
-                        lead: "Nơi những khung hình đầu tiên cất lời.<br>Kiến tạo sân chơi sáng tạo dành cho học sinh – sinh viên trên toàn quốc.<br>Cùng xây dựng cộng đồng điện ảnh ngay từ những viên gạch đầu tiên.",
-                        target: "Xây dựng đội ngũ cốt lõi",
+                        lead: "Kiến tạo sân chơi và bệ phóng cho các nhà làm phim học sinh, sinh viên trên toàn quốc.<br>Chính thức khởi động Tháng 7 này! Hãy cùng đồng hành với tụi mình trong hành trình đầy hứa hẹn.",
+                        target: "Học sinh - Sinh viên toàn quốc",
                         transparency: "Đồng kiến tạo cộng đồng điện ảnh",
-                        goal: "Thành viên sáng lập đặt nền móng"
+                        goal: "Tuyển BTC Core Member",
+                        teaserUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
                     },
                     events: {
                         title: "Sự kiện đang & sắp diễn ra",
@@ -4422,8 +4541,8 @@
                     <h1>${c.title}</h1>
                     <p class="lead">${c.lead}</p>
                     <div class="hero-actions">
-                        <button class="btn btn-gold" onclick="goSection('events')">🎬 Khám phá sự kiện</button>
-                        <button class="btn btn-line" onclick="goSection('apply')">✨ Đăng ký tham gia</button>
+                        <button class="btn btn-gold" onclick="openTeaserModal()">🎬 Xem Teaser Mở Màn</button>
+                        <button class="btn btn-line" onclick="goSection('apply')">✨ Đăng ký tham gia <span class="arrow">→</span></button>
                     </div>
                 `;
             }
@@ -4433,6 +4552,25 @@
             if (transEl) transEl.textContent = c.transparency;
             const goalEl = document.getElementById('heroGoal');
             if (goalEl) goalEl.textContent = c.goal;
+        }
+
+        function openTeaserModal() {
+            const c = getContent().hero;
+            const iframe = document.getElementById('teaserIframe');
+            let url = c.teaserUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+            if (url.includes('youtube.com/watch?v=')) {
+                url = url.replace('youtube.com/watch?v=', 'youtube.com/embed/');
+            } else if (url.includes('youtu.be/')) {
+                url = url.replace('youtu.be/', 'youtube.com/embed/');
+            }
+            if (iframe) iframe.src = url;
+            openModal('teaserModal');
+        }
+
+        function closeTeaserModal() {
+            const iframe = document.getElementById('teaserIframe');
+            if (iframe) iframe.src = '';
+            closeModal('teaserModal');
         }
 
         function renderEventsHeading() {
@@ -4554,7 +4692,8 @@
                     lead: g('cHeroLead'),
                     target: g('cHeroTarget'),
                     transparency: g('cHeroTransparency'),
-                    goal: g('cHeroGoal')
+                    goal: g('cHeroGoal'),
+                    teaserUrl: g('cHeroTeaserUrl')
                 },
                 events: {
                     title: g('cEventsTitle'),
@@ -6697,6 +6836,10 @@
                             <div style="margin-top:14px">
                                 <label>Mô tả chính</label>
                                 <textarea id="cHeroLead" rows="3">${esc(c.hero.lead)}</textarea>
+                            </div>
+                            <div style="margin-top:14px">
+                                <label>Đường dẫn Teaser Video (Youtube Watch/Embed Link)</label>
+                                <input id="cHeroTeaserUrl" value="${esc(c.hero.teaserUrl || '')}">
                             </div>
                         </div>
 

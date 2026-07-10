@@ -3273,16 +3273,6 @@
         </div>
     </div>
 
-    <!-- TEASER MODAL -->
-    <div class="modal" id="teaserModal">
-        <div class="modal-box" style="width:min(800px,95%); padding:0; background:#000; border:2px solid var(--gold); border-radius:12px; overflow:hidden; position:relative;">
-            <span class="close-x" onclick="closeTeaserModal()" style="top:10px; right:15px; font-size:1.8rem; z-index:10000; color:#fff; cursor:pointer;">✕</span>
-            <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%;">
-                <iframe id="teaserIframe" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" src="" title="Ý Niệm Điện Ảnh Teaser" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            </div>
-        </div>
-    </div>
-
     <script>
 
 
@@ -4436,8 +4426,7 @@
                         lead: "Kiến tạo sân chơi và bệ phóng cho các nhà làm phim học sinh, sinh viên trên toàn quốc.<br>Chính thức khởi động Tháng 7 này! Hãy cùng đồng hành với tụi mình trong hành trình đầy hứa hẹn.",
                         target: "Học sinh - Sinh viên toàn quốc",
                         transparency: "Đồng kiến tạo cộng đồng điện ảnh",
-                        goal: "Tuyển BTC Core Member",
-                        teaserUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+                        goal: "Tuyển BTC Core Member"
                     },
                     events: {
                         title: "Sự kiện đang & sắp diễn ra",
@@ -4541,8 +4530,8 @@
                     <h1>${c.title}</h1>
                     <p class="lead">${c.lead}</p>
                     <div class="hero-actions">
-                        <button class="btn btn-gold" onclick="openTeaserModal()">🎬 Xem Teaser Mở Màn</button>
-                        <button class="btn btn-line" onclick="goSection('apply')">✨ Đăng ký tham gia <span class="arrow">→</span></button>
+                        <button class="btn btn-gold" onclick="goSection('events')">🎬 Khám phá sự kiện</button>
+                        <button class="btn btn-line" onclick="goSection('apply')">✨ Đăng ký tham gia</button>
                     </div>
                 `;
             }
@@ -4552,25 +4541,6 @@
             if (transEl) transEl.textContent = c.transparency;
             const goalEl = document.getElementById('heroGoal');
             if (goalEl) goalEl.textContent = c.goal;
-        }
-
-        function openTeaserModal() {
-            const c = getContent().hero;
-            const iframe = document.getElementById('teaserIframe');
-            let url = c.teaserUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ';
-            if (url.includes('youtube.com/watch?v=')) {
-                url = url.replace('youtube.com/watch?v=', 'youtube.com/embed/');
-            } else if (url.includes('youtu.be/')) {
-                url = url.replace('youtu.be/', 'youtube.com/embed/');
-            }
-            if (iframe) iframe.src = url;
-            openModal('teaserModal');
-        }
-
-        function closeTeaserModal() {
-            const iframe = document.getElementById('teaserIframe');
-            if (iframe) iframe.src = '';
-            closeModal('teaserModal');
         }
 
         function renderEventsHeading() {
@@ -4692,8 +4662,7 @@
                     lead: g('cHeroLead'),
                     target: g('cHeroTarget'),
                     transparency: g('cHeroTransparency'),
-                    goal: g('cHeroGoal'),
-                    teaserUrl: g('cHeroTeaserUrl')
+                    goal: g('cHeroGoal')
                 },
                 events: {
                     title: g('cEventsTitle'),
@@ -6836,10 +6805,6 @@
                             <div style="margin-top:14px">
                                 <label>Mô tả chính</label>
                                 <textarea id="cHeroLead" rows="3">${esc(c.hero.lead)}</textarea>
-                            </div>
-                            <div style="margin-top:14px">
-                                <label>Đường dẫn Teaser Video (Youtube Watch/Embed Link)</label>
-                                <input id="cHeroTeaserUrl" value="${esc(c.hero.teaserUrl || '')}">
                             </div>
                         </div>
 

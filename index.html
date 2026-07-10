@@ -3398,54 +3398,122 @@
         }
 
         let paymentPollInterval = null;
+        let paymentSnapshotUnsubscribe = null;
+
+        async function handlePaymentConfirmed(orderCode, txData) {
+            if (paymentPollInterval) {
+                clearInterval(paymentPollInterval);
+                paymentPollInterval = null;
+            }
+            if (paymentSnapshotUnsubscribe) {
+                try { paymentSnapshotUnsubscribe(); } catch (e) {}
+                paymentSnapshotUnsubscribe = null;
+            }
+
+            const lt = showLoadingToast('Đang cập nhật trạng thái thanh toán...');
+            try {
+                if (useFirebase && dbInstance) {
+                    await loadInternalDataFromFirestore(session.id, session.role);
+                }
+            } catch (e) {
+                console.warn('Không thể tải lại dữ liệu sau thanh toán:', e);
+            } finally {
+                hideLoadingToast(lt);
+            }
+
+            const confirmedTx = (localDB.transactions || []).find(t => String(t.orderCode) === String(orderCode)) || { ...(txData || {}), orderCode, status: 'confirmed' };
+            confirmedTx.status = 'confirmed';
+            const idx = (localDB.transactions || []).findIndex(t => String(t.orderCode) === String(orderCode));
+            if (idx >= 0) localDB.transactions[idx] = { ...localDB.transactions[idx], ...confirmedTx };
+
+            const modal = document.getElementById('profileModal');
+            if (modal && modal.classList.contains('open')) {
+                showPaymentReceipt(confirmedTx);
+            }
+            showToast('🎉 Thanh toán thành công! Hệ thống đã nhận được tiền.', 'success', 5000);
+            renderAllPrizePools();
+            renderEvents();
+            renderVoting();
+            if (document.getElementById('dashboard').style.display === 'block') {
+                try { renderTab('transactions'); } catch(e) {}
+            }
+        }
+
+        async function checkPayOSPaymentStatus(orderCode) {
+            const res = await fetch('/api/payment-status?orderCode=' + encodeURIComponent(orderCode), { cache: 'no-store' });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Không thể kiểm tra trạng thái thanh toán');
+            if (data.paid) {
+                await handlePaymentConfirmed(orderCode, { orderCode, status: 'confirmed' });
+                return true;
+            }
+            return false;
+        }
+
         function startPaymentPolling(orderCode) {
+            if (!orderCode) return;
             if (paymentPollInterval) clearInterval(paymentPollInterval);
-            if (!useFirebase || !dbInstance) return;
-            
+            if (paymentSnapshotUnsubscribe) {
+                try { paymentSnapshotUnsubscribe(); } catch (e) {}
+                paymentSnapshotUnsubscribe = null;
+            }
+
             var pollStart = Date.now();
-            paymentPollInterval = setInterval(async () => {
+            var statusEl = document.getElementById('payosStatus');
+            if (statusEl) statusEl.textContent = '⏳ Đang chờ thanh toán... Hệ thống sẽ tự cập nhật ngay khi nhận tiền.';
+
+            if (useFirebase && dbInstance && typeof dbInstance.collection('transactions').where('orderCode', '==', Number(orderCode)).limit(1).onSnapshot === 'function') {
                 try {
-                    const modal = document.getElementById('profileModal');
-                    if (!modal || !modal.classList.contains('open')) {
-                        clearInterval(paymentPollInterval);
-                        return;
+                    paymentSnapshotUnsubscribe = dbInstance.collection('transactions')
+                        .where('orderCode', '==', Number(orderCode))
+                        .limit(1)
+                        .onSnapshot((snapshot) => {
+                            if (!snapshot.empty) {
+                                const tx = snapshot.docs[0].data();
+                                if (tx.status === 'confirmed') handlePaymentConfirmed(orderCode, tx);
+                            }
+                        }, (err) => console.warn('Lỗi lắng nghe thanh toán realtime:', err));
+                } catch (e) {
+                    console.warn('Không thể bật lắng nghe thanh toán realtime:', e);
+                }
+            }
+
+            const pollOnce = async () => {
+                try {
+                    if (useFirebase && dbInstance) {
+                        const q = await dbInstance.collection('transactions').where('orderCode', '==', Number(orderCode)).limit(1).get();
+                        if (!q.empty) {
+                            const tx = q.docs[0].data();
+                            if (tx.status === 'confirmed') {
+                                await handlePaymentConfirmed(orderCode, tx);
+                                return true;
+                            }
+                        }
                     }
-                    
-                    // Show fallback message after 30 seconds
-                    if (Date.now() - pollStart > 30000) {
+
+                    // Fallback: hỏi trực tiếp PayOS để không phải đợi webhook rồi tải lại trang.
+                    if (Date.now() - pollStart > 3000) {
+                        const paid = await checkPayOSPaymentStatus(orderCode);
+                        if (paid) return true;
+                    }
+
+                    if (Date.now() - pollStart > 120000) {
                         var statusEl = document.getElementById('payosStatus');
                         if (statusEl) {
-                            statusEl.innerHTML = '⚠️ Webhook chưa nhận được. <a href="#" onclick="event.preventDefault();location.reload()" style="color:var(--gold)">Tải lại trang</a> hoặc <strong style="color:var(--gold-light)">liên hệ BTC để xác nhận</strong>.';
+                            statusEl.innerHTML = '⚠️ Chưa nhận được xác nhận tự động. <a href="#" onclick="event.preventDefault();startPaymentPolling(\'' + esc(String(orderCode)) + '\')" style="color:var(--gold)">Kiểm tra lại</a> hoặc <strong style="color:var(--gold-light)">liên hệ BTC để xác nhận</strong>.';
                         }
                         clearInterval(paymentPollInterval);
-                        return;
-                    }
-                    
-                    const q = await dbInstance.collection('transactions').where('orderCode', '==', Number(orderCode)).limit(1).get();
-                    if (!q.empty) {
-                        const txDoc = q.docs[0];
-                        const tx = txDoc.data();
-                        if (tx.status === 'confirmed') {
-                            clearInterval(paymentPollInterval);
-                            
-                            const lt = showLoadingToast('Đang cập nhật dữ liệu...');
-                            await loadInternalDataFromFirestore(session.id, session.role);
-                            hideLoadingToast(lt);
-
-                            // Giữ hoá đơn đang mở và đổi trạng thái ngay khi webhook xác nhận.
-                            const confirmedTx = (localDB.transactions || []).find(t => String(t.orderCode) === String(orderCode)) || { ...tx, status: 'confirmed' };
-                            showPaymentReceipt({ ...confirmedTx, status: 'confirmed' });
-                            showToast('🎉 Thanh toán thành công! Hệ thống đã nhận được tiền.', 'success', 5000);
-                            
-                            renderAllPrizePools();
-                            renderEvents();
-                            renderVoting();
-                        }
+                        paymentPollInterval = null;
+                        return true;
                     }
                 } catch (e) {
                     console.error("Lỗi khi kiểm tra trạng thái thanh toán:", e);
                 }
-            }, 3000);
+                return false;
+            };
+
+            pollOnce();
+            paymentPollInterval = setInterval(pollOnce, 1500);
         }
 
         function isExpiredTx(t) {

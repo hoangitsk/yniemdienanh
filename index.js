@@ -330,6 +330,8 @@ app.post('/api/create-payment', async (req, res) => {
     }
 });
 
+app.get('/api/payment-status', require('./api/payment-status'));
+
 app.post('/api/payos-webhook', async (req, res) => {
     try {
         if (!PAYOS_ENABLED) {

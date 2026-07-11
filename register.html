@@ -453,13 +453,17 @@
                 <input id="orgPhone" type="tel" required placeholder="Số điện thoại liên hệ (10 chữ số)">
                 
                 <label for="orgDept">Phân ban bạn muốn ứng tuyển *</label>
-                <select id="orgDept" required>
+                <select id="orgDept" onchange="updateDeptDescription()" required>
                     <option value="Ban Media (Thiết kế&Edit)">Ban Media (Thiết kế & Edit)</option>
                     <option value="Ban duyệt bài">Ban duyệt bài</option>
                     <option value="Ban Nội Dung">Ban Nội Dung</option>
                     <option value="Ban Nhân Sự">Ban Nhân Sự</option>
                     <option value="Ban Truyền Thông">Ban Truyền Thông</option>
                 </select>
+                
+                <div class="dept-description" id="deptDescBox" style="margin-top: 10px; margin-bottom: 18px; padding: 14px; background: rgba(228, 184, 102, 0.08); border: 1px solid rgba(228, 184, 102, 0.2); border-radius: 6px; font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+                    <!-- Sẽ cập nhật tự động bằng JS -->
+                </div>
                 
                 <label for="orgIntro">Giới thiệu bản thân & lý do muốn đồng hành *</label>
                 <textarea id="orgIntro" required placeholder="Giới thiệu bản thân và lý do tại sao bạn lựa chọn phân ban này (tối thiểu 20 ký tự)..."></textarea>
@@ -775,6 +779,10 @@
             if (tabId === 'member') {
                 _renderTurnstileWidgets();
             }
+
+            if (tabId === 'organizer') {
+                updateDeptDescription();
+            }
         }
 
         // UI state toggle between Login and Register
@@ -784,6 +792,23 @@
             document.getElementById('googleAdditionalArea').style.display = 'none';
             if (!showLogin) {
                 _renderTurnstileWidgets();
+            }
+        }
+
+        const deptDescriptions = {
+            "Ban Media (Thiết kế&Edit)": "🎨 <b>Nhiệm vụ Ban Media:</b> Thiết kế poster, banner truyền thông, chỉnh sửa/edit video clip, chuẩn bị tư liệu hình ảnh và âm thanh phục vụ cho sự kiện và các ấn phẩm số của dự án.",
+            "Ban duyệt bài": "⚖️ <b>Nhiệm vụ Ban Duyệt Bài:</b> Theo dõi, đánh giá kỹ thuật và chất lượng nội dung các bài dự thi/phim ngắn được gửi về; đảm bảo tính hợp lệ bản quyền và sự tuân thủ quy chế giải đấu.",
+            "Ban Nội Dung": "✍️ <b>Nhiệm vụ Ban Nội Dung:</b> Lên kế hoạch bài viết, soạn thảo các văn bản chính thức (thư ngỏ, quy chế cuộc thi), xây dựng kịch bản chương trình và sáng tạo nội dung cho Website/Fanpage.",
+            "Ban Nhân Sự": "👥 <b>Nhiệm vụ Ban Nhân Sự:</b> Điều phối công việc của các phân ban, tổ chức các buổi họp nội bộ BTC, quản lý thông tin thành viên, làm chất xúc tác gắn kết và hỗ trợ giải quyết thắc mắc nội bộ.",
+            "Ban Truyền Thông": "📣 <b>Nhiệm vụ Ban Truyền Thông:</b> Lên chiến dịch quảng bá dự án, liên hệ hợp tác chéo với các đối tác/trường học/CLB, phát triển đối tượng tiếp cận và truyền thông giải đấu tới công chúng."
+        };
+
+        function updateDeptDescription() {
+            const selectEl = document.getElementById('orgDept');
+            const descBox = document.getElementById('deptDescBox');
+            if (selectEl && descBox) {
+                const val = selectEl.value;
+                descBox.innerHTML = deptDescriptions[val] || '';
             }
         }
 

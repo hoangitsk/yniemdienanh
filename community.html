@@ -23,9 +23,10 @@
     <script>
         // Core navigation functions – defined early so onclick attributes work
         function showPage(p) {
-            var dash = document.getElementById('dashboard');
-            if (dash) dash.style.display = 'block';
+            var community = document.getElementById('page-community');
+            if (community) community.style.display = 'block';
             window.scrollTo(0, 0);
+            if (p === 'community') { try { showCommunityTab(window.communityCurTab || 'feed'); } catch(e) {} }
         }
         function goSection(id) {
             window.location.href = '/#' + id;
@@ -2546,26 +2547,77 @@
         <nav>
             <div class="logo intro-item delay-logo" onclick="window.location.href='/'" style="cursor:pointer" aria-label="Trang chủ Ý Niệm Điện Ảnh">
                 <img src="Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh" style="height: 48px; width: 48px; object-fit: cover; border-radius: 8px;">
-                <span class="logo-wordmark">Ý Niệm Điện Ảnh<small>Khu vực nội bộ</small></span>
+                <span class="logo-wordmark">Ý Niệm Điện Ảnh<small>Film community</small></span>
             </div>
             <div class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu điều hướng" role="button">☰</div>
             <div class="links" id="navLinks">
                 <a href="/">Trang chủ</a>
+                <a href="/#events">Sự kiện</a>
+                <a href="/#voting">Bình chọn</a>
+                <a href="/community" class="active">Cộng đồng</a>
+                <a href="/#apply">Tuyển dụng</a>
                 <span id="navAuth"></span>
             </div>
         </nav>
 
-
-        <!-- ============ DỰ ÁN NỘI BỘ (DASHBOARD) ============ -->
-        <div id="dashboard">
-            <div class="dash-layout">
-                <!-- Sidebar Menu -->
-                <div class="side" id="sideMenu"></div>
-                
-                <!-- Main Dashboard Panel -->
-                <div class="dash-main" id="dashMain"></div>
+        <!-- ============ CỘNG ĐỒNG (COMMUNITY PAGE) ============ -->
+        <div id="page-community" style="display:block;padding-top:90px">
+            <div class="section-head" style="margin-top:20px">
+                <h2>🌐 Cộng đồng Ý Niệm Điện Ảnh</h2>
+                <p>Kết nối, chia sẻ và cùng nhau phát triển đam mê điện ảnh.</p>
+            </div>
+            <div class="community-tabs">
+                <button class="active" onclick="showCommunityTab('feed')" id="ctab-feed">📰 Bảng tin</button>
+                <button onclick="showCommunityTab('chat')" id="ctab-chat">💬 Chat</button>
+                <button onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người <span style="display:inline-block;padding:2px 6px;border-radius:10px;background:rgba(99,209,158,0.15);color:var(--ok);font-size:0.7rem;margin-left:4px;font-weight:700">8 ●</span></button>
+            </div>
+            <div id="community-content">
+                <div id="communityFeed" class="community-grid">
+                    <!-- Bảng tin (Cột trái) -->
+                    <div>
+                        <!-- Nơi hiển thị bài viết -->
+                        <div id="feedContainer"></div>
+                    </div>
+                    
+                    <!-- Sidebar widgets (Cột phải) -->
+                    <div class="community-sidebar">
+                        <!-- Quick Actions Widget (Only for Admin/BTC) -->
+                        <div id="sidebarQuickActions" class="sidebar-widget" style="display:none">
+                            <h4>⚡ Thao tác nhanh</h4>
+                            <div class="quick-actions-grid">
+                                <button onclick="triggerQuickAction('casting')">➕ Đăng casting</button>
+                                <button onclick="triggerQuickAction('workshop')">➕ Tạo workshop</button>
+                                <button onclick="triggerQuickAction('btc')">➕ Tuyển BTC</button>
+                                <button onclick="triggerQuickAction('project')">➕ Đăng tiến độ</button>
+                                <button onclick="triggerQuickAction('featured')">🔥 Thêm hoạt động nổi bật</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Listings Widget -->
+                        <div class="sidebar-widget">
+                            <h4>🔥 Hoạt động nổi bật</h4>
+                            <div id="featuredListingsContainer"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="communityChat" style="display:none;max-width:800px;margin:0 auto">
+                    <div class="card" style="padding:24px">
+                        <div id="publicChatMsgList" class="chat-box" style="height:450px;margin-bottom:14px">
+                            <div style="color:var(--text-muted);text-align:center;padding:40px">Đang tải tin nhắn...</div>
+                        </div>
+                        <div id="publicChatInputArea" class="chat-input-row"></div>
+                    </div>
+                </div>
+                <div id="communityMembers" style="display:none;max-width:800px;margin:0 auto">
+                    <div class="card" style="padding:24px">
+                        <h3 style="color:var(--gold-light);margin-bottom:16px">👥 Thành viên cộng đồng</h3>
+                        <div id="memberList"></div>
+                    </div>
+                </div>
             </div>
         </div>
+
+
 
         <!-- ============ FOOTER ============ -->
         <footer>
@@ -2593,188 +2645,7 @@
         <span class="fab-icon">💬</span>
     </button>
 
-    <!-- ============ AUTHENTICATION MODAL (ĐĂNG NHẬP / ĐĂNG KÝ) ============ -->
-    <div class="modal" id="authModal">
-        <div class="modal-box">
-            <span class="close-x" onclick="closeModal('authModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
-            
-            <!-- Login Form -->
-            <div id="loginForm">
-                <h3>Đăng Nhập Khu Vực Nội Bộ</h3>
-                <label>Email</label>
-                <input id="liEmail" type="email" placeholder="email@gmail.com">
-                <label>Mật khẩu</label>
-                <input id="liPass" type="password" placeholder="••••••">
-                <div class="form-msg" id="liMsg"></div>
-                <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="doLogin()">Đăng nhập</button>
-                <p style="margin-top:10px;font-size:0.8rem;text-align:center">
-                    <a href="#" onclick="event.preventDefault();resetPassword()" role="button" style="cursor:pointer;color:var(--text-muted);text-decoration:underline">Quên mật khẩu?</a>
-                    <span style="color:var(--text-muted);margin:0 6px">·</span>
-                    <a href="#" onclick="event.preventDefault();resendVerification()" role="button" style="cursor:pointer;color:var(--text-muted);text-decoration:underline">Gửi lại email xác thực</a>
-                </p>
-                
-                <div style="display:flex; align-items:center; margin: 16px 0 8px 0;">
-                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
-                    <span style="padding: 0 10px; font-size: 0.8rem; color: var(--text-muted);">Hoặc</span>
-                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
-                </div>
-                <button class="btn btn-line" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px" onclick="doGoogleLogin()">
-                    <svg width="18" height="18" viewBox="0 0 18 18">
-                        <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
-                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.58-5.05-3.71H.92v2.32C2.4 15.96 5.48 18 9 18z"/>
-                        <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V4.98H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4.02l3.03-2.32z"/>
-                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.89 11.43 0 9 0 5.48 0 2.4 2.04.92 4.98l3.03 2.32C4.66 5.16 6.65 3.58 9 3.58z"/>
-                    </svg>
-                    Đăng nhập bằng Google
-                </button>
 
-                <p style="margin-top:18px;font-size:0.85rem;text-align:center;color:var(--text-muted)">
-                    Bạn chưa có tài khoản? <a href="#" onclick="event.preventDefault();toggleAuth(false)" role="button" style="cursor:pointer;font-weight:600">Đăng ký thành viên</a>
-                </p>
-            </div>
-            
-            <!-- Register Form -->
-            <div id="registerForm" style="display:none">
-                <h3>Tạo Tài Khoản Thành Viên</h3>
-                <label>Họ và tên</label>
-                <input id="rgName" placeholder="Nguyễn Văn A">
-                <label>Email</label>
-                <input id="rgEmail" type="email" placeholder="email@gmail.com">
-                <label>Số điện thoại / Zalo</label>
-                <input id="rgPhone" type="tel" placeholder="09xxxxxxxx">
-                <label>Trường / đơn vị học tập</label>
-                <input id="rgSchool" placeholder="Tên trường của bạn">
-                <label>Lớp / khoa / năm học</label>
-                <input id="rgClass" placeholder="Ví dụ: 11A1, Khoa Truyền thông, Năm 1">
-                <label>Vai trò quan tâm</label>
-                <select id="rgInterest" onchange="toggleInterestOther('rgInterest','rgInterestOther')">
-                    <option value="Khán giả (Bình chọn tác phẩm)">Khán giả (Bình chọn tác phẩm)</option>
-                    <option value="Thí sinh / Người làm phim (Đăng ký đội thi)">Thí sinh / Người làm phim (Đăng ký đội thi)</option>
-                    <option value="Ban tổ chức / Cộng tác viên dự án">Ban tổ chức / Cộng tác viên dự án</option>
-                    <option value="Khách mời / Người tham gia sự kiện (Workshop, Gala...)">Khách mời / Người tham gia sự kiện (Workshop, Gala...)</option>
-                    <option value="Làm phim - Độc lập (Fulltask)">Làm phim - Độc lập (Fulltask)</option>
-                    <option value="Làm phim - Đạo diễn">Làm phim - Đạo diễn</option>
-                    <option value="Làm phim - Biên kịch">Làm phim - Biên kịch</option>
-                    <option value="Làm phim - Quay phim / DOP">Làm phim - Quay phim / DOP</option>
-                    <option value="Làm phim - Dựng phim / Editor">Làm phim - Dựng phim / Editor</option>
-                    <option value="Làm phim - Diễn viên">Làm phim - Diễn viên</option>
-                    <option value="Làm phim - Thiết kế / Mỹ thuật">Làm phim - Thiết kế / Mỹ thuật</option>
-                    <option value="Làm phim - Âm thanh / Nhạc phim">Làm phim - Âm thanh / Nhạc phim</option>
-                    <option value="Khác (nhập bên dưới)">Khác (nhập bên dưới)</option>
-                </select>
-                <input id="rgInterestOther" type="text" placeholder="Nhập vai trò khác..." style="display:none;margin-top:6px">
-                <label>Giới thiệu ngắn (Không bắt buộc)</label>
-                <textarea id="rgIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
-                <p style="font-size:0.78rem;color:var(--text-muted);margin-top:6px">Sau khi tạo tài khoản, hệ thống sẽ gửi email xác thực. Nếu chưa thấy email, hãy kiểm tra cả hòm thư rác/spam.</p>
-                <label>Mật khẩu (Tối thiểu 6 ký tự)</label>
-                <input id="rgPass" type="password" placeholder="••••••">
-                <div class="form-msg" id="rgMsg"></div>
-                <div id="turnstile-register" style="margin-top:16px;display:flex;justify-content:center"></div>
-                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:var(--text-muted);margin-top:12px">
-                    <input id="agreeTerms" type="checkbox" style="margin-top:3px;width:auto;min-width:auto;flex-shrink:0">
-                    <span>Tôi đồng ý với <a href="/terms" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Điều khoản sử dụng</a> và <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Chính sách quyền riêng tư</a>.</span>
-                </label>
-                <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="doRegister()">Tạo tài khoản</button>
-                
-                <div style="display:flex; align-items:center; margin: 16px 0 8px 0;">
-                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
-                    <span style="padding: 0 10px; font-size: 0.8rem; color: var(--text-muted);">Hoặc</span>
-                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
-                </div>
-                <button class="btn btn-line" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px" onclick="doGoogleLogin()">
-                    <svg width="18" height="18" viewBox="0 0 18 18">
-                        <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
-                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.58-5.05-3.71H.92v2.32C2.4 15.96 5.48 18 9 18z"/>
-                        <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V4.98H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4.02l3.03-2.32z"/>
-                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.89 11.43 0 9 0 5.48 0 2.4 2.04.92 4.98l3.03 2.32C4.66 5.16 6.65 3.58 9 3.58z"/>
-                    </svg>
-                    Đăng ký bằng Google
-                </button>
-
-                <p style="margin-top:18px;font-size:0.85rem;text-align:center;color:var(--text-muted)">
-                    Đã có tài khoản? <a href="#" onclick="event.preventDefault();toggleAuth(true)" role="button" style="cursor:pointer;font-weight:600">Đăng nhập ngay</a>
-                </p>
-            </div>
-            
-            <!-- Google Additional Info Form -->
-            <div id="googleAdditionalForm" style="display:none">
-                <h3>Hoàn Tất Thông Tin Tài Khoản</h3>
-                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:14px">Bạn đang đăng ký bằng tài khoản Google. Vui lòng bổ sung các thông tin liên hệ dưới đây để hoàn tất.</p>
-                <label>Họ và tên</label>
-                <input id="ggName" placeholder="Nguyễn Văn A">
-                <label>Email</label>
-                <input id="ggEmail" type="email" disabled style="background:rgba(255,255,255,0.05);color:var(--text-muted);cursor:not-allowed">
-                <label>Số điện thoại / Zalo</label>
-                <input id="ggPhone" type="tel" placeholder="09xxxxxxxx">
-                <label>Trường / đơn vị học tập</label>
-                <input id="ggSchool" placeholder="Tên trường của bạn">
-                <label>Lớp / khoa / năm học</label>
-                <input id="ggClass" placeholder="Ví dụ: 11A1, Khoa Truyền thông, Năm 1">
-                <label>Vai trò quan tâm</label>
-                <select id="ggInterest" onchange="toggleInterestOther('ggInterest','ggInterestOther')">
-                    <option value="Khán giả (Bình chọn tác phẩm)">Khán giả (Bình chọn tác phẩm)</option>
-                    <option value="Thí sinh / Người làm phim (Đăng ký đội thi)">Thí sinh / Người làm phim (Đăng ký đội thi)</option>
-                    <option value="Ban tổ chức / Cộng tác viên dự án">Ban tổ chức / Cộng tác viên dự án</option>
-                    <option value="Khách mời / Người tham gia sự kiện (Workshop, Gala...)">Khách mời / Người tham gia sự kiện (Workshop, Gala...)</option>
-                    <option value="Làm phim - Độc lập (Fulltask)">Làm phim - Độc lập (Fulltask)</option>
-                    <option value="Làm phim - Đạo diễn">Làm phim - Đạo diễn</option>
-                    <option value="Làm phim - Biên kịch">Làm phim - Biên kịch</option>
-                    <option value="Làm phim - Quay phim / DOP">Làm phim - Quay phim / DOP</option>
-                    <option value="Làm phim - Dựng phim / Editor">Làm phim - Dựng phim / Editor</option>
-                    <option value="Làm phim - Diễn viên">Làm phim - Diễn viên</option>
-                    <option value="Làm phim - Thiết kế / Mỹ thuật">Làm phim - Thiết kế / Mỹ thuật</option>
-                    <option value="Làm phim - Âm thanh / Nhạc phim">Làm phim - Âm thanh / Nhạc phim</option>
-                    <option value="Khác (nhập bên dưới)">Khác (nhập bên dưới)</option>
-                </select>
-                <input id="ggInterestOther" type="text" placeholder="Nhập vai trò khác..." style="display:none;margin-top:6px">
-                <label>Giới thiệu ngắn (Không bắt buộc)</label>
-                <textarea id="ggIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
-                <label>Mật khẩu <span style="color:var(--text-muted);font-size:0.75rem">(tùy chọn — để trống nếu chỉ muốn đăng nhập bằng Google)</span></label>
-                <input id="ggPass" type="password" placeholder="Nhập mật khẩu nếu muốn đăng nhập bằng email">
-                <div class="form-msg" id="ggMsg"></div>
-                <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitGoogleAdditional()">Hoàn tất đăng ký</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============ APPLICATION FORM MODAL (ĐƠN APPLY) ============ -->
-    <div class="modal" id="applyModal">
-        <div class="modal-box">
-            <span class="close-x" onclick="closeModal('applyModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
-            <h3 id="applyTitle">Apply Đơn Tuyển Dụng</h3>
-            
-            <label for="apName">Họ và tên *</label>
-            <input id="apName" name="name" required placeholder="Họ và tên đầy đủ">
-            <div class="error-hint">Họ và tên không được để trống!</div>
-            
-            <label for="apEmail">Email liên hệ *</label>
-            <input id="apEmail" name="email" type="email" required placeholder="email@gmail.com">
-            <div class="error-hint">Định dạng Email không hợp lệ (ví dụ: email@gmail.com)!</div>
-            
-            <label for="apPhone">Số điện thoại *</label>
-            <input id="apPhone" name="phone" type="tel" required placeholder="Số điện thoại Zalo (10 chữ số)">
-            <div class="error-hint">Số điện thoại Zalo phải bao gồm 10 chữ số hợp lệ!</div>
-            
-            <!-- Phân ban cho BTC -->
-            <div id="apRoleWrap">
-                <label for="apDept">Phân ban bạn muốn ứng tuyển *</label>
-                <select id="apDept" name="dept">
-                    <option>Ban Media (Thiết kế&Edit)</option>
-                    <option>Ban duyệt bài</option>
-                    <option>Ban Nội Dung</option>
-                    <option>Ban Nhân Sự</option>
-                    <option>Ban Truyền Thông</option>
-                </select>
-            </div>
-            
-            <label for="apIntro">Giới thiệu bản thân & lý do muốn đồng hành *</label>
-            <textarea id="apIntro" name="intro" required placeholder="Hãy giới thiệu một chút về bản thân, các dự án trước đây (nếu có) và mong muốn của bạn khi tham gia (tối thiểu 20 ký tự)..."></textarea>
-            <div class="error-hint">Mục giới thiệu bản thân cần dài tối thiểu 20 ký tự!</div>
-            
-            <div class="form-msg" id="apMsg"></div>
-            <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitApply()">Gửi đơn ứng tuyển</button>
-        </div>
-    </div>
 
     <!-- ============ SUBMIT FILM MODAL ============ -->
     <div class="modal" id="submitModal">
@@ -3539,8 +3410,6 @@
                         } else {
                             session = null;
                             sessionStorage.removeItem('ynda_user');
-                            window.location.href = '/register';
-                            return;
                         }
                         renderNav();
                         renderFeed();
@@ -3548,22 +3417,12 @@
                         renderAllPrizePools();
                         updateStageDisplay();
                         renderAllContent();
-                        if (session) {
-                            openDash();
-                        }
+
                     });
                 } catch (err) {
                     console.error("Lỗi kết nối Firebase Firestore:", err);
                     useFirebase = false;
                     loadLocalStorage();
-                    const stored = sessionStorage.getItem('ynda_user');
-                    if (stored) {
-                        try { session = JSON.parse(stored); } catch(e){}
-                    }
-                    if (!session) {
-                        window.location.href = '/register';
-                        return;
-                    }
                     renderEvents();
                     renderVoting();
                     renderNav();
@@ -3572,28 +3431,10 @@
                     renderAllPrizePools();
                     updateStageDisplay();
                     renderAllContent();
-                    openDash();
                 }
             } else {
                 loadLocalStorage();
                 showOfflineWarning();
-                const stored = sessionStorage.getItem('ynda_user');
-                if (stored) {
-                    try { session = JSON.parse(stored); } catch(e){}
-                }
-                if (!session) {
-                    window.location.href = '/register';
-                    return;
-                }
-                renderEvents();
-                renderVoting();
-                renderNav();
-                renderFeed();
-                renderPublicChat();
-                renderAllPrizePools();
-                updateStageDisplay();
-                renderAllContent();
-                openDash();
             }
 
             // Kiểm tra và hiển thị kết quả redirect thanh toán từ PayOS
@@ -3919,13 +3760,13 @@
 
         // ================= UI AUXILIARY FUNCTIONS =================
         function openModal(id) {
-            if (id === 'authModal') {
-                tempGoogleUser = null;
-                toggleAuth(true);
-            }
-            document.getElementById(id).classList.add('open');
+            const el = document.getElementById(id);
+            if (el) el.classList.add('open');
         }
-        function closeModal(id) { document.getElementById(id).classList.remove('open') }
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        }
         // Đóng modal khi bấm phím Esc
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -4011,9 +3852,10 @@
             if (ggForm) ggForm.style.display = 'none';
         }
         function showPage(p) {
-            const dash = document.getElementById('dashboard');
-            if (dash) dash.style.display = 'block';
+            const community = document.getElementById('page-community');
+            if (community) community.style.display = 'block';
             window.scrollTo(0, 0);
+            showCommunityTab(communityCurTab);
         }
         function goSection(id) { 
             window.location.href = '/#' + id;
@@ -4296,18 +4138,24 @@
             const contentEl = document.getElementById('applyContent');
             if (contentEl) {
                 contentEl.innerHTML = `
-                    <div class="split-cards">
+                    <div class="split-cards" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:20px; width:100%; margin-bottom: 24px;">
+                        <div class="card">
+                            <span class="pill">Apply co-founder</span>
+                            <h3>Đồng sáng lập dự án</h3>
+                            <p>Nhóm nòng cốt sáng lập, đồng kiến tạo chiến lược và định hướng dài hạn cho dự án Ý Niệm Điện Ảnh.</p>
+                            <a href="/register?tab=cofounder" target="_blank" class="btn btn-gold" style="margin-top:20px; text-decoration:none; display:inline-flex">Apply Co-founder</a>
+                        </div>
                         <div class="card">
                             <span class="pill">Apply ban tổ chức</span>
                             <h3>${c.orgTitle}</h3>
                             <p>${c.orgText}</p>
-                            <button class="btn btn-gold" style="margin-top:20px" onclick="openApply('organizer')">Apply Ban Tổ Chức</button>
+                            <a href="/register?tab=organizer" target="_blank" class="btn btn-gold" style="margin-top:20px; text-decoration:none; display:inline-flex">Apply Ban Tổ Chức</a>
                         </div>
                         <div class="card">
                             <span class="pill">Thành viên dự án</span>
                             <h3>${c.memberTitle}</h3>
                             <p>${c.memberText}</p>
-                            <button class="btn btn-line" style="margin-top:20px" onclick="openModal('authModal');toggleAuth(false)">Tạo Tài Khoản</button>
+                            <a href="/register?tab=register" target="_blank" class="btn btn-line" style="margin-top:20px; text-decoration:none; display:inline-flex">Tạo Tài Khoản</a>
                         </div>
                     </div>
                     <div class="card" style="padding:36px">
@@ -4422,420 +4270,6 @@
             }
         }
 
-        async function doGoogleLogin() {
-            if (!authInstance) {
-                showToast("Đăng nhập Google chỉ khả dụng khi có kết nối Firebase.", "info");
-                return;
-            }
-            const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                const result = await authInstance.signInWithPopup(provider);
-                const firebaseUser = result.user;
-
-                // Try Firestore first
-                let userFound = false;
-                try {
-                    const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
-                    if (userDoc.exists) {
-                        const u = userDoc.data();
-                        const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
-                        session = { id: firebaseUser.uid, name: u.name, email: u.email, role: effectiveRole, dept: u.dept || '', phone: u.phone || '', school: u.school || '', className: u.className || '', interest: u.interest || '', intro: u.intro || '' };
-
-                        await dbInstance.collection('users').doc(firebaseUser.uid).set({ emailVerified: true, role: effectiveRole }, { merge: true });
-
-                        sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                        renderNav();
-                        updateStageDisplay();
-                        openDash();
-                        closeModal('authModal');
-                        userFound = true;
-                        return;
-                    }
-                } catch (fsErr) {
-                    console.warn("Firestore không khả dụng:", fsErr.message || fsErr);
-                }
-
-                // Try RTDB if Firestore didn't find user
-                if (!userFound && rtdbInstance) {
-                    try {
-                        const rtdbSnap = await rtdbInstance.ref('users/' + firebaseUser.uid).once('value');
-                        if (rtdbSnap.exists()) {
-                            const u = rtdbSnap.val();
-                            const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
-                            session = { id: firebaseUser.uid, name: u.name, email: u.email, role: effectiveRole, dept: u.dept || '', phone: u.phone || '', school: u.school || '', className: u.className || '', interest: u.interest || '', intro: u.intro || '' };
-                            sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                            renderNav();
-                            updateStageDisplay();
-                            openDash();
-                            closeModal('authModal');
-                            userFound = true;
-                            return;
-                        }
-                    } catch (rtdbErr) {
-                        console.warn("RTDB không khả dụng:", rtdbErr.message || rtdbErr);
-                    }
-                }
-
-                // Fallback to localDB
-                if (!userFound) {
-                    const localUser = localDB.users.find(u => u.email && u.email.toLowerCase() === firebaseUser.email.toLowerCase());
-                    if (localUser) {
-                        const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (localUser.role || 'member');
-                        session = { id: firebaseUser.uid, name: localUser.name, email: firebaseUser.email, role: effectiveRole, dept: localUser.dept || '', phone: localUser.phone || '', school: localUser.school || '', className: localUser.className || '', interest: localUser.interest || '', intro: localUser.intro || '' };
-                        sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                        renderNav();
-                        updateStageDisplay();
-                        openDash();
-                        closeModal('authModal');
-                        userFound = true;
-                        showToast("Đã đăng nhập. Firestore không khả dụng - dữ liệu chỉ lưu local.", "warning", 5000);
-                        return;
-                    }
-                }
-
-                // New Google user (not found anywhere)
-                if (!userFound) {
-                    tempGoogleUser = firebaseUser;
-                    document.getElementById('loginForm').style.display = 'none';
-                    document.getElementById('registerForm').style.display = 'none';
-                    document.getElementById('googleAdditionalForm').style.display = 'block';
-                    document.getElementById('ggName').value = firebaseUser.displayName || '';
-                    document.getElementById('ggEmail').value = firebaseUser.email || '';
-                    showToast("Vui lòng hoàn tất thông tin đăng ký.", "info", 5000);
-                }
-            } catch (err) {
-                console.error("Google Auth Error:", err);
-                if (err.code === 'auth/unauthorized-domain') {
-                    showToast("❌ Domain không được hỗ trợ đăng nhập Google!\n\n👉 Hướng dẫn sửa:\n1. Vào https://console.firebase.google.com\n2. Chọn project yniemdienanh-fb0b7\n3. Authentication → Settings → Authorized domains\n4. Thêm domain: " + window.location.hostname + "\n5. Lưu lại và thử đăng nhập lại", 'error', 8000);
-                } else if (err.code === 'auth/popup-blocked') {
-                    showToast("Trình duyệt đã chặn popup đăng nhập Google.", "error");
-                } else if (err.code === 'auth/popup-closed-by-user') {
-                    // Người dùng tự đóng popup, không cần thông báo
-                } else {
-                    showToast("Lỗi đăng nhập Google: " + (err.message || "Không thể kết nối."), "error");
-                }
-            }
-        }
-
-        async function submitGoogleAdditional() {
-            if (!tempGoogleUser) return;
-            const name = document.getElementById('ggName').value.trim();
-            const email = tempGoogleUser.email;
-            const phone = document.getElementById('ggPhone').value.trim();
-            const school = document.getElementById('ggSchool').value.trim();
-            const className = document.getElementById('ggClass').value.trim();
-            const interest = getInterest('ggInterest', 'ggInterestOther');
-            const intro = document.getElementById('ggIntro').value.trim();
-            const pass = document.getElementById('ggPass').value;
-            const m = document.getElementById('ggMsg');
-            m.className = 'form-msg err'; m.textContent = '';
-
-            if (!name || !phone || !school || !className || !interest) return m.textContent = 'Vui lòng điền đủ tất cả các trường bắt buộc!';
-            if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
-            if (pass && pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
-
-            let role = 'member';
-            let dept = '';
-
-            // Try Firestore for existing email, fallback to RTDB
-            try {
-                const snap = await dbInstance.collection('users').where('email', '==', email).get();
-                if (!snap.empty) {
-                    const preDoc = snap.docs[0];
-                    role = preDoc.data().role || 'member';
-                    dept = preDoc.data().dept || '';
-                    if (preDoc.id !== tempGoogleUser.uid) {
-                        await dbInstance.collection('users').doc(preDoc.id).delete();
-                    }
-                }
-            } catch (e) {
-                console.warn('Firestore không khả dụng, thử RTDB:', e.message || e);
-                try {
-                    const emailKey = email.replace(/\./g, ',');
-                    const emailIdxSnap = await rtdbInstance.ref('emailIndex/' + emailKey).once('value');
-                    const existingUid = emailIdxSnap.val();
-                    if (existingUid) {
-                        const existingUserSnap = await rtdbInstance.ref('users/' + existingUid).once('value');
-                        const preData = existingUserSnap.val();
-                        if (preData) {
-                            role = preData.role || 'member';
-                            dept = preData.dept || '';
-                            if (existingUid !== tempGoogleUser.uid) {
-                                await rtdbInstance.ref('users/' + existingUid).remove();
-                                await rtdbInstance.ref('emailIndex/' + emailKey).remove();
-                            }
-                        }
-                    }
-                } catch (rtdbErr) {
-                    console.warn('RTDB cũng không khả dụng:', rtdbErr.message || rtdbErr);
-                }
-            }
-
-            if (email.toLowerCase() === PROJECT_ADMIN_EMAIL) {
-                role = 'admin';
-            }
-
-            const newUser = { id: tempGoogleUser.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: true, createdAt: new Date().toISOString() };
-
-            // Save to Firestore if available
-            try {
-                await dbInstance.collection('users').doc(tempGoogleUser.uid).set(newUser);
-            } catch (e) {
-                console.warn('Firestore không khả dụng, chỉ lưu local:', e.message || e);
-            }
-
-            // Sync to RTDB if available
-            syncUserToRTDB(newUser);
-
-            // Set password in Firebase Auth if provided
-            if (pass && tempGoogleUser) {
-                try {
-                    await tempGoogleUser.updatePassword(pass);
-                } catch (e) {
-                    console.warn('Không thể đặt mật khẩu (có thể cần reauth):', e.message || e);
-                }
-            }
-
-            // Save to localDB (always)
-            localDB.users = localDB.users.filter(u => String(u.id) !== tempGoogleUser.uid);
-            const localUserEntry = { ...newUser };
-            if (pass) {
-                localUserEntry.passHash = btoa(pass);
-            }
-            localDB.users.push(localUserEntry);
-            localStorage.setItem('ynda_db', JSON.stringify(localDB));
-
-            session = { id: tempGoogleUser.uid, name, email, role, dept, phone, school, className, interest, intro };
-            sessionStorage.setItem('ynda_user', JSON.stringify(session));
-
-            renderNav();
-            updateStageDisplay();
-            openDash();
-            closeModal('authModal');
-
-            tempGoogleUser = null;
-            document.getElementById('ggPhone').value = '';
-            document.getElementById('ggSchool').value = '';
-            document.getElementById('ggClass').value = '';
-            document.getElementById('ggIntro').value = '';
-            document.getElementById('ggPass').value = '';
-        }
-
-        async function doRegister() {
-            const name = document.getElementById('rgName').value.trim();
-            const email = document.getElementById('rgEmail').value.trim().toLowerCase();
-            const phone = document.getElementById('rgPhone').value.trim();
-            const school = document.getElementById('rgSchool').value.trim();
-            const className = document.getElementById('rgClass').value.trim();
-            const interest = getInterest('rgInterest', 'rgInterestOther');
-            const intro = document.getElementById('rgIntro').value.trim();
-            const pass = document.getElementById('rgPass').value;
-            const m = document.getElementById('rgMsg'); 
-            m.className = 'form-msg err'; m.textContent = '';
-            
-            if (!name || !email || !phone || !school || !className || !interest || !pass) return m.textContent = 'Vui lòng điền đủ tất cả các trường bắt buộc!';
-            if (!document.getElementById('agreeTerms').checked) return m.textContent = 'Vui lòng đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.';
-            if (!/^[^\s@]+@gmail\.com$/i.test(email)) return m.textContent = 'Vui lòng đăng ký bằng địa chỉ Gmail hợp lệ.';
-            if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
-            if (pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
-            
-            const turnstileOk = await verifyTurnstile('turnstile-register');
-            if (!turnstileOk) return m.textContent = 'Vui lòng hoàn tất xác thực bảo mật.';
-            
-            try {
-                let emailSent = false;
-                let emailErrorText = '';
-                if (authInstance) {
-                    const cred = await authInstance.createUserWithEmailAndPassword(email, pass);
-                    await cred.user.updateProfile({ displayName: name });
-                    
-                    const isAdmin = email === PROJECT_ADMIN_EMAIL;
-                    let role = 'member';
-                    let dept = '';
-                    
-                    if (isAdmin) {
-                        role = 'admin';
-                    } else {
-                        emailSent = false;
-                        try {
-                            const idToken = await cred.user.getIdToken();
-                            const ctrl = new AbortController();
-                            const timer = setTimeout(() => ctrl.abort(), 10000);
-                            const r = await fetch('/api/email/send-verification', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idToken, email, userName: name }),
-                                signal: ctrl.signal,
-                            });
-                            clearTimeout(timer);
-                            emailSent = r.ok;
-                            if (!r.ok) {
-                                const ed = await r.json().catch(() => ({}));
-                                console.warn('Email API error:', ed);
-                                emailErrorText = JSON.stringify({
-                                    adminErr: ed.adminError,
-                                    initErr: ed.adminInitError,
-                                    appsLen: ed.adminAppsLength,
-                                    hasEnv: ed.hasServiceAccountEnv,
-                                    restErr: ed.detail?.error?.message
-                                });
-                            }
-                        } catch (e) {
-                            console.warn('Email skip:', e.message);
-                            emailErrorText = 'Network: ' + e.message;
-                        }
-                        try {
-                            const snap = await dbInstance.collection('users').where('email', '==', email).get();
-                            if (!snap.empty) {
-                                const preDoc = snap.docs[0];
-                                role = preDoc.data().role || 'member';
-                                dept = preDoc.data().dept || '';
-                                if (preDoc.id !== cred.user.uid) {
-                                    await dbInstance.collection('users').doc(preDoc.id).delete();
-                                }
-                            }
-                        } catch (e) {
-                            console.warn('Firestore không khả dụng, bỏ qua kiểm tra email cũ:', e.message || e);
-                        }
-                    }
-                    
-                    const newUser = { id: cred.user.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: isAdmin, createdAt: new Date().toISOString() };
-                    
-                    try {
-                        await dbInstance.collection('users').doc(cred.user.uid).set(newUser);
-                    } catch (e) {
-                        console.warn('Firestore không khả dụng, chỉ lưu local:', e.message || e);
-                    }
-                    
-                    localDB.users = localDB.users.filter(u => u.email.toLowerCase() !== email);
-                    localDB.users.push(newUser);
-                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
-
-                    syncUserToRTDB(newUser);
-                    
-                    if (isAdmin) {
-                        session = { id: cred.user.uid, name, email, role: 'admin', dept: 'Ban điều hành', phone, school, className, interest, intro };
-                        sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                        renderNav();
-                        updateStageDisplay();
-                        openDash();
-                        closeModal('authModal');
-                        return;
-                    }
-                    await authInstance.signOut();
-                } else {
-                    if (localDB.users.find(u => u.email === email)) return m.textContent = 'Email này đã được đăng ký.';
-                    const nextId = await getNextId();
-                    const newUser = { id: nextId, name, email, phone, school, className, interest, intro, pass, role: 'member', dept: '', emailVerified: true, createdAt: new Date().toISOString() };
-                    localDB.users.push(newUser);
-                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                }
-                
-                const isFirebaseMode = !!authInstance;
-                if (isFirebaseMode && email !== PROJECT_ADMIN_EMAIL) {
-                    if (emailSent) {
-                        showSuccessPopup(
-                            'Email xác thực đã được gửi từ <strong>yniemdienanh@gmail.com</strong>.',
-                            '📧 Mã xác nhận đã gửi — hãy mở Gmail và bấm link xác thực trong email.'
-                        );
-                    } else {
-                        showSuccessPopup(
-                            'Hệ thống gửi email xác thực đang gặp sự cố.',
-                            '⚠️ Chi tiết lỗi: ' + (emailErrorText || 'Vui lòng liên hệ Admin để được xác thực thủ công.'),
-                            true
-                        );
-                    }
-                } else {
-                    showSuccessPopup('Đăng ký tài khoản thành công!');
-                }
-                m.className = 'form-msg ok'; m.textContent = isFirebaseMode
-                    ? (emailSent ? '✅ Đã gửi email xác thực từ yniemdienanh@gmail.com!' : '✅ Đăng ký thành công! Admin sẽ xác thực thủ công.')
-                    : '✅ Đăng ký tài khoản thành công! Đang chuyển sang đăng nhập...';
-                document.getElementById('rgName').value = '';
-                document.getElementById('rgEmail').value = '';
-                document.getElementById('rgPhone').value = '';
-                document.getElementById('rgSchool').value = '';
-                document.getElementById('rgClass').value = '';
-                document.getElementById('rgIntro').value = '';
-                document.getElementById('rgPass').value = '';
-                setTimeout(() => toggleAuth(true), isFirebaseMode ? 4200 : 1200);
-            } catch (err) {
-                m.textContent = err.message || 'Lỗi đăng ký tài khoản.';
-            }
-        }
-
-        async function doLogin() {
-            const email = document.getElementById('liEmail').value.trim().toLowerCase();
-            const pass = document.getElementById('liPass').value;
-            const m = document.getElementById('liMsg');
-            m.className = 'form-msg err'; m.textContent = '';
-            
-            if (!email || !pass) return m.textContent = 'Vui lòng nhập email và mật khẩu!';
-            
-            try {
-                if (authInstance) {
-                    const cred = await authInstance.signInWithEmailAndPassword(email, pass);
-                    let isAdminApproved = false;
-                    if (!cred.user.emailVerified && email !== PROJECT_ADMIN_EMAIL) {
-                        try {
-                            const userDoc = await dbInstance.collection('users').doc(cred.user.uid).get();
-                            isAdminApproved = userDoc.exists && userDoc.data().emailVerified === true;
-                        } catch (verifyErr) {
-                            console.warn('Không thể kiểm tra xác thực admin:', verifyErr);
-                        }
-                    }
-                    if (!cred.user.emailVerified && !isAdminApproved && email !== PROJECT_ADMIN_EMAIL) {
-                        try {
-                            const idToken = await cred.user.getIdToken();
-                            const userDoc2 = await dbInstance.collection('users').doc(cred.user.uid).get().catch(() => null);
-                            const loginName = userDoc2?.data()?.name || email.split('@')[0];
-                            const ctrl = new AbortController();
-                            const timer = setTimeout(() => ctrl.abort(), 10000);
-                            await fetch('/api/email/send-verification', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idToken, email, userName: loginName }),
-                                signal: ctrl.signal,
-                            });
-                            clearTimeout(timer);
-                        } catch (e) {
-                            console.warn('Email skip:', e.message);
-                        }
-                        await authInstance.signOut();
-                        showToast('📧 EMAIL CHƯA XÁC THỰC!\n\nEmail xác thực mới đã được gửi từ yniemdienanh@gmail.com đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực rồi đăng nhập lại.', 'info', 8000);
-                        return m.textContent = 'Tài khoản chưa xác thực. Đã gửi lại email, hãy kiểm tra Gmail nhé!';
-                    }
-                    // onAuthStateChanged sẽ xử lý session + UI sau khi đăng nhập Firebase thành công
-                } else {
-                    const u = localDB.users.find(u => u.email === email && (u.pass === pass || u.passHash === btoa(pass)));
-                    if (!u) return m.textContent = 'Sai tài khoản hoặc mật khẩu!';
-                    if (u.locked) return m.textContent = 'Tài khoản đã bị khóa. Vui lòng liên hệ Admin để biết thêm chi tiết.';
-                    
-                    u.lastLogin = new Date().toISOString();
-                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                    session = { id: u.id, name: u.name, email: u.email, role: u.role, dept: u.dept };
-                    sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                    renderNav();
-                    updateStageDisplay();
-                    openDash();
-                }
-                closeModal('authModal');
-                document.getElementById('liEmail').value = '';
-                document.getElementById('liPass').value = '';
-            } catch (err) {
-                console.error("Login error:", err);
-                if (err.code === 'auth/user-not-found') {
-                    if (email === PROJECT_ADMIN_EMAIL) {
-                        m.textContent = 'Tài khoản Admin chưa tồn tại trong Firebase. Hãy bấm "Đăng ký" để tạo tài khoản Admin trước, hoặc dùng "Quên mật khẩu?" nếu đã có.';
-                    } else {
-                        m.textContent = 'Email chưa được đăng ký. Vui lòng tạo tài khoản trước.';
-                    }
-                } else if (err.code === 'auth/wrong-password') {
-                    m.textContent = 'Sai mật khẩu. Vui lòng thử lại.';
-                } else if (err.code === 'auth/too-many-requests') {
-                    m.textContent = 'Tài khoản tạm thời bị khóa do nhập sai quá nhiều lần. Thử lại sau vài phút.';
-                } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
-                    if (email === PROJECT_ADMIN_EMAIL) {
                         m.textContent = 'Tài khoản Admin chưa được tạo hoặc sai mật khẩu. Hãy bấm "Đăng ký" để tạo tài khoản Admin, hoặc dùng "Quên mật khẩu?".';
                     } else {
                         m.textContent = 'Sai email hoặc mật khẩu. Vui lòng kiểm tra lại.';
@@ -4917,13 +4351,13 @@
                 const isMember = session.role === 'member';
                 var unreadCount = (localDB.notifications||[]).filter(function(n){return n.targetAll||n.userId===session.id;}).filter(function(n){return !n.read;}).length;
                 el.innerHTML = `<span class="chip" style="margin-right:10px">👤 ${esc(session.name)} (${session.role === 'admin' ? 'Admin' : session.role === 'organizer' ? 'BTC' : 'Thành viên'})</span>
-                                <button class="btn btn-line btn-sm" style="position:relative;margin-right:6px" onclick="openDash();setTimeout(function(){renderTab('notifications');},50)" title="Thông báo">🔔${unreadCount>0?'<span style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:10px;font-weight:700">'+unreadCount+'</span>':''}</button>
-                                <button class="btn btn-gold btn-sm" onclick="${isMember ? "openProfilePage()" : "openDash()"}">${isMember ? '👤 Hồ sơ' : '🔐 Khu vực nội bộ'}</button>
+                                <a href="/dashboard?tab=notifications" class="btn btn-line btn-sm" style="position:relative;margin-right:6px" title="Thông báo">🔔${unreadCount>0?'<span style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:10px;font-weight:700">'+unreadCount+'</span>':''}</a>
+                                <a href="${isMember ? '/dashboard?tab=profile' : '/dashboard'}" class="btn btn-gold btn-sm">${isMember ? '👤 Hồ sơ' : '🔐 Khu vực nội bộ'}</a>
                                 <button class="btn btn-line btn-sm" style="margin-left:8px" onclick="logout()">Thoát</button>`;
             } else {
-                el.innerHTML = `<button class="btn btn-gold btn-sm" onclick="openApply('organizer')" style="margin-right:6px">🔥 Apply BTC</button>
-                                <button class="btn btn-line btn-sm" onclick="openModal('authModal');toggleAuth(false)" style="margin-right:6px">Tạo Tài Khoản</button>
-                                <a href="#" onclick="event.preventDefault();openModal('authModal');toggleAuth(true)" role="button" style="font-size:0.85rem;color:var(--text-muted);cursor:pointer;font-weight:500">Đăng nhập</a>`;
+                el.innerHTML = `<a href="/register?tab=organizer" target="_blank" class="btn btn-gold btn-sm" style="margin-right:6px">🔥 Apply BTC</a>
+                                <a href="/register?tab=register" target="_blank" class="btn btn-line btn-sm" style="margin-right:6px">Tạo Tài Khoản</a>
+                                <a href="/register?tab=login" target="_blank" style="font-size:0.85rem;color:var(--text-muted);cursor:pointer;font-weight:500">Đăng nhập</a>`;
             }
         }
 
@@ -5010,7 +4444,7 @@
             const bannerEl = document.getElementById('votingRegisterBanner');
             if (bannerEl) {
                 if (!session) {
-                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">📌 <a href="#" onclick="event.preventDefault();openModal(\'authModal\');toggleAuth(true)" role="button" style="cursor:pointer;color:var(--gold);font-weight:600">Đăng nhập</a> để nộp bài dự thi hoặc bình chọn!</p></div>';
+                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">📌 <a href="/register?tab=login" target="_blank" style="cursor:pointer;color:var(--gold);font-weight:600">Đăng nhập</a> để nộp bài dự thi hoặc bình chọn!</p></div>';
                 } else {
                     bannerEl.innerHTML = '<div class="prize-pool" style="padding:12px 20px;text-align:center"><p style="color:#22c55e;margin:0">🎉 Hãy đăng ký tham gia các dự án bên dưới để nộp bài dự thi của bạn!</p></div>';
                 }
@@ -5046,7 +4480,7 @@
                             </div>
                         </div>
                         
-                        ${session ? `<button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>` : `<div style="text-align:center;margin-top:16px"><p style="color:var(--text-muted);font-size:0.85rem"><a href="#" onclick="event.preventDefault();openModal('authModal');toggleAuth(false)" role="button" style="color:var(--gold);cursor:pointer;font-weight:600">Đăng ký / Đăng nhập</a> để bình chọn</p></div>`}
+                        ${session ? `<button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>` : `<div style="text-align:center;margin-top:16px"><p style="color:var(--text-muted);font-size:0.85rem"><a href="/register?tab=login" target="_blank" style="color:var(--gold);cursor:pointer;font-weight:600">Đăng ký / Đăng nhập</a> để bình chọn</p></div>`}
                         <div style="display:flex;gap:8px;margin-top:10px">
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${s.id}, '${esc(s.title)}')">📤 Share Facebook</button>
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="copyVoteLink(${s.id})">🔗 Copy link</button>
@@ -5058,7 +4492,7 @@
 
         // Chức năng bình chọn chống gian lận (quét IP thiết bị và chặn cookie/localstorage)
         async function castVote(id, e) {
-            if (!session) { openModal('authModal'); toggleAuth(false); return showToast('Vui lòng đăng ký / đăng nhập để bình chọn!', 'info'); }
+            if (!session) { window.open('/register?tab=login', '_blank'); return showToast('Vui lòng đăng ký / đăng nhập để bình chọn!', 'info'); }
             const vOpen = isVoteOpen();
             if (!vOpen.open) return showToast(vOpen.msg, 'info');
             // 1. Kiểm tra nhanh thiết bị qua LocalStorage để chặn bình chọn nhiều lần trên cùng 1 trình duyệt
@@ -5123,23 +4557,7 @@
         // ================= SUBMIT APPLICATION & VALIDATION =================
         let applyType = 'member';
         function openApply(type) {
-            applyType = type;
-            document.getElementById('applyTitle').textContent = type === 'organizer' ? '🎬 Đơn ứng tuyển Ban Tổ Chức' : '🍿 Đăng ký làm Thành viên dự án';
-            document.getElementById('apRoleWrap').style.display = type === 'organizer' ? 'block' : 'none';
-            
-            // Reset form states
-            const formFields = ['apName', 'apEmail', 'apPhone', 'apIntro'];
-            formFields.forEach(id => {
-                const field = document.getElementById(id);
-                if (field) {
-                    field.classList.remove('invalid');
-                    field.value = '';
-                }
-            });
-            const msg = document.getElementById('apMsg');
-            if (msg) msg.textContent = '';
-
-            openModal('applyModal');
+            window.open('/register?tab=' + (type === 'organizer' ? 'organizer' : 'register'), '_blank');
         }
 
         async function submitApply() {
@@ -5362,6 +4780,7 @@
             overview: { icon: '📊', label: 'Tổng quan', roles: ['admin', 'organizer', 'member'] },
             profile: { icon: '👤', label: 'Hồ sơ của tôi', roles: ['admin', 'organizer', 'member'] },
             tasks: { icon: '✅', label: 'Bảng Công việc', roles: ['admin', 'organizer', 'member'] },
+            plan: { icon: '🗓️', label: 'Lộ trình 3 tháng', roles: ['admin', 'organizer'] },
             events: { icon: '🎬', label: 'Quản lý sự kiện', roles: ['admin', 'organizer'] },
             members: { icon: '👥', label: 'Đơn tuyển & Nhân sự', roles: ['admin', 'organizer'] },
             announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'member'] },
@@ -5421,21 +4840,19 @@
 
         let curTab = 'overview';
         function openDash() {
-            const params = new URLSearchParams(window.location.search);
-            const tabParam = params.get('tab');
-            if (tabParam && TABS[tabParam]) {
-                curTab = tabParam;
+            if (!session) {
+                window.open('/register?tab=login', '_blank');
+            } else {
+                window.location.href = '/dashboard';
             }
-            showPage('dash');
-            renderSideMenu();
-            renderTab(curTab);
         }
 
         function openProfilePage() {
-            curTab = 'profile';
-            showPage('dash');
-            renderSideMenu();
-            renderTab('profile');
+            if (!session) {
+                window.open('/register?tab=login', '_blank');
+            } else {
+                window.location.href = '/dashboard?tab=profile';
+            }
         }
 
         function renderSideMenu() {
@@ -5739,7 +5156,54 @@
                             }).join('')}
                         </div>
                     `;
-
+                },
+                plan() {
+                    const userOpts = d.users.map(u => `<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
+                    const eventOpts = d.events.map(e => `<option value="${e.id}">${esc(e.title)} (${e.date})</option>`).join('');
+                    const today = new Date().toISOString().slice(0,10);
+                    main.innerHTML = `
+                        <h2>🗓️ Lộ trình & Các cột mốc 3 tháng</h2>
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px">Thêm cột mốc mới</h3>
+                            <div class="row">
+                                <div><label>Cột mốc / Sự kiện</label><input id="plTitle" placeholder="VD: Khai mạc cuộc thi"></div>
+                                <div><label>Thời hạn dự kiến</label><input id="plDate" type="date"></div>
+                                <div><label>Nội dung ghi chú</label><input id="plNote" placeholder="Ghi chú thêm..."></div>
+                                <div><label>Trạng thái</label><select id="plStatus">
+                                    <option value="todo">📋 Cần làm</option>
+                                    <option value="doing">⚙️ Đang tiến hành</option>
+                                    <option value="done">✔️ Hoàn thành</option>
+                                </select></div>
+                                <div><label>Người phụ trách</label><select id="plAssignee"><option value="">Chưa giao</option>${userOpts}</select></div>
+                                <div><label>Liên kết sự kiện</label><select id="plEventId"><option value="">Không liên kết</option>${eventOpts}</select></div>
+                                <div><button class="btn btn-gold btn-sm" onclick="addPlanMilestone()">+ Thêm mốc</button></div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline">
+                            ${[...d.plans].sort((a,b)=> a.date > b.date ? 1 : -1).map(p => {
+                                const isOverdue = p.date < today && p.status !== 'done';
+                                const statusLabel = p.status === 'todo' ? 'Cần làm' : p.status === 'doing' ? 'Đang tiến hành' : 'Hoàn thành';
+                                return `
+                                <div class="timeline-item">
+                                    <div class="timeline-date">${p.date}</div>
+                                    <div class="timeline-content">
+                                        <div style="display:flex; justify-content:space-between; align-items:center">
+                                            <h4><span class="status-dot ${p.status || 'todo'}"></span>${esc(p.title)}${isOverdue ? ' <span class="overdue-warning" style="display:inline">🚨 QUÁ HẠN</span>' : ''}</h4>
+                                            <button class="btn btn-line btn-sm" style="border:none;color:var(--danger)" onclick="deletePlanMilestone(${p.id})">🗑 Xóa</button>
+                                        </div>
+                                        <p>${esc(p.note)}</p>
+                                        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.8rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05)">
+                                            <span>📌 ${statusLabel}</span>
+                                            ${p.assignee ? '<span>👤 ' + esc(p.assignee) + '</span>' : ''}
+                                            ${p.eventId ? '<span>🎬 Liên kết: ' + esc((d.events.find(function(e) { return String(e.id) === String(p.eventId); }) || {}).title || '') + '</span>' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `}).join('')}
+                        </div>
+                    `;
+                },
                 events() {
                     main.innerHTML = `
                         <h2>🎬 Quản lý Sự kiện trang chủ</h2>
@@ -5886,14 +5350,11 @@
                                     </tr>
                                     ${pendings.map(a => `
                                         <tr>
-                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên')}</span></td>
+                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
                                             <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'}</td>
-                                            <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">
-                                                ${esc(a.intro)}
-                                                ${a.vision ? `<br><strong style="color:var(--gold-light)">Tầm nhìn:</strong> ${esc(a.vision)}` : ''}
-                                            </td>
+                                            <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">${esc(a.intro)}</td>
                                             <td data-label="Quyết định">
                                                 <button class="btn btn-gold btn-sm" onclick="approveApplication(${a.id})">✔ Duyệt</button>
                                                 <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication(${a.id})">✕ Từ chối</button>
@@ -7852,8 +7313,8 @@
                     id: nextId,
                     name: a.name,
                     email: userEmail,
-                    role: (a.type === 'organizer' || a.type === 'cofounder') ? 'organizer' : 'member',
-                    dept: a.dept || ''
+                    role: a.type === 'organizer' ? 'organizer' : 'member',
+                    dept: a.dept
                 };
                 await saveItem('users', newUser);
                 if (useFirebase) {
@@ -8488,7 +7949,7 @@
                     inputEl.innerHTML = `<input id="publicChatInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendPublicChatMsg()" style="flex:1">
                                          <button class="btn btn-gold btn-sm" onclick="sendPublicChatMsg()">Gửi</button>`;
                 } else {
-                    inputEl.innerHTML = `<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.9rem">👉 <a href="#" onclick="event.preventDefault();openModal('authModal');toggleAuth(true)" role="button" style="cursor:pointer;font-weight:600;color:var(--gold)">Đăng nhập</a> để gửi tin nhắn</div>`;
+                    inputEl.innerHTML = `<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.9rem">👉 <a href="/register?tab=login" target="_blank" style="cursor:pointer;font-weight:600;color:var(--gold)">Đăng nhập</a> để gửi tin nhắn</div>`;
                 }
             }
             setTimeout(() => { listEl.scrollTop = listEl.scrollHeight; }, 50);
@@ -8813,7 +8274,7 @@
                                             <input id="commentInput_${p.id}" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter') addComment(${p.id})">
                                             <button class="btn btn-gold btn-sm" onclick="addComment(${p.id})">Gửi</button>
                                         </div>
-                                    ` : '<div style="font-size:0.8rem;color:var(--text-muted);padding:4px 0"><a href="#" onclick="event.preventDefault();openModal(\'authModal\');toggleAuth(true)" role="button" style="cursor:pointer;color:var(--gold)">Đăng nhập</a> để bình luận</div>'}
+                                    ` : '<div style="font-size:0.8rem;color:var(--text-muted);padding:4px 0"><a href="/register?tab=login" target="_blank" style="cursor:pointer;color:var(--gold)">Đăng nhập</a> để bình luận</div>'}
                                 </div>
                             </div>
                         </div>

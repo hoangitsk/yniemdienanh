@@ -2566,7 +2566,7 @@
                 <a href="#" onclick="event.preventDefault();showPage('home');scrollTo(0,0);closeMobileMenu()" role="button">Trang chủ</a>
                 <a href="#" onclick="event.preventDefault();goSection('events');closeMobileMenu()" role="button">Sự kiện</a>
                 <a href="#" onclick="event.preventDefault();showPage('voting');closeMobileMenu()" role="button">Bình chọn</a>
-                <a href="#" onclick="event.preventDefault();showPage('community');closeMobileMenu()" role="button">Cộng đồng</a>
+                <a href="/community">Cộng đồng</a>
                 <a href="#" onclick="event.preventDefault();goSection('apply');closeMobileMenu()" role="button">Tuyển dụng</a>
                 <span id="navAuth"></span>
             </div>
@@ -2664,62 +2664,7 @@
 
         </div>
 
-        <!-- ============ CỘNG ĐỒNG (COMMUNITY PAGE) ============ -->
-        <div id="page-community" style="display:none;padding-top:90px">
-            <div class="section-head" style="margin-top:20px">
-                <h2>🌐 Cộng đồng Ý Niệm Điện Ảnh</h2>
-                <p>Kết nối, chia sẻ và cùng nhau phát triển đam mê điện ảnh.</p>
-            </div>
-            <div class="community-tabs">
-                <button class="active" onclick="showCommunityTab('feed')" id="ctab-feed">📰 Bảng tin</button>
-                <button onclick="showCommunityTab('chat')" id="ctab-chat">💬 Chat</button>
-                <button onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người <span style="display:inline-block;padding:2px 6px;border-radius:10px;background:rgba(99,209,158,0.15);color:var(--ok);font-size:0.7rem;margin-left:4px;font-weight:700">8 ●</span></button>
-            </div>
-            <div id="community-content">
-                <div id="communityFeed" class="community-grid">
-                    <!-- Bảng tin (Cột trái) -->
-                    <div>
-                        <!-- Nơi hiển thị bài viết -->
-                        <div id="feedContainer"></div>
-                    </div>
-                    
-                    <!-- Sidebar widgets (Cột phải) -->
-                    <div class="community-sidebar">
-                        <!-- Quick Actions Widget (Only for Admin/BTC) -->
-                        <div id="sidebarQuickActions" class="sidebar-widget" style="display:none">
-                            <h4>⚡ Thao tác nhanh</h4>
-                            <div class="quick-actions-grid">
-                                <button onclick="triggerQuickAction('casting')">➕ Đăng casting</button>
-                                <button onclick="triggerQuickAction('workshop')">➕ Tạo workshop</button>
-                                <button onclick="triggerQuickAction('btc')">➕ Tuyển BTC</button>
-                                <button onclick="triggerQuickAction('project')">➕ Đăng tiến độ</button>
-                                <button onclick="triggerQuickAction('featured')">🔥 Thêm hoạt động nổi bật</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Active Listings Widget -->
-                        <div class="sidebar-widget">
-                            <h4>🔥 Hoạt động nổi bật</h4>
-                            <div id="featuredListingsContainer"></div>
-                        </div>
-                    </div>
-                </div>
-                <div id="communityChat" style="display:none;max-width:800px;margin:0 auto">
-                    <div class="card" style="padding:24px">
-                        <div id="publicChatMsgList" class="chat-box" style="height:450px;margin-bottom:14px">
-                            <div style="color:var(--text-muted);text-align:center;padding:40px">Đang tải tin nhắn...</div>
-                        </div>
-                        <div id="publicChatInputArea" class="chat-input-row"></div>
-                    </div>
-                </div>
-                <div id="communityMembers" style="display:none;max-width:800px;margin:0 auto">
-                    <div class="card" style="padding:24px">
-                        <h3 style="color:var(--gold-light);margin-bottom:16px">👥 Thành viên cộng đồng</h3>
-                        <div id="memberList"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
 
         <!-- ============ BÌNH CHỌN (VOTING PAGE) ============ -->
         <div id="page-voting" style="display:none;padding-top:90px">
@@ -3130,36 +3075,15 @@
                 ],
                 applications: [],
                 events: [],
-                tasks: [
-                    { id: 1, title: 'Thiết kế poster chính thức cho Mùa 1', assignee: 'Admin Ý Niệm Điện Ảnh', dept: 'Ban Media (Thiết kế&Edit)', deadline: '2026-07-10', priority: 'high', status: 'doing' },
-                    { id: 2, title: 'Soạn thảo thư ngỏ gửi phụ huynh & nhà trường', assignee: 'Admin Ý Niệm Điện Ảnh', dept: 'Ban Nội Dung', deadline: '2026-07-12', priority: 'med', status: 'todo' }
-                ],
-                plans: [
-                    { id: 1, title: 'Tuyển BTC Core Member', date: '2026-07-10', note: 'Khởi động dự án & Mở đơn tuyển Ban tổ chức Core Member đặt nền móng' },
-                    { id: 2, title: '🎬 Phát động Giải đấu 1', date: '2026-08-01', note: 'Giải khởi động - Sân chơi làm phim ngắn/concept nhanh' },
-                    { id: 3, title: 'Chấm giải 1 & Mở Workshop', date: '2026-09-01', note: 'Đóng cổng, chấm giải & Công bố kết quả Giải đấu 1, đồng thời mở chuỗi Workshop bổ trợ' },
-                    { id: 4, title: '🏆 Bùng nổ Giải đấu 2', date: '2026-10-01', note: 'Giải đấu chính thức - Quy mô toàn quốc với thể lệ và chuyên môn nâng cao' },
-                    { id: 5, title: 'Tiếp nhận tác phẩm & Chấm giải 2', date: '2026-11-01', note: 'Tiếp nhận các tác phẩm dự thi & Hội đồng nghệ thuật bắt đầu chấm giải' },
-                    { id: 6, title: 'Gala trao giải tổng kết & Công chiếu', date: '2026-12-20', note: 'Tổ chức đêm Gala tổng kết & Công chiếu các tác phẩm xuất sắc nhất từ cả 2 giải đấu' }
-                ],
-                announcements: [
-                    { id: 1, title: 'Website quản trị nội bộ chính thức hoạt động!', content: 'Chào mừng tất cả mọi người đã tham gia Ban tổ chức Dự án Ý niệm điện ảnh. Vui lòng cập nhật thông tin và kiểm tra mục bảng Công việc được phân công nhé.', date: '2026-07-03' }
-                ],
-                budget: [
-                    { id: 1, type: 'in', label: 'Quỹ tài trợ ban đầu từ nhà hảo tâm', amount: 5000000, date: '2026-07-01' }
-                ],
-                docs: [
-                    { id: 1, title: 'Mẫu kịch bản phân cảnh chi tiết (Screenplay)', url: 'https://docs.google.com', note: 'Tài liệu hướng dẫn trình bày kịch bản chuẩn cho thí sinh' },
-                    { id: 2, title: 'Thư viện âm nhạc & SFX hợp lệ bản quyền', url: 'https://youtube.com', note: 'Tổng hợp danh sách các nguồn nhạc được phép sử dụng trong cuộc thi' }
-                ],
-                submissions: [
-                    { id: 1, title: "Khung hình ký ức", team: "Đội phim 10A2", votes: 42, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: 'approved', submittedBy: 'admin', date: '2026-07-01' },
-                    { id: 2, title: "Lặng im sau ống kính", team: "CLB Điện ảnh Trẻ", votes: 28, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: 'approved', submittedBy: 'admin', date: '2026-07-02' },
-                    { id: 3, title: "Chuyến tàu lúc hoàng hôn", team: "Nhóm Hạt Cát", votes: 35, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: 'approved', submittedBy: 'admin', date: '2026-07-03' }
-                ],
+                tasks: [],
+                plans: [],
+                announcements: [],
+                budget: [],
+                docs: [],
+                submissions: [],
                 votes: [],
                 feedback: [],
-                config: { stage: 'Xây dựng đội ngũ', voteStart: '', voteEnd: '' },
+                config: { stage: 'Khởi động', voteStart: '', voteEnd: '' },
                 content: { hero: { eyebrow: '', title: 'Ý Niệm<br>Điện Ảnh', lead: '', target: '', transparency: '', goal: '' }, events: { title: '', desc: '' }, about: { title: '', desc: '', cards: [] }, rules: { title: '', subtitle: '', col1Title: '', col1Items: [], col2Title: '', col2Text: '' }, apply: { title: '', desc: '', orgTitle: '', orgText: '', memberTitle: '', memberText: '', processTitle: 'Quy trình tuyển dụng', steps: [] }, footer: { text: '' } },
                 seq: 100
             };
@@ -3995,10 +3919,14 @@
         function showPage(p) {
             // Kiem tra che do bao tri
             if (localDB.config && localDB.config.maintenance && (!session || (session.role !== 'admin' && session.role !== 'organizer'))) {
-                document.getElementById('page-home').style.display = 'block';
-                document.getElementById('dashboard').style.display = 'none';
-                document.getElementById('page-community').style.display = 'none';
-                document.getElementById('page-voting').style.display = 'none';
+                const home = document.getElementById('page-home');
+                if (home) home.style.display = 'block';
+                const dash = document.getElementById('dashboard');
+                if (dash) dash.style.display = 'none';
+                const comm = document.getElementById('page-community');
+                if (comm) comm.style.display = 'none';
+                const voting = document.getElementById('page-voting');
+                if (voting) voting.style.display = 'none';
                 var homeEl = document.getElementById('page-home');
                 if (homeEl && !document.getElementById('maintenanceBanner')) {
                     var banner = document.createElement('div');
@@ -4009,13 +3937,17 @@
                 }
                 return;
             }
-            document.getElementById('page-home').style.display = p === 'home' ? 'block' : 'none';
-            document.getElementById('dashboard').style.display = p === 'dash' ? 'block' : 'none';
-            document.getElementById('page-community').style.display = p === 'community' ? 'block' : 'none';
-            document.getElementById('page-voting').style.display = p === 'voting' ? 'block' : 'none';
+            const home = document.getElementById('page-home');
+            if (home) home.style.display = p === 'home' ? 'block' : 'none';
+            const dash = document.getElementById('dashboard');
+            if (dash) dash.style.display = p === 'dash' ? 'block' : 'none';
+            const comm = document.getElementById('page-community');
+            if (comm) comm.style.display = p === 'community' ? 'block' : 'none';
+            const voting = document.getElementById('page-voting');
+            if (voting) voting.style.display = p === 'voting' ? 'block' : 'none';
             window.scrollTo(0, 0);
             renderAllPrizePools();
-            if (p === 'community') { showCommunityTab(communityCurTab); }
+            if (p === 'community') { if (comm) showCommunityTab(communityCurTab); }
             if (p === 'voting') { renderVoting(); }
         }
         function goSection(id) { 
@@ -4435,483 +4367,7 @@
             }
         }
 
-        async function doGoogleLogin() {
-            if (!authInstance) {
-                showToast("Đăng nhập Google chỉ khả dụng khi có kết nối Firebase.", "info");
-                return;
-            }
-            const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                const result = await authInstance.signInWithPopup(provider);
-                const firebaseUser = result.user;
 
-                // Try Firestore first
-                let userFound = false;
-                try {
-                    const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
-                    if (userDoc.exists) {
-                        const u = userDoc.data();
-                        const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
-                        session = { id: firebaseUser.uid, name: u.name, email: u.email, role: effectiveRole, dept: u.dept || '', phone: u.phone || '', school: u.school || '', className: u.className || '', interest: u.interest || '', intro: u.intro || '' };
-
-                        await dbInstance.collection('users').doc(firebaseUser.uid).set({ emailVerified: true, role: effectiveRole }, { merge: true });
-
-                        sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                        renderNav();
-                        updateStageDisplay();
-                        openDash();
-                        closeModal('authModal');
-                        userFound = true;
-                        return;
-                    }
-                } catch (fsErr) {
-                    console.warn("Firestore không khả dụng:", fsErr.message || fsErr);
-                }
-
-                // Try RTDB if Firestore didn't find user
-                if (!userFound && rtdbInstance) {
-                    try {
-                        const rtdbSnap = await rtdbInstance.ref('users/' + firebaseUser.uid).once('value');
-                        if (rtdbSnap.exists()) {
-                            const u = rtdbSnap.val();
-                            const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
-                            session = { id: firebaseUser.uid, name: u.name, email: u.email, role: effectiveRole, dept: u.dept || '', phone: u.phone || '', school: u.school || '', className: u.className || '', interest: u.interest || '', intro: u.intro || '' };
-                            sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                            renderNav();
-                            updateStageDisplay();
-                            openDash();
-                            closeModal('authModal');
-                            userFound = true;
-                            return;
-                        }
-                    } catch (rtdbErr) {
-                        console.warn("RTDB không khả dụng:", rtdbErr.message || rtdbErr);
-                    }
-                }
-
-                // Fallback to localDB
-                if (!userFound) {
-                    const localUser = localDB.users.find(u => u.email && u.email.toLowerCase() === firebaseUser.email.toLowerCase());
-                    if (localUser) {
-                        const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (localUser.role || 'member');
-                        session = { id: firebaseUser.uid, name: localUser.name, email: firebaseUser.email, role: effectiveRole, dept: localUser.dept || '', phone: localUser.phone || '', school: localUser.school || '', className: localUser.className || '', interest: localUser.interest || '', intro: localUser.intro || '' };
-                        sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                        renderNav();
-                        updateStageDisplay();
-                        openDash();
-                        closeModal('authModal');
-                        userFound = true;
-                        showToast("Đã đăng nhập. Firestore không khả dụng - dữ liệu chỉ lưu local.", "warning", 5000);
-                        return;
-                    }
-                }
-
-                // New Google user (not found anywhere)
-                if (!userFound) {
-                    tempGoogleUser = firebaseUser;
-                    document.getElementById('loginForm').style.display = 'none';
-                    document.getElementById('registerForm').style.display = 'none';
-                    document.getElementById('googleAdditionalForm').style.display = 'block';
-                    document.getElementById('ggName').value = firebaseUser.displayName || '';
-                    document.getElementById('ggEmail').value = firebaseUser.email || '';
-                    showToast("Vui lòng hoàn tất thông tin đăng ký.", "info", 5000);
-                }
-            } catch (err) {
-                console.error("Google Auth Error:", err);
-                if (err.code === 'auth/unauthorized-domain') {
-                    showToast("❌ Domain không được hỗ trợ đăng nhập Google!\n\n👉 Hướng dẫn sửa:\n1. Vào https://console.firebase.google.com\n2. Chọn project yniemdienanh-fb0b7\n3. Authentication → Settings → Authorized domains\n4. Thêm domain: " + window.location.hostname + "\n5. Lưu lại và thử đăng nhập lại", 'error', 8000);
-                } else if (err.code === 'auth/popup-blocked') {
-                    showToast("Trình duyệt đã chặn popup đăng nhập Google.", "error");
-                } else if (err.code === 'auth/popup-closed-by-user') {
-                    // Người dùng tự đóng popup, không cần thông báo
-                } else {
-                    showToast("Lỗi đăng nhập Google: " + (err.message || "Không thể kết nối."), "error");
-                }
-            }
-        }
-
-        async function submitGoogleAdditional() {
-            if (!tempGoogleUser) return;
-            const name = document.getElementById('ggName').value.trim();
-            const email = tempGoogleUser.email;
-            const phone = document.getElementById('ggPhone').value.trim();
-            const school = document.getElementById('ggSchool').value.trim();
-            const className = document.getElementById('ggClass').value.trim();
-            const interest = getInterest('ggInterest', 'ggInterestOther');
-            const intro = document.getElementById('ggIntro').value.trim();
-            const pass = document.getElementById('ggPass').value;
-            const m = document.getElementById('ggMsg');
-            m.className = 'form-msg err'; m.textContent = '';
-
-            if (!name || !phone || !school || !className || !interest) return m.textContent = 'Vui lòng điền đủ tất cả các trường bắt buộc!';
-            if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
-            if (pass && pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
-
-            let role = 'member';
-            let dept = '';
-
-            // Try Firestore for existing email, fallback to RTDB
-            try {
-                const snap = await dbInstance.collection('users').where('email', '==', email).get();
-                if (!snap.empty) {
-                    const preDoc = snap.docs[0];
-                    role = preDoc.data().role || 'member';
-                    dept = preDoc.data().dept || '';
-                    if (preDoc.id !== tempGoogleUser.uid) {
-                        await dbInstance.collection('users').doc(preDoc.id).delete();
-                    }
-                }
-            } catch (e) {
-                console.warn('Firestore không khả dụng, thử RTDB:', e.message || e);
-                try {
-                    const emailKey = email.replace(/\./g, ',');
-                    const emailIdxSnap = await rtdbInstance.ref('emailIndex/' + emailKey).once('value');
-                    const existingUid = emailIdxSnap.val();
-                    if (existingUid) {
-                        const existingUserSnap = await rtdbInstance.ref('users/' + existingUid).once('value');
-                        const preData = existingUserSnap.val();
-                        if (preData) {
-                            role = preData.role || 'member';
-                            dept = preData.dept || '';
-                            if (existingUid !== tempGoogleUser.uid) {
-                                await rtdbInstance.ref('users/' + existingUid).remove();
-                                await rtdbInstance.ref('emailIndex/' + emailKey).remove();
-                            }
-                        }
-                    }
-                } catch (rtdbErr) {
-                    console.warn('RTDB cũng không khả dụng:', rtdbErr.message || rtdbErr);
-                }
-            }
-
-            if (email.toLowerCase() === PROJECT_ADMIN_EMAIL) {
-                role = 'admin';
-            }
-
-            const newUser = { id: tempGoogleUser.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: true, createdAt: new Date().toISOString() };
-
-            // Save to Firestore if available
-            try {
-                await dbInstance.collection('users').doc(tempGoogleUser.uid).set(newUser);
-            } catch (e) {
-                console.warn('Firestore không khả dụng, chỉ lưu local:', e.message || e);
-            }
-
-            // Sync to RTDB if available
-            syncUserToRTDB(newUser);
-
-            // Set password in Firebase Auth if provided
-            if (pass && tempGoogleUser) {
-                try {
-                    await tempGoogleUser.updatePassword(pass);
-                } catch (e) {
-                    console.warn('Không thể đặt mật khẩu (có thể cần reauth):', e.message || e);
-                }
-            }
-
-            // Save to localDB (always)
-            localDB.users = localDB.users.filter(u => String(u.id) !== tempGoogleUser.uid);
-            const localUserEntry = { ...newUser };
-            if (pass) {
-                localUserEntry.passHash = btoa(pass);
-            }
-            localDB.users.push(localUserEntry);
-            localStorage.setItem('ynda_db', JSON.stringify(localDB));
-
-            session = { id: tempGoogleUser.uid, name, email, role, dept, phone, school, className, interest, intro };
-            sessionStorage.setItem('ynda_user', JSON.stringify(session));
-
-            renderNav();
-            updateStageDisplay();
-            openDash();
-            closeModal('authModal');
-
-            tempGoogleUser = null;
-            document.getElementById('ggPhone').value = '';
-            document.getElementById('ggSchool').value = '';
-            document.getElementById('ggClass').value = '';
-            document.getElementById('ggIntro').value = '';
-            document.getElementById('ggPass').value = '';
-        }
-
-        async function doRegister() {
-            const name = document.getElementById('rgName').value.trim();
-            const email = document.getElementById('rgEmail').value.trim().toLowerCase();
-            const phone = document.getElementById('rgPhone').value.trim();
-            const school = document.getElementById('rgSchool').value.trim();
-            const className = document.getElementById('rgClass').value.trim();
-            const interest = getInterest('rgInterest', 'rgInterestOther');
-            const intro = document.getElementById('rgIntro').value.trim();
-            const pass = document.getElementById('rgPass').value;
-            const m = document.getElementById('rgMsg'); 
-            m.className = 'form-msg err'; m.textContent = '';
-            
-            if (!name || !email || !phone || !school || !className || !interest || !pass) return m.textContent = 'Vui lòng điền đủ tất cả các trường bắt buộc!';
-            if (!document.getElementById('agreeTerms').checked) return m.textContent = 'Vui lòng đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.';
-            if (!/^[^\s@]+@gmail\.com$/i.test(email)) return m.textContent = 'Vui lòng đăng ký bằng địa chỉ Gmail hợp lệ.';
-            if (!/^0[0-9]{9}$/.test(phone.replace(/\s+/g, ''))) return m.textContent = 'Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).';
-            if (pass.length < 6) return m.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
-            
-            const turnstileOk = await verifyTurnstile('turnstile-register');
-            if (!turnstileOk) return m.textContent = 'Vui lòng hoàn tất xác thực bảo mật.';
-            
-            try {
-                let emailSent = false;
-                let emailErrorText = '';
-                if (authInstance) {
-                    const cred = await authInstance.createUserWithEmailAndPassword(email, pass);
-                    await cred.user.updateProfile({ displayName: name });
-                    
-                    const isAdmin = email === PROJECT_ADMIN_EMAIL;
-                    let role = 'member';
-                    let dept = '';
-                    
-                    if (isAdmin) {
-                        role = 'admin';
-                    } else {
-                        emailSent = false;
-                        try {
-                            const idToken = await cred.user.getIdToken();
-                            const ctrl = new AbortController();
-                            const timer = setTimeout(() => ctrl.abort(), 10000);
-                            const r = await fetch('/api/email/send-verification', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idToken, email, userName: name }),
-                                signal: ctrl.signal,
-                            });
-                            clearTimeout(timer);
-                            emailSent = r.ok;
-                            if (!r.ok) {
-                                const ed = await r.json().catch(() => ({}));
-                                console.warn('Email API error:', ed);
-                                emailErrorText = JSON.stringify({
-                                    adminErr: ed.adminError,
-                                    initErr: ed.adminInitError,
-                                    appsLen: ed.adminAppsLength,
-                                    hasEnv: ed.hasServiceAccountEnv,
-                                    restErr: ed.detail?.error?.message
-                                });
-                            }
-                        } catch (e) {
-                            console.warn('Email skip:', e.message);
-                            emailErrorText = 'Network: ' + e.message;
-                        }
-                        try {
-                            const snap = await dbInstance.collection('users').where('email', '==', email).get();
-                            if (!snap.empty) {
-                                const preDoc = snap.docs[0];
-                                role = preDoc.data().role || 'member';
-                                dept = preDoc.data().dept || '';
-                                if (preDoc.id !== cred.user.uid) {
-                                    await dbInstance.collection('users').doc(preDoc.id).delete();
-                                }
-                            }
-                        } catch (e) {
-                            console.warn('Firestore không khả dụng, bỏ qua kiểm tra email cũ:', e.message || e);
-                        }
-                    }
-                    
-                    const newUser = { id: cred.user.uid, name, email, phone, school, className, interest, intro, role, dept, emailVerified: isAdmin, createdAt: new Date().toISOString() };
-                    
-                    try {
-                        await dbInstance.collection('users').doc(cred.user.uid).set(newUser);
-                    } catch (e) {
-                        console.warn('Firestore không khả dụng, chỉ lưu local:', e.message || e);
-                    }
-                    
-                    localDB.users = localDB.users.filter(u => u.email.toLowerCase() !== email);
-                    localDB.users.push(newUser);
-                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
-
-                    syncUserToRTDB(newUser);
-                    
-                    if (isAdmin) {
-                        session = { id: cred.user.uid, name, email, role: 'admin', dept: 'Ban điều hành', phone, school, className, interest, intro };
-                        sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                        renderNav();
-                        updateStageDisplay();
-                        openDash();
-                        closeModal('authModal');
-                        return;
-                    }
-                    await authInstance.signOut();
-                } else {
-                    if (localDB.users.find(u => u.email === email)) return m.textContent = 'Email này đã được đăng ký.';
-                    const nextId = await getNextId();
-                    const newUser = { id: nextId, name, email, phone, school, className, interest, intro, pass, role: 'member', dept: '', emailVerified: true, createdAt: new Date().toISOString() };
-                    localDB.users.push(newUser);
-                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                }
-                
-                const isFirebaseMode = !!authInstance;
-                if (isFirebaseMode && email !== PROJECT_ADMIN_EMAIL) {
-                    if (emailSent) {
-                        showSuccessPopup(
-                            'Email xác thực đã được gửi từ <strong>yniemdienanh@gmail.com</strong>.',
-                            '📧 Mã xác nhận đã gửi — hãy mở Gmail và bấm link xác thực trong email.'
-                        );
-                    } else {
-                        showSuccessPopup(
-                            'Hệ thống gửi email xác thực đang gặp sự cố.',
-                            '⚠️ Chi tiết lỗi: ' + (emailErrorText || 'Vui lòng liên hệ Admin để được xác thực thủ công.'),
-                            true
-                        );
-                    }
-                } else {
-                    showSuccessPopup('Đăng ký tài khoản thành công!');
-                }
-                m.className = 'form-msg ok'; m.textContent = isFirebaseMode
-                    ? (emailSent ? '✅ Đã gửi email xác thực từ yniemdienanh@gmail.com!' : '✅ Đăng ký thành công! Admin sẽ xác thực thủ công.')
-                    : '✅ Đăng ký tài khoản thành công! Đang chuyển sang đăng nhập...';
-                document.getElementById('rgName').value = '';
-                document.getElementById('rgEmail').value = '';
-                document.getElementById('rgPhone').value = '';
-                document.getElementById('rgSchool').value = '';
-                document.getElementById('rgClass').value = '';
-                document.getElementById('rgIntro').value = '';
-                document.getElementById('rgPass').value = '';
-                setTimeout(() => toggleAuth(true), isFirebaseMode ? 4200 : 1200);
-            } catch (err) {
-                m.textContent = err.message || 'Lỗi đăng ký tài khoản.';
-            }
-        }
-
-        async function doLogin() {
-            const email = document.getElementById('liEmail').value.trim().toLowerCase();
-            const pass = document.getElementById('liPass').value;
-            const m = document.getElementById('liMsg');
-            m.className = 'form-msg err'; m.textContent = '';
-            
-            if (!email || !pass) return m.textContent = 'Vui lòng nhập email và mật khẩu!';
-            
-            try {
-                if (authInstance) {
-                    const cred = await authInstance.signInWithEmailAndPassword(email, pass);
-                    let isAdminApproved = false;
-                    if (!cred.user.emailVerified && email !== PROJECT_ADMIN_EMAIL) {
-                        try {
-                            const userDoc = await dbInstance.collection('users').doc(cred.user.uid).get();
-                            isAdminApproved = userDoc.exists && userDoc.data().emailVerified === true;
-                        } catch (verifyErr) {
-                            console.warn('Không thể kiểm tra xác thực admin:', verifyErr);
-                        }
-                    }
-                    if (!cred.user.emailVerified && !isAdminApproved && email !== PROJECT_ADMIN_EMAIL) {
-                        try {
-                            const idToken = await cred.user.getIdToken();
-                            const userDoc2 = await dbInstance.collection('users').doc(cred.user.uid).get().catch(() => null);
-                            const loginName = userDoc2?.data()?.name || email.split('@')[0];
-                            const ctrl = new AbortController();
-                            const timer = setTimeout(() => ctrl.abort(), 10000);
-                            await fetch('/api/email/send-verification', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idToken, email, userName: loginName }),
-                                signal: ctrl.signal,
-                            });
-                            clearTimeout(timer);
-                        } catch (e) {
-                            console.warn('Email skip:', e.message);
-                        }
-                        await authInstance.signOut();
-                        showToast('📧 EMAIL CHƯA XÁC THỰC!\n\nEmail xác thực mới đã được gửi từ yniemdienanh@gmail.com đến ' + email + '.\n\n👉 Hãy mở Gmail, bấm link xác thực rồi đăng nhập lại.', 'info', 8000);
-                        return m.textContent = 'Tài khoản chưa xác thực. Đã gửi lại email, hãy kiểm tra Gmail nhé!';
-                    }
-                    // onAuthStateChanged sẽ xử lý session + UI sau khi đăng nhập Firebase thành công
-                } else {
-                    const u = localDB.users.find(u => u.email === email && (u.pass === pass || u.passHash === btoa(pass)));
-                    if (!u) return m.textContent = 'Sai tài khoản hoặc mật khẩu!';
-                    if (u.locked) return m.textContent = 'Tài khoản đã bị khóa. Vui lòng liên hệ Admin để biết thêm chi tiết.';
-                    
-                    u.lastLogin = new Date().toISOString();
-                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                    session = { id: u.id, name: u.name, email: u.email, role: u.role, dept: u.dept };
-                    sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                    renderNav();
-                    updateStageDisplay();
-                    openDash();
-                }
-                closeModal('authModal');
-                document.getElementById('liEmail').value = '';
-                document.getElementById('liPass').value = '';
-            } catch (err) {
-                console.error("Login error:", err);
-                if (err.code === 'auth/user-not-found') {
-                    if (email === PROJECT_ADMIN_EMAIL) {
-                        m.textContent = 'Tài khoản Admin chưa tồn tại trong Firebase. Hãy bấm "Đăng ký" để tạo tài khoản Admin trước, hoặc dùng "Quên mật khẩu?" nếu đã có.';
-                    } else {
-                        m.textContent = 'Email chưa được đăng ký. Vui lòng tạo tài khoản trước.';
-                    }
-                } else if (err.code === 'auth/wrong-password') {
-                    m.textContent = 'Sai mật khẩu. Vui lòng thử lại.';
-                } else if (err.code === 'auth/too-many-requests') {
-                    m.textContent = 'Tài khoản tạm thời bị khóa do nhập sai quá nhiều lần. Thử lại sau vài phút.';
-                } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
-                    if (email === PROJECT_ADMIN_EMAIL) {
-                        m.textContent = 'Tài khoản Admin chưa được tạo hoặc sai mật khẩu. Hãy bấm "Đăng ký" để tạo tài khoản Admin, hoặc dùng "Quên mật khẩu?".';
-                    } else {
-                        m.textContent = 'Sai email hoặc mật khẩu. Vui lòng kiểm tra lại.';
-                    }
-                } else {
-                    m.textContent = 'Đăng nhập không thành công. Hãy kiểm tra lại email/mật khẩu.';
-                }
-            }
-        }
-
-        async function resetPassword() {
-            const email = document.getElementById('liEmail').value.trim();
-            if (!email) {
-                showToast('Vui lòng nhập email trước.', "info");
-                return;
-            }
-            if (!authInstance) {
-                showToast('Tính năng này cần kết nối Firebase.', "info");
-                return;
-            }
-            try {
-                const ctrl = new AbortController();
-                const timer = setTimeout(() => ctrl.abort(), 10000);
-                const r = await fetch('/api/email/send-password-reset', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email }),
-                    signal: ctrl.signal,
-                });
-                clearTimeout(timer);
-                if (!r.ok) {
-                    const ed = await r.json().catch(() => ({}));
-                    throw new Error(ed.error || 'Lỗi gửi email');
-                }
-                showToast('📧 ĐÃ GỬI EMAIL ĐẶT LẠI MẬT KHẨU!\n\nVui lòng kiểm tra hộp thư Gmail và bấm link để tạo mật khẩu mới.', 'success', 8000);
-            } catch (err) {
-                console.error("Reset password error:", err);
-                showToast('Lỗi gửi email: ' + (err.message || 'Không thể kết nối.'), "error");
-            }
-        }
-
-        async function resendVerification() {
-            const email = document.getElementById('liEmail').value.trim();
-            if (!email) {
-                showToast('Vui lòng nhập email trước.', "info");
-                return;
-            }
-            if (!authInstance) {
-                showToast('Tính năng này cần kết nối Firebase.', "info");
-                return;
-            }
-            try {
-                const methods = await authInstance.fetchSignInMethodsForEmail(email);
-                if (methods.length === 0) {
-                    showToast('Email chưa được đăng ký. Vui lòng đăng ký trước.', "error");
-                    return;
-                }
-                showToast(`📧 Email ${email} đã được đăng ký.\n\n👉 Hãy nhập MẬT KHẨU và bấm "Đăng nhập".\nNếu tài khoản chưa xác thực, hệ thống sẽ tự động gửi lại email xác thực cho bạn.\n\nNếu quên mật khẩu, bấm "Quên mật khẩu?" để đặt lại.`, 'info', 8000);
-            } catch (err) {
-                console.error("Resend verification error:", err);
-                showToast('Lỗi kiểm tra email: ' + (err.message || 'Không thể kết nối.'), "error");
-            }
-        }
 
         async function logout() {
             if (useFirebase) {

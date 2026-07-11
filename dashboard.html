@@ -23,25 +23,12 @@
     <script>
         // Core navigation functions – defined early so onclick attributes work
         function showPage(p) {
-            var home = document.getElementById('page-home');
             var dash = document.getElementById('dashboard');
-            var community = document.getElementById('page-community');
-            var voting = document.getElementById('page-voting');
-            if (home) home.style.display = p === 'home' ? 'block' : 'none';
-            if (dash) dash.style.display = p === 'dash' ? 'block' : 'none';
-            if (community) community.style.display = p === 'community' ? 'block' : 'none';
-            if (voting) voting.style.display = p === 'voting' ? 'block' : 'none';
+            if (dash) dash.style.display = 'block';
             window.scrollTo(0, 0);
-            try { renderAllPrizePools(); } catch(e) {}
-            if (p === 'community') { try { showCommunityTab(window.communityCurTab || 'feed'); } catch(e) {} }
-            if (p === 'voting') { try { renderVoting(); } catch(e) {} }
         }
         function goSection(id) {
-            showPage('home');
-            setTimeout(function() {
-                var el = document.getElementById(id);
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 80);
+            window.location.href = '/#' + id;
         }
         function toggleMobileMenu() {
             var navLinks = document.getElementById('navLinks');
@@ -2557,187 +2544,28 @@
 
         <!-- ============ HEADER / NAVBAR ============ -->
         <nav>
-            <div class="logo intro-item delay-logo" onclick="showPage('home');scrollTo(0,0)" aria-label="Trang chủ Ý Niệm Điện Ảnh">
+            <div class="logo intro-item delay-logo" onclick="window.location.href='/'" style="cursor:pointer" aria-label="Trang chủ Ý Niệm Điện Ảnh">
                 <img src="Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh" style="height: 48px; width: 48px; object-fit: cover; border-radius: 8px;">
-                <span class="logo-wordmark">Ý Niệm Điện Ảnh<small>Film community</small></span>
+                <span class="logo-wordmark">Ý Niệm Điện Ảnh<small>Khu vực nội bộ</small></span>
             </div>
             <div class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu điều hướng" role="button">☰</div>
             <div class="links" id="navLinks">
-                <a href="#" onclick="event.preventDefault();showPage('home');scrollTo(0,0);closeMobileMenu()" role="button">Trang chủ</a>
-                <a href="#" onclick="event.preventDefault();goSection('events');closeMobileMenu()" role="button">Sự kiện</a>
-                <a href="#" onclick="event.preventDefault();showPage('voting');closeMobileMenu()" role="button">Bình chọn</a>
-                <a href="#" onclick="event.preventDefault();showPage('community');closeMobileMenu()" role="button">Cộng đồng</a>
-                <a href="#" onclick="event.preventDefault();goSection('apply');closeMobileMenu()" role="button">Tuyển dụng</a>
+                <a href="/">Trang chủ</a>
                 <span id="navAuth"></span>
             </div>
         </nav>
 
-        <!-- ============ TRANG CHỦ (PUBLIC PAGE) ============ -->
-        <div id="page-home">
-            
-            <!-- HERO ZONE (2-column layout) -->
-            <div class="hero intro-hero">
-                <div class="hero-grid">
-                    <div id="heroContent">
-                        <div class="eyebrow intro-item delay-eyebrow">Dự án phi lợi nhuận về điện ảnh</div>
-                        <h1 class="intro-title delay-title">Ý Niệm<br>Điện Ảnh</h1>
-                        <p class="lead intro-item delay-lead">Nơi những khung hình đầu tiên cất lời.<br>Kiến tạo sân chơi sáng tạo dành cho học sinh – sinh viên trên toàn quốc.<br>Cùng xây dựng cộng đồng điện ảnh ngay từ những viên gạch đầu tiên.</p>
-                        <div class="hero-actions intro-item delay-actions">
-                            <button class="btn btn-gold" onclick="goSection('apply')">✨ Đăng ký tham gia <span class="arrow">→</span></button>
-                            <button class="btn btn-line" onclick="goSection('about')">🎬 Tìm hiểu dự án</button>
-                        </div>
-                    </div>
-                    <aside class="poster intro-item delay-poster">
-                        <img class="poster-brand" src="Logo/logo ngang.png" alt="Banner Ý Niệm Điện Ảnh">
-                        <div class="frame">
-                            <!-- Click để sửa giai đoạn (Chỉ Admin) -->
-                            <div class="ticker"><strong>Giai đoạn</strong><span id="currentStage" style="cursor:pointer; color:var(--gold-light); font-weight:800;" onclick="editStage()">Khởi động & Tuyển BTC</span></div>
-                            <div class="ticker"><strong>Cơ hội</strong><span id="heroTransparency">Đồng kiến tạo cộng đồng điện ảnh</span></div>
-                            <div class="ticker"><strong>Đặc quyền</strong><span id="heroGoal">Thành viên sáng lập đặt nền móng</span></div>
-                        </div>
-                    </aside>
-                </div>
-            </div>
 
-
-            <!-- PRIZE POOL WIDGET -->
-            <div id="prizePoolHome" class="scroll-reveal" style="margin-top: 40px; margin-bottom: 40px"></div>
-
-
-            <!-- EVENTS ONGOING/UPCOMING -->
-            <section id="events" class="scroll-reveal">
-                <div class="section-head" id="eventsHeading">
-                    <h2 id="eventsTitle">Sự kiện đang & sắp diễn ra</h2>
-                    <p id="eventsDesc">Nơi hội ngộ của những tâm hồn say mê điện ảnh. Theo dõi các hoạt động mới nhất từ dự án.</p>
-                </div>
-                <div class="grid events-grid" id="eventList"></div>
-            </section>
-
-            <!-- ABOUT THE PROJECT (Chi tiết từ Word Kế hoạch) -->
-            <section id="about" class="scroll-reveal">
-                <div class="section-head" id="aboutHeading">
-                    <h2 id="aboutTitle">Về Dự Án</h2>
-                    <p id="aboutDesc">Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án phi lợi nhuận, minh bạch 100%.</p>
-                </div>
+        <!-- ============ DỰ ÁN NỘI BỘ (DASHBOARD) ============ -->
+        <div id="dashboard">
+            <div class="dash-layout">
+                <!-- Sidebar Menu -->
+                <div class="side" id="sideMenu"></div>
                 
-                <div class="grid grid-3" id="aboutCards"></div>
-
-                <!-- Quy chế & Tiêu chí chấm điểm chính thức -->
-                <div class="rules-wrapper scroll-reveal" id="rulesContent">
-                    <h2 class="sec-title" style="font-size:1.8rem;margin-bottom:10px">Thể Lệ & Tiêu Chí Chấm Giải</h2>
-                    <p class="sec-sub" style="margin-bottom:30px">Thông tin kỹ thuật và nguyên tắc đánh giá từ Hội đồng chuyên môn</p>
-                    
-                    <div class="rules-split">
-                        <div class="rules-column">
-                            <h3>Phân hạng Thiết bị Công bằng</h3>
-                            <ul class="rules-list">
-                                <li><b>Hạng mục Ống Kính Di Động (Mobile):</b> Dành riêng cho phim quay bằng điện thoại, độ phân giải tối thiểu 1080p. Khuyến khích sự sáng tạo không giới hạn thiết bị.</li>
-                                <li><b>Hạng mục Ống Kính Điện Ảnh (Camera):</b> Dành cho máy ảnh, máy quay chuyên dụng (Mirrorless, DSLR...). Yêu cầu kỹ thuật tối thiểu 1080p, khuyến khích 4K.</li>
-                                <li><b>Thời lượng tác phẩm:</b> Từ 3 đến 7 phút (tính cả credit đầu/cuối), nộp bài qua liên kết Drive hoặc Youtube ẩn.</li>
-                            </ul>
-                        </div>
-                        <div class="rules-column">
-                            <!-- Sửa chấm điểm do bình chọn -->
-                            <h3>Hình thức chấm điểm</h3>
-                            <p style="font-size:0.95rem;color:#e2e8f0;line-height:1.7">
-                                Điểm đánh giá các tác phẩm dự thi được quyết định 100% bằng lượt **Bình chọn trực tuyến** từ cộng đồng. 
-                            </p>
-                            <p style="font-size:0.95rem;color:var(--text-muted);margin-top:14px;line-height:1.7">
-                                Để đảm bảo tính công bằng tối đa và tránh gian lận vote, hệ thống tích hợp công nghệ quét địa chỉ IP và mã thiết bị đặc biệt. Mỗi địa chỉ IP hoặc thiết bị chỉ được bình chọn 1 lần duy nhất cho mỗi tác phẩm.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-
-
-            <!-- RECRUITMENT / APPLY SECTION (2 cột) -->
-            <section id="apply" class="scroll-reveal">
-                <div class="section-head" id="applyHeading">
-                    <h2 id="applyTitle">Đồng hành cùng dự án</h2>
-                    <p id="applyDesc">Chọn vai trò của bạn để cùng thắp sáng đam mê điện ảnh.</p>
-                </div>
-                
-                <div class="apply-layout" id="applyContent"></div>
-            </section>
-
-        </div>
-
-        <!-- ============ CỘNG ĐỒNG (COMMUNITY PAGE) ============ -->
-        <div id="page-community" style="display:none;padding-top:90px">
-            <div class="section-head" style="margin-top:20px">
-                <h2>🌐 Cộng đồng Ý Niệm Điện Ảnh</h2>
-                <p>Kết nối, chia sẻ và cùng nhau phát triển đam mê điện ảnh.</p>
-            </div>
-            <div class="community-tabs">
-                <button class="active" onclick="showCommunityTab('feed')" id="ctab-feed">📰 Bảng tin</button>
-                <button onclick="showCommunityTab('chat')" id="ctab-chat">💬 Chat</button>
-                <button onclick="showCommunityTab('members')" id="ctab-members">👥 Mọi người <span style="display:inline-block;padding:2px 6px;border-radius:10px;background:rgba(99,209,158,0.15);color:var(--ok);font-size:0.7rem;margin-left:4px;font-weight:700">8 ●</span></button>
-            </div>
-            <div id="community-content">
-                <div id="communityFeed" class="community-grid">
-                    <!-- Bảng tin (Cột trái) -->
-                    <div>
-                        <!-- Nơi hiển thị bài viết -->
-                        <div id="feedContainer"></div>
-                    </div>
-                    
-                    <!-- Sidebar widgets (Cột phải) -->
-                    <div class="community-sidebar">
-                        <!-- Quick Actions Widget (Only for Admin/BTC) -->
-                        <div id="sidebarQuickActions" class="sidebar-widget" style="display:none">
-                            <h4>⚡ Thao tác nhanh</h4>
-                            <div class="quick-actions-grid">
-                                <button onclick="triggerQuickAction('casting')">➕ Đăng casting</button>
-                                <button onclick="triggerQuickAction('workshop')">➕ Tạo workshop</button>
-                                <button onclick="triggerQuickAction('btc')">➕ Tuyển BTC</button>
-                                <button onclick="triggerQuickAction('project')">➕ Đăng tiến độ</button>
-                                <button onclick="triggerQuickAction('featured')">🔥 Thêm hoạt động nổi bật</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Active Listings Widget -->
-                        <div class="sidebar-widget">
-                            <h4>🔥 Hoạt động nổi bật</h4>
-                            <div id="featuredListingsContainer"></div>
-                        </div>
-                    </div>
-                </div>
-                <div id="communityChat" style="display:none;max-width:800px;margin:0 auto">
-                    <div class="card" style="padding:24px">
-                        <div id="publicChatMsgList" class="chat-box" style="height:450px;margin-bottom:14px">
-                            <div style="color:var(--text-muted);text-align:center;padding:40px">Đang tải tin nhắn...</div>
-                        </div>
-                        <div id="publicChatInputArea" class="chat-input-row"></div>
-                    </div>
-                </div>
-                <div id="communityMembers" style="display:none;max-width:800px;margin:0 auto">
-                    <div class="card" style="padding:24px">
-                        <h3 style="color:var(--gold-light);margin-bottom:16px">👥 Thành viên cộng đồng</h3>
-                        <div id="memberList"></div>
-                    </div>
-                </div>
+                <!-- Main Dashboard Panel -->
+                <div class="dash-main" id="dashMain"></div>
             </div>
         </div>
-
-        <!-- ============ BÌNH CHỌN (VOTING PAGE) ============ -->
-        <div id="page-voting" style="display:none;padding-top:90px">
-            <div id="prizePoolVoting" style="margin-top: 20px; margin-bottom: 30px"></div>
-            <div id="votingRegisterBanner" style="max-width:700px;margin:0 auto 20px"></div>
-            <section id="voting">
-                <div class="section-head">
-                    <h2>🗳 Bình chọn tác phẩm dự thi</h2>
-                    <p>Hãy bình chọn cho những thước phim ngắn ấn tượng nhất từ các đội thi. Mỗi thiết bị/địa chỉ IP chỉ được vote 1 lần duy nhất để chống gian lận.</p>
-                    <div id="votingActions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px">
-                        <button class="btn btn-gold" onclick="openSubmitModal()">📤 Nộp bài dự thi</button>
-                    </div>
-                </div>
-                <div class="grid grid-3" id="votingList"></div>
-            </section>
-        </div>
-
-
 
         <!-- ============ FOOTER ============ -->
         <footer>
@@ -2765,7 +2593,188 @@
         <span class="fab-icon">💬</span>
     </button>
 
+    <!-- ============ AUTHENTICATION MODAL (ĐĂNG NHẬP / ĐĂNG KÝ) ============ -->
+    <div class="modal" id="authModal">
+        <div class="modal-box">
+            <span class="close-x" onclick="closeModal('authModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
+            
+            <!-- Login Form -->
+            <div id="loginForm">
+                <h3>Đăng Nhập Khu Vực Nội Bộ</h3>
+                <label>Email</label>
+                <input id="liEmail" type="email" placeholder="email@gmail.com">
+                <label>Mật khẩu</label>
+                <input id="liPass" type="password" placeholder="••••••">
+                <div class="form-msg" id="liMsg"></div>
+                <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="doLogin()">Đăng nhập</button>
+                <p style="margin-top:10px;font-size:0.8rem;text-align:center">
+                    <a href="#" onclick="event.preventDefault();resetPassword()" role="button" style="cursor:pointer;color:var(--text-muted);text-decoration:underline">Quên mật khẩu?</a>
+                    <span style="color:var(--text-muted);margin:0 6px">·</span>
+                    <a href="#" onclick="event.preventDefault();resendVerification()" role="button" style="cursor:pointer;color:var(--text-muted);text-decoration:underline">Gửi lại email xác thực</a>
+                </p>
+                
+                <div style="display:flex; align-items:center; margin: 16px 0 8px 0;">
+                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
+                    <span style="padding: 0 10px; font-size: 0.8rem; color: var(--text-muted);">Hoặc</span>
+                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
+                </div>
+                <button class="btn btn-line" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px" onclick="doGoogleLogin()">
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.58-5.05-3.71H.92v2.32C2.4 15.96 5.48 18 9 18z"/>
+                        <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V4.98H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4.02l3.03-2.32z"/>
+                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.89 11.43 0 9 0 5.48 0 2.4 2.04.92 4.98l3.03 2.32C4.66 5.16 6.65 3.58 9 3.58z"/>
+                    </svg>
+                    Đăng nhập bằng Google
+                </button>
 
+                <p style="margin-top:18px;font-size:0.85rem;text-align:center;color:var(--text-muted)">
+                    Bạn chưa có tài khoản? <a href="#" onclick="event.preventDefault();toggleAuth(false)" role="button" style="cursor:pointer;font-weight:600">Đăng ký thành viên</a>
+                </p>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="registerForm" style="display:none">
+                <h3>Tạo Tài Khoản Thành Viên</h3>
+                <label>Họ và tên</label>
+                <input id="rgName" placeholder="Nguyễn Văn A">
+                <label>Email</label>
+                <input id="rgEmail" type="email" placeholder="email@gmail.com">
+                <label>Số điện thoại / Zalo</label>
+                <input id="rgPhone" type="tel" placeholder="09xxxxxxxx">
+                <label>Trường / đơn vị học tập</label>
+                <input id="rgSchool" placeholder="Tên trường của bạn">
+                <label>Lớp / khoa / năm học</label>
+                <input id="rgClass" placeholder="Ví dụ: 11A1, Khoa Truyền thông, Năm 1">
+                <label>Vai trò quan tâm</label>
+                <select id="rgInterest" onchange="toggleInterestOther('rgInterest','rgInterestOther')">
+                    <option value="Khán giả (Bình chọn tác phẩm)">Khán giả (Bình chọn tác phẩm)</option>
+                    <option value="Thí sinh / Người làm phim (Đăng ký đội thi)">Thí sinh / Người làm phim (Đăng ký đội thi)</option>
+                    <option value="Ban tổ chức / Cộng tác viên dự án">Ban tổ chức / Cộng tác viên dự án</option>
+                    <option value="Khách mời / Người tham gia sự kiện (Workshop, Gala...)">Khách mời / Người tham gia sự kiện (Workshop, Gala...)</option>
+                    <option value="Làm phim - Độc lập (Fulltask)">Làm phim - Độc lập (Fulltask)</option>
+                    <option value="Làm phim - Đạo diễn">Làm phim - Đạo diễn</option>
+                    <option value="Làm phim - Biên kịch">Làm phim - Biên kịch</option>
+                    <option value="Làm phim - Quay phim / DOP">Làm phim - Quay phim / DOP</option>
+                    <option value="Làm phim - Dựng phim / Editor">Làm phim - Dựng phim / Editor</option>
+                    <option value="Làm phim - Diễn viên">Làm phim - Diễn viên</option>
+                    <option value="Làm phim - Thiết kế / Mỹ thuật">Làm phim - Thiết kế / Mỹ thuật</option>
+                    <option value="Làm phim - Âm thanh / Nhạc phim">Làm phim - Âm thanh / Nhạc phim</option>
+                    <option value="Khác (nhập bên dưới)">Khác (nhập bên dưới)</option>
+                </select>
+                <input id="rgInterestOther" type="text" placeholder="Nhập vai trò khác..." style="display:none;margin-top:6px">
+                <label>Giới thiệu ngắn (Không bắt buộc)</label>
+                <textarea id="rgIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
+                <p style="font-size:0.78rem;color:var(--text-muted);margin-top:6px">Sau khi tạo tài khoản, hệ thống sẽ gửi email xác thực. Nếu chưa thấy email, hãy kiểm tra cả hòm thư rác/spam.</p>
+                <label>Mật khẩu (Tối thiểu 6 ký tự)</label>
+                <input id="rgPass" type="password" placeholder="••••••">
+                <div class="form-msg" id="rgMsg"></div>
+                <div id="turnstile-register" style="margin-top:16px;display:flex;justify-content:center"></div>
+                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:var(--text-muted);margin-top:12px">
+                    <input id="agreeTerms" type="checkbox" style="margin-top:3px;width:auto;min-width:auto;flex-shrink:0">
+                    <span>Tôi đồng ý với <a href="/terms" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Điều khoản sử dụng</a> và <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Chính sách quyền riêng tư</a>.</span>
+                </label>
+                <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="doRegister()">Tạo tài khoản</button>
+                
+                <div style="display:flex; align-items:center; margin: 16px 0 8px 0;">
+                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
+                    <span style="padding: 0 10px; font-size: 0.8rem; color: var(--text-muted);">Hoặc</span>
+                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
+                </div>
+                <button class="btn btn-line" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px" onclick="doGoogleLogin()">
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.58-5.05-3.71H.92v2.32C2.4 15.96 5.48 18 9 18z"/>
+                        <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V4.98H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4.02l3.03-2.32z"/>
+                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.89 11.43 0 9 0 5.48 0 2.4 2.04.92 4.98l3.03 2.32C4.66 5.16 6.65 3.58 9 3.58z"/>
+                    </svg>
+                    Đăng ký bằng Google
+                </button>
+
+                <p style="margin-top:18px;font-size:0.85rem;text-align:center;color:var(--text-muted)">
+                    Đã có tài khoản? <a href="#" onclick="event.preventDefault();toggleAuth(true)" role="button" style="cursor:pointer;font-weight:600">Đăng nhập ngay</a>
+                </p>
+            </div>
+            
+            <!-- Google Additional Info Form -->
+            <div id="googleAdditionalForm" style="display:none">
+                <h3>Hoàn Tất Thông Tin Tài Khoản</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:14px">Bạn đang đăng ký bằng tài khoản Google. Vui lòng bổ sung các thông tin liên hệ dưới đây để hoàn tất.</p>
+                <label>Họ và tên</label>
+                <input id="ggName" placeholder="Nguyễn Văn A">
+                <label>Email</label>
+                <input id="ggEmail" type="email" disabled style="background:rgba(255,255,255,0.05);color:var(--text-muted);cursor:not-allowed">
+                <label>Số điện thoại / Zalo</label>
+                <input id="ggPhone" type="tel" placeholder="09xxxxxxxx">
+                <label>Trường / đơn vị học tập</label>
+                <input id="ggSchool" placeholder="Tên trường của bạn">
+                <label>Lớp / khoa / năm học</label>
+                <input id="ggClass" placeholder="Ví dụ: 11A1, Khoa Truyền thông, Năm 1">
+                <label>Vai trò quan tâm</label>
+                <select id="ggInterest" onchange="toggleInterestOther('ggInterest','ggInterestOther')">
+                    <option value="Khán giả (Bình chọn tác phẩm)">Khán giả (Bình chọn tác phẩm)</option>
+                    <option value="Thí sinh / Người làm phim (Đăng ký đội thi)">Thí sinh / Người làm phim (Đăng ký đội thi)</option>
+                    <option value="Ban tổ chức / Cộng tác viên dự án">Ban tổ chức / Cộng tác viên dự án</option>
+                    <option value="Khách mời / Người tham gia sự kiện (Workshop, Gala...)">Khách mời / Người tham gia sự kiện (Workshop, Gala...)</option>
+                    <option value="Làm phim - Độc lập (Fulltask)">Làm phim - Độc lập (Fulltask)</option>
+                    <option value="Làm phim - Đạo diễn">Làm phim - Đạo diễn</option>
+                    <option value="Làm phim - Biên kịch">Làm phim - Biên kịch</option>
+                    <option value="Làm phim - Quay phim / DOP">Làm phim - Quay phim / DOP</option>
+                    <option value="Làm phim - Dựng phim / Editor">Làm phim - Dựng phim / Editor</option>
+                    <option value="Làm phim - Diễn viên">Làm phim - Diễn viên</option>
+                    <option value="Làm phim - Thiết kế / Mỹ thuật">Làm phim - Thiết kế / Mỹ thuật</option>
+                    <option value="Làm phim - Âm thanh / Nhạc phim">Làm phim - Âm thanh / Nhạc phim</option>
+                    <option value="Khác (nhập bên dưới)">Khác (nhập bên dưới)</option>
+                </select>
+                <input id="ggInterestOther" type="text" placeholder="Nhập vai trò khác..." style="display:none;margin-top:6px">
+                <label>Giới thiệu ngắn (Không bắt buộc)</label>
+                <textarea id="ggIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
+                <label>Mật khẩu <span style="color:var(--text-muted);font-size:0.75rem">(tùy chọn — để trống nếu chỉ muốn đăng nhập bằng Google)</span></label>
+                <input id="ggPass" type="password" placeholder="Nhập mật khẩu nếu muốn đăng nhập bằng email">
+                <div class="form-msg" id="ggMsg"></div>
+                <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitGoogleAdditional()">Hoàn tất đăng ký</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ APPLICATION FORM MODAL (ĐƠN APPLY) ============ -->
+    <div class="modal" id="applyModal">
+        <div class="modal-box">
+            <span class="close-x" onclick="closeModal('applyModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
+            <h3 id="applyTitle">Apply Đơn Tuyển Dụng</h3>
+            
+            <label for="apName">Họ và tên *</label>
+            <input id="apName" name="name" required placeholder="Họ và tên đầy đủ">
+            <div class="error-hint">Họ và tên không được để trống!</div>
+            
+            <label for="apEmail">Email liên hệ *</label>
+            <input id="apEmail" name="email" type="email" required placeholder="email@gmail.com">
+            <div class="error-hint">Định dạng Email không hợp lệ (ví dụ: email@gmail.com)!</div>
+            
+            <label for="apPhone">Số điện thoại *</label>
+            <input id="apPhone" name="phone" type="tel" required placeholder="Số điện thoại Zalo (10 chữ số)">
+            <div class="error-hint">Số điện thoại Zalo phải bao gồm 10 chữ số hợp lệ!</div>
+            
+            <!-- Phân ban cho BTC -->
+            <div id="apRoleWrap">
+                <label for="apDept">Phân ban bạn muốn ứng tuyển *</label>
+                <select id="apDept" name="dept">
+                    <option>Ban Media (Thiết kế&Edit)</option>
+                    <option>Ban duyệt bài</option>
+                    <option>Ban Nội Dung</option>
+                    <option>Ban Nhân Sự</option>
+                    <option>Ban Truyền Thông</option>
+                </select>
+            </div>
+            
+            <label for="apIntro">Giới thiệu bản thân & lý do muốn đồng hành *</label>
+            <textarea id="apIntro" name="intro" required placeholder="Hãy giới thiệu một chút về bản thân, các dự án trước đây (nếu có) và mong muốn của bạn khi tham gia (tối thiểu 20 ký tự)..."></textarea>
+            <div class="error-hint">Mục giới thiệu bản thân cần dài tối thiểu 20 ký tự!</div>
+            
+            <div class="form-msg" id="apMsg"></div>
+            <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitApply()">Gửi đơn ứng tuyển</button>
+        </div>
+    </div>
 
     <!-- ============ SUBMIT FILM MODAL ============ -->
     <div class="modal" id="submitModal">
@@ -3551,6 +3560,8 @@
                         } else {
                             session = null;
                             sessionStorage.removeItem('ynda_user');
+                            window.location.href = '/register';
+                            return;
                         }
                         renderNav();
                         renderFeed();
@@ -3558,12 +3569,22 @@
                         renderAllPrizePools();
                         updateStageDisplay();
                         renderAllContent();
-
+                        if (session) {
+                            openDash();
+                        }
                     });
                 } catch (err) {
                     console.error("Lỗi kết nối Firebase Firestore:", err);
                     useFirebase = false;
                     loadLocalStorage();
+                    const stored = sessionStorage.getItem('ynda_user');
+                    if (stored) {
+                        try { session = JSON.parse(stored); } catch(e){}
+                    }
+                    if (!session) {
+                        window.location.href = '/register';
+                        return;
+                    }
                     renderEvents();
                     renderVoting();
                     renderNav();
@@ -3572,10 +3593,28 @@
                     renderAllPrizePools();
                     updateStageDisplay();
                     renderAllContent();
+                    openDash();
                 }
             } else {
                 loadLocalStorage();
                 showOfflineWarning();
+                const stored = sessionStorage.getItem('ynda_user');
+                if (stored) {
+                    try { session = JSON.parse(stored); } catch(e){}
+                }
+                if (!session) {
+                    window.location.href = '/register';
+                    return;
+                }
+                renderEvents();
+                renderVoting();
+                renderNav();
+                renderFeed();
+                renderPublicChat();
+                renderAllPrizePools();
+                updateStageDisplay();
+                renderAllContent();
+                openDash();
             }
 
             // Kiểm tra và hiển thị kết quả redirect thanh toán từ PayOS
@@ -3901,13 +3940,13 @@
 
         // ================= UI AUXILIARY FUNCTIONS =================
         function openModal(id) {
-            const el = document.getElementById(id);
-            if (el) el.classList.add('open');
+            if (id === 'authModal') {
+                tempGoogleUser = null;
+                toggleAuth(true);
+            }
+            document.getElementById(id).classList.add('open');
         }
-        function closeModal(id) {
-            const el = document.getElementById(id);
-            if (el) el.classList.remove('open');
-        }
+        function closeModal(id) { document.getElementById(id).classList.remove('open') }
         // Đóng modal khi bấm phím Esc
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -3993,37 +4032,12 @@
             if (ggForm) ggForm.style.display = 'none';
         }
         function showPage(p) {
-            // Kiem tra che do bao tri
-            if (localDB.config && localDB.config.maintenance && (!session || (session.role !== 'admin' && session.role !== 'organizer'))) {
-                document.getElementById('page-home').style.display = 'block';
-                document.getElementById('dashboard').style.display = 'none';
-                document.getElementById('page-community').style.display = 'none';
-                document.getElementById('page-voting').style.display = 'none';
-                var homeEl = document.getElementById('page-home');
-                if (homeEl && !document.getElementById('maintenanceBanner')) {
-                    var banner = document.createElement('div');
-                    banner.id = 'maintenanceBanner';
-                    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,12,20,0.95);z-index:99999;display:flex;align-items:center;justify-content:center';
-                    banner.innerHTML = '<div style="text-align:center;max-width:500px;padding:40px"><div style="font-size:64px;margin-bottom:20px">🔧</div><h2 style="color:var(--gold-light);margin-bottom:16px">He thong dang bao tri</h2><p style="color:var(--text-muted);line-height:1.7">' + esc(localDB.config.maintenanceMsg || 'Chung toi dang nang cap he thong. Vui long quay lai sau.') + '</p></div>';
-                    document.body.appendChild(banner);
-                }
-                return;
-            }
-            document.getElementById('page-home').style.display = p === 'home' ? 'block' : 'none';
-            document.getElementById('dashboard').style.display = p === 'dash' ? 'block' : 'none';
-            document.getElementById('page-community').style.display = p === 'community' ? 'block' : 'none';
-            document.getElementById('page-voting').style.display = p === 'voting' ? 'block' : 'none';
+            const dash = document.getElementById('dashboard');
+            if (dash) dash.style.display = 'block';
             window.scrollTo(0, 0);
-            renderAllPrizePools();
-            if (p === 'community') { showCommunityTab(communityCurTab); }
-            if (p === 'voting') { renderVoting(); }
         }
         function goSection(id) { 
-            showPage('home'); 
-            setTimeout(() => {
-                const el = document.getElementById(id);
-                if(el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 80); 
+            window.location.href = '/#' + id;
         }
         function toggleMobileMenu() {
             const navLinks = document.getElementById('navLinks');
@@ -4303,24 +4317,18 @@
             const contentEl = document.getElementById('applyContent');
             if (contentEl) {
                 contentEl.innerHTML = `
-                    <div class="split-cards" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:20px; width:100%; margin-bottom: 24px;">
-                        <div class="card">
-                            <span class="pill">Apply co-founder</span>
-                            <h3>Đồng sáng lập dự án</h3>
-                            <p>Nhóm nòng cốt sáng lập, đồng kiến tạo chiến lược và định hướng dài hạn cho dự án Ý Niệm Điện Ảnh.</p>
-                            <a href="/register?tab=cofounder" target="_blank" class="btn btn-gold" style="margin-top:20px; text-decoration:none; display:inline-flex">Apply Co-founder</a>
-                        </div>
+                    <div class="split-cards">
                         <div class="card">
                             <span class="pill">Apply ban tổ chức</span>
                             <h3>${c.orgTitle}</h3>
                             <p>${c.orgText}</p>
-                            <a href="/register?tab=organizer" target="_blank" class="btn btn-gold" style="margin-top:20px; text-decoration:none; display:inline-flex">Apply Ban Tổ Chức</a>
+                            <button class="btn btn-gold" style="margin-top:20px" onclick="openApply('organizer')">Apply Ban Tổ Chức</button>
                         </div>
                         <div class="card">
                             <span class="pill">Thành viên dự án</span>
                             <h3>${c.memberTitle}</h3>
                             <p>${c.memberText}</p>
-                            <a href="/register?tab=register" target="_blank" class="btn btn-line" style="margin-top:20px; text-decoration:none; display:inline-flex">Tạo Tài Khoản</a>
+                            <button class="btn btn-line" style="margin-top:20px" onclick="openModal('authModal');toggleAuth(false)">Tạo Tài Khoản</button>
                         </div>
                     </div>
                     <div class="card" style="padding:36px">
@@ -4930,13 +4938,13 @@
                 const isMember = session.role === 'member';
                 var unreadCount = (localDB.notifications||[]).filter(function(n){return n.targetAll||n.userId===session.id;}).filter(function(n){return !n.read;}).length;
                 el.innerHTML = `<span class="chip" style="margin-right:10px">👤 ${esc(session.name)} (${session.role === 'admin' ? 'Admin' : session.role === 'organizer' ? 'BTC' : 'Thành viên'})</span>
-                                <a href="/dashboard?tab=notifications" class="btn btn-line btn-sm" style="position:relative;margin-right:6px" title="Thông báo">🔔${unreadCount>0?'<span style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:10px;font-weight:700">'+unreadCount+'</span>':''}</a>
-                                <a href="${isMember ? '/dashboard?tab=profile' : '/dashboard'}" class="btn btn-gold btn-sm">${isMember ? '👤 Hồ sơ' : '🔐 Khu vực nội bộ'}</a>
+                                <button class="btn btn-line btn-sm" style="position:relative;margin-right:6px" onclick="openDash();setTimeout(function(){renderTab('notifications');},50)" title="Thông báo">🔔${unreadCount>0?'<span style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:10px;font-weight:700">'+unreadCount+'</span>':''}</button>
+                                <button class="btn btn-gold btn-sm" onclick="${isMember ? "openProfilePage()" : "openDash()"}">${isMember ? '👤 Hồ sơ' : '🔐 Khu vực nội bộ'}</button>
                                 <button class="btn btn-line btn-sm" style="margin-left:8px" onclick="logout()">Thoát</button>`;
             } else {
-                el.innerHTML = `<a href="/register?tab=organizer" target="_blank" class="btn btn-gold btn-sm" style="margin-right:6px">🔥 Apply BTC</a>
-                                <a href="/register?tab=register" target="_blank" class="btn btn-line btn-sm" style="margin-right:6px">Tạo Tài Khoản</a>
-                                <a href="/register?tab=login" target="_blank" style="font-size:0.85rem;color:var(--text-muted);cursor:pointer;font-weight:500">Đăng nhập</a>`;
+                el.innerHTML = `<button class="btn btn-gold btn-sm" onclick="openApply('organizer')" style="margin-right:6px">🔥 Apply BTC</button>
+                                <button class="btn btn-line btn-sm" onclick="openModal('authModal');toggleAuth(false)" style="margin-right:6px">Tạo Tài Khoản</button>
+                                <a href="#" onclick="event.preventDefault();openModal('authModal');toggleAuth(true)" role="button" style="font-size:0.85rem;color:var(--text-muted);cursor:pointer;font-weight:500">Đăng nhập</a>`;
             }
         }
 
@@ -5023,7 +5031,7 @@
             const bannerEl = document.getElementById('votingRegisterBanner');
             if (bannerEl) {
                 if (!session) {
-                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">📌 <a href="/register?tab=login" target="_blank" style="cursor:pointer;color:var(--gold);font-weight:600">Đăng nhập</a> để nộp bài dự thi hoặc bình chọn!</p></div>';
+                    bannerEl.innerHTML = '<div class="prize-pool" style="padding:16px 20px;text-align:center"><p style="color:var(--text-muted);margin:0">📌 <a href="#" onclick="event.preventDefault();openModal(\'authModal\');toggleAuth(true)" role="button" style="cursor:pointer;color:var(--gold);font-weight:600">Đăng nhập</a> để nộp bài dự thi hoặc bình chọn!</p></div>';
                 } else {
                     bannerEl.innerHTML = '<div class="prize-pool" style="padding:12px 20px;text-align:center"><p style="color:#22c55e;margin:0">🎉 Hãy đăng ký tham gia các dự án bên dưới để nộp bài dự thi của bạn!</p></div>';
                 }
@@ -5059,7 +5067,7 @@
                             </div>
                         </div>
                         
-                        ${session ? `<button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>` : `<div style="text-align:center;margin-top:16px"><p style="color:var(--text-muted);font-size:0.85rem"><a href="/register?tab=login" target="_blank" style="color:var(--gold);cursor:pointer;font-weight:600">Đăng ký / Đăng nhập</a> để bình chọn</p></div>`}
+                        ${session ? `<button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>` : `<div style="text-align:center;margin-top:16px"><p style="color:var(--text-muted);font-size:0.85rem"><a href="#" onclick="event.preventDefault();openModal('authModal');toggleAuth(false)" role="button" style="color:var(--gold);cursor:pointer;font-weight:600">Đăng ký / Đăng nhập</a> để bình chọn</p></div>`}
                         <div style="display:flex;gap:8px;margin-top:10px">
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${s.id}, '${esc(s.title)}')">📤 Share Facebook</button>
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="copyVoteLink(${s.id})">🔗 Copy link</button>
@@ -5071,7 +5079,7 @@
 
         // Chức năng bình chọn chống gian lận (quét IP thiết bị và chặn cookie/localstorage)
         async function castVote(id, e) {
-            if (!session) { window.open('/register?tab=login', '_blank'); return showToast('Vui lòng đăng ký / đăng nhập để bình chọn!', 'info'); }
+            if (!session) { openModal('authModal'); toggleAuth(false); return showToast('Vui lòng đăng ký / đăng nhập để bình chọn!', 'info'); }
             const vOpen = isVoteOpen();
             if (!vOpen.open) return showToast(vOpen.msg, 'info');
             // 1. Kiểm tra nhanh thiết bị qua LocalStorage để chặn bình chọn nhiều lần trên cùng 1 trình duyệt
@@ -5136,7 +5144,23 @@
         // ================= SUBMIT APPLICATION & VALIDATION =================
         let applyType = 'member';
         function openApply(type) {
-            window.open('/register?tab=' + (type === 'organizer' ? 'organizer' : 'register'), '_blank');
+            applyType = type;
+            document.getElementById('applyTitle').textContent = type === 'organizer' ? '🎬 Đơn ứng tuyển Ban Tổ Chức' : '🍿 Đăng ký làm Thành viên dự án';
+            document.getElementById('apRoleWrap').style.display = type === 'organizer' ? 'block' : 'none';
+            
+            // Reset form states
+            const formFields = ['apName', 'apEmail', 'apPhone', 'apIntro'];
+            formFields.forEach(id => {
+                const field = document.getElementById(id);
+                if (field) {
+                    field.classList.remove('invalid');
+                    field.value = '';
+                }
+            });
+            const msg = document.getElementById('apMsg');
+            if (msg) msg.textContent = '';
+
+            openModal('applyModal');
         }
 
         async function submitApply() {
@@ -5359,7 +5383,6 @@
             overview: { icon: '📊', label: 'Tổng quan', roles: ['admin', 'organizer', 'member'] },
             profile: { icon: '👤', label: 'Hồ sơ của tôi', roles: ['admin', 'organizer', 'member'] },
             tasks: { icon: '✅', label: 'Bảng Công việc', roles: ['admin', 'organizer', 'member'] },
-            plan: { icon: '🗓️', label: 'Lộ trình 3 tháng', roles: ['admin', 'organizer'] },
             events: { icon: '🎬', label: 'Quản lý sự kiện', roles: ['admin', 'organizer'] },
             members: { icon: '👥', label: 'Đơn tuyển & Nhân sự', roles: ['admin', 'organizer'] },
             announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'member'] },
@@ -5419,19 +5442,21 @@
 
         let curTab = 'overview';
         function openDash() {
-            if (!session) {
-                window.open('/register?tab=login', '_blank');
-            } else {
-                window.location.href = '/dashboard';
+            const params = new URLSearchParams(window.location.search);
+            const tabParam = params.get('tab');
+            if (tabParam && TABS[tabParam]) {
+                curTab = tabParam;
             }
+            showPage('dash');
+            renderSideMenu();
+            renderTab(curTab);
         }
 
         function openProfilePage() {
-            if (!session) {
-                window.open('/register?tab=login', '_blank');
-            } else {
-                window.location.href = '/dashboard?tab=profile';
-            }
+            curTab = 'profile';
+            showPage('dash');
+            renderSideMenu();
+            renderTab('profile');
         }
 
         function renderSideMenu() {
@@ -5735,54 +5760,7 @@
                             }).join('')}
                         </div>
                     `;
-                },
-                plan() {
-                    const userOpts = d.users.map(u => `<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
-                    const eventOpts = d.events.map(e => `<option value="${e.id}">${esc(e.title)} (${e.date})</option>`).join('');
-                    const today = new Date().toISOString().slice(0,10);
-                    main.innerHTML = `
-                        <h2>🗓️ Lộ trình & Các cột mốc 3 tháng</h2>
-                        <div class="panel">
-                            <h3 style="color:var(--gold-light);margin-bottom:14px">Thêm cột mốc mới</h3>
-                            <div class="row">
-                                <div><label>Cột mốc / Sự kiện</label><input id="plTitle" placeholder="VD: Khai mạc cuộc thi"></div>
-                                <div><label>Thời hạn dự kiến</label><input id="plDate" type="date"></div>
-                                <div><label>Nội dung ghi chú</label><input id="plNote" placeholder="Ghi chú thêm..."></div>
-                                <div><label>Trạng thái</label><select id="plStatus">
-                                    <option value="todo">📋 Cần làm</option>
-                                    <option value="doing">⚙️ Đang tiến hành</option>
-                                    <option value="done">✔️ Hoàn thành</option>
-                                </select></div>
-                                <div><label>Người phụ trách</label><select id="plAssignee"><option value="">Chưa giao</option>${userOpts}</select></div>
-                                <div><label>Liên kết sự kiện</label><select id="plEventId"><option value="">Không liên kết</option>${eventOpts}</select></div>
-                                <div><button class="btn btn-gold btn-sm" onclick="addPlanMilestone()">+ Thêm mốc</button></div>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline">
-                            ${[...d.plans].sort((a,b)=> a.date > b.date ? 1 : -1).map(p => {
-                                const isOverdue = p.date < today && p.status !== 'done';
-                                const statusLabel = p.status === 'todo' ? 'Cần làm' : p.status === 'doing' ? 'Đang tiến hành' : 'Hoàn thành';
-                                return `
-                                <div class="timeline-item">
-                                    <div class="timeline-date">${p.date}</div>
-                                    <div class="timeline-content">
-                                        <div style="display:flex; justify-content:space-between; align-items:center">
-                                            <h4><span class="status-dot ${p.status || 'todo'}"></span>${esc(p.title)}${isOverdue ? ' <span class="overdue-warning" style="display:inline">🚨 QUÁ HẠN</span>' : ''}</h4>
-                                            <button class="btn btn-line btn-sm" style="border:none;color:var(--danger)" onclick="deletePlanMilestone(${p.id})">🗑 Xóa</button>
-                                        </div>
-                                        <p>${esc(p.note)}</p>
-                                        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.8rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05)">
-                                            <span>📌 ${statusLabel}</span>
-                                            ${p.assignee ? '<span>👤 ' + esc(p.assignee) + '</span>' : ''}
-                                            ${p.eventId ? '<span>🎬 Liên kết: ' + esc((d.events.find(function(e) { return String(e.id) === String(p.eventId); }) || {}).title || '') + '</span>' : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            `}).join('')}
-                        </div>
-                    `;
-                },
+
                 events() {
                     main.innerHTML = `
                         <h2>🎬 Quản lý Sự kiện trang chủ</h2>
@@ -5929,11 +5907,14 @@
                                     </tr>
                                     ${pendings.map(a => `
                                         <tr>
-                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'}</span></td>
+                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên')}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
                                             <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'}</td>
-                                            <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">${esc(a.intro)}</td>
+                                            <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">
+                                                ${esc(a.intro)}
+                                                ${a.vision ? `<br><strong style="color:var(--gold-light)">Tầm nhìn:</strong> ${esc(a.vision)}` : ''}
+                                            </td>
                                             <td data-label="Quyết định">
                                                 <button class="btn btn-gold btn-sm" onclick="approveApplication(${a.id})">✔ Duyệt</button>
                                                 <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication(${a.id})">✕ Từ chối</button>
@@ -7892,8 +7873,8 @@
                     id: nextId,
                     name: a.name,
                     email: userEmail,
-                    role: a.type === 'organizer' ? 'organizer' : 'member',
-                    dept: a.dept
+                    role: (a.type === 'organizer' || a.type === 'cofounder') ? 'organizer' : 'member',
+                    dept: a.dept || ''
                 };
                 await saveItem('users', newUser);
                 if (useFirebase) {
@@ -8528,7 +8509,7 @@
                     inputEl.innerHTML = `<input id="publicChatInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendPublicChatMsg()" style="flex:1">
                                          <button class="btn btn-gold btn-sm" onclick="sendPublicChatMsg()">Gửi</button>`;
                 } else {
-                    inputEl.innerHTML = `<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.9rem">👉 <a href="/register?tab=login" target="_blank" style="cursor:pointer;font-weight:600;color:var(--gold)">Đăng nhập</a> để gửi tin nhắn</div>`;
+                    inputEl.innerHTML = `<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.9rem">👉 <a href="#" onclick="event.preventDefault();openModal('authModal');toggleAuth(true)" role="button" style="cursor:pointer;font-weight:600;color:var(--gold)">Đăng nhập</a> để gửi tin nhắn</div>`;
                 }
             }
             setTimeout(() => { listEl.scrollTop = listEl.scrollHeight; }, 50);
@@ -8853,7 +8834,7 @@
                                             <input id="commentInput_${p.id}" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter') addComment(${p.id})">
                                             <button class="btn btn-gold btn-sm" onclick="addComment(${p.id})">Gửi</button>
                                         </div>
-                                    ` : '<div style="font-size:0.8rem;color:var(--text-muted);padding:4px 0"><a href="/register?tab=login" target="_blank" style="cursor:pointer;color:var(--gold)">Đăng nhập</a> để bình luận</div>'}
+                                    ` : '<div style="font-size:0.8rem;color:var(--text-muted);padding:4px 0"><a href="#" onclick="event.preventDefault();openModal(\'authModal\');toggleAuth(true)" role="button" style="cursor:pointer;color:var(--gold)">Đăng nhập</a> để bình luận</div>'}
                                 </div>
                             </div>
                         </div>

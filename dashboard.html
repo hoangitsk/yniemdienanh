@@ -5743,7 +5743,7 @@
                             }).join('')}
                         </div>
                     `;
-
+                },
                 events() {
                     main.innerHTML = `
                         <h2>🎬 Quản lý Sự kiện trang chủ</h2>
@@ -5807,6 +5807,9 @@
                                     </tr>
                                 `).join('')}
                             </table>
+                        </div>
+                    `;
+                },
                 submissions() {
                     var subs = d.submissions || [];
                     if (!window._subFilter) window._subFilter = { search: '', status: '', event: '' };

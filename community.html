@@ -5287,7 +5287,7 @@
                                         <th>Loại đơn</th>
                                         <th>Ứng viên</th>
                                         <th>Thông tin liên hệ</th>
-                                        <th>Nguyện vọng Ban</th>
+                                        <th>Nguyện vọng Ban / Chức vụ</th>
                                         <th style="width:30%">Giới thiệu bản thân</th>
                                         <th>Quyết định</th>
                                     </tr>
@@ -5296,7 +5296,7 @@
                                             <td data-label="Loại đơn"><span class="chip">${a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
-                                            <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'}</td>
+                                            <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : (a.position === 'core' ? 'Core' : 'Thành viên')}</strong>)` : ''}</td>
                                             <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">${esc(a.intro)}</td>
                                             <td data-label="Quyết định">
                                                 <button class="btn btn-gold btn-sm" onclick="approveApplication(${a.id})">✔ Duyệt</button>

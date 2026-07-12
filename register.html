@@ -467,6 +467,7 @@
                 
                 <label for="orgPosition">Vị trí ứng tuyển *</label>
                 <select id="orgPosition" onchange="updatePositionAvailability()" required style="margin-bottom:18px">
+                    <option value="member" id="opt-position-member">Thành viên (Member)</option>
                     <option value="core" id="opt-position-core">Core Member (Thành viên cốt cán)</option>
                     <option value="vice_lead" id="opt-position-vice_lead">Phó ban</option>
                 </select>
@@ -844,8 +845,9 @@
             const posSelect = document.getElementById('orgPosition');
             const optCore = document.getElementById('opt-position-core');
             const optViceLead = document.getElementById('opt-position-vice_lead');
+            const optMember = document.getElementById('opt-position-member');
 
-            if (!deptSelect || !posSelect || !optCore || !optViceLead) return;
+            if (!deptSelect || !posSelect || !optCore || !optViceLead || !optMember) return;
 
             const selectedDept = deptSelect.value;
             const btcMembers = activeBTCUsers || [];
@@ -882,25 +884,19 @@
             }
 
             // Automatically toggle selection if the current one is disabled
-            if (posSelect.value === 'vice_lead' && isViceLeadFull && !isCoreFull) {
-                posSelect.value = 'core';
-            } else if (posSelect.value === 'core' && isCoreFull && !isViceLeadFull) {
-                posSelect.value = 'vice_lead';
+            if (posSelect.value === 'vice_lead' && isViceLeadFull) {
+                if (!isCoreFull) posSelect.value = 'core';
+                else posSelect.value = 'member';
+            } else if (posSelect.value === 'core' && isCoreFull) {
+                if (!isViceLeadFull) posSelect.value = 'vice_lead';
+                else posSelect.value = 'member';
             }
 
             const submitBtn = document.getElementById('orgSubmitBtn');
-            if (isViceLeadFull && isCoreFull) {
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerText = "Phân ban đã tuyển đủ Phó ban & Core";
-                    submitBtn.style.opacity = "0.5";
-                }
-            } else {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "Gửi đơn ứng tuyển BTC";
-                    submitBtn.style.opacity = "";
-                }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Gửi đơn ứng tuyển BTC";
+                submitBtn.style.opacity = "";
             }
         }
 

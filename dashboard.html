@@ -5886,7 +5886,7 @@
                                             <td data-label="Loại đơn"><span class="chip">${a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên')}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
-                                            <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : 'Core'}</strong>)` : ''}</td>
+                                            <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : (a.position === 'core' ? 'Core' : 'Thành viên')}</strong>)` : ''}</td>
                                             <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">
                                                 ${esc(a.intro)}
                                                 ${a.vision ? `<br><strong style="color:var(--gold-light)">Tầm nhìn:</strong> ${esc(a.vision)}` : ''}
@@ -5922,6 +5922,7 @@
                                         <option value="Ban Truyền Thông">Ban Truyền Thông</option>
                                     </select></div>
                                     <div><label>Chức vụ</label><select id="usPosition">
+                                         <option value="member">Thành viên</option>
                                         <option value="">Không có</option>
                                         <option value="core">Core Member</option>
                                         <option value="vice_lead">Phó ban</option>

@@ -3969,7 +3969,7 @@
                         lead: "Kiến tạo sân chơi và bệ phóng cho các nhà làm phim học sinh, sinh viên trên toàn quốc.<br>Chính thức khởi động Tháng 7 này! Hãy cùng đồng hành với tụi mình trong hành trình đầy hứa hẹn.",
                         target: "Học sinh - Sinh viên toàn quốc",
                         transparency: "Đồng kiến tạo cộng đồng điện ảnh",
-                        goal: "Tuyển BTC Core Member"
+                        goal: "Tuyển BTC (Core & Member)"
                     },
                     events: {
                         title: "Sự kiện đang & sắp diễn ra",
@@ -4037,7 +4037,11 @@
             }
 
             const raw = localDB.content || _contentFileFallback || getMockData().content;
-            return deepMerge(getDefaultContent(), raw);
+            const merged = deepMerge(getDefaultContent(), raw);
+            if (merged && merged.hero && merged.hero.goal === "Tuyển BTC Core Member") {
+                merged.hero.goal = "Tuyển BTC (Core & Member)";
+            }
+            return merged;
         }
 
         async function saveContentToDB(newContent) {

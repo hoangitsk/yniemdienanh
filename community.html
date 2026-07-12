@@ -513,7 +513,13 @@
         /* Poster card bên phải hero */
         .poster {
             position: relative;
-            min-height: 520px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 32px 28px;
+            box-sizing: border-box;
+            min-height: 440px;
             border: 1px solid var(--line);
             overflow: hidden;
             box-shadow: var(--shadow-card);
@@ -531,11 +537,13 @@
         }
 
         .poster img {
-            position: absolute;
-            inset: 5% 5% auto;
-            width: 90%;
-            height: 38%;
+            width: 92%;
+            max-width: 320px;
+            height: auto;
             object-fit: contain;
+            filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.34));
+            margin-top: 12px;
+            margin-bottom: 24px;
         }
 
         .poster-brand {
@@ -543,10 +551,7 @@
         }
 
         .poster .frame {
-            position: absolute;
-            left: 28px;
-            right: 28px;
-            bottom: 28px;
+            width: 100%;
             border-top: 1px solid var(--line);
             padding-top: 24px;
             display: grid;
@@ -4270,69 +4275,7 @@
             }
         }
 
-                        m.textContent = 'Tài khoản Admin chưa được tạo hoặc sai mật khẩu. Hãy bấm "Đăng ký" để tạo tài khoản Admin, hoặc dùng "Quên mật khẩu?".';
-                    } else {
-                        m.textContent = 'Sai email hoặc mật khẩu. Vui lòng kiểm tra lại.';
-                    }
-                } else {
-                    m.textContent = 'Đăng nhập không thành công. Hãy kiểm tra lại email/mật khẩu.';
-                }
-            }
-        }
 
-        async function resetPassword() {
-            const email = document.getElementById('liEmail').value.trim();
-            if (!email) {
-                showToast('Vui lòng nhập email trước.', "info");
-                return;
-            }
-            if (!authInstance) {
-                showToast('Tính năng này cần kết nối Firebase.', "info");
-                return;
-            }
-            try {
-                const ctrl = new AbortController();
-                const timer = setTimeout(() => ctrl.abort(), 10000);
-                const r = await fetch('/api/email/send-password-reset', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email }),
-                    signal: ctrl.signal,
-                });
-                clearTimeout(timer);
-                if (!r.ok) {
-                    const ed = await r.json().catch(() => ({}));
-                    throw new Error(ed.error || 'Lỗi gửi email');
-                }
-                showToast('📧 ĐÃ GỬI EMAIL ĐẶT LẠI MẬT KHẨU!\n\nVui lòng kiểm tra hộp thư Gmail và bấm link để tạo mật khẩu mới.', 'success', 8000);
-            } catch (err) {
-                console.error("Reset password error:", err);
-                showToast('Lỗi gửi email: ' + (err.message || 'Không thể kết nối.'), "error");
-            }
-        }
-
-        async function resendVerification() {
-            const email = document.getElementById('liEmail').value.trim();
-            if (!email) {
-                showToast('Vui lòng nhập email trước.', "info");
-                return;
-            }
-            if (!authInstance) {
-                showToast('Tính năng này cần kết nối Firebase.', "info");
-                return;
-            }
-            try {
-                const methods = await authInstance.fetchSignInMethodsForEmail(email);
-                if (methods.length === 0) {
-                    showToast('Email chưa được đăng ký. Vui lòng đăng ký trước.', "error");
-                    return;
-                }
-                showToast(`📧 Email ${email} đã được đăng ký.\n\n👉 Hãy nhập MẬT KHẨU và bấm "Đăng nhập".\nNếu tài khoản chưa xác thực, hệ thống sẽ tự động gửi lại email xác thực cho bạn.\n\nNếu quên mật khẩu, bấm "Quên mật khẩu?" để đặt lại.`, 'info', 8000);
-            } catch (err) {
-                console.error("Resend verification error:", err);
-                showToast('Lỗi kiểm tra email: ' + (err.message || 'Không thể kết nối.'), "error");
-            }
-        }
 
         async function logout() {
             if (useFirebase) {

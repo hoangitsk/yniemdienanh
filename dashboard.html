@@ -5803,9 +5803,6 @@
                                     </tr>
                                 `).join('')}
                             </table>
-                        </div>
-                    `;
-                },
                 submissions() {
                     var subs = d.submissions || [];
                     if (!window._subFilter) window._subFilter = { search: '', status: '', event: '' };
@@ -5880,7 +5877,7 @@
                                         <th>Loại đơn</th>
                                         <th>Ứng viên</th>
                                         <th>Thông tin liên hệ</th>
-                                        <th>Nguyện vọng Ban</th>
+                                        <th>Nguyện vọng Ban / Chức vụ</th>
                                         <th style="width:30%">Giới thiệu bản thân</th>
                                         <th>Quyết định</th>
                                     </tr>
@@ -5889,7 +5886,7 @@
                                             <td data-label="Loại đơn"><span class="chip">${a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên')}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
-                                            <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'}</td>
+                                            <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : 'Core'}</strong>)` : ''}</td>
                                             <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">
                                                 ${esc(a.intro)}
                                                 ${a.vision ? `<br><strong style="color:var(--gold-light)">Tầm nhìn:</strong> ${esc(a.vision)}` : ''}
@@ -5923,6 +5920,11 @@
                                         <option value="Ban Nội Dung">Ban Nội Dung</option>
                                         <option value="Ban Nhân Sự">Ban Nhân Sự</option>
                                         <option value="Ban Truyền Thông">Ban Truyền Thông</option>
+                                    </select></div>
+                                    <div><label>Chức vụ</label><select id="usPosition">
+                                        <option value="">Không có</option>
+                                        <option value="core">Core Member</option>
+                                        <option value="vice_lead">Phó ban</option>
                                     </select></div>
                                     <div><button class="btn btn-gold btn-sm" onclick="addNewUserFromDash()">+ Thêm</button></div>
                                 </div>
@@ -7846,14 +7848,20 @@
             // Tự động tạo tài khoản & gửi email đặt mật khẩu
             const userEmail = a.email.toLowerCase();
             let matchedUser = localDB.users.find(u => u.email === userEmail);
-            if (!matchedUser) {
+            if (matchedUser) {
+                matchedUser.role = (a.type === 'organizer' || a.type === 'cofounder') ? 'organizer' : 'member';
+                matchedUser.dept = a.dept || '';
+                matchedUser.position = a.position || '';
+                await saveItem('users', matchedUser);
+            } else {
                 const nextId = await getNextId();
                 const newUser = {
                     id: nextId,
                     name: a.name,
                     email: userEmail,
                     role: (a.type === 'organizer' || a.type === 'cofounder') ? 'organizer' : 'member',
-                    dept: a.dept || ''
+                    dept: a.dept || '',
+                    position: a.position || ''
                 };
                 await saveItem('users', newUser);
                 if (useFirebase) {
@@ -7927,12 +7935,22 @@
             }
         }
 
+        async function updateUserPosition(id, newPosition) {
+            const u = localDB.users.find(x => String(x.id) === String(id));
+            if (u) {
+                u.position = newPosition;
+                await saveItem('users', u);
+                renderTab('members');
+            }
+        }
+
         async function addNewUserFromDash() {
             const name = document.getElementById('usName').value.trim();
             const email = document.getElementById('usEmail').value.trim().toLowerCase();
             const pass = document.getElementById('usPass').value;
             const role = document.getElementById('usRole').value;
             const dept = document.getElementById('usDept').value;
+            const position = document.getElementById('usPosition').value;
 
             if (!name || !email || !pass) return showToast("Vui lòng điền đủ họ tên, email và mật khẩu!", "error");
             if (pass.length < 6) return showToast("Mật khẩu phải chứa ít nhất 6 ký tự!", "error");
@@ -7952,6 +7970,7 @@
                             email, 
                             role, 
                             dept, 
+                            position,
                             emailVerified: true, 
                             createdAt: new Date().toISOString() 
                         };
@@ -7968,6 +7987,7 @@
                         pass, 
                         role, 
                         dept, 
+                        position,
                         emailVerified: true, 
                         createdAt: new Date().toISOString() 
                     };

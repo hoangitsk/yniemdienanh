@@ -465,6 +465,12 @@
                     <!-- Sẽ cập nhật tự động bằng JS -->
                 </div>
                 
+                <label for="orgPosition">Vị trí ứng tuyển *</label>
+                <select id="orgPosition" onchange="updatePositionAvailability()" required style="margin-bottom:18px">
+                    <option value="core" id="opt-position-core">Core Member (Thành viên cốt cán)</option>
+                    <option value="vice_lead" id="opt-position-vice_lead">Phó ban</option>
+                </select>
+                
                 <label for="orgIntro">Giới thiệu bản thân & lý do muốn đồng hành *</label>
                 <textarea id="orgIntro" required placeholder="Giới thiệu bản thân và lý do tại sao bạn lựa chọn phân ban này (tối thiểu 20 ký tự)..."></textarea>
                 
@@ -756,6 +762,7 @@
                     } catch (e) {}
                 }
             }
+            fetchBTCUsers();
         }
 
         // Tab selection logic
@@ -803,6 +810,100 @@
             "Ban Truyền Thông": "📣 <b>Nhiệm vụ Ban Truyền Thông:</b> Lên chiến dịch quảng bá dự án, liên hệ hợp tác chéo với các đối tác/trường học/CLB, phát triển đối tượng tiếp cận và truyền thông giải đấu tới công chúng."
         };
 
+        let activeBTCUsers = [];
+
+        async function fetchBTCUsers() {
+            activeBTCUsers = [];
+            if (useFirebase && dbInstance) {
+                try {
+                    const snap = await dbInstance.collection('users').get();
+                    snap.forEach(doc => {
+                        const ud = doc.data();
+                        if (ud.role === 'organizer' || ud.role === 'admin') {
+                            activeBTCUsers.push({
+                                id: doc.id,
+                                name: ud.name,
+                                role: ud.role,
+                                dept: ud.dept || '',
+                                position: ud.position || ''
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.warn("Public read of users failed. Falling back to localDB:", err);
+                    activeBTCUsers = (localDB && localDB.users || []).filter(u => u.role === 'organizer' || u.role === 'admin');
+                }
+            } else {
+                activeBTCUsers = (localDB && localDB.users || []).filter(u => u.role === 'organizer' || u.role === 'admin');
+            }
+            updatePositionAvailability();
+        }
+
+        function updatePositionAvailability() {
+            const deptSelect = document.getElementById('orgDept');
+            const posSelect = document.getElementById('orgPosition');
+            const optCore = document.getElementById('opt-position-core');
+            const optViceLead = document.getElementById('opt-position-vice_lead');
+
+            if (!deptSelect || !posSelect || !optCore || !optViceLead) return;
+
+            const selectedDept = deptSelect.value;
+            const btcMembers = activeBTCUsers || [];
+            
+            // Count vice leads in this department
+            const viceLeadCount = btcMembers.filter(u => u.dept === selectedDept && u.position === 'vice_lead').length;
+            
+            // Count core members in this department
+            const coreCount = btcMembers.filter(u => u.dept === selectedDept && u.position === 'core').length;
+
+            const isViceLeadFull = viceLeadCount >= 1;
+            const isCoreFull = coreCount >= 3; // Limit of 3 core members per department
+
+            // Update vice lead option
+            if (isViceLeadFull) {
+                optViceLead.disabled = true;
+                optViceLead.text = "Phó ban (Đã có người làm - Hết slot)";
+                optViceLead.style.color = "rgba(255,255,255,0.4)";
+            } else {
+                optViceLead.disabled = false;
+                optViceLead.text = "Phó ban";
+                optViceLead.style.color = "";
+            }
+
+            // Update core member option
+            if (isCoreFull) {
+                optCore.disabled = true;
+                optCore.text = "Core Member (Đã có người làm - Hết slot)";
+                optCore.style.color = "rgba(255,255,255,0.4)";
+            } else {
+                optCore.disabled = false;
+                optCore.text = "Core Member (Thành viên cốt cán)";
+                optCore.style.color = "";
+            }
+
+            // Automatically toggle selection if the current one is disabled
+            if (posSelect.value === 'vice_lead' && isViceLeadFull && !isCoreFull) {
+                posSelect.value = 'core';
+            } else if (posSelect.value === 'core' && isCoreFull && !isViceLeadFull) {
+                posSelect.value = 'vice_lead';
+            }
+
+            const submitBtn = document.getElementById('orgSubmitBtn');
+            if (isViceLeadFull && isCoreFull) {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = "Phân ban đã tuyển đủ Phó ban & Core";
+                    submitBtn.style.opacity = "0.5";
+                }
+            } else {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Gửi đơn ứng tuyển BTC";
+                    submitBtn.style.opacity = "";
+                }
+            }
+        }
+
         function updateDeptDescription() {
             const selectEl = document.getElementById('orgDept');
             const descBox = document.getElementById('deptDescBox');
@@ -810,6 +911,7 @@
                 const val = selectEl.value;
                 descBox.innerHTML = deptDescriptions[val] || '';
             }
+            updatePositionAvailability();
         }
 
         function toggleInterestOther() {
@@ -951,6 +1053,7 @@
             const intro = document.getElementById(prefix + 'Intro').value.trim();
             const vision = isCoFounder ? document.getElementById('cfVision').value.trim() : '';
             const dept = isCoFounder ? '' : document.getElementById('orgDept').value;
+            const position = isCoFounder ? '' : document.getElementById('orgPosition').value;
             
             // Validate basic inputs
             if (!name || !email || !phone || !intro || (isCoFounder && !vision)) {
@@ -987,6 +1090,7 @@
                     phone: phone,
                     intro: intro,
                     dept: dept,
+                    position: position,
                     vision: vision,
                     status: 'pending',
                     date: new Date().toISOString().slice(0, 10)

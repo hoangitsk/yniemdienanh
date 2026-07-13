@@ -5378,8 +5378,12 @@
                 },
                 members() {
                     const pendings = d.applications.filter(a => a.status === 'pending');
+                    const processed = d.applications.filter(a => a.status === 'approved' || a.status === 'rejected');
                     main.innerHTML = `
-                        <h2>👥 Quản lý Nhân sự & Đơn Tuyển dụng</h2>
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px">
+                            <h2 style="margin:0">👥 Quản lý Nhân sự & Đơn Tuyển dụng</h2>
+                            <button class="btn btn-gold btn-sm" onclick="exportCSV('applications')">📥 Xuất tất cả đơn apply (CSV)</button>
+                        </div>
                         
                         <!-- DANH SÁCH ĐƠN APPLY CHỜ DUYỆT -->
                         <div class="panel">
@@ -5407,6 +5411,43 @@
                                             </td>
                                         </tr>
                                     `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Không có đơn ứng tuyển mới.</td></tr>'}
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- DANH SÁCH ĐƠN APPLY ĐÃ DUYỆT / TỪ CHỐI -->
+                        <div class="panel">
+                            <h3 style="color:var(--gold-light);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+                                Lịch sử duyệt đơn ứng tuyển (${processed.length})
+                                <button class="btn btn-line btn-sm" onclick="var t=document.getElementById('processedAppsTable');var b=document.getElementById('toggleProcessedBtn');if(t.style.display==='none'){t.style.display='block';b.textContent='Ẩn lịch sử';}else{t.style.display='none';b.textContent='Hiện lịch sử';}" id="toggleProcessedBtn" style="padding:2px 8px;font-size:0.75rem">Hiện lịch sử</button>
+                            </h3>
+                            <div class="table-wrap" id="processedAppsTable" style="display:none">
+                                <table>
+                                    <tr>
+                                        <th>Loại đơn</th>
+                                        <th>Ứng viên</th>
+                                        <th>Liên hệ</th>
+                                        <th>Nguyện vọng Ban / Chức vụ</th>
+                                        <th style="width:30%">Giới thiệu bản thân</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                    ${processed.map(a => `
+                                        <tr>
+                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên')}</span></td>
+                                            <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
+                                            <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
+                                            <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : (a.position === 'core' ? 'Core' : 'Thành viên')}</strong>)` : ''}</td>
+                                            <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">
+                                                ${esc(a.intro)}
+                                                ${a.vision ? `<br><strong style="color:var(--gold-light)">Tầm nhìn:</strong> ${esc(a.vision)}` : ''}
+                                            </td>
+                                            <td data-label="Trạng thái">
+                                                <span class="chip" style="background:${a.status === 'approved' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'};color:${a.status === 'approved' ? 'var(--ok)' : 'var(--danger)'}">
+                                                    ${a.status === 'approved' ? '✔ Đã duyệt' : '✕ Từ chối'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có đơn ứng tuyển nào được duyệt hoặc từ chối.</td></tr>'}
                                 </table>
                             </div>
                         </div>

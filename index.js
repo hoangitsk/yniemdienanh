@@ -463,6 +463,114 @@ app.post('/api/send-notification-email', async (req, res) => {
     }
 });
 
+// API: Generate personalized email with Gemini
+app.post('/api/email/generate-gemini-reply', async (req, res) => {
+    const rawKeys = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS || '';
+    const keys = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
+    if (keys.length === 0) {
+        return res.status(500).json({ error: 'GEMINI_API_KEY chưa được cấu hình trên server.' });
+    }
+    const activeKey = keys[Math.floor(Math.random() * keys.length)];
+
+    try {
+        const { type, name, role, dept, intro, vision, emailType } = req.body;
+        if (!name || !emailType) {
+            return res.status(400).json({ error: 'Thiếu thông tin ứng viên (name) hoặc loại email (emailType)' });
+        }
+
+        const prompt = `Bạn là Trưởng ban Nhân sự của dự án "Ý Niệm Điện Ảnh" - một dự án phim ngắn phi lợi nhuận dành cho học sinh, sinh viên.
+Hãy soạn thảo một email phản hồi ứng tuyển dựa trên thông tin dưới đây:
+- Tên ứng viên: ${name}
+- Loại đơn ứng tuyển: ${type === 'organizer' ? 'Ban Tổ Chức' : type === 'cofounder' ? 'Co-founder' : type === 'president' ? 'President' : 'Thành viên'}
+- Ban ứng tuyển: ${dept || 'Cộng đồng'}
+- Giới thiệu bản thân: ${intro || 'N/A'}
+${vision ? `- Tầm nhìn / Ý tưởng đóng góp: ${vision}` : ''}
+
+Loại email cần soạn: ${emailType === 'approve' ? 'Duyệt đơn và Chào mừng tham gia dự án (Email ấm áp, hào hứng, chào mừng họ gia nhập đội ngũ)' : emailType === 'reject' ? 'Từ chối đơn ứng tuyển (Email chân thành, lịch sự, cảm ơn sự quan tâm và chúc họ may mắn trong hành trình sắp tới)' : 'Mời tham gia phỏng vấn (Email hẹn phỏng vấn, đề xuất họ chọn lịch hẹn)'}.
+
+Yêu cầu định dạng:
+Trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
+{
+  "subject": "Tiêu đề email hấp dẫn, ngắn gọn, phù hợp với nội dung",
+  "body": "Nội dung email bằng tiếng Việt, trình bày đẹp mắt dưới dạng HTML (chỉ sử dụng các thẻ HTML cơ bản như <p>, <br>, <strong>, <ul>, <li> để định dạng. Không sử dụng thẻ <html>, <body>, <head>)."
+}
+
+Chú ý: Email cần viết bằng tiếng Việt, văn phong ấm áp, chuyên nghiệp, truyền cảm hứng và mang tính chất kết nối. Xưng hô là "Ban Nhân Sự Ý Niệm Điện Ảnh" và gọi ứng viên là "${name}".`;
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`;
+        const response = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{ text: prompt }]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            console.error('Gemini API Error:', errData);
+            return res.status(response.status).json({ error: 'Lỗi gọi API Gemini', details: errData });
+        }
+
+        const data = await response.json();
+        const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!textResponse) {
+            return res.status(500).json({ error: 'Không nhận được câu trả lời từ Gemini AI.' });
+        }
+
+        const result = JSON.parse(textResponse.trim());
+        res.status(200).json(result);
+    } catch (err) {
+        console.error('Error generating Gemini email:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API: Send custom email
+app.post('/api/email/send-custom', async (req, res) => {
+    try {
+        const { to, subject, html } = req.body;
+        if (!to || !subject || !html) {
+            return res.status(400).json({ error: 'Missing to, subject, or html' });
+        }
+
+        const fromName = process.env.BREVO_FROM_NAME || 'Ý Niệm Điện Ảnh';
+        const fromEmail = process.env.BREVO_FROM_EMAIL;
+        if (!fromEmail) {
+            return res.status(500).json({ error: 'BREVO_FROM_EMAIL chưa được cấu hình.' });
+        }
+
+        await transporter.sendMail({
+            from: `"${fromName}" <${fromEmail}>`,
+            to,
+            subject,
+            html: `
+                <div style="max-width:600px;margin:auto;background:#0d0d0d;padding:0;border-radius:12px;overflow:hidden;font-family:'Be Vietnam Pro',Helvetica,Arial,sans-serif">
+                    <div style="background:linear-gradient(135deg,#1a1008 0%,#0d0d0d 50%,#1a1008 100%);padding:20px;text-align:center;border-bottom:2px solid rgba(228,184,102,0.2)">
+                        <img src="https://yniemdienanh.vercel.app/Logo/logo%20ngang.png" alt="Ý Niệm Điện Ảnh" style="max-height:40px">
+                    </div>
+                    <div style="padding:30px;color:#e2e8f0;font-size:14px;line-height:1.7;background:#0d0d0d">${html}</div>
+                    <div style="background:#0a0a0a;padding:20px;text-align:center;border-top:1px solid rgba(228,184,102,0.08)">
+                        <p style="color:#555;font-size:12px;margin:0">© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</p>
+                    </div>
+                </div>
+            `
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Send custom email error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 // API: Generate certificate data (for PDF generation in future)
 app.post('/api/generate-certificate', async (req, res) => {
     try {

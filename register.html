@@ -369,6 +369,45 @@
                 font-size: 1.8rem;
             }
         }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 7, 12, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 24px;
+        }
+        .modal.open {
+            display: flex;
+        }
+        .modal-box {
+            background: var(--navy-card);
+            border: 1px solid rgba(224, 178, 98, 0.25);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: min(500px, 100%);
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .close-x {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+        .close-x:hover {
+            color: var(--gold);
+        }
     </style>
 </head>
 <body>
@@ -388,11 +427,11 @@
 
         <!-- 3 Portal Cards -->
         <div class="portal-grid">
-            <div class="portal-card" id="card-cofounder" onclick="selectTab('cofounder')">
+            <div class="portal-card" id="card-president" onclick="selectTab('president')">
                 <div>
-                    <div class="icon">🤝</div>
-                    <h3>Apply Co-founder</h3>
-                    <p>Nhóm nòng cốt sáng lập, đồng kiến tạo chiến lược và định hướng dài hạn cho dự án.</p>
+                    <div class="icon">👑</div>
+                    <h3>Apply President</h3>
+                    <p>Chủ tịch / Trưởng ban điều hành toàn bộ hoạt động của dự án và định hướng tương lai.</p>
                 </div>
             </div>
             <div class="portal-card" id="card-organizer" onclick="selectTab('organizer')">
@@ -411,12 +450,12 @@
             </div>
         </div>
 
-        <!-- ============ FORM 1: APPLY CO-FOUNDER ============ -->
-        <div class="form-card" id="form-cofounder">
-            <h2 style="color:var(--gold);margin-bottom:10px">🤝 Đơn Ứng Tuyển Co-founder</h2>
-            <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:20px">Hãy chia sẻ thông tin và tầm nhìn của bạn để cùng chúng tôi kiến tạo bệ phóng điện ảnh trẻ.</p>
+        <!-- ============ FORM 1: APPLY PRESIDENT ============ -->
+        <div class="form-card" id="form-president">
+            <h2 style="color:var(--gold);margin-bottom:10px">👑 Đơn Ứng Tuyển President (Chủ tịch)</h2>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:20px">Hãy chia sẻ thông tin và tầm nhìn của bạn để cùng chúng tôi lãnh đạo dự án cất cánh.</p>
             
-            <form onsubmit="event.preventDefault();submitApplication('cofounder')">
+            <form onsubmit="event.preventDefault();submitApplication('president')">
                 <label for="cfName">Họ và tên *</label>
                 <input id="cfName" required placeholder="Họ và tên đầy đủ của bạn">
                 
@@ -429,11 +468,11 @@
                 <label for="cfIntro">Giới thiệu bản thân & kinh nghiệm liên quan *</label>
                 <textarea id="cfIntro" required placeholder="Kinh nghiệm của bạn, các dự án trước đây bạn từng tham gia hoặc vận hành (tối thiểu 20 ký tự)..."></textarea>
                 
-                <label for="cfVision">Tầm nhìn & Đóng góp định hướng cho dự án *</label>
-                <textarea id="cfVision" required placeholder="Tại sao bạn muốn làm Co-founder? Định hướng và giá trị bạn mong muốn mang lại cho Ý Niệm Điện Ảnh là gì (tối thiểu 30 ký tự)..."></textarea>
+                <label for="cfVision">Tầm nhìn & Định hướng phát triển dự án *</label>
+                <textarea id="cfVision" required placeholder="Tại sao bạn muốn ứng cử vị trí President? Định hướng và giá trị bạn mong muốn mang lại cho Ý Niệm Điện Ảnh là gì (tối thiểu 30 ký tự)..."></textarea>
                 
                 <div class="form-msg" id="cfMsg"></div>
-                <button class="btn btn-gold" id="cfSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn ứng tuyển Co-founder</button>
+                <button class="btn btn-gold" id="cfSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn ứng tuyển President</button>
             </form>
         </div>
 
@@ -738,11 +777,16 @@
                             }
                             sessionStorage.setItem('ynda_user', JSON.stringify(session));
                             
-                            // If logged in and they are just on register page, redirect to dashboard
-                            showToast("Đã đăng nhập! Đang chuyển hướng đến Khu nội bộ...", "success");
-                            setTimeout(() => {
-                                window.location.href = '/dashboard';
-                            }, 1500);
+                            // If logged in and they are just on register page, redirect to dashboard only if on login/register tab
+                            closeModal('recruitmentAuthModal');
+                            if (currentTabId === 'member' || !currentTabId) {
+                                showToast("Đã đăng nhập! Đang chuyển hướng đến Khu nội bộ...", "success");
+                                setTimeout(() => {
+                                    window.location.href = '/dashboard';
+                                }, 1500);
+                            } else {
+                                renderRecruitmentForms();
+                            }
                         } else {
                             session = null;
                             sessionStorage.removeItem('ynda_user');
@@ -766,6 +810,116 @@
             fetchBTCUsers();
         }
 
+        // Modal open/close helpers
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('open');
+        }
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        }
+
+        // Check and render recruitment forms according to auth status
+        function renderRecruitmentForms() {
+            const loggedIn = !!session;
+            
+            // For President form
+            const presForm = document.getElementById('form-president');
+            if (presForm) {
+                let loginPrompt = presForm.querySelector('.recruitment-login-prompt');
+                let formContent = presForm.querySelector('form');
+                if (loggedIn) {
+                    if (loginPrompt) loginPrompt.style.display = 'none';
+                    if (formContent) {
+                        formContent.style.display = 'block';
+                        const nameInput = document.getElementById('cfName');
+                        const emailInput = document.getElementById('cfEmail');
+                        if (nameInput) {
+                            nameInput.value = session.name || '';
+                            nameInput.readOnly = true;
+                            nameInput.style.opacity = '0.7';
+                            nameInput.style.cursor = 'not-allowed';
+                        }
+                        if (emailInput) {
+                            emailInput.value = session.email || '';
+                            emailInput.readOnly = true;
+                            emailInput.style.opacity = '0.7';
+                            emailInput.style.cursor = 'not-allowed';
+                        }
+                    }
+                } else {
+                    if (formContent) formContent.style.display = 'none';
+                    if (!loginPrompt) {
+                        loginPrompt = document.createElement('div');
+                        loginPrompt.className = 'recruitment-login-prompt';
+                        loginPrompt.innerHTML = `
+                            <div style="text-align:center; padding:40px 20px; border:1px dashed rgba(228,184,102,0.3); border-radius:12px; background:rgba(0,0,0,0.2); margin-top:20px">
+                                <p style="color:var(--text-muted); margin-bottom:20px; font-size:0.95rem">Vui lòng đăng nhập để điền đơn ứng tuyển vị trí này.</p>
+                                <button class="btn btn-gold" onclick="event.preventDefault(); submitGoogleLogin()" style="display:inline-flex; align-items:center; gap:8px; margin:auto; cursor:pointer">
+                                    <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.529-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 5.922 1 12s4.922 11 11.24 11c6.59 0 11-4.636 11-11 0-.737-.08-1.3-.176-1.715H12.24z"/></svg>
+                                    Đăng nhập bằng Google
+                                </button>
+                            </div>
+                        `;
+                        presForm.appendChild(loginPrompt);
+                    } else {
+                        loginPrompt.style.display = 'block';
+                    }
+                }
+            }
+            
+            // For Organizer (BTC) form
+            const orgForm = document.getElementById('form-organizer');
+            if (orgForm) {
+                let loginPrompt = orgForm.querySelector('.recruitment-login-prompt');
+                let formContent = orgForm.querySelector('form');
+                if (loggedIn) {
+                    if (loginPrompt) loginPrompt.style.display = 'none';
+                    if (formContent) {
+                        formContent.style.display = 'block';
+                        const nameInput = document.getElementById('orgName');
+                        const emailInput = document.getElementById('orgEmail');
+                        if (nameInput) {
+                            nameInput.value = session.name || '';
+                            nameInput.readOnly = true;
+                            nameInput.style.opacity = '0.7';
+                            nameInput.style.cursor = 'not-allowed';
+                        }
+                        if (emailInput) {
+                            emailInput.value = session.email || '';
+                            emailInput.readOnly = true;
+                            emailInput.style.opacity = '0.7';
+                            emailInput.style.cursor = 'not-allowed';
+                        }
+                    }
+                } else {
+                    if (formContent) formContent.style.display = 'none';
+                    if (!loginPrompt) {
+                        loginPrompt = document.createElement('div');
+                        loginPrompt.className = 'recruitment-login-prompt';
+                        loginPrompt.innerHTML = `
+                            <div style="text-align:center; padding:40px 20px; border:1px dashed rgba(228,184,102,0.3); border-radius:12px; background:rgba(0,0,0,0.2); margin-top:20px">
+                                <p style="color:var(--text-muted); margin-bottom:20px; font-size:0.95rem">Vui lòng đăng nhập để điền đơn ứng tuyển vị trí này.</p>
+                                <button class="btn btn-gold" onclick="event.preventDefault(); submitGoogleLogin()" style="display:inline-flex; align-items:center; gap:8px; margin:auto; cursor:pointer">
+                                    <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.529-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 5.922 1 12s4.922 11 11.24 11c6.59 0 11-4.636 11-11 0-.737-.08-1.3-.176-1.715H12.24z"/></svg>
+                                    Đăng nhập bằng Google
+                                </button>
+                            </div>
+                        `;
+                        orgForm.appendChild(loginPrompt);
+                    } else {
+                        loginPrompt.style.display = 'block';
+                    }
+                }
+            }
+        }
+
+        async function submitGoogleLoginFromPopup() {
+            await submitGoogleLogin();
+            closeModal('recruitmentAuthModal');
+        }
+
         // Tab selection logic
         function selectTab(tabId) {
             currentTabId = tabId;
@@ -775,12 +929,19 @@
             const selectedCard = document.getElementById('card-' + tabId);
             if (selectedCard) selectedCard.classList.add('active');
 
-            // Show form
+            // Show form & check login popup
             document.querySelectorAll('.form-card').forEach(f => f.style.display = 'none');
             const targetForm = document.getElementById('form-' + tabId);
             if (targetForm) {
                 targetForm.style.display = 'block';
                 targetForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            if (tabId === 'president' || tabId === 'organizer') {
+                renderRecruitmentForms();
+                if (!session) {
+                    openModal('recruitmentAuthModal');
+                }
             }
             
             // Clean Turnstile widget if switching to member
@@ -1034,7 +1195,7 @@
 
         // ================= FLOW: SUBMIT APPLICATIONS =================
         async function submitApplication(type) {
-            const isCoFounder = type === 'cofounder';
+            const isCoFounder = type === 'cofounder' || type === 'president';
             const prefix = isCoFounder ? 'cf' : 'org';
             
             const msgEl = document.getElementById(prefix + 'Msg');
@@ -1114,7 +1275,7 @@
                 msgEl.textContent = "Gặp lỗi: " + err.message;
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = isCoFounder ? "Gửi đơn ứng tuyển Co-founder" : "Gửi đơn ứng tuyển BTC";
+                submitBtn.textContent = isCoFounder ? (type === 'president' ? "Gửi đơn ứng tuyển President" : "Gửi đơn ứng tuyển Co-founder") : "Gửi đơn ứng tuyển BTC";
             }
         }
 
@@ -1343,15 +1504,22 @@
                 const userDoc = await dbInstance.collection('users').doc(cred.user.uid).get();
                 
                 if (isNewUser || !userDoc.exists) {
-                    // Needs additional details
-                    googleUserTemp = cred.user;
-                    document.getElementById('loginArea').style.display = 'none';
-                    document.getElementById('registerArea').style.display = 'none';
-                    document.getElementById('googleAdditionalArea').style.display = 'block';
-                    
-                    document.getElementById('ggName').value = googleUserTemp.displayName || '';
-                    document.getElementById('ggEmail').value = email;
-                    showToast("Đăng nhập thành công! Vui lòng hoàn tất thông tin đăng ký.", "info");
+                    // Instantly create profile and proceed!
+                    const userProfile = {
+                        id: cred.user.uid,
+                        name: cred.user.displayName || 'Thành viên mới',
+                        email: email,
+                        phone: '',
+                        school: '',
+                        className: '',
+                        interest: '',
+                        intro: '',
+                        role: 'member',
+                        createdAt: new Date().toISOString().slice(0, 10),
+                        emailVerified: true
+                    };
+                    await dbInstance.collection('users').doc(cred.user.uid).set(userProfile);
+                    showToast("Đăng ký thành công bằng Google!", "success");
                 } else {
                     // Profile exists, let onAuthStateChanged handle redirect
                     showToast("Đăng nhập thành công!", "success");
@@ -1467,8 +1635,8 @@
             // Handle URL action parameters if passed
             const params = new URLSearchParams(window.location.search);
             const tabAction = params.get('tab') || params.get('action');
-            if (tabAction === 'cofounder') {
-                selectTab('cofounder');
+            if (tabAction === 'cofounder' || tabAction === 'president') {
+                selectTab(tabAction);
             } else if (tabAction === 'organizer') {
                 selectTab('organizer');
             } else if (tabAction === 'register') {

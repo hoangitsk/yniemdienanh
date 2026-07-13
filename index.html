@@ -2927,6 +2927,52 @@
             <div id="tdmBody"></div>
         </div>
     </div>
+    <!-- EMAIL COMPOSER MODAL (SOẠN & GỬI EMAIL) -->
+    <div class="modal" id="emailModal">
+        <div class="modal-box" style="width:min(650px,100%); background:var(--navy-dark); border:1px solid rgba(228,184,102,0.25)">
+            <span class="close-x" onclick="closeModal('emailModal')">✕</span>
+            <h3 style="color:var(--gold-light);font-size:1.3rem;margin-bottom:18px;display:flex;align-items:center;gap:8px">📧 Soạn & Gửi Email Ứng Viên</h3>
+            
+            <div style="display:grid; gap:14px; text-align:left">
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Gửi đến</label>
+                    <input id="emTo" type="email" readonly style="width:100%;background:rgba(0,0,0,0.2);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);padding:10px;border-radius:8px">
+                </div>
+                
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Mẫu email nhanh</label>
+                    <select id="emTemplateSelect" onchange="applyEmailTemplate()" style="width:100%;padding:10px;background:rgba(0,0,0,0.3);color:#e2e8f0;border-radius:8px;border:1px solid rgba(228,184,102,0.2)">
+                        <option value="">-- Chọn mẫu email --</option>
+                        <option value="approve">Duyệt & Chào mừng tham gia dự án</option>
+                        <option value="interview">Mời tham gia phỏng vấn</option>
+                        <option value="reject">Từ chối đơn ứng tuyển</option>
+                    </select>
+                </div>
+                
+                <div style="display:flex; justify-content:flex-end; align-items:center">
+                    <button class="btn btn-line btn-sm" onclick="generateEmailWithAI()" style="background:rgba(228,184,102,0.05);color:var(--gold-light);border-color:var(--gold);padding:6px 12px;border-radius:8px;cursor:pointer">
+                        🤖 Soạn thư bằng Gemini AI
+                    </button>
+                </div>
+                
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Tiêu đề email</label>
+                    <input id="emSubject" type="text" placeholder="Tiêu đề email..." style="width:100%;background:rgba(0,0,0,0.3);color:#e2e8f0;border:1px solid rgba(228,184,102,0.2);padding:10px;border-radius:8px">
+                </div>
+                
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Nội dung (hỗ trợ HTML)</label>
+                    <textarea id="emBody" rows="12" placeholder="Nội dung email soạn thảo ở đây..." style="width:100%;resize:vertical;background:rgba(0,0,0,0.3);color:#e2e8f0;border:1px solid rgba(228,184,102,0.2);font-family:monospace;font-size:0.88rem;padding:12px;border-radius:8px"></textarea>
+                </div>
+            </div>
+            
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+                <button class="btn btn-line btn-sm" onclick="closeModal('emailModal')">Hủy</button>
+                <button class="btn btn-gold btn-sm" onclick="sendCustomEmailSubmit()" id="emSendBtn">📤 Gửi Email</button>
+            </div>
+        </div>
+    </div>
+
 
     <script>
 
@@ -4249,7 +4295,7 @@
                             <span class="pill">Apply co-founder</span>
                             <h3>Đồng sáng lập dự án</h3>
                             <p>Nhóm nòng cốt sáng lập, đồng kiến tạo chiến lược và định hướng dài hạn cho dự án Ý Niệm Điện Ảnh.</p>
-                            <a href="/register?tab=cofounder" target="_blank" class="btn btn-gold" style="margin-top:20px; text-decoration:none; display:inline-flex">Apply Co-founder</a>
+                            <a href="/register?tab=president" target="_blank" class="btn btn-gold" style="margin-top:20px; text-decoration:none; display:inline-flex">Apply President</a>
                         </div>
                         <div class="card">
                             <span class="pill">Apply ban tổ chức</span>
@@ -5069,7 +5115,8 @@
                             <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06)">
                                 <h4 style="color:var(--text-muted);margin-bottom:12px">🎥 Bài dự thi đã nộp (${mySubs.length})</h4>
                                 ${mySubs.length === 0 ? '<p style="color:var(--text-muted);font-size:0.85rem">Bạn chưa nộp bài dự thi nào.</p>' :
-                                    '<div class="table-wrap"><table><tr><th>Tác phẩm</th><th>Trạng thái</th><th>Award</th></tr>' + mySubs.map(function(s) {
+                                    '<div class="table-wrap"><table><tr><th>Tác phẩm</th><th>Trạng thái</th>
+                                        <th>Hành động</th><th>Award</th></tr>' + mySubs.map(function(s) {
                                         var sc = s.status === 'approved' ? '#22c55e' : s.status === 'pending' ? '#eab308' : '#ef4444';
                                         var sl = s.status === 'approved' ? 'Đã duyệt' : s.status === 'pending' ? 'Chờ duyệt' : 'Từ chối';
                                         var awardHtml = s.award ? '<span style="color:#fbbf24;font-weight:600">' + esc(s.award) + '</span>' : '—';
@@ -5081,7 +5128,8 @@
                             <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06)">
                                 <h4 style="color:var(--text-muted);margin-bottom:12px">💰 Lịch sử thanh toán (${myTxs.length})</h4>
                                 ${myTxs.length === 0 ? '<p style="color:var(--text-muted);font-size:0.85rem">Chưa có giao dịch nào.</p>' :
-                                    '<div class="table-wrap"><table><tr><th>Mã giao dịch</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th>Ngày</th></tr>' + myTxs.map(function(t) {
+                                    '<div class="table-wrap"><table><tr><th>Mã giao dịch</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th>
+                                        <th>Hành động</th><th>Ngày</th></tr>' + myTxs.map(function(t) {
                                         var sc2 = t.status === 'confirmed' ? '#22c55e' : t.status === 'pending' ? '#eab308' : '#ef4444';
                                         var sl2 = t.status === 'confirmed' ? 'Đã xác nhận' : t.status === 'pending' ? 'Chờ xử lý' : 'Thất bại';
                                         var typeLabel = t.type === 'registration' ? 'Đăng ký' : t.type === 'vote' ? 'Bình chọn' : 'Tài trợ';
@@ -5361,7 +5409,8 @@
                         ].join('') : '',
                         '<div class="panel">',
                             '<h3 style="color:var(--gold-light);margin-bottom:14px">Tất cả bài dự thi (', filteredSubs.length, ')</h3>',
-                            '<div class="table-wrap"><table><tr><th>Tác phẩm</th><th>Đội thi</th><th>Lượt vote</th><th>Trạng thái</th><th>Người nộp</th><th>Hành động</th></tr>',
+                            '<div class="table-wrap"><table><tr><th>Tác phẩm</th><th>Đội thi</th><th>Lượt vote</th><th>Trạng thái</th>
+                                        <th>Hành động</th><th>Người nộp</th><th>Hành động</th></tr>',
                             (function(){
                                 var subPage = window._subPage || 1;
                                 var subPResult = paginateList(filteredSubs, subPage, 20);
@@ -5370,7 +5419,7 @@
                                 var subNav = subPResult.navHtml;
                                 return subItems.map(function(s) {
                                     return '<tr><td data-label="Tác phẩm"><b>' + esc(s.title) + '</b></td><td data-label="Đội thi">' + esc(s.team) + '</td><td data-label="Lượt vote">' + (s.votes || 0) + '</td><td data-label="Trạng thái"><span class="chip" style="background:' + (s.status === 'approved' ? 'rgba(34,197,94,0.2)' : s.status === 'pending' ? 'rgba(234,179,8,0.2)' : 'rgba(239,68,68,0.2)') + ';color:' + (s.status === 'approved' ? '#22c55e' : s.status === 'pending' ? '#eab308' : '#ef4444') + '">' + (s.status === 'approved' ? 'Đã duyệt' : s.status === 'pending' ? 'Chờ duyệt' : 'Từ chối') + '</span></td><td data-label="Người nộp">' + esc(s.submittedBy || '—') + '</td><td data-label="Hành động"><button class="btn btn-line btn-sm" onclick="adminEditSubmission(' + s.id + ')">✏️ Sửa</button><button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteSubmissionItem(' + s.id + ')">🗑 Xóa</button></td></tr>';
-                                }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có bài dự thi nào.</td></tr>' + subNav;
+                                }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Chưa có bài dự thi nào.</td></tr>' + subNav;
                             })(),
                             '</table></div></div>',
                     ].join('');
@@ -5400,7 +5449,7 @@
                                     </tr>
                                     ${pendings.map(a => `
                                         <tr>
-                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'}</span></td>
+                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'president' ? 'President' : (a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'))}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
                                             <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : (a.position === 'core' ? 'Core' : 'Thành viên')}</strong>)` : ''}</td>
@@ -5408,9 +5457,10 @@
                                             <td data-label="Quyết định">
                                                 <button class="btn btn-gold btn-sm" onclick="approveApplication(${a.id})">✔ Duyệt</button>
                                                 <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication(${a.id})">✕ Từ chối</button>
+                                                 <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--gold);border-color:var(--gold)" onclick="openEmailModal(${a.id})">📧 Gửi Email</button>
                                             </td>
                                         </tr>
-                                    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Không có đơn ứng tuyển mới.</td></tr>'}
+                                    `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Không có đơn ứng tuyển mới.</td></tr>'}
                                 </table>
                             </div>
                         </div>
@@ -5430,10 +5480,11 @@
                                         <th>Nguyện vọng Ban / Chức vụ</th>
                                         <th style="width:30%">Giới thiệu bản thân</th>
                                         <th>Trạng thái</th>
+                                        <th>Hành động</th>
                                     </tr>
                                     ${processed.map(a => `
                                         <tr>
-                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên')}</span></td>
+                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'president' ? 'President' : (a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'))}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
                                             <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : (a.position === 'core' ? 'Core' : 'Thành viên')}</strong>)` : ''}</td>
@@ -5446,8 +5497,11 @@
                                                     ${a.status === 'approved' ? '✔ Đã duyệt' : '✕ Từ chối'}
                                                 </span>
                                             </td>
+                                            <td data-label="Hành động">
+                                                <button class="btn btn-line btn-sm" style="color:var(--gold);border-color:var(--gold)" onclick="openEmailModal(${a.id})">📧 Liên hệ</button>
+                                            </td>
                                         </tr>
-                                    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có đơn ứng tuyển nào được duyệt hoặc từ chối.</td></tr>'}
+                                    `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Chưa có đơn ứng tuyển nào được duyệt hoặc từ chối.</td></tr>'}
                                 </table>
                             </div>
                         </div>
@@ -5647,7 +5701,8 @@
                             '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px">',
                                 '<h3 style="color:var(--gold-light);margin:0">Lịch sử giao dịch (', filteredTxs.length, ')</h3>',
                             '</div>',
-                            '<div class="table-wrap"><table><tr><th>Người dùng</th><th>Nội dung</th><th>Số tiền</th><th>Trạng thái</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>',
+                            '<div class="table-wrap"><table><tr><th>Người dùng</th><th>Nội dung</th><th>Số tiền</th><th>Trạng thái</th>
+                                        <th>Hành động</th><th>Memo</th><th>Thời gian</th><th>Thao tác</th></tr>',
                             (function(){
                                 var txPage = window._txPage || 1;
                                 var txReversed = filteredTxs.slice().reverse();
@@ -5939,7 +5994,8 @@
                             '</div>',
                             '<div class="table-wrap">',
                                 '<table>',
-                                    '<tr><th>ID</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Phòng ban</th><th>Xác thực</th><th>Trạng thái</th><th>Hoạt động</th><th>Ghi chú</th><th>Thao tác</th></tr>',
+                                    '<tr><th>ID</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Phòng ban</th><th>Xác thực</th><th>Trạng thái</th>
+                                        <th>Hành động</th><th>Hoạt động</th><th>Ghi chú</th><th>Thao tác</th></tr>',
                                     filteredUsers.map(function(u) {
                                         var locked = u.locked ? '🔒 Đã khóa' : '🔓 Hoạt động';
                                         var lockColor = u.locked ? '#ef4444' : '#63d19e';
@@ -7400,7 +7456,7 @@
                     id: nextId,
                     name: a.name,
                     email: userEmail,
-                    role: a.type === 'organizer' ? 'organizer' : 'member',
+                    role: (a.type === 'organizer' || a.type === 'cofounder' || a.type === 'president') ? 'organizer' : 'member',
                     dept: a.dept
                 };
                 await saveItem('users', newUser);
@@ -10035,6 +10091,128 @@
         }
 
         // ================= NEW FEATURES SUPPORTING FUNCTIONS =================
+
+        // --- EMAIL MODAL & AI REPLY GENERATOR ---
+        window.currentEmailApp = null;
+        function openEmailModal(appId) {
+            const list = localDB.applications || [];
+            const app = list.find(x => String(x.id) === String(appId));
+            if (!app) return showToast('Không tìm thấy đơn ứng tuyển.', 'error');
+            window.currentEmailApp = app;
+            
+            document.getElementById('emTo').value = app.email;
+            document.getElementById('emTemplateSelect').value = '';
+            document.getElementById('emSubject').value = '';
+            document.getElementById('emBody').value = '';
+            openModal('emailModal');
+        }
+
+        function applyEmailTemplate() {
+            const app = window.currentEmailApp;
+            if (!app) return;
+            const type = document.getElementById('emTemplateSelect').value;
+            if (!type) {
+                document.getElementById('emSubject').value = '';
+                document.getElementById('emBody').value = '';
+                return;
+            }
+
+            const templates = {
+                approve: {
+                    subject: `[Ý Niệm Điện Ảnh] Kết quả ứng tuyển Ban Tổ Chức — ${app.name}`,
+                    body: `<p>Xin chào <strong>${app.name}</strong>,</p>
+<p>Thay mặt Ban Nhân Sự dự án Ý Niệm Điện Ảnh, chúng tôi vô cùng vui mừng thông báo đơn ứng tuyển vị trí <strong>${app.dept || 'BTC'}</strong> của bạn đã được chính thức thông qua!</p>
+<p>Chúng tôi sẽ sớm liên hệ qua Zalo/Facebook để mời bạn tham gia nhóm làm việc chính thức và bắt đầu hành trình onboarding.</p>
+<p>Chào mừng bạn đến với đại gia đình Ý Niệm Điện Ảnh! ✨</p>
+<p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
+                },
+                interview: {
+                    subject: `[Ý Niệm Điện Ảnh] Thư mời tham gia phỏng vấn — ${app.name}`,
+                    body: `<p>Xin chào <strong>${app.name}</strong>,</p>
+<p>Cảm ơn bạn đã quan tâm và nộp đơn ứng tuyển vào dự án Ý niệm Điện Ảnh. Chúng tôi rất ấn tượng với hồ sơ của bạn và muốn mời bạn tham gia một buổi phỏng vấn ngắn để trao đổi thêm.</p>
+<p>Vui lòng lựa chọn khung giờ phù hợp và phản hồi lại email này hoặc tin nhắn Zalo sớm nhất có thể nhé.</p>
+<p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
+                },
+                reject: {
+                    subject: `[Ý Niệm Điện Ảnh] Thư cảm ơn ứng tuyển — ${app.name}`,
+                    body: `<p>Xin chào <strong>${app.name}</strong>,</p>
+<p>Cảm ơn bạn đã dành thời gian nộp đơn ứng tuyển vị trí <strong>${app.dept || 'BTC'}</strong> tại dự án Ý Niệm Điện Ảnh.</p>
+<p>Dù rất tiếc chưa thể đồng hành cùng bạn ở mùa giải năm nay do giới hạn số lượng nhân sự, chúng tôi vẫn rất trân trọng hồ sơ của bạn và hy vọng có cơ hội hợp tác trong tương lai.</p>
+<p>Chúc bạn luôn giữ vững ngọn lửa đam mê điện ảnh và gặp nhiều may mắn!</p>
+<p>Thân ái,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
+                }
+            };
+
+            const t = templates[type];
+            if (t) {
+                document.getElementById('emSubject').value = t.subject;
+                document.getElementById('emBody').value = t.body;
+            }
+        }
+
+        async function generateEmailWithAI() {
+            const app = window.currentEmailApp;
+            if (!app) return showToast('Không xác định được ứng viên.', 'error');
+            const emailType = document.getElementById('emTemplateSelect').value || 'approve';
+            
+            showToast('AI đang soạn email, vui lòng đợi...', 'info');
+            try {
+                const res = await fetch('/api/email/generate-gemini-reply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: app.type,
+                        name: app.name,
+                        dept: app.dept,
+                        intro: app.intro,
+                        vision: app.vision,
+                        emailType: emailType
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Lỗi gọi API AI');
+                
+                document.getElementById('emSubject').value = data.subject || '';
+                document.getElementById('emBody').value = data.body || '';
+                showToast('Đã soạn xong email bằng AI!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Lỗi AI: ' + err.message, 'error');
+            }
+        }
+
+        async function sendCustomEmailSubmit() {
+            const to = document.getElementById('emTo').value;
+            const subject = document.getElementById('emSubject').value;
+            const html = document.getElementById('emBody').value;
+            
+            if (!subject.trim() || !html.trim()) {
+                return showToast('Vui lòng điền đầy đủ tiêu đề và nội dung email.', 'warning');
+            }
+
+            const btn = document.getElementById('emSendBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Đang gửi...';
+
+            try {
+                const res = await fetch('/api/email/send-custom', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to, subject, html })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Lỗi gửi email');
+                
+                showToast('Gửi email thành công!', 'success');
+                closeModal('emailModal');
+            } catch (err) {
+                console.error(err);
+                showToast('Gửi email thất bại: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Gửi Email';
+            }
+        }
 
         // --- GENERIC HELPERS ---
         function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }

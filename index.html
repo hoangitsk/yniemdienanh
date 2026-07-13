@@ -6938,14 +6938,27 @@
                 },
                 certificates() {
                     var certs = d.certificates||[];
+                    var seasons = d.seasons||[];
                     var subTab = sessionStorage.getItem('certSubTab')||'list';
                     var myCerts = certs.filter(function(c){return c.userId===session.id;});
+                    var typeLabel = { badge: 'Digital Badge', participation: 'Certificate of Participation', recognition: 'Certificate of Recognition', lor: 'Letter of Recommendation', finalist: 'Finalist', winner: 'Giải thưởng' };
+                    var tierLabel = { tier1: 'Cấp 1 · 1 sự kiện', tier2: 'Cấp 2 · 2-3 sự kiện', tier3: 'Cấp 3 · LOR đặc biệt' };
+                    var seasonOptions = seasons.map(function(s){return '<option value="'+esc(s.name||s.id)+'">'+esc(s.name||s.id)+'</option>';}).join('');
                     main.innerHTML = `
-                        <h2>📜 Chứng nhận / Certificate</h2>
+                        <h2>📜 Chứng nhận theo mùa / Seasonal Certification</h2>
+                        <div class="panel" style="border-color:rgba(212,175,55,0.35)">
+                            <h4 style="color:var(--gold-light);margin-bottom:10px">🏆 Quy chế cấp chứng nhận theo Season</h4>
+                            <div class="feature-grid">
+                                <div class="feature-card"><h4>Cấp 1</h4><p>Hoàn thành 1 sự kiện trong mùa: cấp Digital Badge hoặc Certificate of Participation dạng PDF.</p></div>
+                                <div class="feature-card"><h4>Cấp 2</h4><p>Đồng hành 2-3 sự kiện / 6-9 tháng: cấp Certificate of Recognition cho Core Team.</p></div>
+                                <div class="feature-card"><h4>Cấp 3</h4><p>Trưởng ban hoặc đóng góp xuất sắc: xét Letter of Recommendation chi tiết.</p></div>
+                            </div>
+                            <p style="color:var(--text-muted);font-size:0.86rem;margin-top:10px">📌 Chứng nhận chỉ xét <strong>một lần vào cuối Season</strong>. Thành viên cần hoàn thành tối thiểu <strong>80% KPI</strong> được giao; không đạt KPI sẽ không được cấp giấy.</p>
+                        </div>
                         <div class="tab-nav">
                             <button class="tab-btn ${subTab==='list'?'active':''}" onclick="sessionStorage.setItem('certSubTab','list');renderTab('certificates')">📜 Danh sách</button>
                             <button class="tab-btn ${subTab==='my'?'active':''}" onclick="sessionStorage.setItem('certSubTab','my');renderTab('certificates')">👤 Của tôi (${myCerts.length})</button>
-                            ${isOrg ? '<button class="tab-btn '+(subTab==='issue'?'active':'')+'" onclick="sessionStorage.setItem(\'certSubTab\',\'issue\');renderTab(\'certificates\')">📝 Cấp mới</button>' : ''}
+                            ${isOrg ? '<button class="tab-btn '+(subTab==='issue'?'active':'')+'" onclick="sessionStorage.setItem(\'certSubTab\',\'issue\');renderTab(\'certificates\')">📝 Cấp cuối mùa</button>' : ''}
                         </div>
                         ${subTab==='list' ? `
                         <div class="filter-bar">
@@ -6953,16 +6966,20 @@
                             <button class="filter-btn" onclick="filterCerts('team')">Theo đội</button>
                             <button class="filter-btn" onclick="filterCerts('individual')">Cá nhân</button>
                         </div>
-                        <div class="feature-grid">${certs.length===0 ? '<p style="color:var(--text-muted)">Chưa có chứng nhận nào.</p>' : certs.map(function(c){var u=d.users.find(function(x){return String(x.id)===String(c.userId);});var isTeam=c.teamId?true:false;return '<div class="cert-card" style="'+(isTeam?'border-color:#64b4ff':'')+'"><div class="cert-title">Ý Niệm Điện Ảnh</div><div class="cert-name">'+(u?esc(u.name):'')+'</div>'+(isTeam?'<div class="meta" style="justify-content:center;margin:6px 0"><span class="badge badge-blue">Đội: '+esc(c.teamName||'')+'</span><span class="badge badge-gold">'+esc(c.role||'Thành viên')+'</span></div>':'')+'<div class="cert-desc">'+(c.type==='participation'?'Đã tham gia':c.type==='finalist'?'Finalist':'Giải thưởng')+' · '+esc(c.achievement||'')+'</div><div class="cert-id">Mã: YNDA-'+esc(c.id)+'</div></div>';}).join('')}</div>` : subTab==='my' ? `
-                        <div class="feature-grid">${myCerts.length===0 ? '<p style="color:var(--text-muted)">Bạn chưa có chứng nhận nào.</p>' : myCerts.map(function(c){return '<div class="cert-card"><div class="cert-title">Ý Niệm Điện Ảnh</div><div class="cert-name">'+esc(session.name)+'</div>'+(c.teamId?'<div class="meta" style="justify-content:center;margin:6px 0"><span class="badge badge-blue">Đội: '+esc(c.teamName||'')+'</span><span class="badge badge-gold">'+esc(c.role||'')+'</span></div>':'')+'<div class="cert-desc">'+esc(c.achievement||'')+'</div><div class="cert-id">Mã: YNDA-'+esc(c.id)+'</div></div>';}).join('')}</div>` : `
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">📝 Cấp chứng nhận cho cá nhân</h4>
+                        <div class="feature-grid">${certs.length===0 ? '<p style="color:var(--text-muted)">Chưa có chứng nhận nào.</p>' : certs.map(function(c){var u=d.users.find(function(x){return String(x.id)===String(c.userId);});var isTeam=c.teamId?true:false;var meta=[c.season, tierLabel[c.tier]||'', c.kpiPassed===false?'Không đạt KPI':'KPI ≥ 80%'].filter(Boolean).join(' · ');return '<div class="cert-card" style="'+(isTeam?'border-color:#64b4ff':'')+'"><div class="cert-title">Ý Niệm Điện Ảnh</div><div class="cert-name">'+(u?esc(u.name):esc(c.userName||''))+'</div>'+(isTeam?'<div class="meta" style="justify-content:center;margin:6px 0"><span class="badge badge-blue">Đội: '+esc(c.teamName||'')+'</span><span class="badge badge-gold">'+esc(c.role||'Thành viên')+'</span></div>':'')+'<div class="cert-desc">'+(typeLabel[c.type]||'Chứng nhận')+' · '+esc(c.achievement||'')+'</div>'+(meta?'<div class="cert-id">'+esc(meta)+'</div>':'')+'<div class="cert-id">Mã: YNDA-'+esc(c.id)+'</div></div>';}).join('')}</div>` : subTab==='my' ? `
+                        <div class="feature-grid">${myCerts.length===0 ? '<p style="color:var(--text-muted)">Bạn chưa có chứng nhận nào. Chứng nhận sẽ được xét vào cuối Season nếu KPI đạt tối thiểu 80%.</p>' : myCerts.map(function(c){var meta=[c.season, tierLabel[c.tier]||'', c.kpiPassed===false?'Không đạt KPI':'KPI ≥ 80%'].filter(Boolean).join(' · ');return '<div class="cert-card"><div class="cert-title">Ý Niệm Điện Ảnh</div><div class="cert-name">'+esc(session.name)+'</div>'+(c.teamId?'<div class="meta" style="justify-content:center;margin:6px 0"><span class="badge badge-blue">Đội: '+esc(c.teamName||'')+'</span><span class="badge badge-gold">'+esc(c.role||'')+'</span></div>':'')+'<div class="cert-desc">'+(typeLabel[c.type]||'Chứng nhận')+' · '+esc(c.achievement||'')+'</div>'+(meta?'<div class="cert-id">'+esc(meta)+'</div>':'')+'<div class="cert-id">Mã: YNDA-'+esc(c.id)+'</div></div>';}).join('')}</div>` : `
+                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">📝 Cấp chứng nhận cuối Season</h4>
                             <div class="inline-form">
                                 <div class="field"><label>Người nhận</label><select id="certUser">${d.users.map(function(u){return '<option value="'+u.id+'">'+esc(u.name)+'</option>';}).join('')}</select></div>
-                                <div class="field"><label>Loại</label><select id="certType"><option value="participation">Tham gia</option><option value="finalist">Finalist</option><option value="winner">Giải thưởng</option></select></div>
-                                <div class="field"><label>Thành tích</label><input id="certAchievement" placeholder="VD: Giải Nhất"></div>
+                                <div class="field"><label>Season</label>${seasonOptions ? '<select id="certSeason">'+seasonOptions+'</select>' : '<input id="certSeason" placeholder="VD: Season 1: Khởi Nguyên">'}</div>
+                                <div class="field"><label>Cấp chứng nhận</label><select id="certTier"><option value="tier1">Cấp 1 - Digital Badge / Participation</option><option value="tier2">Cấp 2 - Certificate of Recognition</option><option value="tier3">Cấp 3 - Letter of Recommendation</option></select></div>
+                                <div class="field"><label>Loại</label><select id="certType"><option value="badge">Digital Badge</option><option value="participation">Certificate of Participation</option><option value="recognition">Certificate of Recognition</option><option value="lor">Letter of Recommendation</option></select></div>
+                                <div class="field"><label>Số sự kiện</label><input id="certEvents" type="number" min="1" value="1"></div>
+                                <div class="field"><label>KPI hoàn thành (%)</label><input id="certKpi" type="number" min="0" max="100" value="80"></div>
+                                <div class="field"><label>Đóng góp / thành tích</label><input id="certAchievement" placeholder="VD: Core Team Truyền thông · đạt 120% KPI"></div>
                                 <button class="btn btn-gold" onclick="issueCertificate()">📜 Cấp</button>
                             </div>
-                            <p style="color:var(--text-muted);font-size:0.82rem;margin-top:8px">💡 Đăng ký theo đội: chứng chỉ tự động cấp cho <strong>tất cả thành viên</strong> trong đội (xem tab "Danh sách").</p>
+                            <p style="color:var(--text-muted);font-size:0.82rem;margin-top:8px">💡 Hệ thống sẽ chặn cấp chứng nhận nếu KPI dưới 80%. LOR chỉ nên dùng cho trưởng ban hoặc đóng góp đặc biệt xuất sắc.</p>
                         </div>`}
                     `;
                 },
@@ -10939,13 +10956,28 @@
         // --- CERTIFICATES ---
         async function issueCertificate() {
             var userId=document.getElementById('certUser');var type=document.getElementById('certType');var achievement=document.getElementById('certAchievement');
+            var season=document.getElementById('certSeason');var tier=document.getElementById('certTier');var eventCount=document.getElementById('certEvents');var kpi=document.getElementById('certKpi');
+            var kpiPercent = Number(kpi && kpi.value ? kpi.value : 0);
+            if (kpiPercent < 80) return showToast('Không thể cấp chứng nhận: thành viên chưa đạt tối thiểu 80% KPI.', 'error');
             if (!localDB.certificates) localDB.certificates = [];
             var certId = (localDB.certificates.length+1001).toString();
             var u = localDB.users.find(function(x){return String(x.id)===String(userId.value);});
-            localDB.certificates.push({id:certId,userId:userId.value,userName:u?u.name:'',type:type.value,achievement:achievement.value.trim(),issuedAt:new Date().toISOString()});
+            localDB.certificates.push({
+                id:certId,
+                userId:userId.value,
+                userName:u?u.name:'',
+                type:type.value,
+                tier:tier?tier.value:'tier1',
+                season:season?season.value.trim():'',
+                eventCount:Number(eventCount&&eventCount.value?eventCount.value:1),
+                kpiPercent:kpiPercent,
+                kpiPassed:true,
+                achievement:achievement.value.trim(),
+                issuedAt:new Date().toISOString()
+            });
             achievement.value='';
             await saveItem('certificates', localDB.certificates);
-            renderTab('certificates');showToast('Đã cấp chứng nhận cho '+(u?u.name:'')+'! Mã: YNDA-'+certId,'success');
+            renderTab('certificates');showToast('Đã cấp chứng nhận cuối mùa cho '+(u?u.name:'')+'! Mã: YNDA-'+certId,'success');
         }
         function filterCerts(type) { sessionStorage.setItem('certFilter',type); renderTab('certificates'); }
 

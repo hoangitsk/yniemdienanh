@@ -2978,13 +2978,15 @@
         </div>
     </div>
 
-    <!-- TASK DETAIL MODAL -->
+        <!-- TASK DETAIL MODAL -->
     <div class="modal" id="taskDetailModal">
         <div class="modal-box" style="width:min(700px,100%)">
             <span class="close-x" onclick="closeModal('taskDetailModal')">✕</span>
             <h3 id="tdmTitle" style="text-align:left;font-size:1.2rem">Chi tiết nhiệm vụ</h3>
             <div id="tdmBody"></div>
         </div>
+    </div>
+
     <!-- EMAIL COMPOSER MODAL (SOẠN & GỬI EMAIL) -->
     <div class="modal" id="emailModal">
         <div class="modal-box" style="width:min(650px,100%); background:var(--navy-dark); border:1px solid rgba(228,184,102,0.25)">
@@ -4541,7 +4543,7 @@
                     }
                 }
 
-                // New Google user (not found anywhere) - auto create profile instantly!
+                                // New Google user (not found anywhere) - auto create profile instantly!
                 if (!userFound) {
                     try {
                         const newUser = {
@@ -5965,11 +5967,11 @@
                                     </tr>
                                     ${pendings.map(a => `
                                         <tr>
-                                            <td data-label="Loại đơn"><span class="chip">${a.type === 'president' ? 'President' : (a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'))}</span></td>
+                                                                                        <td data-label="Loại đơn"><span class="chip">${a.type === 'president' ? 'President' : (a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'))}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
                                             <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : (a.position === 'core' ? 'Core' : 'Thành viên')}</strong>)` : ''}</td>
-                                            <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">
+                                                                                        <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">
                                                 ${esc(a.intro)}
                                                 ${a.vision ? `<br><strong style="color:var(--gold-light)">Tầm nhìn:</strong> ${esc(a.vision)}` : ''}
                                             </td>
@@ -10633,7 +10635,7 @@
 
         // ================= NEW FEATURES SUPPORTING FUNCTIONS =================
 
-        // --- EMAIL MODAL & AI REPLY GENERATOR ---
+                // --- EMAIL MODAL & AI REPLY GENERATOR ---
         window.currentEmailApp = null;
         function openEmailModal(appId) {
             const list = localDB.applications || [];
@@ -10678,7 +10680,7 @@
                     subject: `[Ý Niệm Điện Ảnh] Thư cảm ơn ứng tuyển — ${app.name}`,
                     body: `<p>Xin chào <strong>${app.name}</strong>,</p>
 <p>Cảm ơn bạn đã dành thời gian nộp đơn ứng tuyển vị trí <strong>${app.dept || 'BTC'}</strong> tại dự án Ý Niệm Điện Ảnh.</p>
-<p>Dù rất tiếc chưa thể đồng hành cùng bạn ở mùa giải năm nay do giới hạn số lượng nhân sự, chúng tôi vẫn rất trân trọng hồ sơ của bạn và hy vọng có cơ hội hợp tác trong tương lai.</p>
+<p>Dù rất tiếc chưa thể đồng hành cùng bạn ở mùa giải năm nay do giới hạn số lượng nhân sự, chúng tôi vẫn rất trân trọng hồ sơ của bạn và hy chọn cơ hội hợp tác trong tương lai.</p>
 <p>Chúc bạn luôn giữ vững ngọn lửa đam mê điện ảnh và gặp nhiều may mắn!</p>
 <p>Thân ái,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
                 }

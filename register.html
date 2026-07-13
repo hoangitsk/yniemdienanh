@@ -360,7 +360,7 @@
             color: var(--gold-light);
         }
 
-        /* Responsive */
+                /* Responsive */
         @media (max-width: 600px) {
             .form-card {
                 padding: 24px 16px;
@@ -427,7 +427,7 @@
 
         <!-- 3 Portal Cards -->
         <div class="portal-grid">
-            <div class="portal-card" id="card-president" onclick="selectTab('president')">
+                        <div class="portal-card" id="card-president" onclick="selectTab('president')">
                 <div>
                     <div class="icon">👑</div>
                     <h3>Apply President</h3>
@@ -450,7 +450,7 @@
             </div>
         </div>
 
-        <!-- ============ FORM 1: APPLY PRESIDENT ============ -->
+                <!-- ============ FORM 1: APPLY PRESIDENT ============ -->
         <div class="form-card" id="form-president">
             <h2 style="color:var(--gold);margin-bottom:10px">👑 Đơn Ứng Tuyển President (Chủ tịch)</h2>
             <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:20px">Hãy chia sẻ thông tin và tầm nhìn của bạn để cùng chúng tôi lãnh đạo dự án cất cánh.</p>
@@ -468,11 +468,11 @@
                 <label for="cfIntro">Giới thiệu bản thân & kinh nghiệm liên quan *</label>
                 <textarea id="cfIntro" required placeholder="Kinh nghiệm của bạn, các dự án trước đây bạn từng tham gia hoặc vận hành (tối thiểu 20 ký tự)..."></textarea>
                 
-                <label for="cfVision">Tầm nhìn & Định hướng phát triển dự án *</label>
+                                <label for="cfVision">Tầm nhìn & Định hướng phát triển dự án *</label>
                 <textarea id="cfVision" required placeholder="Tại sao bạn muốn ứng cử vị trí President? Định hướng và giá trị bạn mong muốn mang lại cho Ý Niệm Điện Ảnh là gì (tối thiểu 30 ký tự)..."></textarea>
                 
                 <div class="form-msg" id="cfMsg"></div>
-                <button class="btn btn-gold" id="cfSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn ứng tuyển President</button>
+                                <button class="btn btn-gold" id="cfSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn ứng tuyển President</button>
             </form>
         </div>
 
@@ -662,6 +662,22 @@
         </div>
     </div>
 
+    <!-- POPUP YÊU CẦU ĐĂNG NHẬP -->
+    <div class="modal" id="recruitmentAuthModal">
+        <div class="modal-box" style="width:min(450px,100%); text-align:center; padding:30px; background:var(--navy-dark); border:1px solid rgba(228,184,102,0.25)">
+            <span class="close-x" onclick="closeModal('recruitmentAuthModal')">✕</span>
+            <div style="font-size:3rem; margin-bottom:15px">🔑</div>
+            <h3 style="color:var(--gold-light); margin-bottom:12px; font-size:1.25rem">Yêu Cầu Đăng Nhập</h3>
+            <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.6; margin-bottom:24px">
+                Vui lòng đăng nhập bằng tài khoản Google để tiếp tục điền đơn ứng tuyển vị trí này.
+            </p>
+            <button class="btn btn-gold" onclick="event.preventDefault(); submitGoogleLoginFromPopup()" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:8px; cursor:pointer">
+                <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.529-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 5.922 1 12s4.922 11 11.24 11c6.59 0 11-4.636 11-11 0-.737-.08-1.3-.176-1.715H12.24z"/></svg>
+                Đăng nhập bằng Google
+            </button>
+        </div>
+    </div>
+
     <script>
         // ================= CONFIGURATION & FIREBASE =================
         const FIREBASE_CONFIG = {
@@ -777,7 +793,7 @@
                             }
                             sessionStorage.setItem('ynda_user', JSON.stringify(session));
                             
-                            // If logged in and they are just on register page, redirect to dashboard only if on login/register tab
+                                                        // If logged in and they are just on register page, redirect to dashboard only if on login/register tab
                             closeModal('recruitmentAuthModal');
                             if (currentTabId === 'member' || !currentTabId) {
                                 showToast("Đã đăng nhập! Đang chuyển hướng đến Khu nội bộ...", "success");
@@ -810,7 +826,7 @@
             fetchBTCUsers();
         }
 
-        // Modal open/close helpers
+                // Modal open/close helpers
         function openModal(id) {
             const el = document.getElementById(id);
             if (el) el.classList.add('open');
@@ -929,7 +945,7 @@
             const selectedCard = document.getElementById('card-' + tabId);
             if (selectedCard) selectedCard.classList.add('active');
 
-            // Show form & check login popup
+                        // Show form & check login popup
             document.querySelectorAll('.form-card').forEach(f => f.style.display = 'none');
             const targetForm = document.getElementById('form-' + tabId);
             if (targetForm) {
@@ -1194,7 +1210,7 @@
         }
 
         // ================= FLOW: SUBMIT APPLICATIONS =================
-        async function submitApplication(type) {
+                async function submitApplication(type) {
             const isCoFounder = type === 'cofounder' || type === 'president';
             const prefix = isCoFounder ? 'cf' : 'org';
             
@@ -1275,7 +1291,7 @@
                 msgEl.textContent = "Gặp lỗi: " + err.message;
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = isCoFounder ? (type === 'president' ? "Gửi đơn ứng tuyển President" : "Gửi đơn ứng tuyển Co-founder") : "Gửi đơn ứng tuyển BTC";
+                                submitBtn.textContent = isCoFounder ? (type === 'president' ? "Gửi đơn ứng tuyển President" : "Gửi đơn ứng tuyển Co-founder") : "Gửi đơn ứng tuyển BTC";
             }
         }
 
@@ -1503,7 +1519,7 @@
                 // Check if user profile already exists
                 const userDoc = await dbInstance.collection('users').doc(cred.user.uid).get();
                 
-                if (isNewUser || !userDoc.exists) {
+                                if (isNewUser || !userDoc.exists) {
                     // Instantly create profile and proceed!
                     const userProfile = {
                         id: cred.user.uid,
@@ -1635,7 +1651,7 @@
             // Handle URL action parameters if passed
             const params = new URLSearchParams(window.location.search);
             const tabAction = params.get('tab') || params.get('action');
-            if (tabAction === 'cofounder' || tabAction === 'president') {
+                        if (tabAction === 'cofounder' || tabAction === 'president') {
                 selectTab(tabAction);
             } else if (tabAction === 'organizer') {
                 selectTab('organizer');

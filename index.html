@@ -2967,6 +2967,7 @@
                     <select id="emTemplateSelect" onchange="handleEmailTemplateChange()" style="width:100%;padding:10px;background:rgba(0,0,0,0.3);color:#e2e8f0;border-radius:8px;border:1px solid rgba(228,184,102,0.2)">
                         <option value="">-- Chọn mẫu email --</option>
                         <option value="approve">Duyệt & Chào mừng tham gia dự án</option>
+                        <option value="round1_pass">Chúc mừng vượt qua vòng 1</option>
                         <option value="interview">Mời tham gia phỏng vấn</option>
                         <option value="reject">Từ chối đơn ứng tuyển</option>
                     </select>
@@ -10332,6 +10333,15 @@
 <p>Thay mặt Ban Nhân Sự dự án Ý Niệm Điện Ảnh, chúng tôi vô cùng vui mừng thông báo đơn ứng tuyển vị trí <strong>${app.dept || 'BTC'}</strong> của bạn đã được chính thức thông qua!</p>
 <p>Chúng tôi sẽ sớm liên hệ qua Zalo/Facebook để mời bạn tham gia nhóm làm việc chính thức và bắt đầu hành trình onboarding.</p>
 <p>Chào mừng bạn đến với đại gia đình Ý Niệm Điện Ảnh! ✨</p>
+<p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
+                },
+                round1_pass: {
+                    subject: `[Ý Niệm Điện Ảnh] Chúc mừng bạn đã vượt qua vòng 1 — ${app.name}`,
+                    body: `<p>Xin chào <strong>${app.name}</strong>,</p>
+<p>Ban Nhân Sự Ý Niệm Điện Ảnh vui mừng thông báo bạn đã chính thức <strong>vượt qua vòng 1</strong> của quá trình ứng tuyển.</p>
+<p>Trong vòng <strong>3 ngày tới</strong>, chúng tôi sẽ gửi một email tiếp theo đến địa chỉ này để bạn lựa chọn khung giờ phỏng vấn phù hợp.</p>
+<p>Vui lòng theo dõi hộp thư đến, mục Quảng cáo và Thư rác để không bỏ lỡ thông báo nhé.</p>
+<p>Chúc mừng bạn và hẹn gặp lại ở vòng phỏng vấn!</p>
 <p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
                 },
                 interview: {

@@ -5966,6 +5966,22 @@
                             <h2 style="margin:0">👥 Quản lý Nhân sự & Đơn Tuyển dụng</h2>
                             <button class="btn btn-gold btn-sm" onclick="exportCSV('applications')">📥 Xuất tất cả đơn apply (CSV)</button>
                         </div>
+
+                        <div class="panel" style="padding:14px;margin-bottom:16px;border-color:rgba(228,184,102,.28)">
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                                <strong style="color:var(--gold-light)">📨 Gửi email hàng loạt</strong>
+                                <select id="bulkEmailType" style="min-width:240px;padding:9px;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);border-radius:8px">
+                                    <option value="">-- Chọn loại email --</option>
+                                    <option value="round1_pass">Chúc mừng vượt qua vòng 1</option>
+                                    <option value="interview">Mời chọn lịch phỏng vấn</option>
+                                    <option value="approve">Duyệt & chào mừng</option>
+                                    <option value="reject">Từ chối ứng tuyển</option>
+                                </select>
+                                <button id="bulkEmailSendBtn" class="btn btn-gold btn-sm" onclick="sendBulkPersonalizedEmails()">📤 Gửi cá nhân hóa hàng loạt</button>
+                                <span id="bulkEmailCount" style="font-size:.8rem;color:var(--text-muted)">0 ứng viên đã chọn</span>
+                            </div>
+                            <div id="bulkEmailProgress" style="font-size:.75rem;color:var(--text-muted);margin-top:8px">Gemini tối ưu riêng từng thư, tối đa 8 ứng viên trong một lượt tạo để tiết kiệm quota.</div>
+                        </div>
                         
                         <!-- DANH SÁCH ĐƠN APPLY CHỜ DUYỆT -->
                         <div class="panel">
@@ -5973,6 +5989,7 @@
                             <div class="table-wrap">
                                 <table>
                                     <tr>
+                                        <th><input type="checkbox" aria-label="Chọn tất cả ứng viên" onchange="toggleBulkEmailSelection(this.checked,this)"></th>
                                         <th>Loại đơn</th>
                                         <th>Ứng viên</th>
                                         <th>Thông tin liên hệ</th>
@@ -5982,6 +5999,7 @@
                                     </tr>
                                     ${pendings.map(a => `
                                         <tr>
+                                            <td data-label="Chọn"><input class="bulk-email-app" type="checkbox" value="${a.id}" aria-label="Chọn ${esc(a.name)}" onchange="updateBulkEmailCount()"></td>
                                                                                         <td data-label="Loại đơn"><span class="chip">${a.type === 'president' ? 'President' : (a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'))}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
@@ -5994,9 +6012,10 @@
                                                 <button class="btn btn-gold btn-sm" onclick="approveApplication(${a.id})">✔ Duyệt</button>
                                                 <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication(${a.id})">✕ Từ chối</button>
                                                 <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--gold);border-color:var(--gold)" onclick="openEmailModal(${a.id})">📧 Gửi Email</button>
+                                                <div style="margin-top:8px">${renderApplicationEmailStatus(a)}</div>
                                             </td>
                                         </tr>
-                                    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Không có đơn ứng tuyển mới.</td></tr>'}
+                                    `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Không có đơn ứng tuyển mới.</td></tr>'}
                                 </table>
                             </div>
                         </div>
@@ -6010,6 +6029,7 @@
                             <div class="table-wrap" id="processedAppsTable" style="display:none">
                                 <table>
                                     <tr>
+                                        <th><input type="checkbox" aria-label="Chọn tất cả ứng viên" onchange="toggleBulkEmailSelection(this.checked,this)"></th>
                                         <th>Loại đơn</th>
                                         <th>Ứng viên</th>
                                         <th>Liên hệ</th>
@@ -6020,6 +6040,7 @@
                                     </tr>
                                     ${processed.map(a => `
                                         <tr>
+                                            <td data-label="Chọn"><input class="bulk-email-app" type="checkbox" value="${a.id}" aria-label="Chọn ${esc(a.name)}" onchange="updateBulkEmailCount()"></td>
                                             <td data-label="Loại đơn"><span class="chip">${a.type === 'president' ? 'President' : (a.type === 'cofounder' ? 'Co-founder' : (a.type === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'))}</span></td>
                                             <td data-label="Ứng viên"><b>${esc(a.name)}</b></td>
                                             <td data-label="Liên hệ" style="font-size:0.8rem">${esc(a.email)}<br>${esc(a.phone)}</td>
@@ -6035,9 +6056,10 @@
                                             </td>
                                             <td data-label="Hành động">
                                                 <button class="btn btn-line btn-sm" style="color:var(--gold);border-color:var(--gold)" onclick="openEmailModal(${a.id})">📧 Liên hệ</button>
+                                                <div style="margin-top:8px">${renderApplicationEmailStatus(a)}</div>
                                             </td>
                                         </tr>
-                                    `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Chưa có đơn ứng tuyển nào được duyệt hoặc từ chối.</td></tr>'}
+                                    `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted)">Chưa có đơn ứng tuyển nào được duyệt hoặc từ chối.</td></tr>'}
                                 </table>
                             </div>
                         </div>
@@ -11871,6 +11893,7 @@
         // Helper: save entire collection to localStorage
         function persistDB() { localStorage.setItem('ynda_db', JSON.stringify(localDB)); }
     </script>
+    <script src="/js/hr-email-bulk.js"></script>
 </body>
 
 </html>

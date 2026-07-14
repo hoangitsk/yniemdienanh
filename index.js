@@ -9,6 +9,7 @@ const admin = require('firebase-admin');
 const { generateGeminiJson, getGeminiConfig } = require('./lib/gemini');
 const { ensureInterviewScheduleContent } = require('./lib/emailContent');
 const { normalizePdfAttachment } = require('./lib/pdfAttachment');
+const generateGeminiBulkEmails = require('./api/email/generate-gemini-bulk');
 require('dotenv').config();
 
 const PAYOS_CLIENT_ID = process.env.PAYOS_CLIENT_ID || "";
@@ -468,6 +469,8 @@ app.post('/api/send-notification-email', async (req, res) => {
 });
 
 // API: Generate personalized email with Gemini
+app.post('/api/email/generate-gemini-bulk', generateGeminiBulkEmails);
+
 app.post('/api/email/generate-gemini-reply', async (req, res) => {
     const { keys } = getGeminiConfig();
     if (keys.length === 0) {
@@ -736,6 +739,7 @@ app.get('/api/sync/status', (req, res) => {
 // Serve static files
 app.use('/Logo', express.static(path.join(__dirname, 'Logo')));
 app.use('/Kế hoạch', express.static(path.join(__dirname, 'Kế hoạch')));
+app.use('/js', express.static(path.join(__dirname, 'js')));
 
 // SPA routing fallback
 app.get('/payment-success', (req, res) => {

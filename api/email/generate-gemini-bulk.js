@@ -1,0 +1,76 @@
+const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
+const { ensureInterviewScheduleContent } = require('../../lib/emailContent');
+
+module.exports = async (req, res) => {
+    const corsOrigin = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
+    res.setHeader('Access-Control-Allow-Origin', corsOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    const { keys } = getGeminiConfig();
+    if (!keys.length) return res.status(500).json({ error: 'GEMINI_API_KEY chưa được cấu hình trên server.' });
+
+    const applications = Array.isArray(req.body && req.body.applications) ? req.body.applications.slice(0, 8) : [];
+    const emailType = req.body && req.body.emailType;
+    const allowedTypes = new Set(['approve', 'round1_pass', 'interview', 'reject']);
+    if (!applications.length || !allowedTypes.has(emailType)) {
+        return res.status(400).json({ error: 'Danh sách ứng viên hoặc loại email không hợp lệ.' });
+    }
+
+    const safeApplications = applications.map((app) => ({
+        id: String(app.id || '').slice(0, 100),
+        name: String(app.name || '').slice(0, 150),
+        type: String(app.type || '').slice(0, 50),
+        dept: String(app.dept || '').slice(0, 150),
+        intro: String(app.intro || '').slice(0, 800),
+        vision: String(app.vision || '').slice(0, 800)
+    })).filter((app) => app.id && app.name);
+    if (!safeApplications.length) return res.status(400).json({ error: 'Không có ứng viên hợp lệ.' });
+
+    const scheduleUrl = process.env.SCHEDULE_PUBLIC_URL || 'https://yniemdienanh.vercel.app/schedule';
+    const typeInstruction = {
+        approve: 'Thông báo được duyệt và chào mừng gia nhập dự án.',
+        round1_pass: 'Chúc mừng vượt qua vòng 1; nói rõ trong 3 ngày tới sẽ có email khác để chọn lịch phỏng vấn, chưa yêu cầu chọn lịch trong thư này.',
+        interview: `Mời phỏng vấn; bắt buộc có liên kết HTML đến ${scheduleUrl} để chọn thời gian rảnh; nói rõ hệ thống chốt lúc 0h hằng ngày theo giờ Việt Nam và ứng viên chưa được chốt vẫn có thể cập nhật đến hết hạn.`,
+        reject: 'Từ chối lịch sự, chân thành, cảm ơn ứng viên và chúc họ may mắn.'
+    }[emailType];
+
+    const prompt = `Bạn là Trưởng ban Nhân sự dự án phim ngắn phi lợi nhuận "Ý Niệm Điện Ảnh".
+Hãy viết RIÊNG một email tiếng Việt cho từng ứng viên trong danh sách JSON bên dưới.
+Loại thư: ${typeInstruction}
+Văn phong ấm áp, chuyên nghiệp, tự nhiên; cá nhân hóa dựa trên ban ứng tuyển, phần giới thiệu và tầm nhìn nhưng không bịa thông tin.
+Chỉ dùng HTML cơ bản trong body (<p>, <br>, <strong>, <ul>, <li>, <a>), không dùng <html>, <head>, <body>.
+
+Ứng viên:
+${JSON.stringify(safeApplications)}
+
+Trả về JSON chính xác theo cấu trúc:
+{
+  "emails": [
+    { "id": "giữ nguyên id đầu vào", "subject": "tiêu đề", "body": "nội dung HTML" }
+  ]
+}
+Phải trả đủ đúng một email cho mỗi id, không thêm id khác.`;
+
+    try {
+        const result = await generateGeminiJson(prompt);
+        const rawEmails = result.data && Array.isArray(result.data.emails) ? result.data.emails : [];
+        const allowedIds = new Set(safeApplications.map((app) => app.id));
+        const emails = rawEmails
+            .filter((email) => email && allowedIds.has(String(email.id)) && email.subject && email.body)
+            .map((email) => ({
+                id: String(email.id),
+                ...ensureInterviewScheduleContent({ subject: String(email.subject), body: String(email.body) }, emailType, scheduleUrl)
+            }));
+        if (emails.length !== safeApplications.length) {
+            return res.status(502).json({ error: 'Gemini không trả đủ email cho toàn bộ ứng viên.' });
+        }
+        res.setHeader('X-Gemini-Model', result.model);
+        return res.status(200).json({ emails, model: result.model });
+    } catch (error) {
+        console.error('Bulk Gemini email error:', error);
+        return res.status(error.status || 500).json({ error: error.message || 'Không thể tạo email hàng loạt.' });
+    }
+};

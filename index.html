@@ -261,7 +261,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 5%;
+            min-height: 76px;
+            padding: 12px 5%;
             background: rgba(5, 12, 20, 0.80);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -282,8 +283,10 @@
 
         @media (min-width: 1400px) {
             nav {
-                padding-left: calc((100vw - 1200px) / 2);
-                padding-right: calc((100vw - 1200px) / 2);
+                /* Header có nhiều điểm điều hướng hơn hero, vì vậy cần khung rộng
+                   riêng để không ép chữ và cụm tài khoản xuống hai hàng. */
+                padding-left: max(5%, calc((100vw - 1440px) / 2));
+                padding-right: max(5%, calc((100vw - 1440px) / 2));
             }
         }
 
@@ -299,6 +302,7 @@
             color: transparent;
             letter-spacing: 1px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .logo-wordmark {
@@ -322,19 +326,49 @@
 
         nav .links {
             display: flex;
-            gap: 24px;
+            gap: clamp(10px, 1.05vw, 20px);
             align-items: center;
+            justify-content: flex-end;
+            min-width: 0;
         }
 
         nav .links a {
             color: var(--text-light);
-            font-size: 0.95rem;
+            font-size: 0.86rem;
             font-weight: 500;
             cursor: pointer;
+            line-height: 1.35;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         nav .links a:hover {
             color: var(--gold);
+        }
+
+        #navAuth {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        #navAuth > * {
+            margin: 0 !important;
+        }
+
+        #navAuth .chip {
+            display: inline-block;
+            max-width: 170px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+
+        #navAuth .btn-sm {
+            padding: 7px 12px;
+            font-size: 0.76rem;
         }
 
         /* Responsive Mobile Navigation Menu */
@@ -389,6 +423,59 @@
 
             .logo-wordmark {
                 font-size: 0.95rem;
+            }
+        }
+
+        /* Thu gọn menu trước khi các mục điều hướng có cơ hội chồng lấn. */
+        @media (max-width: 1280px) and (min-width: 769px) {
+            nav {
+                padding: 12px 5%;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            nav .links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                max-height: calc(100svh - 76px);
+                overflow-y: auto;
+                background: rgba(5, 12, 20, 0.98);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                padding: 18px 5% 24px;
+                border-bottom: 1px solid rgba(224, 178, 98, 0.25);
+                box-shadow: 0 18px 36px rgba(0, 0, 0, 0.5);
+                text-align: center;
+            }
+
+            nav .links.open {
+                display: flex;
+            }
+
+            nav .links > a {
+                padding: 9px 12px;
+                font-size: 0.92rem;
+            }
+
+            nav .links #navAuth {
+                justify-content: center;
+                flex-wrap: wrap;
+                padding-top: 10px;
+                border-top: 1px solid rgba(228, 184, 102, 0.14);
+            }
+        }
+
+        @media (max-width: 1399px) and (min-width: 1281px) {
+            .logo-wordmark {
+                display: none;
             }
         }
 
@@ -483,10 +570,11 @@
 
         /* ===== HERO SECTION (2-column layout) ===== */
         .hero {
-            min-height: calc(100vh - 74px);
+            min-height: min(760px, calc(100vh - 76px));
+            min-height: min(760px, calc(100svh - 76px));
             display: grid;
             align-items: center;
-            padding: 52px 5% 42px;
+            padding: 48px 5% 44px;
             position: relative;
         }
 
@@ -545,7 +633,7 @@
             align-items: center;
             padding: 32px 28px;
             box-sizing: border-box;
-            min-height: 440px;
+            min-height: 410px;
             border: 1px solid var(--line);
             overflow: hidden;
             box-shadow: var(--shadow-card);
@@ -1769,6 +1857,16 @@
                 grid-template-columns: 1fr;
             }
 
+            .hero {
+                min-height: auto;
+                padding-top: 44px;
+                padding-bottom: 56px;
+            }
+
+            .hero-grid {
+                gap: 34px;
+            }
+
             .poster {
                 min-height: 400px;
             }
@@ -1843,6 +1941,8 @@
                 transform: translateY(-10px) !important;
                 pointer-events: none !important;
                 transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s !important;
+                max-height: calc(100svh - 72px) !important;
+                overflow-y: auto !important;
             }
 
             nav .links.open {
@@ -1981,6 +2081,44 @@
             .chat-msg {
                 max-width: 90% !important;
                 padding: 8px 12px !important;
+            }
+        }
+
+        @media (max-width: 520px) {
+            nav {
+                min-height: 68px;
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            .logo-wordmark {
+                max-width: 150px;
+            }
+
+            .hero {
+                padding: 36px 20px 48px;
+            }
+
+            .hero h1 {
+                margin-top: 8px;
+                letter-spacing: 0.5px;
+                line-height: 1.08;
+            }
+
+            .poster {
+                padding: 24px 18px !important;
+            }
+
+            .ticker {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .ticker strong,
+            .ticker span {
+                width: 100%;
+                text-align: left;
             }
         }
 
@@ -3014,6 +3152,11 @@
         window.onerror = function(message, source, lineno, colno, error) {
             var isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.search.includes('dev');
             if (isDev) {
+                // Bỏ qua lỗi script chéo nguồn hoặc Turnstile trên localhost để tránh che giao diện dev
+                if (message === 'Script error.' || (message && message.includes('Turnstile')) || (source && source.includes('challenges.cloudflare.com'))) {
+                    console.warn('Ignored external/Turnstile error on dev:', message, source);
+                    return false;
+                }
                 const errDiv = document.createElement('div');
                 errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:15px;z-index:10000;font-family:monospace;font-size:12px;white-space:pre-wrap;box-shadow:0 4px 10px rgba(0,0,0,0.5)';
                 errDiv.innerHTML = '<b>PHAT HIEN LOI JS:</b>\n' + message + '\nTap tin: ' + source + '\nDong: ' + lineno + ':' + colno + '\n\n<b>Chi tiet loi:</b>\n' + (error ? error.stack : 'N/A');
@@ -3758,670 +3901,6 @@
             const collections = isOrg 
                 ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints']
                 : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints'];
-            const promises = collections.map(async (col) => {
-                try {
-                    const snap = await firestoreWithTimeout(dbInstance.collection(col).get());
-                    localDB[col] = [];
-                    snap.forEach(doc => {
-                        let docData = doc.data();
-                        if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
-                            docData.id = parseInt(docData.id);
-                        }
-                        localDB[col].push(docData);
-                    });
-                } catch (err) {
-                    console.warn(`Không thể đọc ${col}:`, err.message || err);
-                    localDB[col] = localDB[col] || [];
-                }
-            });
-            await Promise.all(promises);
-
-            // Tải thêm các giao dịch cá nhân nếu không phải BTC/Admin (do phân quyền Security Rules)
-            if (useFirebase && dbInstance && !isOrg) {
-                try {
-                    const snap = await firestoreWithTimeout(dbInstance.collection('transactions').where('userId', '==', uid).get());
-                    localDB.transactions = [];
-                    snap.forEach(doc => {
-                        let docData = doc.data();
-                        if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
-                            docData.id = parseInt(docData.id);
-                        }
-                        localDB.transactions.push(docData);
-                    });
-                } catch (err) {
-                    console.warn("Không thể đọc transactions cá nhân:", err.message || err);
-                    localDB.transactions = localDB.transactions || [];
-                }
-            }
-
-            if (useFirebase && dbInstance) {
-                try {
-                    const seqDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('sequence').get());
-                    localDB.seq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
-                    await loadPublicConfigFromFirestore();
-                } catch (e) {
-                    console.warn('Không thể đọc sequence, giữ giá trị cũ:', e.message);
-                }
-            }
-
-            // Sao lưu dữ liệu xuống localStorage để phòng khi mất kết nối Firebase
-            localStorage.setItem('ynda_db', JSON.stringify(localDB));
-        }
-
-        async function saveItem(collection, item) {
-            // Handle both single-item saves and full-collection saves
-            if (item && typeof item === 'object' && !item.id && !Array.isArray(item)) {
-                // Object without id - treat as replacement for the collection
-                localDB[collection] = item;
-                localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                return;
-            }
-            var list = localDB[collection] || [];
-            // If item is an array being passed as the entire collection, treat as replacement
-            if (Array.isArray(item)) {
-                localDB[collection] = item;
-                localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                return;
-            }
-            var isNew = !list.find(function(x) { return x.id === item.id; });
-            if (isNew) {
-                list.push(item);
-            } else {
-                var idx = list.findIndex(function(x) { return x.id === item.id; });
-                if (idx !== -1) list[idx] = item;
-            }
-
-            if (useFirebase) {
-                try { await dbInstance.collection(collection).doc(String(item.id)).set(item); } catch(e) {}
-            } else {
-                localStorage.setItem('ynda_db', JSON.stringify(localDB));
-            }
-            // Ghi audit log cho cac collection quan trong
-            var auditCollections = ['users', 'events', 'submissions', 'tasks', 'budget', 'docs', 'feedback', 'posts', 'transactions'];
-            if (auditCollections.indexOf(collection) !== -1) {
-                addAuditLog((isNew ? 'create_' : 'update_') + collection, item.title || item.name || item.label || String(item.id));
-            }
-        }
-
-        async function deleteItemFromDB(collection, id) {
-            localDB[collection] = localDB[collection].filter(function(x) { return String(x.id) !== String(id); });
-            if (useFirebase) {
-                await dbInstance.collection(collection).doc(String(id)).delete();
-            } else {
-                localStorage.setItem('ynda_db', JSON.stringify(localDB));
-            }
-            var auditCollections = ['users', 'events', 'submissions', 'tasks', 'budget', 'docs', 'feedback', 'posts', 'transactions'];
-            if (auditCollections.indexOf(collection) !== -1) {
-                addAuditLog('delete_' + collection, 'ID: ' + id);
-            }
-        }
-
-        async function getNextId() {
-            localDB.seq++;
-            if (useFirebase) {
-                await dbInstance.collection('config').doc('sequence').set({ val: localDB.seq });
-            } else {
-                localStorage.setItem('ynda_db', JSON.stringify(localDB));
-            }
-            return localDB.seq;
-        }
-
-        // ================= AUDIT LOG =================
-        async function addAuditLog(action, detail) {
-            if (!localDB.auditLog) localDB.auditLog = [];
-            var entry = {
-                id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
-                action: action,
-                detail: detail || '',
-                userId: session ? session.id : null,
-                userName: session ? session.name : 'unknown',
-                time: new Date().toISOString()
-            };
-            localDB.auditLog.push(entry);
-            localStorage.setItem('ynda_db', JSON.stringify(localDB));
-            if (useFirebase) {
-                try {
-                    await dbInstance.collection('auditLog').add(entry);
-                } catch (e) { /* silent */ }
-            }
-        }
-
-        // ================= PAGINATION HELPER =================
-        function paginateList(items, page, pageSize) {
-            page = page || 1;
-            pageSize = pageSize || 20;
-            var total = items.length;
-            var totalPages = Math.ceil(total / pageSize) || 1;
-            if (page > totalPages) page = totalPages;
-            var start = (page - 1) * pageSize;
-            var end = Math.min(start + pageSize, total);
-            var pageItems = items.slice(start, end);
-            var html = '';
-            if (totalPages > 1) {
-                html += '<div style="display:flex;gap:6px;justify-content:center;align-items:center;padding:12px 0;font-size:0.85rem">';
-                if (page > 1) html += '<button class="btn btn-line btn-sm" onclick="window._pgCallback(' + (page - 1) + ')">Trang truoc</button>';
-                html += '<span style="color:var(--text-muted)">Trang ' + page + '/' + totalPages + ' (' + total + ' muc)</span>';
-                if (page < totalPages) html += '<button class="btn btn-line btn-sm" onclick="window._pgCallback(' + (page + 1) + ')">Trang sau</button>';
-                html += '</div>';
-            }
-            return { items: pageItems, page: page, totalPages: totalPages, total: total, navHtml: html };
-        }
-
-        // ================= UI AUXILIARY FUNCTIONS =================
-        function openModal(id) {
-            const el = document.getElementById(id);
-            if (el) el.classList.add('open');
-        }
-        function closeModal(id) {
-            const el = document.getElementById(id);
-            if (el) el.classList.remove('open');
-        }
-        // Đóng modal khi bấm phím Esc
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                var openModals = document.querySelectorAll('.modal.open');
-                for (var i = 0; i < openModals.length; i++) {
-                    openModals[i].classList.remove('open');
-                }
-            }
-        });
-        // ================= CONFIRM/ALERT/REPLACEMENT MODAL =================
-        function showConfirmModal(msg) {
-            return new Promise(function(resolve) {
-                var overlay = document.createElement('div');
-                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:20000;display:flex;align-items:center;justify-content:center';
-                var box = document.createElement('div');
-                box.style.cssText = 'background:#122438;border:1px solid rgba(228,184,102,0.2);border-radius:12px;padding:30px;max-width:420px;width:90%;text-align:center';
-                box.innerHTML = '<p style="color:#f8fafc;font-size:1rem;margin-bottom:20px;line-height:1.6">' + esc(msg) + '</p><div style="display:flex;gap:12px;justify-content:center"><button id="confirmYes" class="btn btn-gold">Xac nhan</button><button id="confirmNo" class="btn btn-line">Huy</button></div>';
-                overlay.appendChild(box);
-                document.body.appendChild(overlay);
-                document.getElementById('confirmYes').onclick = function() { overlay.remove(); resolve(true); };
-                document.getElementById('confirmNo').onclick = function() { overlay.remove(); resolve(false); };
-                overlay.onclick = function(e) { if (e.target === overlay) { overlay.remove(); resolve(false); } };
-                // Esc key
-                var escHandler = function(e) { if (e.key === 'Escape') { overlay.remove(); resolve(false); document.removeEventListener('keydown', escHandler); } };
-                document.addEventListener('keydown', escHandler);
-            });
-        }
-
-        function showPromptModal(msg, defaultValue) {
-            return new Promise(function(resolve) {
-                var overlay = document.createElement('div');
-                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:20000;display:flex;align-items:center;justify-content:center';
-                var box = document.createElement('div');
-                box.style.cssText = 'background:#122438;border:1px solid rgba(228,184,102,0.2);border-radius:12px;padding:30px;max-width:420px;width:90%;text-align:center';
-                box.innerHTML = '<p style="color:#f8fafc;font-size:1rem;margin-bottom:16px;line-height:1.6">' + esc(msg) + '</p><input id="promptInput" value="' + esc(defaultValue || '') + '" style="width:100%;padding:10px;border-radius:8px;background:#1c334e;color:#fff;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;font-size:1rem"><div style="display:flex;gap:12px;justify-content:center"><button id="promptOk" class="btn btn-gold">Xac nhan</button><button id="promptCancel" class="btn btn-line">Huy</button></div>';
-                overlay.appendChild(box);
-                document.body.appendChild(overlay);
-                var input = document.getElementById('promptInput');
-                input.focus();
-                input.select();
-                document.getElementById('promptOk').onclick = function() { overlay.remove(); resolve(input.value); };
-                document.getElementById('promptCancel').onclick = function() { overlay.remove(); resolve(null); };
-                overlay.onclick = function(e) { if (e.target === overlay) { overlay.remove(); resolve(null); } };
-                input.onkeydown = function(e) { if (e.key === 'Enter') { overlay.remove(); resolve(input.value); } if (e.key === 'Escape') { overlay.remove(); resolve(null); } };
-            });
-        }
-        function showSuccessPopup(msg, subMsg, isError) {
-            document.getElementById('successPopupMsg').innerHTML = msg || 'Đăng ký tài khoản thành công.';
-            const subEl = document.getElementById('successSubMsg');
-            if (subMsg) {
-                subEl.innerHTML = subMsg;
-                subEl.style.display = 'block';
-            } else {
-                subEl.style.display = 'none';
-            }
-            
-            const popup = document.getElementById('successPopup');
-            const successIcon = popup.querySelector('.status-icon-success');
-            const errorIcon = popup.querySelector('.status-icon-error');
-            const titleEl = document.getElementById('successPopupTitle');
-            
-            if (isError) {
-                popup.classList.add('popup-error');
-                successIcon.style.display = 'none';
-                errorIcon.style.display = 'block';
-                titleEl.textContent = 'Sự cố!';
-            } else {
-                popup.classList.remove('popup-error');
-                successIcon.style.display = 'block';
-                errorIcon.style.display = 'none';
-                titleEl.textContent = 'Thành công!';
-            }
-            
-            popup.classList.add('open');
-        }
-        function closeSuccessPopup() {
-            document.getElementById('successPopup').classList.remove('open');
-        }
-        function toggleAuth(login) {
-            document.getElementById('loginForm').style.display = login ? 'block' : 'none';
-            document.getElementById('registerForm').style.display = login ? 'none' : 'block';
-            const ggForm = document.getElementById('googleAdditionalForm');
-            if (ggForm) ggForm.style.display = 'none';
-        }
-        function showPage(p) {
-            // Kiem tra che do bao tri
-            if (localDB.config && localDB.config.maintenance && (!session || (session.role !== 'admin' && session.role !== 'organizer'))) {
-                const home = document.getElementById('page-home');
-                if (home) home.style.display = 'block';
-                const dash = document.getElementById('dashboard');
-                if (dash) dash.style.display = 'none';
-                const comm = document.getElementById('page-community');
-                if (comm) comm.style.display = 'none';
-                const voting = document.getElementById('page-voting');
-                if (voting) voting.style.display = 'none';
-                var homeEl = document.getElementById('page-home');
-                if (homeEl && !document.getElementById('maintenanceBanner')) {
-                    var banner = document.createElement('div');
-                    banner.id = 'maintenanceBanner';
-                    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,12,20,0.95);z-index:99999;display:flex;align-items:center;justify-content:center';
-                    banner.innerHTML = '<div style="text-align:center;max-width:500px;padding:40px"><div style="font-size:64px;margin-bottom:20px">🔧</div><h2 style="color:var(--gold-light);margin-bottom:16px">He thong dang bao tri</h2><p style="color:var(--text-muted);line-height:1.7">' + esc(localDB.config.maintenanceMsg || 'Chung toi dang nang cap he thong. Vui long quay lai sau.') + '</p></div>';
-                    document.body.appendChild(banner);
-                }
-                return;
-            }
-            const home = document.getElementById('page-home');
-            if (home) home.style.display = p === 'home' ? 'block' : 'none';
-            const dash = document.getElementById('dashboard');
-            if (dash) dash.style.display = p === 'dash' ? 'block' : 'none';
-            const comm = document.getElementById('page-community');
-            if (comm) comm.style.display = p === 'community' ? 'block' : 'none';
-            const voting = document.getElementById('page-voting');
-            if (voting) voting.style.display = p === 'voting' ? 'block' : 'none';
-            window.scrollTo(0, 0);
-            renderAllPrizePools();
-            if (p === 'community') { if (comm) showCommunityTab(communityCurTab); }
-            if (p === 'voting') { renderVoting(); }
-        }
-        function goSection(id) { 
-            showPage('home'); 
-            setTimeout(() => {
-                const el = document.getElementById(id);
-                if(el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 80); 
-        }
-        function toggleMobileMenu() {
-            const navLinks = document.getElementById('navLinks');
-            const toggleBtn = document.querySelector('.menu-toggle');
-            navLinks.classList.toggle('open');
-            if (toggleBtn) {
-                toggleBtn.textContent = navLinks.classList.contains('open') ? '✕' : '☰';
-            }
-        }
-        function closeMobileMenu() {
-            const navLinks = document.getElementById('navLinks');
-            const toggleBtn = document.querySelector('.menu-toggle');
-            if (navLinks) navLinks.classList.remove('open');
-            if (toggleBtn) toggleBtn.textContent = '☰';
-        }
-
-        // Chuyển tab Kanban trên giao diện di động
-        function switchKanbanMobile(statusKey) {
-            window.currentKanbanMobileTab = statusKey;
-            ['todo', 'doing', 'done'].forEach(s => {
-                const btn = document.getElementById('ktab-' + s);
-                const col = document.getElementById('kcol-' + s);
-                if (btn) {
-                    if (s === statusKey) btn.classList.add('active');
-                    else btn.classList.remove('active');
-                }
-                if (col) {
-                    if (s === statusKey) col.classList.add('active-mobile');
-                    else col.classList.remove('active-mobile');
-                }
-            });
-        }
-
-        // Cập nhật hiển thị Giai đoạn
-        function updateStageDisplay() {
-            currentStage = localDB.config?.stage || 'Xây dựng đội ngũ';
-            const stageEl = document.getElementById('currentStage');
-            if (stageEl) {
-                stageEl.textContent = currentStage;
-                if (session && session.role === 'admin') {
-                    stageEl.style.textDecoration = 'underline dashed var(--gold)';
-                    stageEl.style.cursor = 'pointer';
-                    stageEl.title = 'Click để chỉnh sửa giai đoạn (Admin)';
-                } else {
-                    stageEl.style.textDecoration = 'none';
-                    stageEl.style.cursor = 'default';
-                    stageEl.title = '';
-                }
-            }
-        }
-
-        // Thay đổi giai đoạn dự án dành cho Admin
-        async function editStage() {
-            if (!session || session.role !== 'admin') {
-                return; // Chỉ admin click được
-            }
-            const newStage = await showPromptModal("Nhập tên giai đoạn dự án mới:", currentStage);
-            if (newStage !== null && newStage.trim() !== "") {
-                currentStage = newStage.trim();
-                localDB.config = localDB.config || {};
-                localDB.config.stage = currentStage;
-                
-                try {
-                    if (useFirebase) {
-                        await dbInstance.collection('config').doc('stage').set({ val: currentStage });
-                    } else {
-                        localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                    }
-                    updateStageDisplay();
-                    addAuditLog('update_stage', 'Cập nhật giai đoạn: ' + currentStage);
-                    showToast("Cập nhật giai đoạn dự án thành công!", "success");
-                } catch (e) {
-                    showToast("Có lỗi: " + e.message, "error");
-                }
-            }
-        }
-
-        // ================= CONTENT MANAGEMENT (DYNAMIC CONTENT FROM DB) =================
-        let _contentFileFallback = null;
-
-        async function loadContentFromFile() {
-            try {
-                const resp = await fetch('/api/homepage-content');
-                if (resp.ok) {
-                    const data = await resp.json();
-                    if (data) {
-                        _contentFileFallback = data;
-                        return data;
-                    }
-                }
-            } catch (e) {
-                console.warn('Không thể tải nội dung từ file, dùng fallback inline:', e);
-            }
-            return null;
-        }
-
-        function getContent() {
-            function getDefaultContent() {
-                return {
-                    hero: {
-                        eyebrow: "Dự án phi lợi nhuận về điện ảnh",
-                        title: "Ý Niệm<br>Điện Ảnh",
-                        lead: "Kiến tạo sân chơi và bệ phóng cho các nhà làm phim học sinh, sinh viên trên toàn quốc.<br>Chính thức khởi động Tháng 7 này! Hãy cùng đồng hành với tụi mình trong hành trình đầy hứa hẹn.",
-                        target: "Học sinh - Sinh viên toàn quốc",
-                        transparency: "Đồng kiến tạo cộng đồng điện ảnh",
-                        goal: "Tuyển BTC (Core & Member)"
-                    },
-                    events: {
-                        title: "Sự kiện đang & sắp diễn ra",
-                        desc: "Nơi hội ngộ của những tâm hồn say mê điện ảnh. Theo dõi các hoạt động mới nhất từ dự án."
-                    },
-                    about: {
-                        title: "Về Dự Án",
-                        desc: "Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án phi lợi nhuận, minh bạch 100%.",
-                        cards: [
-                            { title: "Sứ mệnh", text: "Kiến tạo bệ phóng cho thế hệ làm phim trẻ tuổi tài năng." },
-                            { title: "Tầm nhìn", text: "Trở thành cộng đồng điện ảnh học sinh - sinh viên lớn nhất Việt Nam." },
-                            { title: "Giá trị cốt lõi", text: "Sáng tạo tự do, minh bạch 100%, kết nối và sẻ chia." }
-                        ]
-                    },
-                    rules: {
-                        title: "Thể Lệ & Tiêu Chí Chấm Giải",
-                        subtitle: "Thông tin kỹ thuật và nguyên tắc đánh giá từ Hội đồng chuyên môn",
-                        col1Title: "Phân hạng Thiết bị Công bằng",
-                        col1Items: [
-                            "<b>Hạng mục Ống Kính Di Động (Mobile):</b> Dành riêng cho phim quay bằng điện thoại, độ phân giải tối thiểu 1080p. Khuyến khích sự sáng tạo không giới hạn thiết bị.",
-                            "<b>Hạng mục Ống Kính Điện Ảnh (Camera):</b> Dành cho máy ảnh, máy quay chuyên dụng (Mirrorless, DSLR...). Yêu cầu kỹ thuật tối thiểu 1080p, khuyến khích 4K.",
-                            "<b>Thời lượng tác phẩm:</b> Từ 3 đến 7 phút (tính cả credit đầu/cuối), nộp bài qua liên kết Drive hoặc Youtube ẩn."
-                        ],
-                        col2Title: "Hình thức chấm điểm",
-                        col2Text: "Điểm đánh giá các tác phẩm dự thi được quyết định 100% bằng lượt **Bình chọn trực tuyến** từ cộng đồng.<br><br>Để đảm bảo tính công bằng tối đa và tránh gian lận vote, hệ thống tích hợp công nghệ quét địa chỉ IP và mã thiết bị đặc biệt. Mỗi địa chỉ IP hoặc thiết bị chỉ được bình chọn 1 lần duy nhất cho mỗi tác phẩm."
-                    },
-                    apply: {
-                        title: "Đồng hành cùng dự án",
-                        desc: "Chọn vai trò của bạn để cùng thắp sáng đam mê điện ảnh.",
-                        orgTitle: "Ban Tổ Chức Mùa 1",
-                        orgText: "Tham gia ban nội dung, truyền thông, hậu cần hoặc thiết kế.",
-                        memberTitle: "Thành viên Cộng đồng",
-                        memberText: "Đăng ký tài khoản để bình chọn, tham gia thảo luận và gửi phim.",
-                        processTitle: "Quy trình tuyển dụng",
-                        steps: [
-                            { num: "1", title: "Nộp đơn trực tuyến", desc: "Điền thông tin và gửi CV/Portfolio." },
-                            { num: "2", title: "Phỏng vấn", desc: "Trò chuyện trực tiếp cùng Ban điều hành." },
-                            { num: "3", title: "Thử thách", desc: "Thực hiện bài test nhỏ tùy vị trí." },
-                            { num: "4", title: "Onboarding", desc: "Gia nhập đội ngũ cốt lõi." }
-                        ]
-                    },
-                    footer: {
-                        text: "© 2026 Ý Niệm Điện Ảnh. Tất cả quyền được bảo lưu."
-                    }
-                };
-            }
-
-            function deepMerge(target, source) {
-                if (!source) return target;
-                const result = { ...target };
-                for (const key in source) {
-                    if (source.hasOwnProperty(key)) {
-                        if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-                            result[key] = deepMerge(target[key] || {}, source[key]);
-                        } else if (Array.isArray(source[key])) {
-                            if (source[key].length > 0) {
-                                result[key] = source[key];
-                            }
-                        } else if (source[key] !== undefined && source[key] !== null && source[key] !== '') {
-                            result[key] = source[key];
-                        }
-                    }
-                }
-                return result;
-            }
-
-            const raw = localDB.content || _contentFileFallback || getMockData().content;
-            const merged = deepMerge(getDefaultContent(), raw);
-            if (merged && merged.hero && merged.hero.goal === "Tuyển BTC Core Member") {
-                merged.hero.goal = "Tuyển BTC (Core & Member)";
-            }
-            return merged;
-        }
-
-        async function saveContentToDB(newContent) {
-            localDB.content = newContent;
-            _contentFileFallback = newContent;
-            // Lưu xuống file JSON để AI deploy không ghi đè
-            try {
-                await fetch('/api/homepage-content', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newContent)
-                });
-            } catch (e) {
-                console.warn('Không thể lưu nội dung xuống file:', e);
-            }
-            if (useFirebase) {
-                try {
-                    await dbInstance.collection('config').doc('content').set(newContent, { merge: true });
-                } catch (e) {
-                    console.error('Lỗi lưu content lên Firestore:', e);
-                }
-            } else {
-                localStorage.setItem('ynda_db', JSON.stringify(localDB));
-            }
-        }
-
-        function renderHeroContent() {
-            const c = getContent().hero;
-            const heroEl = document.getElementById('heroContent');
-            if (heroEl) {
-                heroEl.innerHTML = `
-                    <div class="eyebrow">${c.eyebrow}</div>
-                    <h1>${c.title}</h1>
-                    <p class="lead">${c.lead}</p>
-                    <div class="hero-actions">
-                        <button class="btn btn-gold" onclick="goSection('events')">🎬 Khám phá sự kiện</button>
-                        <button class="btn btn-line" onclick="goSection('apply')">✨ Đăng ký tham gia</button>
-                    </div>
-                `;
-            }
-            const targetEl = document.getElementById('heroTarget');
-            if (targetEl) targetEl.textContent = c.target;
-            const transEl = document.getElementById('heroTransparency');
-            if (transEl) transEl.textContent = c.transparency;
-            const goalEl = document.getElementById('heroGoal');
-            if (goalEl) goalEl.textContent = c.goal;
-        }
-
-        function renderEventsHeading() {
-            const c = getContent().events;
-            const titleEl = document.getElementById('eventsTitle');
-            if (titleEl) titleEl.textContent = c.title;
-            const descEl = document.getElementById('eventsDesc');
-            if (descEl) descEl.textContent = c.desc;
-        }
-
-        function renderAboutContent() {
-            const c = getContent().about;
-            const titleEl = document.getElementById('aboutTitle');
-            if (titleEl) titleEl.textContent = c.title;
-            const descEl = document.getElementById('aboutDesc');
-            if (descEl) descEl.textContent = c.desc;
-            const cardsEl = document.getElementById('aboutCards');
-            if (cardsEl) {
-                cardsEl.innerHTML = c.cards.map(card => `
-                    <div class="card">
-                        <h3>${card.title}</h3>
-                        <p>${card.text}</p>
-                    </div>
-                `).join('');
-            }
-        }
-
-        function renderRulesContent() {
-            const c = getContent().rules;
-            const wrapper = document.getElementById('rulesContent');
-            if (wrapper) {
-                wrapper.innerHTML = `
-                    <h2 class="sec-title" style="font-size:1.8rem;margin-bottom:10px">${c.title}</h2>
-                    <p class="sec-sub" style="margin-bottom:30px">${c.subtitle}</p>
-                    <div class="rules-split">
-                        <div class="rules-column">
-                            <h3>${c.col1Title}</h3>
-                            <ul class="rules-list">
-                                ${c.col1Items.map(item => `<li>${item}</li>`).join('')}
-                            </ul>
-                        </div>
-                        <div class="rules-column">
-                            <h3>${c.col2Title}</h3>
-                            <p style="font-size:0.95rem;color:#e2e8f0;line-height:1.7">${c.col2Text}</p>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        function renderApplyContent() {
-            const c = getContent().apply;
-            const titleEl = document.getElementById('applyTitle');
-            if (titleEl) titleEl.textContent = c.title;
-            const descEl = document.getElementById('applyDesc');
-            if (descEl) descEl.textContent = c.desc;
-            const contentEl = document.getElementById('applyContent');
-            if (contentEl) {
-                contentEl.innerHTML = `
-                    <div class="split-cards" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:20px; width:100%; margin-bottom: 24px;">
-                        <div class="card">
-                            <span class="pill">Apply co-founder</span>
-                            <h3>Đồng sáng lập dự án</h3>
-                            <p>Nhóm nòng cốt sáng lập, đồng kiến tạo chiến lược và định hướng dài hạn cho dự án Ý Niệm Điện Ảnh.</p>
-                            <a href="/register?tab=president" target="_blank" class="btn btn-gold" style="margin-top:20px; text-decoration:none; display:inline-flex">Apply President</a>
-                        </div>
-                        <div class="card">
-                            <span class="pill">Apply ban tổ chức</span>
-                            <h3>${c.orgTitle}</h3>
-                            <p>${c.orgText}</p>
-                            <a href="/register?tab=organizer" target="_blank" class="btn btn-gold" style="margin-top:20px; text-decoration:none; display:inline-flex">Apply Ban Tổ Chức</a>
-                        </div>
-                        <div class="card">
-                            <span class="pill">Thành viên dự án</span>
-                            <h3>${c.memberTitle}</h3>
-                            <p>${c.memberText}</p>
-                            <a href="/register?tab=register" target="_blank" class="btn btn-line" style="margin-top:20px; text-decoration:none; display:inline-flex">Tạo Tài Khoản</a>
-                        </div>
-                    </div>
-                    <div class="card" style="padding:36px">
-                        <span class="pill" style="margin-bottom:14px">Về quy trình</span>
-                        <h3 style="margin-top:8px">${c.processTitle}</h3>
-                        <div style="margin-top:20px; display:grid; gap:18px">
-                            ${c.steps.map(s => `
-                                <div style="display:flex; gap:14px; align-items:flex-start">
-                                    <div style="min-width:42px; height:42px; border-radius:50%; background:rgba(228,184,102,0.1); display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:var(--gold-light)">${s.num}</div>
-                                    <div><strong style="color:var(--gold-light)">${s.title}</strong><p style="font-size:0.88rem; color:var(--text-muted); margin-top:4px">${s.desc}</p></div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        function renderFooterContent() {
-            const c = getContent().footer;
-            const footerEl = document.getElementById('footerText');
-            if (footerEl) footerEl.textContent = c.text;
-        }
-
-        function renderAllContent() {
-            renderHeroContent();
-            renderEventsHeading();
-            renderAboutContent();
-            renderRulesContent();
-            renderApplyContent();
-            renderFooterContent();
-        }
-
-        function sanitizeHtml(str) {
-            // Chi cho phep the br, b, i, u, a, strong, em, p, ul, ol, li
-            return String(str).replace(/<script[\s\S]*?<\/script>/gi, '').replace(/on\w+\s*=\s*["'][^"']*["']/gi, '').replace(/on\w+\s*=\s*\S+/gi, '');
-        }
-
-        async function saveContentFromDash() {
-            const g = (id) => {
-                const el = document.getElementById(id);
-                return el ? sanitizeHtml(el.value) : '';
-            };
-            const c = {
-                hero: {
-                    eyebrow: g('cHeroEyebrow'),
-                    title: g('cHeroTitle').replace(/\\n/g, '<br>'),
-                    lead: g('cHeroLead'),
-                    target: g('cHeroTarget'),
-                    transparency: g('cHeroTransparency'),
-                    goal: g('cHeroGoal')
-                },
-                events: {
-                    title: g('cEventsTitle'),
-                    desc: g('cEventsDesc')
-                },
-                about: {
-                    title: g('cAboutTitle'),
-                    desc: g('cAboutDesc'),
-                    cards: [0,1,2].map(i => ({
-                        title: g('cAboutCard' + i + 'Title'),
-                        text: g('cAboutCard' + i + 'Text')
-                    }))
-                },
-                rules: {
-                    title: g('cRulesTitle'),
-                    subtitle: g('cRulesSubtitle'),
-                    col1Title: g('cRulesCol1Title'),
-                    col1Items: [0,1,2].map(i => g('cRulesCol1Item' + i)),
-                    col2Title: g('cRulesCol2Title'),
-                    col2Text: g('cRulesCol2Text')
-                },
-                apply: {
-                    title: g('cApplyTitle'),
-                    desc: g('cApplyDesc'),
-                    orgTitle: g('cApplyOrgTitle'),
-                    orgText: g('cApplyOrgText'),
-                    memberTitle: g('cApplyMemberTitle'),
-                    memberText: g('cApplyMemberText'),
-                    processTitle: 'Quy trình tuyển dụng',
-                    steps: [0,1,2,3].map(i => ({
                         num: g('cApplyStep' + i + 'Num') || String(i+1),
                         title: g('cApplyStep' + i + 'Title'),
                         desc: g('cApplyStep' + i + 'Desc')
@@ -4473,10 +3952,10 @@
             if (session) {
                 const isMember = session.role === 'member';
                 var unreadCount = (localDB.notifications||[]).filter(function(n){return n.targetAll||n.userId===session.id;}).filter(function(n){return !n.read;}).length;
-                el.innerHTML = `<span class="chip" style="margin-right:10px">👤 ${esc(session.name)} (${session.role === 'admin' ? 'Admin' : session.role === 'organizer' ? 'BTC' : 'Thành viên'})</span>
-                                <a href="/dashboard?tab=notifications" class="btn btn-line btn-sm" style="position:relative;margin-right:6px" title="Thông báo">🔔${unreadCount>0?'<span style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:10px;font-weight:700">'+unreadCount+'</span>':''}</a>
+                el.innerHTML = `<span class="chip" title="${esc(session.name)} (${session.role === 'admin' ? 'Admin' : session.role === 'organizer' ? 'BTC' : 'Thành viên'})">👤 ${esc(session.name)} (${session.role === 'admin' ? 'Admin' : session.role === 'organizer' ? 'BTC' : 'Thành viên'})</span>
+                                <a href="/dashboard?tab=notifications" class="btn btn-line btn-sm" style="position:relative;margin-right:6px" title="Thông báo" aria-label="Thông báo">🔔${unreadCount>0?'<span style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:10px;font-weight:700">'+unreadCount+'</span>':''}</a>
                                 <a href="${isMember ? '/dashboard?tab=profile' : '/dashboard'}" class="btn btn-gold btn-sm">${isMember ? '👤 Hồ sơ' : '🔐 Khu vực nội bộ'}</a>
-                                <button class="btn btn-line btn-sm" style="margin-left:8px" onclick="logout()">Thoát</button>`;
+                                <button class="btn btn-line btn-sm" style="margin-left:8px" onclick="logout()" aria-label="Đăng xuất">Thoát</button>`;
             } else {
                 el.innerHTML = `<a href="/register?tab=organizer" target="_blank" class="btn btn-gold btn-sm" style="margin-right:6px">🔥 Apply BTC</a>
                                 <a href="/register?tab=register" target="_blank" class="btn btn-line btn-sm" style="margin-right:6px">Tạo Tài Khoản</a>

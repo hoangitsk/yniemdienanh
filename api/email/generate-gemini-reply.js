@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
         return res.status(500).json({ error: 'GEMINI_API_KEY chưa được cấu hình trên server.' });
     }
     try {
-        const { type, name, role, dept, intro, vision, emailType } = req.body;
+        const { type, name, role, dept, intro, vision, emailType, customDescription } = req.body;
         if (!name || !emailType) {
             return res.status(400).json({ error: 'Thiếu thông tin ứng viên (name) hoặc loại email (emailType)' });
         }
@@ -37,7 +37,8 @@ Hãy soạn thảo một email phản hồi ứng tuyển dựa trên thông tin
 - Giới thiệu bản thân: ${intro || 'N/A'}
 ${vision ? `- Tầm nhìn / Ý tưởng đóng góp: ${vision}` : ''}
 
-Loại email cần soạn: ${emailType === 'approve' ? 'Duyệt đơn và Chào mừng tham gia dự án (Email ấm áp, hào hứng, chào mừng họ gia nhập đội ngũ)' : emailType === 'reject' ? 'Từ chối đơn ứng tuyển (Email chân thành, lịch sự, cảm ơn sự quan tâm và chúc họ may mắn trong hành trình sắp tới)' : 'Mời tham gia phỏng vấn (Email hẹn phỏng vấn, đề xuất họ chọn lịch hẹn)'}.
+Loại email cần soạn: ${emailType === 'approve' ? 'Duyệt đơn và Chào mừng tham gia dự án (Email ấm áp, hào hứng, chào mừng họ gia nhập đội ngũ)' : emailType === 'reject' ? 'Từ chối đơn ứng tuyển (Email chân thành, lịch sự, cảm ơn sự quan tâm và chúc họ may mắn trong hành trình sắp tới)' : emailType === 'custom' ? 'Thư tùy chỉnh theo yêu cầu riêng của HR bên dưới' : 'Mời tham gia phỏng vấn (Email hẹn phỏng vấn, đề xuất họ chọn lịch hẹn)'}.
+${customDescription ? `- Yêu cầu riêng của HR: ${String(customDescription).slice(0, 1000)}` : ''}
 
 Yêu cầu định dạng:
 Trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:

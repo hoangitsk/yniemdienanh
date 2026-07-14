@@ -3008,6 +3008,16 @@
                         <option value="reject">Từ chối đơn ứng tuyển</option>
                     </select>
                 </div>
+
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Mô tả loại thư cho AI <span style="color:#64748b">(không bắt buộc)</span></label>
+                    <textarea id="emCustomDescription" rows="3" maxlength="1000" placeholder="Ví dụ: Viết thư nhắc ứng viên bổ sung portfolio, giọng văn thân thiện..." style="width:100%;resize:vertical;background:rgba(0,0,0,0.3);color:#e2e8f0;border:1px solid rgba(228,184,102,0.2);padding:10px;border-radius:8px"></textarea>
+                </div>
+
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Tài liệu PDF đính kèm <span style="color:#64748b">(không bắt buộc, tối đa 2 MB)</span></label>
+                    <input id="emPdfAttachment" type="file" accept="application/pdf,.pdf" style="width:100%;color:#cbd5e1;border:1px dashed rgba(228,184,102,0.25);padding:10px;border-radius:8px;background:rgba(0,0,0,0.2)">
+                </div>
                 
                 <div style="display:flex; justify-content:flex-end; align-items:center">
                     <button class="btn btn-line btn-sm" onclick="generateEmailWithAI()" style="background:rgba(228,184,102,0.05);color:var(--gold-light);border-color:var(--gold);padding:6px 12px;border-radius:8px;cursor:pointer">
@@ -10827,6 +10837,8 @@
             
             document.getElementById('emTo').value = app.email;
             document.getElementById('emTemplateSelect').value = '';
+            document.getElementById('emCustomDescription').value = '';
+            document.getElementById('emPdfAttachment').value = '';
             document.getElementById('emSubject').value = '';
             document.getElementById('emBody').value = '';
             openModal('emailModal');
@@ -10878,7 +10890,8 @@
         async function generateEmailWithAI() {
             const app = window.currentEmailApp;
             if (!app) return showToast('Không xác định được ứng viên.', 'error');
-            const emailType = document.getElementById('emTemplateSelect').value || 'approve';
+            const customDescription = document.getElementById('emCustomDescription').value.trim();
+            const emailType = document.getElementById('emTemplateSelect').value || (customDescription ? 'custom' : 'approve');
             
             showToast('AI đang soạn email, vui lòng đợi...', 'info');
             try {
@@ -10891,7 +10904,8 @@
                         dept: app.dept,
                         intro: app.intro,
                         vision: app.vision,
-                        emailType: emailType
+                        emailType: emailType,
+                        customDescription: customDescription
                     })
                 });
                 const data = await res.json();
@@ -10910,9 +10924,14 @@
             const to = document.getElementById('emTo').value;
             const subject = document.getElementById('emSubject').value;
             const html = document.getElementById('emBody').value;
+            const pdfFile = document.getElementById('emPdfAttachment').files[0];
             
             if (!subject.trim() || !html.trim()) {
                 return showToast('Vui lòng điền đầy đủ tiêu đề và nội dung email.', 'warning');
+            }
+
+            if (pdfFile && (!pdfFile.name.toLowerCase().endsWith('.pdf') || pdfFile.size > 2 * 1024 * 1024)) {
+                return showToast('Tài liệu đính kèm phải là PDF và không vượt quá 2 MB.', 'warning');
             }
 
             const btn = document.getElementById('emSendBtn');
@@ -10920,10 +10939,20 @@
             btn.textContent = '⏳ Đang gửi...';
 
             try {
+                let attachment;
+                if (pdfFile) {
+                    const dataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = () => reject(new Error('Không thể đọc tệp PDF.'));
+                        reader.readAsDataURL(pdfFile);
+                    });
+                    attachment = { filename: pdfFile.name, base64: String(dataUrl).split(',')[1] };
+                }
                 const res = await fetch('/api/email/send-custom', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ to, subject, html })
+                    body: JSON.stringify({ to, subject, html, attachment })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Lỗi gửi email');

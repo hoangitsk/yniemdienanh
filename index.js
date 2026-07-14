@@ -7,6 +7,7 @@ const PayOS = require('@payos/node');
 const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 const { generateGeminiJson, getGeminiConfig } = require('./lib/gemini');
+const { normalizePdfAttachment } = require('./lib/pdfAttachment');
 require('dotenv').config();
 
 const PAYOS_CLIENT_ID = process.env.PAYOS_CLIENT_ID || "";
@@ -51,7 +52,7 @@ if (FIREBASE_SERVICE_ACCOUNT) {
 const app = express();
 var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '3mb' }));
 
 // Simple in-memory rate limiter
 var rateLimitStore = {};
@@ -472,7 +473,7 @@ app.post('/api/email/generate-gemini-reply', async (req, res) => {
         return res.status(500).json({ error: 'GEMINI_API_KEY chưa được cấu hình trên server.' });
     }
     try {
-        const { type, name, role, dept, intro, vision, emailType } = req.body;
+        const { type, name, role, dept, intro, vision, emailType, customDescription } = req.body;
         if (!name || !emailType) {
             return res.status(400).json({ error: 'Thiếu thông tin ứng viên (name) hoặc loại email (emailType)' });
         }
@@ -485,7 +486,8 @@ Hãy soạn thảo một email phản hồi ứng tuyển dựa trên thông tin
 - Giới thiệu bản thân: ${intro || 'N/A'}
 ${vision ? `- Tầm nhìn / Ý tưởng đóng góp: ${vision}` : ''}
 
-Loại email cần soạn: ${emailType === 'approve' ? 'Duyệt đơn và Chào mừng tham gia dự án (Email ấm áp, hào hứng, chào mừng họ gia nhập đội ngũ)' : emailType === 'reject' ? 'Từ chối đơn ứng tuyển (Email chân thành, lịch sự, cảm ơn sự quan tâm và chúc họ may mắn trong hành trình sắp tới)' : 'Mời tham gia phỏng vấn (Email hẹn phỏng vấn, đề xuất họ chọn lịch hẹn)'}.
+Loại email cần soạn: ${emailType === 'approve' ? 'Duyệt đơn và Chào mừng tham gia dự án (Email ấm áp, hào hứng, chào mừng họ gia nhập đội ngũ)' : emailType === 'reject' ? 'Từ chối đơn ứng tuyển (Email chân thành, lịch sự, cảm ơn sự quan tâm và chúc họ may mắn trong hành trình sắp tới)' : emailType === 'custom' ? 'Thư tùy chỉnh theo yêu cầu riêng của HR bên dưới' : 'Mời tham gia phỏng vấn (Email hẹn phỏng vấn, đề xuất họ chọn lịch hẹn)'}.
+${customDescription ? `- Yêu cầu riêng của HR: ${String(customDescription).slice(0, 1000)}` : ''}
 
 Yêu cầu định dạng:
 Trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
@@ -509,7 +511,7 @@ Chú ý: Email cần viết bằng tiếng Việt, văn phong ấm áp, chuyên 
 // API: Send custom email
 app.post('/api/email/send-custom', async (req, res) => {
     try {
-        const { to, subject, html } = req.body;
+        const { to, subject, html, attachment } = req.body;
         if (!to || !subject || !html) {
             return res.status(400).json({ error: 'Missing to, subject, or html' });
         }
@@ -520,6 +522,7 @@ app.post('/api/email/send-custom', async (req, res) => {
             return res.status(500).json({ error: 'BREVO_FROM_EMAIL chưa được cấu hình.' });
         }
 
+        const pdfAttachment = normalizePdfAttachment(attachment);
         await transporter.sendMail({
             from: `"${fromName}" <${fromEmail}>`,
             to,
@@ -534,13 +537,14 @@ app.post('/api/email/send-custom', async (req, res) => {
                         <p style="color:#555;font-size:12px;margin:0">© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</p>
                     </div>
                 </div>
-            `
+            `,
+            attachments: pdfAttachment ? [pdfAttachment] : []
         });
 
         res.json({ success: true });
     } catch (err) {
         console.error('Send custom email error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(err.status || 500).json({ error: err.message });
     }
 });
 

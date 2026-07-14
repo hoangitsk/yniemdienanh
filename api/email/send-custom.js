@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { normalizePdfAttachment } = require('../../lib/pdfAttachment');
 
 const transporter = nodemailer.createTransport({
     host: 'smtp-relay.brevo.com',
@@ -30,7 +31,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { to, subject, html } = req.body;
+        const { to, subject, html, attachment } = req.body;
         if (!to || !subject || !html) {
             return res.status(400).json({ error: 'Missing to, subject, or html' });
         }
@@ -41,6 +42,7 @@ module.exports = async (req, res) => {
             return res.status(500).json({ error: 'BREVO_FROM_EMAIL chưa được cấu hình.' });
         }
 
+        const pdfAttachment = normalizePdfAttachment(attachment);
         await transporter.sendMail({
             from: `"${fromName}" <${fromEmail}>`,
             to,
@@ -55,12 +57,13 @@ module.exports = async (req, res) => {
                         <p style="color:#555;font-size:12px;margin:0">© ${new Date().getFullYear()} Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</p>
                     </div>
                 </div>
-            `
+            `,
+            attachments: pdfAttachment ? [pdfAttachment] : []
         });
 
         res.status(200).json({ success: true });
     } catch (err) {
         console.error('Send custom email error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(err.status || 500).json({ error: err.message });
     }
 };

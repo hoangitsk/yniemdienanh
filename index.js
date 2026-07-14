@@ -562,6 +562,10 @@ app.post('/api/email/send-custom', async (req, res) => {
 // API: Gửi thư lịch phỏng vấn cho ứng viên và HR được phân công.
 const sendScheduleInvitations = require('./api/schedule/send-invitations');
 app.post('/api/schedule/send-invitations', sendScheduleInvitations);
+const listScheduleUsers = require('./api/schedule/list-users');
+app.post('/api/schedule/list-users', listScheduleUsers);
+const saveSchedulePoll = require('./api/schedule/save-poll');
+app.post('/api/schedule/save-poll', saveSchedulePoll);
 const finalizeInterviewCron = require('./api/cron/finalize-interviews');
 app.get('/api/cron/finalize-interviews', finalizeInterviewCron);
 app.post('/api/cron/finalize-interviews', finalizeInterviewCron);

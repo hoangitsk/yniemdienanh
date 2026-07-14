@@ -696,6 +696,19 @@
             return year + '-' + month + '-' + day;
         }
 
+        function scheduleTimeout(promise, timeoutMs, message) {
+            return new Promise((resolve, reject) => {
+                const timer = setTimeout(() => reject(new Error(message || 'Kết nối quá thời gian. Vui lòng thử lại.')), timeoutMs || 15000);
+                Promise.resolve(promise).then(value => {
+                    clearTimeout(timer);
+                    resolve(value);
+                }, error => {
+                    clearTimeout(timer);
+                    reject(error);
+                });
+            });
+        }
+
         // Calculate the admin-configured availability window, starting tomorrow by default.
         function generateDates(startDateId, dayCount) {
             dynamicDates = [];
@@ -840,13 +853,32 @@
             document.getElementById('adminPollPanel').classList.toggle('hidden', !canManageSchedules);
             if (canManageSchedules && dbInstance) {
                 try {
-                    const usersSnap = await dbInstance.collection('users').get();
-                    directoryUsers = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    showPollAdminStatus('⏳ Đang tải danh sách tài khoản...', 'var(--gold)');
+                    const idToken = await currentUser.getIdToken();
+                    const response = await scheduleTimeout(fetch('/api/schedule/list-users', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ idToken })
+                    }), 15000, 'Tải danh sách tài khoản quá thời gian.');
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok || !Array.isArray(result.users)) throw new Error(result.error || 'Không tải được danh sách tài khoản.');
+                    directoryUsers = result.users;
                     hrMembers = directoryUsers.filter(user => {
                         const dept = String(user.dept || '').toLowerCase();
                         return dept.includes('nhân sự') || dept.includes('nhan su') || dept === 'hr';
                     });
-                } catch (error) { console.warn('Không thể tải danh sách HR:', error); }
+                    showPollAdminStatus('✓ Đã tải ' + directoryUsers.length + ' tài khoản đăng ký.', 'var(--ok)');
+                } catch (error) {
+                    console.warn('Không thể tải danh sách tài khoản qua API:', error);
+                    try {
+                        const usersSnap = await scheduleTimeout(dbInstance.collection('users').get(), 10000, 'Firestore không phản hồi.');
+                        directoryUsers = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        showPollAdminStatus('Đang dùng ' + directoryUsers.length + ' hồ sơ Firestore dự phòng.', 'var(--gold)');
+                    } catch (fallbackError) {
+                        directoryUsers = [];
+                        showPollAdminStatus('Không tải được tài khoản: ' + error.message, 'var(--danger)');
+                    }
+                }
             }
             renderHrOptions();
             renderPollParticipantOptions();
@@ -913,7 +945,7 @@
             select.innerHTML = directoryUsers.slice().sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'vi')).map(user => {
                 const label = (user.name || user.email || user.id) + (user.dept ? ' · ' + user.dept : '') + (user.email ? ' · ' + user.email : '');
                 return '<option value="' + escapeHtml(user.id) + '"' + (selected.has(user.id) ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
-            }).join('');
+            }).join('') || '<option disabled>Không tải được tài khoản đăng ký</option>';
             filterPollParticipants();
             updatePollParticipantCount();
         }
@@ -1014,7 +1046,7 @@
                 return;
             }
             try {
-                const snap = await dbInstance.collection('availabilityPolls').get();
+                const snap = await scheduleTimeout(dbInstance.collection('availabilityPolls').get(), 12000, 'Tải đợt vote quá thời gian.');
                 availabilityPolls = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 localDB.availabilityPolls = availabilityPolls;
                 localStorage.setItem('ynda_db', JSON.stringify(localDB));
@@ -1037,7 +1069,9 @@
             const type = document.getElementById('pollType').value;
             const startDate = document.getElementById('pollStartDate').value;
             const dayCount = Math.max(1, Math.min(14, Number(document.getElementById('pollDayCount').value || 7)));
-            const participantIds = Array.from(document.getElementById('pollParticipants').selectedOptions).map(option => option.value);
+            const participantIds = Array.from(document.getElementById('pollParticipants').selectedOptions)
+                .filter(option => !option.disabled && option.value)
+                .map(option => option.value);
             const isPublic = document.getElementById('pollPublic').checked;
             if (!title || !startDate) return showPollAdminStatus('Vui lòng nhập tên đợt và ngày bắt đầu.', 'var(--danger)');
             if (!isPublic && !participantIds.length) return showPollAdminStatus('Hãy chọn ít nhất một người hoặc bật “Cho phép tất cả”.', 'var(--danger)');
@@ -1048,23 +1082,45 @@
                 const user = directoryUsers.find(item => item.id === id);
                 return user ? (user.name || user.email || id) : id;
             });
+            const targetId = editingId || window._pendingPollSaveId || dbInstance.collection('availabilityPolls').doc().id;
+            if (!editingId) window._pendingPollSaveId = targetId;
             const data = {
                 title, type, startDate, dayCount, participantIds, participantNames, isPublic,
                 status: existing ? existing.status : document.getElementById('pollInitialStatus').value,
                 createdBy: existing ? existing.createdBy : currentUser.uid,
-                createdAt: existing ? existing.createdAt : new Date().toISOString(),
+                createdAt: existing ? existing.createdAt : (window._pendingPollCreatedAt || (window._pendingPollCreatedAt = new Date().toISOString())),
                 updatedAt: new Date().toISOString()
             };
+            const saveButton = document.getElementById('savePollButton');
+            saveButton.disabled = true;
+            saveButton.textContent = '⏳ Đang lưu...';
             showPollAdminStatus('⏳ Đang lưu đợt vote...', 'var(--gold)');
             try {
-                if (editingId) await dbInstance.collection('availabilityPolls').doc(editingId).set(data, { merge:true });
-                else await dbInstance.collection('availabilityPolls').add(data);
+                const idToken = await currentUser.getIdToken();
+                const response = await scheduleTimeout(fetch('/api/schedule/save-poll', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken, pollId: targetId, poll: data })
+                }), 15000, 'Máy chủ không phản hồi sau 15 giây. Vui lòng thử lại.');
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.poll) throw new Error(result.error || 'Không lưu được đợt vote.');
+                const savedPoll = result.poll;
+                const savedIndex = availabilityPolls.findIndex(poll => poll.id === targetId);
+                if (savedIndex === -1) availabilityPolls.push(savedPoll);
+                else availabilityPolls[savedIndex] = savedPoll;
+                localDB.availabilityPolls = availabilityPolls;
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
                 await fetchAvailabilityPolls();
+                window._pendingPollSaveId = '';
+                window._pendingPollCreatedAt = '';
                 resetPollForm();
                 renderAvailabilityPolls();
                 showPollAdminStatus('✓ Đã lưu đợt vote. Các đợt cũ vẫn được giữ nguyên.', 'var(--ok)');
             } catch (error) {
                 showPollAdminStatus('Không lưu được đợt vote: ' + error.message, 'var(--danger)');
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = editingId ? '💾 Lưu thay đổi' : '+ Tạo đợt vote';
             }
         }
 

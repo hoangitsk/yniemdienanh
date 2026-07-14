@@ -204,6 +204,11 @@ service cloud.firestore {
       allow delete: if signedIn() && (resource.data.candidateId == request.auth.uid || isOrganizer());
     }
 
+    match /staffPoints/{pointId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isOrganizer();
+    }
+
     match /notifications/{docId} {
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || resource.data.targetAll == true || isOrganizer());
       allow create: if signedIn();

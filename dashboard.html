@@ -3722,7 +3722,7 @@
                 });
                 
                 // Initialize new feature collections
-                var newCollections = ['supportFaq','supportQuestions','onboardingProgress','calendarEvents','notifications','teams','teamMembers','productionHandbooks','crewFinder','crewApplications','talentProfiles','filmLocations','equipment','equipmentRequests','filmIdeas','ideaComments','peerReviews','productionDiaries','riskReports','trailers','learningLibrary','learningProgress','musicLibrary','studentPortfolios','surveys','surveyResponses','alumni','communityMap','seasons','seasonThemes','workshops','workshopRegistrations','mentors','mentorQuestions','competitionCategories','productionProgress','miniChallenges','miniChallengeSubmissions','judging','judgingScores','leaderboard','gala','certificates','partners','ambassadors','ambassadorReferrals','schoolPartners','kpi','deadlineExtensions','brandKits','mediaTasks','filmArchive','meetingSchedules'];
+                var newCollections = ['supportFaq','supportQuestions','onboardingProgress','calendarEvents','notifications','teams','teamMembers','productionHandbooks','crewFinder','crewApplications','talentProfiles','filmLocations','equipment','equipmentRequests','filmIdeas','ideaComments','peerReviews','productionDiaries','riskReports','trailers','learningLibrary','learningProgress','musicLibrary','studentPortfolios','surveys','surveyResponses','alumni','communityMap','seasons','seasonThemes','workshops','workshopRegistrations','mentors','mentorQuestions','competitionCategories','productionProgress','miniChallenges','miniChallengeSubmissions','judging','judgingScores','leaderboard','gala','certificates','partners','ambassadors','ambassadorReferrals','schoolPartners','kpi','deadlineExtensions','brandKits','mediaTasks','filmArchive','meetingSchedules','staffPoints'];
                 newCollections.forEach(function(c) { if (!localDB[c]) localDB[c] = []; });
                 if (!localDB.gala) localDB.gala = {};
                 if (!localDB.studentPortfolios) localDB.studentPortfolios = {};
@@ -3812,8 +3812,8 @@
             }
             const isOrg = ['admin', 'organizer'].includes(role);
             const collections = isOrg 
-                ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules']
-                : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules'];
+                ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints']
+                : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await firestoreWithTimeout(dbInstance.collection(col).get());
@@ -5439,6 +5439,7 @@
             overview: { icon: '📊', label: 'Tổng quan', roles: ['admin', 'organizer', 'member'] },
             profile: { icon: '👤', label: 'Hồ sơ của tôi', roles: ['admin', 'organizer', 'member'] },
             tasks: { icon: '✅', label: 'Bảng Công việc', roles: ['admin', 'organizer', 'member'] },
+            staffscore: { icon: '⭐', label: 'Điểm đóng góp BTC', roles: ['admin', 'organizer', 'member'] },
             events: { icon: '🎬', label: 'Quản lý sự kiện', roles: ['admin', 'organizer'] },
             members: { icon: '👥', label: 'Đơn tuyển & Nhân sự', roles: ['admin', 'organizer'] },
             announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'member'] },
@@ -7467,6 +7468,27 @@
                         <div class="feature-grid">${submissions.length===0 ? '<p style="color:var(--text-muted)">Chưa có bài dự thi.</p>' : submissions.map(function(s){var avg=scores.filter(function(sc){return sc.submissionId===s.id;});var avgScore=avg.length>0?Math.round(avg.reduce(function(a,b){return a+(b.total||0);},0)/avg.length):0;return '<div class="feature-card"><h4>'+esc(s.title||'')+'</h4><div class="meta"><span class="badge badge-gold">Điểm TB: '+avgScore+'</span><span class="badge badge-blue">'+avg.length+' lượt chấm</span></div><button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="scoreSubmission(\''+s.id+'\')">⚖️ Chấm điểm</button></div>';}).join('')}</div>
                     `;
                 },
+                staffscore() {
+                    var points = (d.staffPoints || []).slice().sort(function(a,b){return String(b.createdAt||'').localeCompare(String(a.createdAt||''));});
+                    var totals = {};
+                    points.forEach(function(item) {
+                        var key = String(item.userId || item.userName || '');
+                        if (!totals[key]) totals[key] = { userId:item.userId, name:item.userName||'Thành viên BTC', dept:item.dept||'', total:0, count:0 };
+                        totals[key].total += Number(item.points || 0);
+                        totals[key].count++;
+                    });
+                    var ranking = Object.values(totals).sort(function(a,b){return b.total-a.total;});
+                    var visibleHistory = session && ['admin','organizer'].includes(session.role) ? points : points.filter(function(item){return String(item.userId)===String(session.id);});
+                    main.innerHTML = `
+                        <h2>⭐ Điểm đóng góp BTC</h2>
+                        <p style="color:var(--text-muted);margin:-10px 0 20px">HR: +10 điểm khi hoàn tất một buổi phỏng vấn. PR: +10 hoàn thành, +5 đúng hạn và +5 nếu hoàn thành trong 48 giờ.</p>
+                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">🏆 Bảng xếp hạng</h4>
+                            ${ranking.length===0?'<p style="color:var(--text-muted)">Chưa có điểm đóng góp.</p>':ranking.map(function(row,index){return '<div class="list-item"><div class="info"><div class="title">#'+(index+1)+' '+esc(row.name)+'</div><div class="sub">'+esc(row.dept||'BTC')+' · '+row.count+' hoạt động</div></div><strong style="color:var(--gold);font-size:1.15rem">'+row.total+' điểm</strong></div>';}).join('')}
+                        </div>
+                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">📜 Lịch sử cộng điểm</h4>
+                            ${visibleHistory.length===0?'<p style="color:var(--text-muted)">Chưa có lịch sử.</p>':visibleHistory.slice(0,50).map(function(item){return '<div class="list-item"><div class="info"><div class="title">'+esc(item.userName||'')+' · +'+Number(item.points||0)+'</div><div class="sub">'+esc(item.reason||'Đóng góp BTC')+' · '+(item.createdAt?new Date(item.createdAt).toLocaleString('vi-VN'):'')+'</div></div></div>';}).join('')}
+                        </div>`;
+                },
                 leaderboard() {
                     var submissions = d.submissions||[];
                     var scores = d.judgingScores||[];
@@ -7753,8 +7775,11 @@
             const id = parseInt(ev.dataTransfer.getData("text/plain"));
             const t = localDB.tasks.find(x => x.id === id);
             if (t) {
+                const oldStatus = t.status;
                 t.status = newStatus;
+                if (newStatus === 'done' && oldStatus !== 'done') t.completedAt = new Date().toISOString();
                 await saveItem('tasks', t);
+                if (newStatus === 'done' && oldStatus !== 'done') await awardPrTaskPoints(t);
                 renderTab('tasks');
             }
         }
@@ -7812,7 +7837,7 @@
             if (!title) return showToast("Vui lòng nhập tên đầu việc!", "error");
             
             const nextId = await getNextId();
-            const newTask = { id: nextId, title, assignee, dept, deadline: dl, priority: pr, status: 'todo', note: note, checklist: [], comments: [], files: [], activity: [{ action: 'Nhiệm vụ được tạo', time: new Date().toISOString() }] };
+            const newTask = { id: nextId, title, assignee, dept, deadline: dl, priority: pr, status: 'todo', note: note, createdAt: new Date().toISOString(), checklist: [], comments: [], files: [], activity: [{ action: 'Nhiệm vụ được tạo', time: new Date().toISOString() }] };
             await saveItem('tasks', newTask);
             renderTab('tasks');
         }
@@ -7822,10 +7847,30 @@
             const t = localDB.tasks.find(x => x.id === id);
             if (t) {
                 const curIdx = order.indexOf(t.status);
+                const oldStatus = t.status;
                 t.status = order[Math.max(0, Math.min(2, curIdx + dir))];
+                if (t.status === 'done' && oldStatus !== 'done') t.completedAt = new Date().toISOString();
                 await saveItem('tasks', t);
+                if (t.status === 'done' && oldStatus !== 'done') await awardPrTaskPoints(t);
                 renderTab('tasks');
             }
+        }
+
+        async function awardPrTaskPoints(task) {
+            if (!session || !['admin','organizer'].includes(session.role)) return;
+            var dept = String(task.dept || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            if (dept.indexOf('truyen thong') === -1 && dept !== 'pr') return;
+            var user = (localDB.users || []).find(function(item){return String(item.name || '').trim().toLowerCase() === String(task.assignee || '').trim().toLowerCase();});
+            if (!user) return showToast('Đã hoàn thành nhưng chưa thể cộng điểm vì không tìm thấy tài khoản PR được giao.', 'warning');
+            var pointId = 'pr_task_' + task.id + '_' + user.id;
+            if ((localDB.staffPoints || []).some(function(item){return item.id === pointId;})) return;
+            var now = new Date();
+            var points = 10;
+            var bonuses = [];
+            if (task.deadline && now.toISOString().slice(0,10) <= task.deadline) { points += 5; bonuses.push('đúng hạn'); }
+            if (task.createdAt && now.getTime() - new Date(task.createdAt).getTime() <= 48 * 3600000) { points += 5; bonuses.push('hoàn thành trong 48 giờ'); }
+            await saveItem('staffPoints', { id:pointId, userId:user.id, userName:user.name, dept:user.dept||task.dept, points:points, sourceType:'pr_task', sourceId:String(task.id), reason:'Hoàn thành nhiệm vụ PR: '+task.title+(bonuses.length?' ('+bonuses.join(', ')+')':''), awardedBy:session.id, createdAt:new Date().toISOString() });
+            showToast('Đã cộng ' + points + ' điểm đóng góp cho ' + user.name + '.', 'success');
         }
 
         async function deleteTaskItem(id) {

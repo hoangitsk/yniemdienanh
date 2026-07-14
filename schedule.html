@@ -426,8 +426,12 @@
                     <input id="eventDuration" type="number" min="15" max="480" value="30">
                     <label>Số chỗ tối đa</label>
                     <input id="eventCapacity" type="number" min="1" max="500" value="1">
+                    <label>HR phụ trách phỏng vấn</label>
+                    <select id="eventHr"><option value="">Đang tải danh sách HR...</option></select>
                     <label>Địa điểm hoặc liên kết họp</label>
                     <input id="eventLocation" maxlength="300" placeholder="Google Meet / Phòng họp / địa chỉ">
+                    <button type="button" class="btn small" onclick="openNewMeetRoom()" style="margin:-8px 0 16px">🎥 Mở phòng Google Meet mới</button>
+                    <p style="font-size:.75rem;color:var(--text-muted);margin:-8px 0 16px">Google Meet sẽ mở ở tab mới. Sao chép đường dẫn phòng vừa tạo và dán vào ô phía trên.</p>
                     <label>Hướng dẫn cho người đặt</label>
                     <textarea id="eventNotes" maxlength="1000" placeholder="Chuẩn bị portfolio, đến trước 10 phút..."></textarea>
                     <button class="btn" onclick="createOfficialEvent()">+ Mở lịch</button>
@@ -551,6 +555,7 @@
         let localDB = { meetingSchedules: [] };
         let officialEvents = [];
         let myBookings = [];
+        let hrMembers = [];
         let currentUser = null;
         let canManageSchedules = false;
         const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
@@ -642,9 +647,27 @@
                 } catch (error) { console.warn('Không thể kiểm tra quyền lịch:', error); }
             }
             document.getElementById('adminSchedulePanel').classList.toggle('hidden', !canManageSchedules);
+            if (canManageSchedules && dbInstance) {
+                try {
+                    const usersSnap = await dbInstance.collection('users').get();
+                    hrMembers = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(user => {
+                        const dept = String(user.dept || '').toLowerCase();
+                        return dept.includes('nhân sự') || dept.includes('nhan su') || dept === 'hr';
+                    });
+                } catch (error) { console.warn('Không thể tải danh sách HR:', error); }
+            }
+            renderHrOptions();
             document.getElementById('bookingNotice').textContent = currentUser
                 ? (canManageSchedules ? 'Bạn có quyền quản lý lịch. Có thể tạo lịch mới và xác nhận người đặt.' : 'Chọn lịch phù hợp để đặt chỗ. Bạn chỉ có thể quản lý lượt đặt của mình.')
                 : 'Vui lòng đăng nhập trước khi đặt lịch.';
+        }
+
+        function renderHrOptions() {
+            const select = document.getElementById('eventHr');
+            if (!select) return;
+            select.innerHTML = '<option value="">-- Chọn HR phụ trách --</option>' + hrMembers.map(user =>
+                '<option value="' + escapeHtml(user.id) + '">' + escapeHtml(user.name || user.email) + '</option>'
+            ).join('');
         }
 
         function eventStartLabel(value) {
@@ -924,7 +947,8 @@
             const container = document.getElementById('officialEvents');
             if (!container) return;
             container.innerHTML = '';
-            const futureEvents = officialEvents.filter(event => !event.startAt || new Date(event.startAt).getTime() >= Date.now() - 3600000);
+            const historyWindow = canManageSchedules ? 7 * 86400000 : 3600000;
+            const futureEvents = officialEvents.filter(event => !event.startAt || new Date(event.startAt).getTime() >= Date.now() - historyWindow);
             if (!futureEvents.length) {
                 container.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem">Chưa có lịch họp hoặc phỏng vấn đang mở.</p>';
                 return;
@@ -940,6 +964,7 @@
                 const confirmed = allEventBookings.filter(booking => booking.status === 'confirmed').length;
                 meta.innerHTML = '📅 ' + eventStartLabel(event.startAt) + ' · ' + Number(event.duration || 0) + ' phút<br>' +
                     (event.location ? '📍 ' + escapeHtml(event.location) + '<br>' : '') +
+                    (event.assignedHrName ? '🧑‍💼 HR phụ trách: ' + escapeHtml(event.assignedHrName) + '<br>' : '') +
                     '👤 Số chỗ: ' + (event.capacity || 1) + (canManageSchedules ? ' · Đã xác nhận: ' + confirmed : '');
                 card.append(heading, meta);
                 if (event.notes) {
@@ -949,6 +974,11 @@
                 const ownBooking = currentUser && myBookings.find(booking => booking.eventId === event.id && booking.candidateId === currentUser.uid);
                 if (canManageSchedules) {
                     const manage = document.createElement('button'); manage.className = 'btn small'; manage.textContent = 'Quản lý (' + allEventBookings.length + ')'; manage.onclick = () => manageEventBookings(event.id); actions.appendChild(manage);
+                    if (event.type === 'interview') { const assign = document.createElement('button'); assign.className = 'btn small'; assign.textContent = event.assignedHrId ? 'Đổi HR' : 'Phân công HR'; assign.onclick = () => assignEventHr(event.id); actions.appendChild(assign); }
+                    const meet = document.createElement('button'); meet.className = 'btn small'; meet.textContent = isGoogleMeetRoom(event.location) ? 'Sửa link Meet' : '+ Thêm link Meet'; meet.onclick = () => updateEventMeetLink(event.id); actions.appendChild(meet);
+                    if (event.type === 'interview' && !event.completedAt && allEventBookings.some(item => item.status === 'confirmed')) {
+                        const complete = document.createElement('button'); complete.className = 'btn small'; complete.textContent = '✓ Hoàn tất PV +10 điểm HR'; complete.onclick = () => completeInterview(event.id); actions.appendChild(complete);
+                    }
                     const remove = document.createElement('button'); remove.className = 'btn small'; remove.style.background = 'linear-gradient(135deg,#ff8a8a,#f43f5e)'; remove.style.color = '#fff'; remove.textContent = 'Hủy lịch'; remove.onclick = () => cancelOfficialEvent(event.id); actions.appendChild(remove);
                 } else if (!currentUser) {
                     const login = document.createElement('a'); login.className = 'btn small'; login.href = '/'; login.textContent = 'Đăng nhập để đặt'; actions.appendChild(login);
@@ -964,16 +994,33 @@
 
         function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value || ''; return div.innerHTML; }
 
+        function openNewMeetRoom() {
+            const meetWindow = window.open('https://meet.google.com/new', '_blank', 'noopener,noreferrer');
+            if (!meetWindow) return showAdminStatus('Trình duyệt đang chặn cửa sổ mới. Hãy cho phép popup rồi thử lại.', 'var(--danger)');
+            showAdminStatus('Đã mở Google Meet. Hãy sao chép link phòng và dán vào ô “Địa điểm hoặc liên kết họp”.', 'var(--gold-light)');
+            document.getElementById('eventLocation').focus();
+        }
+
+        function isGoogleMeetRoom(value) {
+            return /^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}(?:\?.*)?$/i.test(String(value || '').trim());
+        }
+
         async function createOfficialEvent() {
             if (!canManageSchedules || !currentUser || !dbInstance) return showAdminStatus('Bạn không có quyền tạo lịch.', 'var(--danger)');
             const title = document.getElementById('eventTitle').value.trim();
             const startAt = document.getElementById('eventStart').value;
             const duration = Number(document.getElementById('eventDuration').value);
             const capacity = Number(document.getElementById('eventCapacity').value);
+            const eventType = document.getElementById('eventType').value;
+            const location = document.getElementById('eventLocation').value.trim();
+            const assignedHrId = document.getElementById('eventHr').value;
             if (!title || !startAt || !Number.isFinite(duration) || duration < 15 || !Number.isInteger(capacity) || capacity < 1) return showAdminStatus('Hãy nhập tiêu đề, thời điểm, thời lượng (ít nhất 15 phút) và số chỗ hợp lệ.', 'var(--danger)');
+            if (eventType === 'interview' && location && !isGoogleMeetRoom(location)) return showAdminStatus('Link Meet phải có dạng https://meet.google.com/xxx-xxxx-xxx. Không dùng link /new.', 'var(--danger)');
+            if (eventType === 'interview' && !assignedHrId) return showAdminStatus('Hãy chọn HR phụ trách phỏng vấn.', 'var(--danger)');
             try {
                 showAdminStatus('Đang mở lịch...', 'var(--gold)');
-                await dbInstance.collection('scheduledEvents').add({ title, type: document.getElementById('eventType').value, startAt: new Date(startAt).toISOString(), duration, capacity, location: document.getElementById('eventLocation').value.trim(), notes: document.getElementById('eventNotes').value.trim(), status: 'open', createdBy: currentUser.uid, createdAt: new Date().toISOString() });
+                const assignedHr = hrMembers.find(user => user.id === assignedHrId);
+                await dbInstance.collection('scheduledEvents').add({ title, type: eventType, startAt: new Date(startAt).toISOString(), duration, capacity, location: location, notes: document.getElementById('eventNotes').value.trim(), assignedHrId: assignedHrId || null, assignedHrName: assignedHr ? (assignedHr.name || assignedHr.email) : '', status: 'open', createdBy: currentUser.uid, createdAt: new Date().toISOString() });
                 ['eventTitle','eventStart','eventLocation','eventNotes'].forEach(id => document.getElementById(id).value = '');
                 showAdminStatus('✓ Đã mở lịch. Người dùng có thể gửi yêu cầu đặt chỗ.', 'var(--ok)'); await fetchOfficialSchedule();
             } catch (error) { console.error(error); showAdminStatus('Không thể tạo lịch. Kiểm tra quyền quản trị.', 'var(--danger)'); }
@@ -992,17 +1039,89 @@
 
         async function cancelMyBooking(id) { if (dbInstance && confirm('Hủy yêu cầu đặt lịch này?')) { await dbInstance.collection('scheduledBookings').doc(id).delete(); await fetchOfficialSchedule(); } }
         async function cancelOfficialEvent(id) { if (dbInstance && confirm('Hủy lịch này? Các yêu cầu đặt chỗ sẽ không còn hiển thị.')) { await dbInstance.collection('scheduledEvents').doc(id).update({ status: 'cancelled', cancelledAt: new Date().toISOString() }); await fetchOfficialSchedule(); } }
+        async function updateEventMeetLink(id) {
+            const event = officialEvents.find(item => item.id === id);
+            if (!event || !dbInstance) return;
+            const link = prompt('Dán liên kết Google Meet cho lịch này:', event.location || 'https://meet.google.com/');
+            if (link === null) return;
+            if (!isGoogleMeetRoom(link)) return alert('Liên kết Google Meet không hợp lệ. Link đúng có dạng https://meet.google.com/xxx-xxxx-xxx');
+            await dbInstance.collection('scheduledEvents').doc(id).update({ location: link.trim(), updatedAt: new Date().toISOString(), updatedBy: currentUser.uid });
+            await fetchOfficialSchedule();
+            showAdminStatus('✓ Đã cập nhật liên kết Google Meet.', 'var(--ok)');
+        }
+        async function assignEventHr(id) {
+            const event = officialEvents.find(item => item.id === id);
+            if (!event || !hrMembers.length) return alert('Chưa có tài khoản thuộc Ban Nhân Sự. Hãy phân ban cho HR trong Quản lý tài khoản trước.');
+            const list = hrMembers.map((user, index) => (index + 1) + '. ' + (user.name || user.email)).join('\n');
+            const choice = Number(prompt('Chọn HR phụ trách:\n\n' + list)) - 1;
+            if (!Number.isInteger(choice) || !hrMembers[choice]) return;
+            const hr = hrMembers[choice];
+            await dbInstance.collection('scheduledEvents').doc(id).update({ assignedHrId: hr.id, assignedHrName: hr.name || hr.email, updatedAt: new Date().toISOString(), updatedBy: currentUser.uid });
+            showAdminStatus('✓ Đã phân công ' + (hr.name || hr.email) + ' phụ trách phỏng vấn.', 'var(--ok)');
+            await fetchOfficialSchedule();
+        }
+        async function completeInterview(id) {
+            const event = officialEvents.find(item => item.id === id);
+            if (!event || event.type !== 'interview' || event.completedAt) return;
+            if (new Date(event.startAt).getTime() > Date.now()) return alert('Chỉ cộng điểm sau khi buổi phỏng vấn đã bắt đầu.');
+            const hr = hrMembers.find(user => user.id === event.assignedHrId);
+            if (!hr) return alert('Lịch chưa có HR phụ trách hợp lệ.');
+            if (!confirm('Xác nhận HR ' + (hr.name || hr.email) + ' đã hoàn thành buổi phỏng vấn và cộng 10 điểm?')) return;
+            const pointId = 'interview_' + id + '_' + hr.id;
+            await dbInstance.collection('staffPoints').doc(pointId).set({
+                id: pointId,
+                userId: hr.id,
+                userName: hr.name || hr.email,
+                dept: hr.dept || 'Ban Nhân Sự',
+                points: 10,
+                sourceType: 'interview',
+                sourceId: id,
+                reason: 'Hoàn thành phỏng vấn: ' + event.title,
+                awardedBy: currentUser.uid,
+                createdAt: new Date().toISOString()
+            });
+            await dbInstance.collection('scheduledEvents').doc(id).update({ completedAt: new Date().toISOString(), completedBy: currentUser.uid });
+            showAdminStatus('✓ Đã hoàn tất phỏng vấn và cộng 10 điểm cho HR.', 'var(--ok)');
+            await fetchOfficialSchedule();
+        }
         async function manageEventBookings(eventId) {
             const bookings = myBookings.filter(item => item.eventId === eventId);
             if (!bookings.length) return alert('Chưa có yêu cầu đặt chỗ.');
-            const message = bookings.map((b, index) => (index + 1) + '. ' + b.candidateName + ' — ' + (b.status === 'confirmed' ? 'Đã xác nhận' : 'Chờ xác nhận')).join('\n');
-            const choice = prompt(message + '\n\nNhập số thứ tự để xác nhận (hoặc để trống để đóng):');
+            const message = bookings.map((b, index) => (index + 1) + '. ' + b.candidateName + ' — ' + (b.status === 'confirmed' ? (b.invitationSentAt ? 'Đã gửi thư' : 'Đã xác nhận, chưa gửi thư') : 'Chờ xác nhận')).join('\n');
+            const choice = prompt(message + '\n\nNhập số thứ tự để xác nhận; nếu đã xác nhận thì hệ thống sẽ gửi lại thư mời:');
             const index = Number(choice) - 1;
             const event = officialEvents.find(item => item.id === eventId);
             const confirmedCount = bookings.filter(item => item.status === 'confirmed').length;
+            if (Number.isInteger(index) && bookings[index] && bookings[index].status === 'confirmed') {
+                return sendScheduleInvitation(event, bookings[index]);
+            }
             if (Number.isInteger(index) && bookings[index] && bookings[index].status === 'requested') {
                 if (event && confirmedCount >= Number(event.capacity || 1)) return alert('Lịch đã đủ số chỗ. Hãy tăng sức chứa hoặc không xác nhận thêm.');
-                await dbInstance.collection('scheduledBookings').doc(bookings[index].id).update({ status: 'confirmed', confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid }); await fetchOfficialSchedule();
+                if (event && event.type === 'interview' && !isGoogleMeetRoom(event.location)) {
+                    showAdminStatus('Lịch phỏng vấn chưa có link Google Meet. Hãy tạo lịch mới với link Meet trước khi xác nhận.', 'var(--danger)');
+                    return alert('Chưa thể xác nhận và gửi thư: lịch phỏng vấn chưa có link Google Meet hợp lệ.');
+                }
+                await dbInstance.collection('scheduledBookings').doc(bookings[index].id).update({ status: 'confirmed', confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid });
+                await sendScheduleInvitation(event, bookings[index]);
+                await fetchOfficialSchedule();
+            }
+        }
+
+        async function sendScheduleInvitation(event, booking) {
+            try {
+                showAdminStatus('Đang gửi thư mời cho ứng viên và HR được phân công...', 'var(--gold)');
+                const idToken = await currentUser.getIdToken();
+                const response = await fetch('/api/schedule/send-invitations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: idToken, eventId: event.id, bookingId: booking.id })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Không thể gửi thư mời.');
+                showAdminStatus('✓ Đã xác nhận và gửi thư cho ứng viên cùng HR phụ trách, kèm lịch Google Meet.', 'var(--ok)');
+            } catch (error) {
+                console.error('Lỗi gửi thư lịch:', error);
+                showAdminStatus('Đã xác nhận lịch nhưng gửi thư thất bại: ' + error.message, 'var(--danger)');
             }
         }
 

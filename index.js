@@ -74,6 +74,7 @@ app.use('/api/email/', rateLimit(5, 60000));       // 5 requests per minute for 
 app.use('/api/create-payment', rateLimit(10, 60000)); // 10 per minute for payments
 app.use('/api/verify-turnstile', rateLimit(20, 60000)); // 20 per minute for turnstile
 app.use('/api/admin/', rateLimit(10, 60000));       // 10 per minute for admin APIs
+app.use('/api/schedule/', rateLimit(10, 60000));    // 10 per minute for schedule invitations
 
 const PORT = process.env.PORT || 24687;
 const PYTHON_PORT = process.env.PYTHON_PORT || 8000;
@@ -569,6 +570,10 @@ app.post('/api/email/send-custom', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// API: Gửi thư lịch phỏng vấn cho ứng viên và HR được phân công.
+const sendScheduleInvitations = require('./api/schedule/send-invitations');
+app.post('/api/schedule/send-invitations', sendScheduleInvitations);
 
 
 // API: Generate certificate data (for PDF generation in future)

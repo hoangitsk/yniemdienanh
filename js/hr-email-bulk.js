@@ -175,11 +175,11 @@
         window.currentEmailWasAi = document.getElementById('emBody').value !== before;
     };
 
-    async function generateBulkContent(apps, type) {
+    async function generateBulkContent(apps, type, customDescription) {
         var response = await fetch('/api/email/generate-gemini-bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ emailType: type, applications: apps.map(function (app) {
+            body: JSON.stringify({ emailType: type, customDescription: customDescription, applications: apps.map(function (app) {
                 return { id: app.id, type: app.type, name: app.name, dept: app.dept, intro: app.intro, vision: app.vision };
             }) })
         });
@@ -193,11 +193,14 @@
         var typeInput = document.getElementById('bulkEmailType');
         var attachmentInput = document.getElementById('bulkEmailAttachment');
         var attachmentFile = attachmentInput && attachmentInput.files ? attachmentInput.files[0] : null;
+        var descriptionInput = document.getElementById('bulkEmailDescription');
+        var customDescription = descriptionInput ? descriptionInput.value.trim() : '';
         var type = typeInput ? typeInput.value : '';
         var button = document.getElementById('bulkEmailSendBtn');
         var progress = document.getElementById('bulkEmailProgress');
         if (!apps.length) return showToast('Hãy chọn ít nhất một ứng viên.', 'warning');
         if (!type) return showToast('Hãy chọn loại email muốn gửi.', 'warning');
+        if (type === 'custom' && !customDescription) return showToast('Hãy nhập mô tả nội dung để Gemini soạn thư tùy chỉnh.', 'warning');
         if (type === 'attachment_followup' && !attachmentFile) return showToast('Thư bổ sung tài liệu cần chọn một file PDF.', 'warning');
         if (attachmentFile && (!attachmentFile.name.toLowerCase().endsWith('.pdf') || attachmentFile.size > 2 * 1024 * 1024)) {
             return showToast('Tệp gửi hàng loạt phải là PDF và không vượt quá 2 MB.', 'warning');
@@ -224,17 +227,18 @@
                 attachment = { filename: attachmentFile.name, base64: String(dataUrl).split(',')[1] };
             }
 
-            if (type === 'attachment_followup') {
+            if (type === 'attachment_followup' && !customDescription) {
                 apps.forEach(function (app) { contents[String(app.id)] = fallbackEmail(app, type); });
             } else {
                 for (var offset = 0; offset < apps.length; offset += 8) {
                     var chunk = apps.slice(offset, offset + 8);
                     if (progress) progress.textContent = 'Gemini đang viết riêng thư ' + (offset + 1) + '–' + Math.min(offset + chunk.length, apps.length) + '/' + apps.length + '...';
                     try {
-                        var generated = await generateBulkContent(chunk, type);
+                        var generated = await generateBulkContent(chunk, type, customDescription);
                         generated.forEach(function (email) { contents[String(email.id)] = email; aiIds[String(email.id)] = true; });
                     } catch (error) {
                         console.warn('Bulk Gemini fallback:', error);
+                        if (type === 'custom') throw new Error('Gemini chưa tạo được thư tùy chỉnh nên hệ thống đã dừng trước khi gửi. ' + error.message);
                         chunk.forEach(function (app) { contents[String(app.id)] = fallbackEmail(app, type); });
                     }
                 }
@@ -266,6 +270,10 @@
                 if (attachmentInput) attachmentInput.value = '';
             }
             renderTab('members');
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || 'Không thể chuẩn bị email hàng loạt.', 'error');
+            if (progress) progress.textContent = 'Đã dừng trước khi gửi: ' + (error.message || 'Lỗi không xác định');
         } finally {
             button.disabled = false;
             button.textContent = '📤 Gửi cá nhân hóa hàng loạt';

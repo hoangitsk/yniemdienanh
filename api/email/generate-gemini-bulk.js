@@ -14,9 +14,13 @@ module.exports = async (req, res) => {
 
     const applications = Array.isArray(req.body && req.body.applications) ? req.body.applications.slice(0, 8) : [];
     const emailType = req.body && req.body.emailType;
-    const allowedTypes = new Set(['approve', 'round1_pass', 'interview', 'reject']);
+    const customDescription = String((req.body && req.body.customDescription) || '').trim().slice(0, 1000);
+    const allowedTypes = new Set(['approve', 'round1_pass', 'interview', 'reject', 'attachment_followup', 'custom']);
     if (!applications.length || !allowedTypes.has(emailType)) {
         return res.status(400).json({ error: 'Danh sách ứng viên hoặc loại email không hợp lệ.' });
+    }
+    if (emailType === 'custom' && !customDescription) {
+        return res.status(400).json({ error: 'Thư tùy chỉnh cần có mô tả nội dung cho AI.' });
     }
 
     const safeApplications = applications.map((app) => ({
@@ -34,12 +38,15 @@ module.exports = async (req, res) => {
         approve: 'Thông báo được duyệt và chào mừng gia nhập dự án.',
         round1_pass: 'Chúc mừng vượt qua vòng 1; nói rõ trong 3 ngày tới sẽ có email khác để chọn lịch phỏng vấn, chưa yêu cầu chọn lịch trong thư này.',
         interview: `Mời phỏng vấn; bắt buộc có liên kết HTML đến ${scheduleUrl} để chọn thời gian rảnh; nói rõ hệ thống chốt lúc 0h hằng ngày theo giờ Việt Nam và ứng viên chưa được chốt vẫn có thể cập nhật đến hết hạn.`,
-        reject: 'Từ chối lịch sự, chân thành, cảm ơn ứng viên và chúc họ may mắn.'
+        reject: 'Từ chối lịch sự, chân thành, cảm ơn ứng viên và chúc họ may mắn.',
+        attachment_followup: 'Gửi bổ sung tài liệu còn thiếu trong email trước; lời nhắn ngắn gọn, xin lỗi nhẹ nhàng và nhắc ứng viên xem file đính kèm.',
+        custom: 'Thư tùy chỉnh theo đúng mô tả riêng của HR bên dưới.'
     }[emailType];
 
     const prompt = `Bạn là Trưởng ban Nhân sự dự án phim ngắn phi lợi nhuận "Ý Niệm Điện Ảnh".
 Hãy viết RIÊNG một email tiếng Việt cho từng ứng viên trong danh sách JSON bên dưới.
 Loại thư: ${typeInstruction}
+${customDescription ? `Yêu cầu riêng của HR: ${customDescription}` : ''}
 Văn phong ấm áp, chuyên nghiệp, tự nhiên; cá nhân hóa dựa trên ban ứng tuyển, phần giới thiệu và tầm nhìn nhưng không bịa thông tin.
 Chỉ dùng HTML cơ bản trong body (<p>, <br>, <strong>, <ul>, <li>, <a>), không dùng <html>, <head>, <body>.
 

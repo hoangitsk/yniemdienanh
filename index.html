@@ -5475,12 +5475,14 @@
                                     <option value="approve">Duyệt & chào mừng</option>
                                     <option value="reject">Từ chối ứng tuyển</option>
                                     <option value="attachment_followup">Bổ sung tài liệu còn thiếu</option>
+                                    <option value="custom">Thư tùy chỉnh theo mô tả AI</option>
                                 </select>
                                 <input id="bulkEmailAttachment" type="file" accept="application/pdf,.pdf" title="PDF dùng chung cho tất cả ứng viên đã chọn" style="max-width:260px;color:#cbd5e1;border:1px dashed rgba(228,184,102,.25);padding:7px;border-radius:8px;background:rgba(0,0,0,.2)">
+                                <textarea id="bulkEmailDescription" rows="2" maxlength="1000" placeholder="Mô tả cho AI (không bắt buộc), ví dụ: Nhắc ứng viên đọc handbook trước buổi phỏng vấn, giọng thân thiện..." style="flex:1 1 360px;min-width:280px;resize:vertical;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);padding:9px;border-radius:8px"></textarea>
                                 <button id="bulkEmailSendBtn" class="btn btn-gold btn-sm" onclick="sendBulkPersonalizedEmails()">📤 Gửi cá nhân hóa hàng loạt</button>
                                 <span id="bulkEmailCount" style="font-size:.8rem;color:var(--text-muted)">0 ứng viên đã chọn</span>
                             </div>
-                            <div id="bulkEmailProgress" style="font-size:.75rem;color:var(--text-muted);margin-top:8px">PDF tối đa 2 MB sẽ được gửi cho từng ứng viên. Loại “Bổ sung tài liệu” dùng thư ngắn và không gọi Gemini.</div>
+                            <div id="bulkEmailProgress" style="font-size:.75rem;color:var(--text-muted);margin-top:8px">PDF tối đa 2 MB sẽ được gửi cho từng ứng viên. Nếu nhập mô tả, Gemini sẽ áp dụng yêu cầu đó và cá nhân hóa riêng từng thư.</div>
                         </div>
                         
                         <!-- DANH SÁCH ĐƠN APPLY CHỜ DUYỆT -->

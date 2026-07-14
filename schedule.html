@@ -501,7 +501,7 @@
                     <textarea id="eventNotes" maxlength="1000" placeholder="Chuẩn bị portfolio, đến trước 10 phút..."></textarea>
                     <button class="btn" onclick="createOfficialEvent()">+ Mở lịch</button>
                     <button type="button" class="btn small" onclick="calculateAvailabilityVotes()" style="margin-top:8px">📊 Tính phiếu giờ rảnh</button>
-                    <button type="button" class="btn small" onclick="buildAutomaticInterviewPlan()" style="margin-top:8px">🧠 Xếp lịch phỏng vấn tự động</button>
+                    <button type="button" class="btn small" disabled style="margin-top:8px;opacity:.7;cursor:not-allowed">🕛 Hệ thống tự chốt lúc 0h Việt Nam</button>
                     <div class="status-msg" id="adminStatus"></div>
                     <div id="availabilityVotes" style="margin-top:14px"></div>
                 </div>
@@ -1245,8 +1245,8 @@
                 plan.map(function(item, index) {
                     if (!item.choice) return '<div class="event-card" style="border-left-color:var(--danger)"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta">' + escapeHtml(item.reason || 'Không tìm thấy giao điểm giờ rảnh với HR.') + '</div></div>';
                     const preferenceLabel = item.choice.candidatePreferred && item.choice.hrPreferred ? '★ Cả hai cùng ưu tiên' : item.choice.candidatePreferred ? '★ Ưu tiên của ứng viên' : item.choice.hrPreferred ? '★ Ưu tiên của HR' : '✓ Cả hai đều có thể';
-                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta">📅 ' + escapeHtml(item.choice.info.date.label) + ' · ' + item.choice.info.shift.time + '<br>🧑‍💼 HR: ' + escapeHtml(item.choice.hrAccount.name || item.choice.hrAccount.email) + '<br>' + preferenceLabel + ' · ' + item.optionCount + ' phương án hợp lệ</div><button class="btn small" onclick="createAutomaticInterview(' + index + ')">Tạo lịch này</button></div>';
-                }).join('') + '<button class="btn small" onclick="createAllAutomaticInterviews()" style="margin-top:8px">+ Tạo tất cả lịch có thể xếp</button>';
+                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta">📅 ' + escapeHtml(item.choice.info.date.label) + ' · ' + item.choice.info.shift.name + ' (' + item.choice.info.shift.time + ')<br>🧑‍💼 HR: ' + escapeHtml(item.choice.hrAccount.name || item.choice.hrAccount.email) + '<br>' + preferenceLabel + ' · ' + item.optionCount + ' phương án hợp lệ</div></div>';
+                }).join('') + '<p style="font-size:.76rem;color:var(--text-muted);margin-top:8px">Đây là bản xem trước. Hệ thống sẽ chốt và gửi Meet tự động lúc 0h Việt Nam; người chưa được chốt vẫn có thể tiếp tục vote đến hết đợt.</p>';
         }
 
         function findHrAccountForSchedule(schedule) {

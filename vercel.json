@@ -1,5 +1,11 @@
 {
   "cleanUrls": false,
+  "crons": [
+    {
+      "path": "/api/cron/finalize-interviews",
+      "schedule": "0 17 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

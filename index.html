@@ -2964,7 +2964,7 @@
                 
                 <div>
                     <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Mẫu email nhanh</label>
-                    <select id="emTemplateSelect" onchange="applyEmailTemplate()" style="width:100%;padding:10px;background:rgba(0,0,0,0.3);color:#e2e8f0;border-radius:8px;border:1px solid rgba(228,184,102,0.2)">
+                    <select id="emTemplateSelect" onchange="handleEmailTemplateChange()" style="width:100%;padding:10px;background:rgba(0,0,0,0.3);color:#e2e8f0;border-radius:8px;border:1px solid rgba(228,184,102,0.2)">
                         <option value="">-- Chọn mẫu email --</option>
                         <option value="approve">Duyệt & Chào mừng tham gia dự án</option>
                         <option value="interview">Mời tham gia phỏng vấn</option>
@@ -2983,7 +2983,7 @@
                 </div>
                 
                 <div style="display:flex; justify-content:flex-end; align-items:center">
-                    <button class="btn btn-line btn-sm" onclick="generateEmailWithAI()" style="background:rgba(228,184,102,0.05);color:var(--gold-light);border-color:var(--gold);padding:6px 12px;border-radius:8px;cursor:pointer">
+                    <button id="emAiButton" class="btn btn-line btn-sm" onclick="generateEmailWithAI()" style="background:rgba(228,184,102,0.05);color:var(--gold-light);border-color:var(--gold);padding:6px 12px;border-radius:8px;cursor:pointer">
                         🤖 Soạn thư bằng Gemini AI
                     </button>
                 </div>
@@ -10359,11 +10359,18 @@
             }
         }
 
+        function handleEmailTemplateChange() {
+            applyEmailTemplate();
+            if (document.getElementById('emTemplateSelect').value) generateEmailWithAI();
+        }
+
         async function generateEmailWithAI() {
             const app = window.currentEmailApp;
             if (!app) return showToast('Không xác định được ứng viên.', 'error');
             const customDescription = document.getElementById('emCustomDescription').value.trim();
             const emailType = document.getElementById('emTemplateSelect').value || (customDescription ? 'custom' : 'approve');
+            const aiButton = document.getElementById('emAiButton');
+            if (aiButton) { aiButton.disabled = true; aiButton.textContent = '⏳ Gemini đang viết...'; }
             
             showToast('AI đang soạn email, vui lòng đợi...', 'info');
             try {
@@ -10389,6 +10396,8 @@
             } catch (err) {
                 console.error(err);
                 showToast('Lỗi AI: ' + err.message, 'error');
+            } finally {
+                if (aiButton) { aiButton.disabled = false; aiButton.textContent = '🤖 Soạn thư bằng Gemini AI'; }
             }
         }
 

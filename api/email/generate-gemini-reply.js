@@ -1,4 +1,5 @@
 const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
+const { ensureInterviewScheduleContent } = require('../../lib/emailContent');
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -52,8 +53,9 @@ Trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
 Chú ý: Email cần viết bằng tiếng Việt, văn phong ấm áp, chuyên nghiệp, truyền cảm hứng và mang tính chất kết nối. Xưng hô là "Ban Nhân Sự Ý Niệm Điện Ảnh" và gọi ứng viên là "${name}".`;
 
         const result = await generateGeminiJson(prompt);
+        const email = ensureInterviewScheduleContent(result.data, emailType, scheduleUrl);
         res.setHeader('X-Gemini-Model', result.model);
-        res.status(200).json(result.data);
+        res.status(200).json(email);
     } catch (err) {
         console.error('Error generating Gemini email:', err);
         if (err.attempts) console.error('Gemini fallback attempts:', err.attempts);

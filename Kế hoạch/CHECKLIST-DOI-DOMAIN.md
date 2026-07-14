@@ -78,5 +78,6 @@ Kiểm tra các vị trí thường gặp:
 - Production: https://yniemdienanh.vercel.app
 - Firebase Auth domain: yniemdienanh-fb0b7.firebaseapp.com
 - OAuth callback dự kiến: /api/google/oauth/callback
+- File xác minh Search Console hiện tại: /google832c51429493ac4c.html
 
 Khi đổi domain, cập nhật checklist này và không xóa domain cũ cho đến khi các phiên đăng nhập, OAuth token và email đã được kiểm tra đầy đủ.

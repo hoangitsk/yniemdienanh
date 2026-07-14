@@ -497,7 +497,7 @@ Trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
 
 Chú ý: Email cần viết bằng tiếng Việt, văn phong ấm áp, chuyên nghiệp, truyền cảm hứng và mang tính chất kết nối. Xưng hô là "Ban Nhân Sự Ý Niệm Điện Ảnh" và gọi ứng viên là "${name}".`;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${activeKey}`;
         const response = await fetch(geminiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -775,6 +775,14 @@ app.get('/dashboard', (req, res) => {
 
 app.get('/community', (req, res) => {
     res.sendFile(path.join(__dirname, 'community.html'));
+});
+
+app.get('/verify', (req, res) => {
+    res.sendFile(path.join(__dirname, 'verify.html'));
+});
+
+app.get('/schedule', (req, res) => {
+    res.sendFile(path.join(__dirname, 'schedule.html'));
 });
 
 app.get('/', (req, res) => {

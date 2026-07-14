@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lên lịch họp & phỏng vấn - Ý Niệm Điện Ảnh. Chọn khung giờ rảnh để tìm lịch khớp nhanh nhất.">
+    <title>Lịch Họp & Phỏng Vấn — Ý Niệm Điện Ảnh</title>
+    <link rel="icon" type="image/png" href="/Logo/avtar.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --navy-darkest: #050c14;
+            --navy-dark: #0d2034;
+            --navy-card: #122438;
+            --navy-light: #1c334e;
+            --gold: #e4b866;
+            --gold-light: #f3dba3;
+            --gold-dark: #cc9d4f;
+            --text-light: #f8fafc;
+            --text-muted: #aab6c5;
+            --danger: #ff7f7f;
+            --ok: #63d19e;
+            --ok-bg: rgba(99, 209, 158, 0.12);
+            --grad: linear-gradient(135deg, var(--gold-light), var(--gold));
+            --glow: 0 0 20px rgba(228, 184, 102, 0.2);
+            --glass: rgba(12, 29, 45, 0.8);
+            --line: rgba(229, 184, 103, 0.15);
+            
+            /* Badges colors */
+            --badge-btc: #e4b866;
+            --badge-member: #64b4ff;
+            --badge-candidate: #d2a1ff;
+            --badge-mentor: #63d19e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(228, 184, 102, 0.1), transparent 35rem),
+                radial-gradient(circle at 90% 90%, rgba(84, 132, 170, 0.12), transparent 30rem),
+                linear-gradient(135deg, #07111d 0%, #102b44 50%, #06101b 100%);
+            background-attachment: fixed;
+            color: var(--text-light);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header img {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid var(--line);
+            box-shadow: var(--glow);
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: var(--gold-light);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* Layout Grid */
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .panel {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        h3 {
+            color: var(--gold-light);
+            margin-bottom: 18px;
+            font-size: 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Form styling */
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            background: rgba(5, 12, 20, 0.6);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-light);
+            font-family: inherit;
+            outline: none;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--gold);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            background: var(--grad);
+            border: none;
+            color: var(--navy-darkest);
+            font-family: inherit;
+            font-weight: 600;
+            padding: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: center;
+            transition: all 0.25s ease;
+            box-shadow: var(--glow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(228, 184, 102, 0.35);
+        }
+
+        /* Mode Switcher */
+        .mode-switch {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: rgba(5, 12, 20, 0.5);
+            border-radius: 10px;
+            padding: 4px;
+            border: 1px solid var(--line);
+            margin-bottom: 24px;
+        }
+
+        .mode-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            padding: 10px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--navy-light);
+            color: var(--gold-light);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Board Legend */
+        .legend {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* Timetable Grid */
+        .board-container {
+            overflow-x: auto;
+        }
+
+        .timetable {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+            background: rgba(12, 29, 45, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--line);
+        }
+
+        .timetable th, .timetable td {
+            border: 1.5px solid var(--line);
+            padding: 12px;
+            text-align: center;
+            vertical-align: top;
+            width: 16.6%;
+        }
+
+        .timetable th {
+            background: var(--navy-light);
+            color: var(--gold-light);
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 16px 12px;
+        }
+
+        .timetable th.time-col {
+            width: 130px;
+            background: var(--navy-dark);
+        }
+
+        .timetable td.time-cell {
+            background: rgba(13, 32, 52, 0.7);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-align: center;
+            vertical-align: middle;
+            line-height: 1.4;
+        }
+
+        .timetable td.time-cell strong {
+            display: block;
+            color: var(--gold-light);
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        /* Timetable Cells */
+        .slot-cell {
+            cursor: pointer;
+            min-height: 90px;
+            position: relative;
+            transition: all 0.2s;
+            border-radius: 4px;
+            background: rgba(5, 12, 20, 0.2);
+        }
+
+        .slot-cell:hover {
+            background: rgba(228, 184, 102, 0.05);
+        }
+
+        .slot-cell.selected {
+            background: rgba(228, 184, 102, 0.12) !important;
+            border: 1.5px solid var(--gold) !important;
+        }
+
+        .slot-people {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 6px;
+            text-align: left;
+        }
+
+        .person-tag {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        /* Badges roles styling */
+        .tag-btc { background: rgba(228, 184, 102, 0.15); color: var(--badge-btc); border: 1.5px solid rgba(228, 184, 102, 0.3); }
+        .tag-member { background: rgba(100, 180, 255, 0.15); color: var(--badge-member); border: 1.5px solid rgba(100, 180, 255, 0.3); }
+        .tag-candidate { background: rgba(210, 161, 255, 0.15); color: var(--badge-candidate); border: 1.5px solid rgba(210, 161, 255, 0.3); }
+        .tag-mentor { background: rgba(99, 209, 158, 0.15); color: var(--badge-mentor); border: 1.5px solid rgba(99, 209, 158, 0.3); }
+
+        /* Highlight modes */
+        .slot-cell.best-slot {
+            background: rgba(99, 209, 158, 0.16) !important;
+            border: 2px solid var(--ok) !important;
+        }
+
+        .slot-cell.best-slot::after {
+            content: "🔥 Tốt nhất";
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.65rem;
+            color: var(--ok);
+            font-weight: bold;
+        }
+
+        .slot-cell.interview-match {
+            background: rgba(210, 161, 255, 0.16) !important;
+            border: 2px solid var(--badge-candidate) !important;
+        }
+
+        .slot-cell.interview-match::after {
+            content: "🤝 Khớp PV";
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.65rem;
+            color: var(--badge-candidate);
+            font-weight: bold;
+        }
+
+        .empty-slot-text {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-style: italic;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .status-msg {
+            font-size: 0.82rem;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 32px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+            text-align: center;
+            width: 100%;
+        }
+
+        .back-link:hover {
+            color: var(--gold);
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <a href="/"><img src="/Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh"></a>
+            <h1>Lịch Họp & Phỏng Vấn</h1>
+            <p class="subtitle">Tìm khung giờ rảnh tối ưu của đội ngũ & ứng viên mùa giải</p>
+        </header>
+
+        <div class="layout">
+            <!-- Sidebar Setup -->
+            <div class="panel">
+                <h3>📝 Thiết lập lịch rảnh</h3>
+                
+                <label>Họ và tên của bạn</label>
+                <input type="text" id="schedName" placeholder="VD: Nguyễn Văn A" autocomplete="off" aria-label="Họ tên">
+                
+                <label>Vai trò dự án</label>
+                <select id="schedRole">
+                    <option value="member">Thành viên (Member)</option>
+                    <option value="btc">BTC / Người phỏng vấn</option>
+                    <option value="candidate">Ứng viên phỏng vấn</option>
+                    <option value="mentor">Mentor / Diễn giả</option>
+                </select>
+
+                <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 18px;">
+                    <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-muted)">
+                        💡 <strong>Quy định:</strong> Bạn có thể chọn nhiều khung giờ rảnh, nhưng <strong>phải tích tối thiểu 3 khung giờ</strong> trên bảng để hệ thống dễ ghép lịch.
+                    </p>
+                </div>
+
+                <button class="btn" onclick="submitSchedule()">💾 Lưu lịch rảnh</button>
+                <div class="status-msg" id="statusMsg"></div>
+
+                <div style="margin-top: 30px;">
+                    <h3>⚙️ Chế độ xem bảng</h3>
+                    <div class="mode-switch">
+                        <button class="mode-btn active" id="modeMeeting" onclick="setMode('meeting')">👥 Lịch Họp</button>
+                        <button class="mode-btn" id="modeInterview" onclick="setMode('interview')">🤝 Phỏng Vấn</button>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item"><span class="legend-color tag-btc"></span> <span>Ban tổ chức / PV</span></div>
+                    <div class="legend-item"><span class="legend-color tag-member"></span> <span>Thành viên</span></div>
+                    <div class="legend-item"><span class="legend-color tag-candidate"></span> <span>Ứng viên phỏng vấn</span></div>
+                    <div class="legend-item"><span class="legend-color tag-mentor"></span> <span>Mentor / Diễn giả</span></div>
+                </div>
+            </div>
+
+            <!-- Timetable Grid -->
+            <div class="panel board-container">
+                <h3 id="boardTitle">📅 Bảng Lưới Thời Gian Rảnh (Chế độ: Lịch Họp)</h3>
+                
+                <table class="timetable">
+                    <thead>
+                        <tr>
+                            <th class="time-col">Khung giờ</th>
+                            <th id="dayCol1">Thứ Hai</th>
+                            <th id="dayCol2">Thứ Ba</th>
+                            <th id="dayCol3">Thứ Tư</th>
+                            <th id="dayCol4">Thứ Năm</th>
+                            <th id="dayCol5">Thứ Sáu</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetableBody">
+                        <!-- Will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <a href="/" class="back-link">← Quay lại Trang chủ</a>
+    </div>
+
+    <script>
+        // ================= CONFIGURATION & FIREBASE =================
+        const FIREBASE_CONFIG = {
+          apiKey: "AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ",
+          authDomain: "yniemdienanh-fb0b7.firebaseapp.com",
+          databaseURL: "https://yniemdienanh-fb0b7-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "yniemdienanh-fb0b7",
+          storageBucket: "yniemdienanh-fb0b7.firebasestorage.app",
+          messagingSenderId: "69246326577",
+          appId: "1:69246326577:web:50fb1d9cab97e7543fc210",
+          measurementId: "G-YN751MBNH0"
+        };
+
+        const SHIFTS = [
+            { name: "Ca 1", time: "08:00 - 09:30" },
+            { name: "Ca 2", time: "09:30 - 11:00" },
+            { name: "Ca 3", time: "14:00 - 15:30" },
+            { name: "Ca 4", time: "15:30 - 17:00" },
+            { name: "Ca 5", time: "19:30 - 21:00" },
+            { name: "Ca 6", time: "21:00 - 22:30" }
+        ];
+
+        let dbInstance = null;
+        let useFirebase = false;
+        let localDB = { meetingSchedules: [] };
+        
+        let dynamicDates = [];
+        let selectedSlots = new Set();
+        let currentMode = 'meeting'; // 'meeting' or 'interview'
+
+        // Calculate next 5 dates starting tomorrow
+        function generateDates() {
+            dynamicDates = [];
+            const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+            for (let i = 1; i <= 5; i++) {
+                const d = new Date();
+                d.setDate(d.getDate() + i);
+                const dayIndex = d.getDay();
+                const dayLabel = dayNames[dayIndex] + " (" + d.getDate() + "/" + (d.getMonth() + 1) + ")";
+                const idStr = d.toISOString().split('T')[0];
+                dynamicDates.push({ label: dayLabel, id: idStr });
+            }
+        }
+
+        async function init() {
+            generateDates();
+            
+            // Set header labels for dates
+            for (let i = 0; i < 5; i++) {
+                document.getElementById('dayCol' + (i + 1)).textContent = dynamicDates[i].label;
+            }
+
+            // Load LocalStorage backup
+            const raw = localStorage.getItem('ynda_db');
+            if (raw) {
+                try {
+                    localDB = JSON.parse(raw);
+                } catch(e) {}
+            }
+            if (!localDB.meetingSchedules) localDB.meetingSchedules = [];
+
+            // Attempt Firebase Init
+            const isFirebaseConfigured = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.trim() !== "";
+            if (isFirebaseConfigured) {
+                try {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                    dbInstance = firebase.firestore();
+                    useFirebase = true;
+                    console.log("Firebase initialized successfully on schedules page.");
+                    await fetchSchedulesFromFirestore();
+                } catch (err) {
+                    console.warn("Firebase Init failed, using local storage:", err);
+                }
+            }
+
+            renderTimetable();
+        }
+
+        async function fetchSchedulesFromFirestore() {
+            if (!useFirebase || !dbInstance) return;
+            try {
+                const snap = await dbInstance.collection('meetingSchedules').get();
+                localDB.meetingSchedules = [];
+                snap.forEach(doc => {
+                    localDB.meetingSchedules.push(doc.data());
+                });
+                // Backup to LocalStorage
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            } catch(e) {
+                console.warn("Lỗi tải Firestore schedules:", e);
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('modeMeeting').className = "mode-btn" + (mode === 'meeting' ? " active" : "");
+            document.getElementById('modeInterview').className = "mode-btn" + (mode === 'interview' ? " active" : "");
+            document.getElementById('boardTitle').textContent = "📅 Bảng Lưới Thời Rảnh (Chế độ: " + (mode === 'meeting' ? "Lịch Họp" : "Phỏng Vấn") + ")";
+            renderTimetable();
+        }
+
+        function toggleCellSelection(slotId) {
+            if (selectedSlots.has(slotId)) {
+                selectedSlots.delete(slotId);
+            } else {
+                selectedSlots.add(slotId);
+            }
+            
+            // Re-render cell visual selection
+            const cell = document.getElementById('cell_' + slotId);
+            if (cell) {
+                if (selectedSlots.has(slotId)) {
+                    cell.classList.add('selected');
+                } else {
+                    cell.classList.remove('selected');
+                }
+            }
+        }
+
+        function renderTimetable() {
+            const tbody = document.getElementById('timetableBody');
+            tbody.innerHTML = '';
+
+            // Analyze overlaps
+            let maxOverlap = 0;
+            const slotCounts = {};
+
+            // Calculate overlaps for Meeting Mode
+            localDB.meetingSchedules.forEach(sched => {
+                (sched.slots || []).forEach(slotId => {
+                    slotCounts[slotId] = (slotCounts[slotId] || 0) + 1;
+                    if (slotCounts[slotId] > maxOverlap) {
+                        maxOverlap = slotCounts[slotId];
+                    }
+                });
+            });
+
+            SHIFTS.forEach((shift, shiftIndex) => {
+                const tr = document.createElement('tr');
+
+                // Time description cell
+                const timeCell = document.createElement('td');
+                timeCell.className = "time-cell";
+                timeCell.innerHTML = "<strong>" + shift.name + "</strong>" + shift.time;
+                tr.appendChild(timeCell);
+
+                // Date cells
+                dynamicDates.forEach((date) => {
+                    const slotId = date.id + "_" + shiftIndex;
+                    const td = document.createElement('td');
+                    td.id = 'cell_' + slotId;
+                    td.className = "slot-cell";
+                    if (selectedSlots.has(slotId)) {
+                        td.classList.add('selected');
+                    }
+
+                    // Click handler
+                    td.onclick = function() {
+                        toggleCellSelection(slotId);
+                    };
+
+                    // Populate people scheduled
+                    const matches = localDB.meetingSchedules.filter(s => (s.slots || []).includes(slotId));
+                    
+                    const peopleContainer = document.createElement('div');
+                    peopleContainer.className = "slot-people";
+
+                    if (matches.length > 0) {
+                        matches.forEach(p => {
+                            const tag = document.createElement('span');
+                            tag.className = "person-tag tag-" + (p.role || 'member');
+                            tag.textContent = p.name;
+                            tag.title = p.name + " (" + (p.role === 'btc' ? 'BTC' : p.role === 'candidate' ? 'Ứng viên' : p.role === 'mentor' ? 'Mentor' : 'Thành viên') + ")";
+                            peopleContainer.appendChild(tag);
+                        });
+                        td.appendChild(peopleContainer);
+
+                        // Highlight Logic based on Mode
+                        if (currentMode === 'meeting') {
+                            // Highlights if it matches maximum availability
+                            if (slotCounts[slotId] === maxOverlap && maxOverlap > 1) {
+                                td.classList.add('best-slot');
+                            }
+                        } else if (currentMode === 'interview') {
+                            // Highlights if there is at least 1 Interviewer/BTC and at least 1 Candidate
+                            const hasBTC = matches.some(p => p.role === 'btc');
+                            const hasCandidate = matches.some(p => p.role === 'candidate');
+                            if (hasBTC && hasCandidate) {
+                                td.classList.add('interview-match');
+                            }
+                        }
+                    } else {
+                        const emptyText = document.createElement('div');
+                        emptyText.className = "empty-slot-text";
+                        emptyText.textContent = "Chưa có ai";
+                        td.appendChild(emptyText);
+                    }
+
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function submitSchedule() {
+            const name = document.getElementById('schedName').value.trim();
+            const role = document.getElementById('schedRole').value;
+            const statusEl = document.getElementById('statusMsg');
+
+            if (!name) {
+                showStatus("Vui lòng điền họ và tên.", "red");
+                return;
+            }
+
+            if (selectedSlots.size < 3) {
+                showStatus("Lỗi: Bạn phải chọn ít nhất 3 khung giờ rảnh trên bảng lưới.", "red");
+                return;
+            }
+
+            const scheduleDoc = {
+                id: name.toLowerCase().replace(/\s+/g, '_'),
+                name: name,
+                role: role,
+                slots: Array.from(selectedSlots),
+                submittedAt: new Date().toISOString()
+            };
+
+            showStatus("⏳ Đang lưu dữ liệu...", "var(--gold)");
+
+            // 1. Save to LocalDB / LocalStorage
+            const idx = localDB.meetingSchedules.findIndex(s => s.id === scheduleDoc.id);
+            if (idx >= 0) {
+                localDB.meetingSchedules[idx] = scheduleDoc;
+            } else {
+                localDB.meetingSchedules.push(scheduleDoc);
+            }
+            localStorage.setItem('ynda_db', JSON.stringify(localDB));
+
+            // 2. Save to Firebase Firestore (if useFirebase is active)
+            if (useFirebase && dbInstance) {
+                try {
+                    await dbInstance.collection('meetingSchedules').doc(scheduleDoc.id).set(scheduleDoc);
+                    showStatus("✅ Đã cập nhật lịch rảnh của bạn thành công trên hệ thống!", "var(--ok)");
+                } catch(e) {
+                    console.error("Firebase write error:", e);
+                    showStatus("⚠️ Đã lưu offline. Không thể kết nối máy chủ.", "var(--danger)");
+                }
+            } else {
+                showStatus("✅ Đã lưu lịch rảnh của bạn thành công vào trình duyệt (Offline)!", "var(--ok)");
+            }
+
+            // 3. Re-load and re-render
+            await fetchSchedulesFromFirestore();
+            renderTimetable();
+        }
+
+        function showStatus(msg, color) {
+            const statusEl = document.getElementById('statusMsg');
+            statusEl.textContent = msg;
+            statusEl.style.color = color;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

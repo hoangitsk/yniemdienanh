@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Xác thực chứng nhận - Ý Niệm Điện Ảnh. Hệ thống đối soát chứng chỉ chính thức dành cho thành viên và đối tác.">
+    <title>Xác Thực Chứng Nhận — Ý Niệm Điện Ảnh</title>
+    <link rel="icon" type="image/png" href="/Logo/avtar.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --navy-darkest: #050c14;
+            --navy-dark: #0d2034;
+            --navy-card: #122438;
+            --navy-light: #1c334e;
+            --gold: #e4b866;
+            --gold-light: #f3dba3;
+            --gold-dark: #cc9d4f;
+            --text-light: #f8fafc;
+            --text-muted: #aab6c5;
+            --danger: #ff7f7f;
+            --ok: #63d19e;
+            --ok-bg: rgba(99, 209, 158, 0.12);
+            --grad: linear-gradient(135deg, var(--gold-light), var(--gold));
+            --glow: 0 0 20px rgba(228, 184, 102, 0.25);
+            --glass: rgba(12, 29, 45, 0.75);
+            --line: rgba(229, 184, 103, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(228, 184, 102, 0.12), transparent 30rem),
+                radial-gradient(circle at 85% 85%, rgba(84, 132, 170, 0.15), transparent 25rem),
+                linear-gradient(135deg, #07111d 0%, #102b44 50%, #06101b 100%);
+            background-attachment: fixed;
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-wrap {
+            margin-bottom: 24px;
+        }
+
+        .logo-wrap img {
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            box-shadow: var(--glow);
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            color: var(--gold-light);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 32px;
+        }
+
+        .search-box {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        input {
+            flex: 1;
+            background: rgba(5, 12, 20, 0.5);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: var(--text-light);
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 10px rgba(228, 184, 102, 0.2);
+        }
+
+        button {
+            background: var(--grad);
+            border: none;
+            color: var(--navy-darkest);
+            font-family: inherit;
+            font-weight: 600;
+            padding: 0 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.25s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow);
+        }
+
+        .result-panel {
+            display: none;
+            background: var(--glass);
+            border: 1.5px solid var(--gold);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), var(--glow);
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        }
+
+        @keyframes scaleUp {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .result-panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--grad);
+        }
+
+        .cert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid rgba(228, 184, 102, 0.15);
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+
+        .cert-org {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--gold-light);
+            font-weight: 700;
+        }
+
+        .cert-code {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: rgba(228, 184, 102, 0.08);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(228, 184, 102, 0.15);
+        }
+
+        .cert-body {
+            margin-bottom: 24px;
+        }
+
+        .cert-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .cert-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-light);
+        }
+
+        .cert-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--gold);
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .cert-desc {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+
+        .cert-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 20px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-valid {
+            background: var(--ok-bg);
+            color: var(--ok);
+            border: 1px solid rgba(99, 209, 158, 0.2);
+        }
+
+        .status-revoked {
+            background: rgba(255, 127, 127, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(255, 127, 127, 0.2);
+        }
+
+        .info-msg {
+            color: var(--danger);
+            background: rgba(255, 127, 127, 0.08);
+            border: 1px solid rgba(255, 127, 127, 0.15);
+            padding: 14px;
+            border-radius: 10px;
+            margin-top: 16px;
+            display: none;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 32px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--gold);
+        }
+
+        @media (max-width: 500px) {
+            .input-group {
+                flex-direction: column;
+            }
+            button {
+                padding: 14px 0;
+            }
+            .cert-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo-wrap">
+            <a href="/"><img src="/Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh"></a>
+        </div>
+        <h1>Xác Thực Chứng Nhận</h1>
+        <p class="subtitle">Nhập mã đối soát để kiểm tra tính hợp lệ của chứng chỉ thành viên</p>
+
+        <div class="search-box">
+            <div class="input-group">
+                <input type="text" id="certInput" placeholder="Ví dụ: YNDA-S1-CON-0001" autocomplete="off" aria-label="Mã chứng nhận">
+                <button onclick="verifyCertificate()">🔍 Tra cứu</button>
+            </div>
+            <div class="info-msg" id="errorMsg"></div>
+        </div>
+
+        <div class="result-panel" id="resultPanel">
+            <div class="cert-header">
+                <div class="cert-org">Ý Niệm Điện Ảnh</div>
+                <div class="cert-code" id="resCode">YNDA-S1-CON-0001</div>
+            </div>
+            <div class="cert-body">
+                <div class="cert-label">Chứng nhận cấp cho</div>
+                <div class="cert-name" id="resName">Nguyễn Minh Hoàng</div>
+                
+                <div class="cert-label">Nội dung ghi nhận</div>
+                <div class="cert-value" id="resAchievement">Đóng góp nổi bật - Ban chuyên môn</div>
+                
+                <div class="cert-desc" id="resDesc">
+                    Thành viên chính thức đã hoàn thành xuất sắc cam kết và nhiệm vụ đóng góp cho dự án Ý Niệm Điện Ảnh trong mùa giải.
+                </div>
+
+                <div class="cert-grid">
+                    <div>
+                        <div class="cert-label">Mùa giải / Season</div>
+                        <div style="font-weight: 500;" id="resSeason">Mùa 1 (Season 1)</div>
+                    </div>
+                    <div>
+                        <div class="cert-label">Ngày phát hành</div>
+                        <div style="font-weight: 500;" id="resIssuedAt">14/07/2026</div>
+                    </div>
+                    <div>
+                        <div class="cert-label">Ký duyệt bởi</div>
+                        <div style="font-weight: 500;" id="resApprovedBy">Founder - Nguyễn Minh Hoàng</div>
+                    </div>
+                    <div>
+                        <div class="cert-label">Trạng thái</div>
+                        <div>
+                            <span class="status-badge status-valid" id="resStatus">
+                                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok)"></span>
+                                Hợp lệ / Active
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <a href="/" class="back-link">← Quay lại Trang chủ</a>
+    </div>
+
+    <script>
+        // ================= CONFIGURATION & FIREBASE =================
+        const FIREBASE_CONFIG = {
+          apiKey: "AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ",
+          authDomain: "yniemdienanh-fb0b7.firebaseapp.com",
+          databaseURL: "https://yniemdienanh-fb0b7-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "yniemdienanh-fb0b7",
+          storageBucket: "yniemdienanh-fb0b7.firebasestorage.app",
+          messagingSenderId: "69246326577",
+          appId: "1:69246326577:web:50fb1d9cab97e7543fc210",
+          measurementId: "G-YN751MBNH0"
+        };
+
+        let dbInstance = null;
+        let useFirebase = false;
+        let localDB = { certificates: [] };
+
+        // Initialize App & Read Database
+        async function init() {
+            // Load LocalStorage backup first
+            const raw = localStorage.getItem('ynda_db');
+            if (raw) {
+                try {
+                    localDB = JSON.parse(raw);
+                } catch(e) {}
+            }
+            if (!localDB.certificates) localDB.certificates = [];
+
+            // Attempt Firebase Firestore Init
+            const isFirebaseConfigured = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.trim() !== "";
+            if (isFirebaseConfigured) {
+                try {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                    dbInstance = firebase.firestore();
+                    useFirebase = true;
+                    console.log("Firebase initialized successfully on verification page.");
+                } catch (err) {
+                    console.warn("Failed to initialize Firebase, falling back to LocalStorage:", err);
+                }
+            }
+
+            // Check if there is an ID in query parameter
+            const params = new URLSearchParams(window.location.search);
+            const queryId = params.get('id');
+            if (queryId) {
+                document.getElementById('certInput').value = queryId.trim();
+                verifyCertificate();
+            }
+        }
+
+        async function verifyCertificate() {
+            const inputVal = document.getElementById('certInput').value.trim();
+            const errorEl = document.getElementById('errorMsg');
+            const panelEl = document.getElementById('resultPanel');
+            
+            errorEl.style.display = 'none';
+            panelEl.style.display = 'none';
+
+            if (!inputVal) {
+                showError("Vui lòng nhập mã chứng nhận.");
+                return;
+            }
+
+            let cert = null;
+
+            // 1. Check LocalDB/LocalStorage first
+            cert = localDB.certificates.find(c => String(c.id).toLowerCase() === inputVal.toLowerCase());
+
+            // 2. If not found in LocalDB and Firebase is available, query Firestore
+            if (!cert && useFirebase && dbInstance) {
+                try {
+                    // search by doc ID
+                    const docRef = dbInstance.collection('certificates').doc(inputVal);
+                    const docSnap = await docRef.get();
+                    if (docSnap.exists) {
+                        cert = docSnap.data();
+                    } else {
+                        // search case insensitively by query
+                        const qSnap = await dbInstance.collection('certificates').where('id', '==', inputVal).limit(1).get();
+                        if (!qSnap.empty) {
+                            cert = qSnap.docs[0].data();
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Lỗi truy vấn Firestore:", e);
+                }
+            }
+
+            // 3. Render Results
+            if (cert) {
+                document.getElementById('resCode').textContent = cert.id || inputVal;
+                document.getElementById('resName').textContent = cert.userName || "N/A";
+                
+                let certTypeLabel = "Chứng nhận";
+                if (cert.typeCode === "PAR" || cert.type === "participation") certTypeLabel = "Chứng nhận Tham gia / Participation";
+                else if (cert.typeCode === "CON" || cert.type === "contribution" || cert.type === "finalist" || cert.type === "winner") certTypeLabel = "Chứng nhận Đóng góp / Contribution";
+                else if (cert.typeCode === "LEA" || cert.type === "leadership") certTypeLabel = "Chứng nhận Lãnh đạo / Leadership";
+                else if (cert.typeCode === "APP" || cert.type === "appreciation") certTypeLabel = "Thư Cảm ơn / Appreciation";
+                
+                document.getElementById('resAchievement').textContent = certTypeLabel + (cert.achievement ? " — " + cert.achievement : "");
+                
+                let descText = "Thành viên chính thức đã hoàn thành xuất sắc cam kết và đóng góp cho dự án Ý Niệm Điện Ảnh trong mùa giải.";
+                if (cert.typeCode === "PAR" || cert.type === "participation") {
+                    descText = "Chứng nhận thành viên đã tham gia đầy đủ các hoạt động chuyên môn và hoàn thành tốt vai trò trong mùa giải của Ý Niệm Điện Ảnh.";
+                } else if (cert.typeCode === "LEA" || cert.type === "leadership") {
+                    descText = "Ghi nhận năng lực lãnh đạo, điều phối đội ngũ và chịu trách nhiệm xuất sắc đối với mục tiêu chung của Ban điều hành dự án.";
+                } else if (cert.typeCode === "APP" || cert.type === "appreciation") {
+                    descText = "Lời cảm ơn sâu sắc dành cho sự đồng hành, hỗ trợ và tài trợ quý giá của đối tác, mentor đối với dự án cộng đồng Ý Niệm Điện Ảnh.";
+                }
+                document.getElementById('resDesc').textContent = descText;
+
+                document.getElementById('resSeason').textContent = "Mùa " + (cert.season || "1") + " (Season " + (cert.season || "1") + ")";
+                
+                let dateStr = "N/A";
+                if (cert.issuedAt) {
+                    const d = new Date(cert.issuedAt);
+                    dateStr = d.toLocaleDateString('vi-VN');
+                }
+                document.getElementById('resIssuedAt').textContent = dateStr;
+                document.getElementById('resApprovedBy').textContent = cert.approvedBy || "Founder - Nguyễn Minh Hoàng";
+                
+                const statusEl = document.getElementById('resStatus');
+                if (cert.status === 'revoked' || cert.status === 'revok') {
+                    statusEl.className = "status-badge status-revoked";
+                    statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger)"></span>Đã thu hồi / Revoked';
+                } else {
+                    statusEl.className = "status-badge status-valid";
+                    statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok)"></span>Hợp lệ / Active';
+                }
+                
+                panelEl.style.display = 'block';
+            } else {
+                showError("Không tìm thấy thông tin chứng nhận với mã: " + inputVal + ". Vui lòng kiểm tra lại chính tả hoặc liên hệ Ban tổ chức.");
+            }
+        }
+
+        function showError(msg) {
+            const errorEl = document.getElementById('errorMsg');
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

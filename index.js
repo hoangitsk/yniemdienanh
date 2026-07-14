@@ -566,6 +566,8 @@ const listScheduleUsers = require('./api/schedule/list-users');
 app.post('/api/schedule/list-users', listScheduleUsers);
 const saveSchedulePoll = require('./api/schedule/save-poll');
 app.post('/api/schedule/save-poll', saveSchedulePoll);
+const listStaffAvailability = require('./api/schedule/list-availability');
+app.post('/api/schedule/list-availability', listStaffAvailability);
 const finalizeInterviewCron = require('./api/cron/finalize-interviews');
 app.get('/api/cron/finalize-interviews', finalizeInterviewCron);
 app.post('/api/cron/finalize-interviews', finalizeInterviewCron);

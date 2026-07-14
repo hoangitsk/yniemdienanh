@@ -54,9 +54,11 @@ module.exports = async function saveAvailabilityPoll(req, res) {
         const existingDoc = await ref.get();
         const existing = existingDoc.exists ? existingDoc.data() : null;
         const now = new Date().toISOString();
+        const allowedStatuses = ['draft', 'open', 'closed', 'archived'];
+        const requestedStatus = allowedStatuses.includes(input.status) ? input.status : (existing ? existing.status : 'draft');
         const poll = {
             title, type, startDate, dayCount, participantIds, participantNames, isPublic,
-            status: existing ? existing.status : (input.status === 'open' ? 'open' : 'draft'),
+            status: requestedStatus,
             createdBy: existing ? existing.createdBy : decoded.uid,
             createdAt: existing ? existing.createdAt : now,
             updatedAt: now

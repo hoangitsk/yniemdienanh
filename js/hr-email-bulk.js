@@ -6,6 +6,7 @@
         round1_pass: 'Vượt qua vòng 1',
         interview: 'Mời chọn lịch phỏng vấn',
         reject: 'Từ chối ứng tuyển',
+        attachment_followup: 'Bổ sung tài liệu',
         custom: 'Thư tùy chỉnh'
     };
 
@@ -33,7 +34,8 @@
         var recent = history.length ? history.slice(-3).reverse() : [{ type: type, sentAt: sentAt, subject: app.lastEmailSubject }];
         return recent.map(function (item) {
             return '<div style="margin-top:4px"><span class="chip" title="' + esc(item.subject || emailLabel(item.type)) + '" style="background:rgba(34,197,94,.13);color:var(--ok)">📨 ' +
-                esc(emailLabel(item.type)) + '</span><div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">' + esc(formatEmailTime(item.sentAt)) + '</div></div>';
+                esc(emailLabel(item.type)) + '</span><div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">' + esc(formatEmailTime(item.sentAt)) +
+                (item.attachmentName ? ' · 📎 ' + esc(item.attachmentName) : '') + '</div></div>';
         }).join('') + (count > 3 ? '<div style="font-size:.68rem;color:var(--text-muted);margin-top:3px">+' + (count - 3) + ' thư trước</div>' : '');
     };
 
@@ -74,6 +76,10 @@
             reject: {
                 subject: '[Ý Niệm Điện Ảnh] Thư cảm ơn ứng tuyển — ' + (app.name || ''),
                 body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Cảm ơn bạn đã dành thời gian ứng tuyển vào <strong>' + dept + '</strong>. Rất tiếc chúng tôi chưa thể đồng hành cùng bạn trong đợt này.</p><p>Chúc bạn luôn giữ vững đam mê và gặp nhiều may mắn.</p><p>Thân ái,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>'
+            },
+            attachment_followup: {
+                subject: '[Ý Niệm Điện Ảnh] Bổ sung tài liệu đính kèm',
+                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Ban Nhân Sự xin gửi bổ sung tài liệu còn thiếu trong email trước. Bạn vui lòng xem tệp đính kèm trong email này nhé.</p><p>Mong bạn thông cảm vì sự bất tiện.</p><p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>'
             }
         };
         return templates[type] || templates.approve;
@@ -185,11 +191,17 @@
     window.sendBulkPersonalizedEmails = async function () {
         var apps = selectedApplications();
         var typeInput = document.getElementById('bulkEmailType');
+        var attachmentInput = document.getElementById('bulkEmailAttachment');
+        var attachmentFile = attachmentInput && attachmentInput.files ? attachmentInput.files[0] : null;
         var type = typeInput ? typeInput.value : '';
         var button = document.getElementById('bulkEmailSendBtn');
         var progress = document.getElementById('bulkEmailProgress');
         if (!apps.length) return showToast('Hãy chọn ít nhất một ứng viên.', 'warning');
         if (!type) return showToast('Hãy chọn loại email muốn gửi.', 'warning');
+        if (type === 'attachment_followup' && !attachmentFile) return showToast('Thư bổ sung tài liệu cần chọn một file PDF.', 'warning');
+        if (attachmentFile && (!attachmentFile.name.toLowerCase().endsWith('.pdf') || attachmentFile.size > 2 * 1024 * 1024)) {
+            return showToast('Tệp gửi hàng loạt phải là PDF và không vượt quá 2 MB.', 'warning');
+        }
         var duplicateCount = apps.filter(function (app) { return app.lastEmailType === type; }).length;
         var message = 'Gửi ' + emailLabel(type) + ' cho ' + apps.length + ' ứng viên? Nội dung sẽ được cá nhân hóa riêng.';
         if (duplicateCount) message += '\n\nCó ' + duplicateCount + ' ứng viên đã từng nhận loại thư này.';
@@ -200,15 +212,31 @@
         var aiIds = {};
         var failures = [];
         try {
-            for (var offset = 0; offset < apps.length; offset += 8) {
-                var chunk = apps.slice(offset, offset + 8);
-                if (progress) progress.textContent = 'Gemini đang viết riêng thư ' + (offset + 1) + '–' + Math.min(offset + chunk.length, apps.length) + '/' + apps.length + '...';
-                try {
-                    var generated = await generateBulkContent(chunk, type);
-                    generated.forEach(function (email) { contents[String(email.id)] = email; aiIds[String(email.id)] = true; });
-                } catch (error) {
-                    console.warn('Bulk Gemini fallback:', error);
-                    chunk.forEach(function (app) { contents[String(app.id)] = fallbackEmail(app, type); });
+            var attachment;
+            if (attachmentFile) {
+                if (progress) progress.textContent = 'Đang đọc file đính kèm...';
+                var dataUrl = await new Promise(function (resolve, reject) {
+                    var reader = new FileReader();
+                    reader.onload = function () { resolve(reader.result); };
+                    reader.onerror = function () { reject(new Error('Không thể đọc file PDF.')); };
+                    reader.readAsDataURL(attachmentFile);
+                });
+                attachment = { filename: attachmentFile.name, base64: String(dataUrl).split(',')[1] };
+            }
+
+            if (type === 'attachment_followup') {
+                apps.forEach(function (app) { contents[String(app.id)] = fallbackEmail(app, type); });
+            } else {
+                for (var offset = 0; offset < apps.length; offset += 8) {
+                    var chunk = apps.slice(offset, offset + 8);
+                    if (progress) progress.textContent = 'Gemini đang viết riêng thư ' + (offset + 1) + '–' + Math.min(offset + chunk.length, apps.length) + '/' + apps.length + '...';
+                    try {
+                        var generated = await generateBulkContent(chunk, type);
+                        generated.forEach(function (email) { contents[String(email.id)] = email; aiIds[String(email.id)] = true; });
+                    } catch (error) {
+                        console.warn('Bulk Gemini fallback:', error);
+                        chunk.forEach(function (app) { contents[String(app.id)] = fallbackEmail(app, type); });
+                    }
                 }
             }
 
@@ -218,9 +246,9 @@
                 if (progress) progress.textContent = 'Đang gửi ' + (i + 1) + '/' + apps.length + ': ' + app.name;
                 button.textContent = '⏳ ' + (i + 1) + '/' + apps.length;
                 try {
-                    await sendEmail({ to: app.email, subject: content.subject, html: content.body });
+                    await sendEmail({ to: app.email, subject: content.subject, html: content.body, attachment: attachment });
                     try {
-                        await recordSentEmail(app, { type: type, subject: content.subject, source: 'bulk', aiPersonalized: Boolean(aiIds[String(app.id)]) });
+                        await recordSentEmail(app, { type: type, subject: content.subject, source: 'bulk', aiPersonalized: Boolean(aiIds[String(app.id)]), attachmentName: attachmentFile ? attachmentFile.name : '' });
                     } catch (historyError) {
                         failures.push(app.name + ' (đã gửi, lỗi lưu lịch sử)');
                     }
@@ -235,6 +263,7 @@
             } else {
                 showToast('Đã gửi và lưu lịch sử cho ' + sent + ' ứng viên!', 'success');
                 if (progress) progress.textContent = 'Hoàn tất ' + sent + '/' + apps.length + ' email.';
+                if (attachmentInput) attachmentInput.value = '';
             }
             renderTab('members');
         } finally {

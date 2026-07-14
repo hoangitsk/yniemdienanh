@@ -622,7 +622,7 @@
             <!-- GOOGLE ADDITIONAL INFO -->
             <div id="googleAdditionalArea" style="display:none">
                 <h2 style="color:var(--gold);margin-bottom:10px">Hoàn Tất Thông Tin Tài Khoản</h2>
-                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px">Bổ sung các thông tin liên hệ để hoàn tất đăng ký bằng tài khoản Google.</p>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px">Google đã xác thực tài khoản của bạn. Bổ sung thông tin khi tiện; bạn cũng có thể làm sau.</p>
                 
                 <form onsubmit="event.preventDefault();submitGoogleAdditional()">
                     <label for="ggName">Họ và tên *</label>
@@ -652,11 +652,9 @@
                     <label for="ggIntro">Giới thiệu ngắn (Không bắt buộc)</label>
                     <textarea id="ggIntro" placeholder="Giới thiệu bản thân..."></textarea>
                     
-                    <label for="ggPass">Mật khẩu <span style="color:var(--text-muted);font-size:0.75rem">(tùy chọn — để trống nếu chỉ muốn đăng nhập bằng Google)</span></label>
-                    <input id="ggPass" type="password" placeholder="Mật khẩu nếu muốn dùng đăng nhập qua email sau này">
-
                     <div class="form-msg" id="ggMsg"></div>
                     <button class="btn btn-gold" id="ggSubmitBtn" style="width:100%;margin-top:20px" type="submit">Hoàn tất đăng ký</button>
+                    <button class="btn btn-line" type="button" onclick="skipGoogleProfileCompletion()" style="width:100%;margin-top:10px">Làm sau</button>
                 </form>
             </div>
         </div>
@@ -785,8 +783,9 @@
                         if (firebaseUser) {
                             // Find user in firestore/local db
                             const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get().catch(() => null);
+                            const profile = userDoc && userDoc.exists ? userDoc.data() : {};
                             if (userDoc && userDoc.exists) {
-                                const ud = userDoc.data();
+                                const ud = profile;
                                 session = { id: firebaseUser.uid, name: ud.name, email: firebaseUser.email, role: ud.role || 'member', dept: ud.dept || '' };
                             } else {
                                 session = { id: firebaseUser.uid, name: firebaseUser.displayName || 'Thành viên mới', email: firebaseUser.email, role: 'member', dept: '' };
@@ -795,7 +794,10 @@
                             
                                                         // If logged in and they are just on register page, redirect to dashboard only if on login/register tab
                             closeModal('recruitmentAuthModal');
-                            if (currentTabId === 'member' || !currentTabId) {
+                            const profileIncomplete = !profile.phone || !profile.school || !profile.className;
+                            if ((currentTabId === 'member' || !currentTabId) && profileIncomplete) {
+                                showGoogleProfileCompletion(firebaseUser, profile);
+                            } else if (currentTabId === 'member' || !currentTabId) {
                                 showToast("Đã đăng nhập! Đang chuyển hướng đến Khu nội bộ...", "success");
                                 setTimeout(() => {
                                     window.location.href = '/dashboard';
@@ -971,13 +973,36 @@
         }
 
         // UI state toggle between Login and Register
-        function toggleAuthForm(showLogin) {
-            document.getElementById('loginArea').style.display = showLogin ? 'block' : 'none';
-            document.getElementById('registerArea').style.display = showLogin ? 'none' : 'block';
+        function renderGoogleOnlyAuth() {
+            const area = document.getElementById('loginArea');
+            if (!area) return;
+            area.innerHTML = `
+                <h2 style="color:var(--gold);margin-bottom:10px">🔐 Đăng nhập bằng Google</h2>
+                <p style="color:var(--text-muted);font-size:.9rem;line-height:1.6;margin-bottom:22px">Dùng tài khoản Google để vào cộng đồng, tham gia hoạt động và quản lý hồ sơ. Không cần mật khẩu hoặc mã xác nhận email riêng.</p>
+                <button class="btn btn-gold" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="submitGoogleLogin()">🔐 Tiếp tục với Google</button>
+                <p style="color:var(--text-muted);font-size:.78rem;text-align:center;line-height:1.5;margin:16px 0 0">Lần đầu đăng nhập, bạn có thể bổ sung số điện thoại, trường học và thông tin quan tâm sau.</p>`;
+            document.getElementById('registerArea').style.display = 'none';
+        }
+
+        function toggleAuthForm() {
+            renderGoogleOnlyAuth();
+            document.getElementById('loginArea').style.display = 'block';
+            document.getElementById('registerArea').style.display = 'none';
             document.getElementById('googleAdditionalArea').style.display = 'none';
-            if (!showLogin) {
-                _renderTurnstileWidgets();
-            }
+        }
+
+        function showGoogleProfileCompletion(user, profile) {
+            googleUserTemp = user;
+            document.getElementById('loginArea').style.display = 'none';
+            document.getElementById('registerArea').style.display = 'none';
+            document.getElementById('googleAdditionalArea').style.display = 'block';
+            document.getElementById('ggName').value = profile.name || user.displayName || '';
+            document.getElementById('ggEmail').value = user.email || '';
+            document.getElementById('ggPhone').value = profile.phone || '';
+            document.getElementById('ggSchool').value = profile.school || '';
+            document.getElementById('ggClass').value = profile.className || '';
+            document.getElementById('ggInterest').value = profile.interest || 'Khán giả (Bình chọn tác phẩm)';
+            document.getElementById('ggIntro').value = profile.intro || '';
         }
 
         const deptDescriptions = {
@@ -1515,12 +1540,13 @@
                 const cred = await authInstance.signInWithPopup(provider);
                 const isNewUser = cred.additionalUserInfo?.isNewUser;
                 const email = cred.user.email.toLowerCase();
+                googleUserTemp = cred.user;
                 
                 // Check if user profile already exists
                 const userDoc = await dbInstance.collection('users').doc(cred.user.uid).get();
                 
-                                if (isNewUser || !userDoc.exists) {
-                    // Instantly create profile and proceed!
+                if (isNewUser || !userDoc.exists) {
+                    // Google đã xác thực email; chỉ tạo hồ sơ tối thiểu, phần còn lại bổ sung sau.
                     const userProfile = {
                         id: cred.user.uid,
                         name: cred.user.displayName || 'Thành viên mới',
@@ -1532,13 +1558,19 @@
                         intro: '',
                         role: 'member',
                         createdAt: new Date().toISOString().slice(0, 10),
-                        emailVerified: true
+                        emailVerified: true,
+                        profileCompleted: false
                     };
                     await dbInstance.collection('users').doc(cred.user.uid).set(userProfile);
-                    showToast("Đăng ký thành công bằng Google!", "success");
+                    showGoogleProfileCompletion(cred.user, userProfile);
+                    showToast("Đã tạo tài khoản bằng Google!", "success");
                 } else {
-                    // Profile exists, let onAuthStateChanged handle redirect
-                    showToast("Đăng nhập thành công!", "success");
+                    const profile = userDoc.data() || {};
+                    if (!profile.phone || !profile.school || !profile.className) {
+                        showGoogleProfileCompletion(cred.user, profile);
+                    } else {
+                        showToast("Đăng nhập thành công!", "success");
+                    }
                 }
             } catch (e) {
                 showToast("Lỗi đăng nhập Google: " + e.message, "error");
@@ -1556,7 +1588,6 @@
             const interestOther = document.getElementById('ggInterestOther').value.trim();
             const interest = interestSelect === 'Khác (nhập bên dưới)' ? interestOther : interestSelect;
             const intro = document.getElementById('ggIntro').value.trim();
-            const pass = document.getElementById('ggPass').value;
             
             const msg = document.getElementById('ggMsg');
             const submitBtn = document.getElementById('ggSubmitBtn');
@@ -1572,6 +1603,8 @@
             submitBtn.textContent = "Đang lưu...";
 
             try {
+                const currentDoc = await dbInstance.collection('users').doc(googleUserTemp.uid).get();
+                const currentProfile = currentDoc.exists ? currentDoc.data() : {};
                 const userProfile = {
                     id: googleUserTemp.uid,
                     name: name,
@@ -1581,25 +1614,17 @@
                     className: className,
                     interest: interest,
                     intro: intro,
-                    role: 'member',
-                    createdAt: new Date().toISOString().slice(0, 10),
-                    emailVerified: true // Google accounts are pre-verified
+                    role: currentProfile.role || 'member',
+                    dept: currentProfile.dept || '',
+                    position: currentProfile.position || '',
+                    createdAt: currentProfile.createdAt || new Date().toISOString().slice(0, 10),
+                    emailVerified: true,
+                    profileCompleted: true
                 };
 
                 // Save in Firestore
-                await dbInstance.collection('users').doc(googleUserTemp.uid).set(userProfile);
+                await dbInstance.collection('users').doc(googleUserTemp.uid).set(userProfile, { merge: true });
                 
-                // Set password if optionally provided
-                if (pass) {
-                    if (pass.length < 6) {
-                        msg.textContent = 'Mật khẩu phụ cần tối thiểu 6 ký tự!';
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = "Hoàn tất đăng ký";
-                        return;
-                    }
-                    await googleUserTemp.updatePassword(pass);
-                }
-
                 showToast("Cập nhật thông tin tài khoản thành công!", "success");
                 
                 // Session will sync and onAuthStateChanged redirects
@@ -1609,6 +1634,10 @@
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Hoàn tất đăng ký";
             }
+        }
+
+        function skipGoogleProfileCompletion() {
+            window.location.href = '/dashboard';
         }
 
         async function forgotPassword() {
@@ -1646,6 +1675,7 @@
         // ================= PAGE INITIALIZATION =================
         window.addEventListener('DOMContentLoaded', async () => {
             initStars();
+            renderGoogleOnlyAuth();
             await initFirebaseAndData();
             
             // Handle URL action parameters if passed
@@ -1657,7 +1687,7 @@
                 selectTab('organizer');
             } else if (tabAction === 'register') {
                 selectTab('member');
-                toggleAuthForm(false);
+                toggleAuthForm(true);
             } else {
                 // Default: member / login tab
                 selectTab('member');

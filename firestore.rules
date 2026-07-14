@@ -54,6 +54,17 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    function canRespondToAvailabilityPoll(pollId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/availabilityPolls/$(pollId))
+        && get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.status == 'open'
+        && (
+          get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.isPublic == true
+          || request.auth.uid in get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.participantIds
+          || isOrganizer()
+        );
+    }
+
     match /config/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -180,13 +191,27 @@ service cloud.firestore {
     }
 
     // Lịch rảnh cá nhân và lịch chính thức do BTC/Admin điều phối.
-    match /meetingSchedules/{docId} {
+    match /availabilityPolls/{pollId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow create, update, delete: if isOrganizer();
+    }
+
+    match /meetingSchedules/{docId} {
+      allow read: if isOrganizer() || (signedIn() && resource.data.ownerId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && ('pollId' in request.resource.data)
+        && docId == request.resource.data.pollId + '_' + request.auth.uid
+        && canRespondToAvailabilityPoll(request.resource.data.pollId);
       allow update: if signedIn()
         && (resource.data.ownerId == request.auth.uid || isOrganizer())
-        && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isOrganizer());
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.pollId == resource.data.pollId
+        && (isOrganizer() || canRespondToAvailabilityPoll(resource.data.pollId));
+      allow delete: if isOrganizer()
+        || (signedIn() && resource.data.ownerId == request.auth.uid
+          && ('pollId' in resource.data)
+          && canRespondToAvailabilityPoll(resource.data.pollId));
     }
 
     match /scheduledEvents/{eventId} {
@@ -197,9 +222,12 @@ service cloud.firestore {
     match /scheduledBookings/{bookingId} {
       allow read: if signedIn() && (resource.data.candidateId == request.auth.uid || isOrganizer());
       allow create: if signedIn()
-        && request.resource.data.candidateId == request.auth.uid
         && bookingId == request.resource.data.eventId + '_' + request.auth.uid
+        && request.resource.data.candidateId == request.auth.uid
         && request.resource.data.status == 'requested';
+      allow create: if isOrganizer()
+        && bookingId == request.resource.data.eventId + '_' + request.resource.data.candidateId
+        && request.resource.data.status in ['requested', 'confirmed'];
       allow update: if isOrganizer();
       allow delete: if signedIn() && (resource.data.candidateId == request.auth.uid || isOrganizer());
     }

@@ -6,6 +6,7 @@ const { execSync } = require('child_process');
 const PayOS = require('@payos/node');
 const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
+const { generateGeminiJson, getGeminiConfig } = require('./lib/gemini');
 require('dotenv').config();
 
 const PAYOS_CLIENT_ID = process.env.PAYOS_CLIENT_ID || "";
@@ -466,13 +467,10 @@ app.post('/api/send-notification-email', async (req, res) => {
 
 // API: Generate personalized email with Gemini
 app.post('/api/email/generate-gemini-reply', async (req, res) => {
-    const rawKeys = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS || '';
-    const keys = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
+    const { keys } = getGeminiConfig();
     if (keys.length === 0) {
         return res.status(500).json({ error: 'GEMINI_API_KEY chưa được cấu hình trên server.' });
     }
-    const activeKey = keys[Math.floor(Math.random() * keys.length)];
-
     try {
         const { type, name, role, dept, intro, vision, emailType } = req.body;
         if (!name || !emailType) {
@@ -498,38 +496,13 @@ Trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
 
 Chú ý: Email cần viết bằng tiếng Việt, văn phong ấm áp, chuyên nghiệp, truyền cảm hứng và mang tính chất kết nối. Xưng hô là "Ban Nhân Sự Ý Niệm Điện Ảnh" và gọi ứng viên là "${name}".`;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${activeKey}`;
-        const response = await fetch(geminiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: prompt }]
-                }],
-                generationConfig: {
-                    responseMimeType: "application/json"
-                }
-            })
-        });
-
-        if (!response.ok) {
-            const errData = await response.json();
-            console.error('Gemini API Error:', errData);
-            return res.status(response.status).json({ error: 'Lỗi gọi API Gemini', details: errData });
-        }
-
-        const data = await response.json();
-        const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        if (!textResponse) {
-            return res.status(500).json({ error: 'Không nhận được câu trả lời từ Gemini AI.' });
-        }
-
-        const result = JSON.parse(textResponse.trim());
-        res.status(200).json(result);
+        const result = await generateGeminiJson(prompt);
+        res.setHeader('X-Gemini-Model', result.model);
+        res.status(200).json(result.data);
     } catch (err) {
         console.error('Error generating Gemini email:', err);
-        res.status(500).json({ error: err.message });
+        if (err.attempts) console.error('Gemini fallback attempts:', err.attempts);
+        res.status(err.status || 500).json({ error: err.message });
     }
 });
 

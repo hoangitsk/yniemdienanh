@@ -1,5 +1,6 @@
 const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
 const { ensureInterviewScheduleContent } = require('../../lib/emailContent');
+const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('../../lib/projectIdentity');
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -31,7 +32,10 @@ module.exports = async (req, res) => {
         }
 
         const scheduleUrl = process.env.SCHEDULE_PUBLIC_URL || 'https://yniemdienanh.vercel.app/schedule';
-        const prompt = `Bạn là Trưởng ban Nhân sự của dự án "Ý Niệm Điện Ảnh" - một dự án phim ngắn phi lợi nhuận dành cho học sinh, sinh viên.
+        const prompt = `Bạn là Trưởng ban Nhân sự của Ý Niệm Điện Ảnh.
+Thông tin chính thức từ Sổ tay dự án:
+${PROJECT_HANDBOOK_EMAIL_CONTEXT}
+
 Hãy soạn thảo một email phản hồi ứng tuyển dựa trên thông tin dưới đây:
 - Tên ứng viên: ${name}
 - Loại đơn ứng tuyển: ${type === 'organizer' ? 'Ban Tổ Chức' : type === 'cofounder' ? 'Co-founder' : type === 'president' ? 'President' : 'Thành viên'}

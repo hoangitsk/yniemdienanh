@@ -1,5 +1,6 @@
 const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
 const { ensureInterviewScheduleContent } = require('../../lib/emailContent');
+const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('../../lib/projectIdentity');
 
 module.exports = async (req, res) => {
     const corsOrigin = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
@@ -43,7 +44,10 @@ module.exports = async (req, res) => {
         custom: 'Thư tùy chỉnh theo đúng mô tả riêng của HR bên dưới.'
     }[emailType];
 
-    const prompt = `Bạn là Trưởng ban Nhân sự dự án phim ngắn phi lợi nhuận "Ý Niệm Điện Ảnh".
+    const prompt = `Bạn là Trưởng ban Nhân sự của Ý Niệm Điện Ảnh.
+Thông tin chính thức từ Sổ tay dự án:
+${PROJECT_HANDBOOK_EMAIL_CONTEXT}
+
 Hãy viết RIÊNG một email tiếng Việt cho từng ứng viên trong danh sách JSON bên dưới.
 Loại thư: ${typeInstruction}
 ${customDescription ? `Yêu cầu riêng của HR: ${customDescription}` : ''}

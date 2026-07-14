@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         :root {
@@ -559,6 +560,9 @@
         let currentUser = null;
         let canManageSchedules = false;
         const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
+        const GOOGLE_OAUTH_CLIENT_ID = '69246326577-8mc3nrao3ea8ogm98orcfij1s32ipffn.apps.googleusercontent.com';
+        const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+        let googleTokenClient = null;
         
         let dynamicDates = [];
         let selectedSlots = new Set();
@@ -1001,6 +1005,96 @@
             document.getElementById('eventLocation').focus();
         }
 
+        async function getGoogleCalendarToken() {
+            if (!window.google || !google.accounts || !google.accounts.oauth2) {
+                throw new Error('Google Identity Services chưa tải xong. Hãy tải lại trang.');
+            }
+            if (!googleTokenClient) {
+                googleTokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_OAUTH_CLIENT_ID,
+                    scope: GOOGLE_CALENDAR_SCOPE,
+                    callback: function() {}
+                });
+            }
+            return new Promise(function(resolve, reject) {
+                googleTokenClient.callback = function(response) {
+                    if (response && response.access_token) resolve(response.access_token);
+                    else reject(new Error('Google không cấp access token.'));
+                };
+                googleTokenClient.error_callback = function(error) {
+                    reject(new Error(error && error.type === 'popup_failed_to_open' ? 'Popup Google bị chặn.' : 'Bạn chưa cấp quyền Google Calendar.'));
+                };
+                googleTokenClient.requestAccessToken({});
+            });
+        }
+
+        function calendarDateTime(startAt, duration) {
+            const start = new Date(startAt);
+            const end = new Date(start.getTime() + Number(duration || 30) * 60000);
+            return {
+                start: { dateTime: start.toISOString(), timeZone: 'Asia/Ho_Chi_Minh' },
+                end: { dateTime: end.toISOString(), timeZone: 'Asia/Ho_Chi_Minh' }
+            };
+        }
+
+        async function createGoogleCalendarEvent(eventId, eventData, candidateEmail) {
+            const token = await getGoogleCalendarToken();
+            const hr = hrMembers.find(user => user.id === eventData.assignedHrId);
+            const attendees = [];
+            if (hr && hr.email) attendees.push({ email: hr.email });
+            if (candidateEmail && !attendees.some(item => item.email.toLowerCase() === candidateEmail.toLowerCase())) attendees.push({ email: candidateEmail });
+            const times = calendarDateTime(eventData.startAt, eventData.duration);
+            const resource = {
+                summary: eventData.title,
+                description: (eventData.notes || '') + '\nLịch do Ý Niệm Điện Ảnh tạo tự động.',
+                start: times.start,
+                end: times.end,
+                attendees: attendees,
+                conferenceData: {
+                    createRequest: {
+                        requestId: 'ynda_' + eventId + '_' + Date.now(),
+                        conferenceSolutionKey: { type: 'hangoutsMeet' }
+                    }
+                }
+            };
+            const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1&sendUpdates=all', {
+                method: 'POST',
+                headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify(resource)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error && result.error.message || 'Google Calendar không tạo được sự kiện.');
+            let meetLink = result.hangoutLink || (result.conferenceData && result.conferenceData.entryPoints || []).find(item => item.entryPointType === 'video')?.uri;
+            if (!meetLink && result.id) {
+                for (let attempt = 0; attempt < 6 && !meetLink; attempt++) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    const poll = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/' + encodeURIComponent(result.id), { headers: { Authorization: 'Bearer ' + token } });
+                    if (!poll.ok) continue;
+                    const latest = await poll.json();
+                    meetLink = latest.hangoutLink || (latest.conferenceData && latest.conferenceData.entryPoints || []).find(item => item.entryPointType === 'video')?.uri;
+                }
+            }
+            if (!meetLink) throw new Error('Google Calendar đang tạo Meet. Hãy mở lại lịch sau vài giây.');
+            await dbInstance.collection('scheduledEvents').doc(eventId).update({ location: meetLink, googleCalendarEventId: result.id, googleCalendarHtmlLink: result.htmlLink || '', googleCalendarOwner: currentUser.email, googleCalendarCreatedAt: new Date().toISOString() });
+            return { meetLink: meetLink, calendarEventId: result.id };
+        }
+
+        async function addCandidateToGoogleEvent(event, booking) {
+            if (!event.googleCalendarEventId || !booking.candidateEmail) return;
+            const token = await getGoogleCalendarToken();
+            const hr = hrMembers.find(user => user.id === event.assignedHrId);
+            const attendees = [{ email: booking.candidateEmail }];
+            if (hr && hr.email && hr.email.toLowerCase() !== booking.candidateEmail.toLowerCase()) attendees.push({ email: hr.email });
+            const times = calendarDateTime(event.startAt, event.duration);
+            const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/' + encodeURIComponent(event.googleCalendarEventId) + '?conferenceDataVersion=1&sendUpdates=all', {
+                method: 'PATCH',
+                headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start: times.start, end: times.end, attendees: attendees })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error && result.error.message || 'Không thể thêm ứng viên vào Google Calendar.');
+        }
+
         function isGoogleMeetRoom(value) {
             return /^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}(?:\?.*)?$/i.test(String(value || '').trim());
         }
@@ -1020,9 +1114,19 @@
             try {
                 showAdminStatus('Đang mở lịch...', 'var(--gold)');
                 const assignedHr = hrMembers.find(user => user.id === assignedHrId);
-                await dbInstance.collection('scheduledEvents').add({ title, type: eventType, startAt: new Date(startAt).toISOString(), duration, capacity, location: location, notes: document.getElementById('eventNotes').value.trim(), assignedHrId: assignedHrId || null, assignedHrName: assignedHr ? (assignedHr.name || assignedHr.email) : '', status: 'open', createdBy: currentUser.uid, createdAt: new Date().toISOString() });
+                const eventData = { title, type: eventType, startAt: new Date(startAt).toISOString(), duration, capacity, location: location, notes: document.getElementById('eventNotes').value.trim(), assignedHrId: assignedHrId || null, assignedHrName: assignedHr ? (assignedHr.name || assignedHr.email) : '', status: 'open', createdBy: currentUser.uid, createdAt: new Date().toISOString() };
+                const eventRef = await dbInstance.collection('scheduledEvents').add(eventData);
+                eventData.id = eventRef.id;
+                try {
+                    showAdminStatus('Đang xin quyền Google Calendar và tạo Meet...', 'var(--gold)');
+                    await createGoogleCalendarEvent(eventRef.id, eventData);
+                    showAdminStatus('✓ Đã tạo Meet, thêm HR vào Calendar và mở lịch thành công.', 'var(--ok)');
+                } catch (calendarError) {
+                    console.warn('Google Calendar/Meet:', calendarError);
+                    showAdminStatus('Đã mở lịch nhưng chưa tạo được Meet: ' + calendarError.message + '. Có thể dùng nút thêm link Meet thủ công.', 'var(--danger)');
+                }
                 ['eventTitle','eventStart','eventLocation','eventNotes'].forEach(id => document.getElementById(id).value = '');
-                showAdminStatus('✓ Đã mở lịch. Người dùng có thể gửi yêu cầu đặt chỗ.', 'var(--ok)'); await fetchOfficialSchedule();
+                await fetchOfficialSchedule();
             } catch (error) { console.error(error); showAdminStatus('Không thể tạo lịch. Kiểm tra quyền quản trị.', 'var(--danger)'); }
         }
 
@@ -1102,6 +1206,14 @@
                     return alert('Chưa thể xác nhận và gửi thư: lịch phỏng vấn chưa có link Google Meet hợp lệ.');
                 }
                 await dbInstance.collection('scheduledBookings').doc(bookings[index].id).update({ status: 'confirmed', confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid });
+                try {
+                    showAdminStatus('Đang thêm ứng viên vào Google Calendar...', 'var(--gold)');
+                    if (event.googleCalendarEventId) await addCandidateToGoogleEvent(event, bookings[index]);
+                    else await createGoogleCalendarEvent(event.id, event, bookings[index].candidateEmail);
+                } catch (calendarError) {
+                    console.warn('Không thể cập nhật Google Calendar:', calendarError);
+                    showAdminStatus('Đã xác nhận nhưng chưa thêm được ứng viên vào Google Calendar: ' + calendarError.message, 'var(--danger)');
+                }
                 await sendScheduleInvitation(event, bookings[index]);
                 await fetchOfficialSchedule();
             }

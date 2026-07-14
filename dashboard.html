@@ -7535,6 +7535,8 @@
                                 <div class="field"><label>Mùa giải</label><select id="certSeason"><option value="1">Mùa 1</option><option value="2">Mùa 2</option><option value="3">Mùa 3</option></select></div>
                                 <div class="field"><label>Loại</label><select id="certType"><option value="participation">Tham gia (PAR)</option><option value="contribution">Đóng góp nổi bật (CON)</option><option value="leadership">Lãnh đạo (LEA)</option><option value="appreciation">Cảm ơn & Đối tác (APP)</option></select></div>
                                 <div class="field"><label>Thành tích / Vai trò</label><input id="certAchievement" placeholder="VD: Trưởng Ban Nhân Sự"></div>
+                                <div class="field"><label>Người phê duyệt</label><select id="certApprover"><option value="President">President</option><option value="Founder">Founder</option></select></div>
+                                <label class="field" style="display:flex;gap:8px;align-items:center;font-size:.82rem"><input id="certEligibility" type="checkbox" style="width:auto"> Đã rà soát: hoàn thành KPI tối thiểu 80%, không có vi phạm nghiêm trọng và đã bàn giao (nếu áp dụng).</label>
                                 <button class="btn btn-gold" onclick="issueCertificate()">📜 Cấp</button>
                             </div>
                             <p style="color:var(--text-muted);font-size:0.82rem;margin-top:8px">💡 Định dạng mã chứng nhận chuẩn: <strong>YNDA-S[Mùa]-[Loại]-[Số thứ tự]</strong> (Ví dụ: YNDA-S1-CON-0001).</p>
@@ -7545,13 +7547,19 @@
                     var partners = d.partners||[];
                     main.innerHTML = `
                         <h2>🤝 Đối tác & Nhà tài trợ</h2>
+                        <p style="color:var(--text-muted);font-size:.85rem;margin:-10px 0 14px">Lưu đầu mối, quyền lợi, cam kết và trạng thái để đối soát đúng quy trình hợp tác của YNĐA.</p>
                         <div class="inline-form">
                             <div class="field"><label>Tên đối tác</label><input id="ptName" placeholder="VD: Công ty XYZ"></div>
-                            <div class="field"><label>Loại</label><select id="ptType"><option value="sponsor">Nhà tài trợ</option><option value="partner">Đối tác</option><option value="media">Đối tác truyền thông</option></select></div>
-                            <div class="field"><label>Gói tài trợ</label><input id="ptPackage" placeholder="VD: Vàng, Bạc"></div>
+                            <div class="field"><label>Loại</label><select id="ptType"><option value="sponsor">Nhà tài trợ</option><option value="media">Đối tác truyền thông</option><option value="university">Trường học / CLB</option><option value="community">Cộng đồng</option><option value="professional">Chuyên môn / Mentor</option></select></div>
+                            <div class="field"><label>Đầu mối liên hệ</label><input id="ptContact" placeholder="Tên · email / SĐT"></div>
+                            <div class="field"><label>Người phụ trách YNĐA</label><input id="ptOwner" placeholder="Tên người phụ trách"></div>
+                            <div class="field"><label>Trạng thái</label><select id="ptStatus"><option value="proposed">Đề xuất</option><option value="screening">Đang thẩm định</option><option value="approved">Đã phê duyệt</option><option value="active">Đang triển khai</option></select></div>
+                            <div class="field"><label>Ngày đối soát</label><input id="ptReviewDate" type="date"></div>
+                            <div class="field"><label>Quyền lợi / gói</label><input id="ptPackage" placeholder="Logo, bài đăng, hiện vật..."></div>
+                            <div class="field"><label>Cam kết / ghi chú</label><input id="ptCommitment" placeholder="Deadline, phạm vi, điều kiện..."></div>
                             <button class="btn btn-gold" onclick="addPartner()">+ Thêm</button>
                         </div>
-                        <div class="feature-grid">${partners.length===0 ? '<p style="color:var(--text-muted)">Chưa có đối tác nào.</p>' : partners.map(function(p){return '<div class="feature-card"><h4>'+esc(p.name)+'</h4><div class="meta"><span class="badge '+(p.type==='sponsor'?'badge-gold':p.type==='partner'?'badge-blue':'badge-purple')+'">'+(p.type==='sponsor'?'Nhà tài trợ':p.type==='partner'?'Đối tác':'Đối tác TH')+'</span>'+(p.package?'<span class="badge badge-green">'+esc(p.package)+'</span>':'')+'</div><button class="btn btn-line btn-sm" onclick="removePartner(\''+p.id+'\')" style="color:var(--danger)">🗑️</button></div>';}).join('')}</div>
+                        <div class="feature-grid">${partners.length===0 ? '<p style="color:var(--text-muted)">Chưa có đối tác nào.</p>' : partners.map(function(p){var labels={sponsor:'Nhà tài trợ',media:'Đối tác truyền thông',university:'Trường học / CLB',community:'Cộng đồng',professional:'Chuyên môn / Mentor'};var stages={proposed:'Đề xuất',screening:'Thẩm định',approved:'Đã phê duyệt',active:'Đang triển khai',completed:'Đã hoàn tất',closed:'Đã kết thúc'};return '<div class="feature-card"><h4>'+esc(p.name)+'</h4><div class="meta"><span class="badge '+(p.type==='sponsor'?'badge-gold':'badge-blue')+'">'+(labels[p.type]||'Đối tác')+'</span><span class="badge badge-purple">'+(stages[p.status]||'Đề xuất')+'</span></div>'+(p.contact?'<p style="font-size:.8rem">👤 '+esc(p.contact)+'</p>':'')+(p.owner?'<p style="font-size:.8rem">📌 Phụ trách: '+esc(p.owner)+'</p>':'')+(p.package?'<p style="font-size:.8rem">🎁 '+esc(p.package)+'</p>':'')+(p.commitment?'<p style="font-size:.8rem">📝 '+esc(p.commitment)+'</p>':'')+(p.reviewDate?'<p style="font-size:.8rem;color:var(--gold-light)">📅 Đối soát: '+esc(p.reviewDate)+'</p>':'')+'<div class="meta"><select style="padding:5px;font-size:.75rem" onchange="updatePartnerStage(\''+p.id+'\',this.value)"><option value="proposed" '+(p.status==='proposed'?'selected':'')+'>Đề xuất</option><option value="screening" '+(p.status==='screening'?'selected':'')+'>Thẩm định</option><option value="approved" '+(p.status==='approved'?'selected':'')+'>Phê duyệt</option><option value="active" '+(p.status==='active'?'selected':'')+'>Triển khai</option><option value="completed" '+(p.status==='completed'?'selected':'')+'>Hoàn tất</option><option value="closed" '+(p.status==='closed'?'selected':'')+'>Kết thúc</option></select><button class="btn btn-line btn-sm" onclick="removePartner(\''+p.id+'\')" style="color:var(--danger)">🗑️</button></div></div>';}).join('')}</div>
                     `;
                 },
                 ambassadors() {
@@ -11619,6 +11627,11 @@
             var type = document.getElementById('certType').value;
             var achievement = document.getElementById('certAchievement');
             var season = document.getElementById('certSeason')?.value || "1";
+            var eligible = document.getElementById('certEligibility')?.checked;
+            var approver = document.getElementById('certApprover')?.value || 'President';
+
+            if (!eligible) return showToast('Cần xác nhận đã rà soát KPI, kỷ luật và bàn giao trước khi cấp chứng nhận.', 'error');
+            if (type === 'leadership' && approver !== 'Founder') return showToast('Chứng nhận Leadership cần Founder phê duyệt theo Sổ tay dự án.', 'error');
             
             if (!localDB.certificates) localDB.certificates = [];
             
@@ -11644,7 +11657,9 @@
                 achievement: achievement.value.trim(),
                 issuedAt: new Date().toISOString(),
                 status: 'active',
-                approvedBy: 'Founder - Nguyễn Minh Hoàng'
+                approvedBy: approver,
+                eligibilityChecked: true,
+                eligibilityCheckedAt: new Date().toISOString()
             };
             
             achievement.value = '';
@@ -11657,12 +11672,21 @@
         // --- PARTNERS ---
         async function addPartner() {
             var name=document.getElementById('ptName');var type=document.getElementById('ptType');var pkg=document.getElementById('ptPackage');
+            var contact=document.getElementById('ptContact');var owner=document.getElementById('ptOwner');var status=document.getElementById('ptStatus');var reviewDate=document.getElementById('ptReviewDate');var commitment=document.getElementById('ptCommitment');
             if (!name||!name.value.trim()) return showToast('Vui lòng nhập tên','error');
             if (!localDB.partners) localDB.partners = [];
-            localDB.partners.push({id:genId(),name:name.value.trim(),type:type.value,package:pkg.value.trim()});
-            name.value='';pkg.value='';
+            localDB.partners.push({id:genId(),name:name.value.trim(),type:type.value,package:pkg.value.trim(),contact:contact.value.trim(),owner:owner.value.trim(),status:status.value,reviewDate:reviewDate.value,commitment:commitment.value.trim(),createdAt:new Date().toISOString()});
+            name.value='';pkg.value='';contact.value='';owner.value='';reviewDate.value='';commitment.value='';
             await saveItem('partners', localDB.partners);
             renderTab('partners');showToast('Đã thêm đối tác!','success');
+        }
+        async function updatePartnerStage(id, status) {
+            var partner=(localDB.partners||[]).find(function(p){return p.id===id;});
+            if (!partner) return;
+            partner.status=status;
+            partner.updatedAt=new Date().toISOString();
+            await saveItem('partners', partner);
+            renderTab('partners');
         }
         async function removePartner(id) {
             if (!confirm('Xóa đối tác?')) return;

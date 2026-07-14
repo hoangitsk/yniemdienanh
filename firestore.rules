@@ -179,6 +179,31 @@ service cloud.firestore {
       allow delete: if isOrganizer();
     }
 
+    // Lịch rảnh cá nhân và lịch chính thức do BTC/Admin điều phối.
+    match /meetingSchedules/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if signedIn()
+        && (resource.data.ownerId == request.auth.uid || isOrganizer())
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isOrganizer());
+    }
+
+    match /scheduledEvents/{eventId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isOrganizer();
+    }
+
+    match /scheduledBookings/{bookingId} {
+      allow read: if signedIn() && (resource.data.candidateId == request.auth.uid || isOrganizer());
+      allow create: if signedIn()
+        && request.resource.data.candidateId == request.auth.uid
+        && bookingId == request.resource.data.eventId + '_' + request.auth.uid
+        && request.resource.data.status == 'requested';
+      allow update: if isOrganizer();
+      allow delete: if signedIn() && (resource.data.candidateId == request.auth.uid || isOrganizer());
+    }
+
     match /notifications/{docId} {
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || resource.data.targetAll == true || isOrganizer());
       allow create: if signedIn();
@@ -407,7 +432,8 @@ service cloud.firestore {
     }
 
     match /partners/{docId} {
-      allow read: if true;
+      // Hồ sơ hợp tác có thể chứa thông tin đầu mối, quyền lợi và cam kết.
+      allow read: if isOrganizer();
       allow write: if isOrganizer();
     }
 
@@ -422,12 +448,13 @@ service cloud.firestore {
     }
 
     match /school_partners/{docId} {
-      allow read: if true;
+      // Số điện thoại/email của đầu mối trường/CLB chỉ dành cho BTC.
+      allow read: if isOrganizer();
       allow write: if isOrganizer();
     }
 
     match /kpi/{docId} {
-      allow read: if true;
+      allow read: if signedIn();
       allow write: if isOrganizer();
     }
 

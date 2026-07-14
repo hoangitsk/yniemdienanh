@@ -10,6 +10,7 @@
     
     <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
     <style>
@@ -132,7 +133,7 @@
             font-weight: 500;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
             background: rgba(5, 12, 20, 0.6);
             border: 1px solid var(--line);
@@ -145,9 +146,17 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             border-color: var(--gold);
         }
+
+        textarea { min-height: 74px; resize: vertical; }
+        .hidden { display: none !important; }
+        .event-card { border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 9px; padding: 12px; background: rgba(5,12,20,.32); margin-bottom: 10px; }
+        .event-card.interview { border-left-color: var(--badge-candidate); }
+        .event-card .event-meta { color: var(--text-muted); font-size: .78rem; line-height: 1.65; }
+        .event-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+        .btn.small { width:auto; padding:8px 10px; font-size:.78rem; box-shadow:none; }
 
         .btn {
             display: block;
@@ -396,48 +405,102 @@
         </header>
 
         <div class="layout">
-            <!-- Sidebar Setup -->
-            <div class="panel">
-                <h3>📝 Thiết lập lịch rảnh</h3>
-                
-                <label>Họ và tên của bạn</label>
-                <input type="text" id="schedName" placeholder="VD: Nguyễn Văn A" autocomplete="off" aria-label="Họ tên">
-                
-                <label>Vai trò dự án</label>
-                <select id="schedRole">
-                    <option value="member">Thành viên (Member)</option>
-                    <option value="btc">BTC / Người phỏng vấn</option>
-                    <option value="candidate">Ứng viên phỏng vấn</option>
-                    <option value="mentor">Mentor / Diễn giả</option>
-                </select>
-
-                <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 18px;">
-                    <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-muted)">
-                        💡 <strong>Quy định:</strong> Bạn có thể chọn nhiều khung giờ rảnh, nhưng <strong>phải tích tối thiểu 3 khung giờ</strong> trên bảng để hệ thống dễ ghép lịch.
-                    </p>
+            <!-- Left Column: Controls & Recommendations -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div class="panel" id="officialSchedulePanel">
+                    <h3>📌 Lịch đã mở</h3>
+                    <p id="bookingNotice" style="font-size:.82rem;color:var(--text-muted);margin:-6px 0 14px">Đăng nhập để đặt lịch và theo dõi trạng thái.</p>
+                    <div id="officialEvents"><p style="color:var(--text-muted);font-size:.82rem">Đang tải lịch...</p></div>
                 </div>
 
-                <button class="btn" onclick="submitSchedule()">💾 Lưu lịch rảnh</button>
-                <div class="status-msg" id="statusMsg"></div>
+                <div class="panel hidden" id="adminSchedulePanel">
+                    <h3>🛠️ Tạo lịch chính thức</h3>
+                    <p style="font-size:.8rem;color:var(--text-muted);margin:-6px 0 16px">Chỉ Admin/BTC. Lịch phỏng vấn cho phép ứng viên tự đặt chỗ; lịch họp dùng để đăng ký tham dự.</p>
+                    <label>Tiêu đề lịch</label>
+                    <input id="eventTitle" maxlength="120" placeholder="VD: Phỏng vấn vòng 1 - Ban nội dung">
+                    <label>Loại lịch</label>
+                    <select id="eventType"><option value="interview">Phỏng vấn</option><option value="meeting">Cuộc họp</option></select>
+                    <label>Ngày, giờ bắt đầu</label>
+                    <input id="eventStart" type="datetime-local">
+                    <label>Thời lượng (phút)</label>
+                    <input id="eventDuration" type="number" min="15" max="480" value="30">
+                    <label>Số chỗ tối đa</label>
+                    <input id="eventCapacity" type="number" min="1" max="500" value="1">
+                    <label>Địa điểm hoặc liên kết họp</label>
+                    <input id="eventLocation" maxlength="300" placeholder="Google Meet / Phòng họp / địa chỉ">
+                    <label>Hướng dẫn cho người đặt</label>
+                    <textarea id="eventNotes" maxlength="1000" placeholder="Chuẩn bị portfolio, đến trước 10 phút..."></textarea>
+                    <button class="btn" onclick="createOfficialEvent()">+ Mở lịch</button>
+                    <div class="status-msg" id="adminStatus"></div>
+                </div>
 
-                <div style="margin-top: 30px;">
-                    <h3>⚙️ Chế độ xem bảng</h3>
-                    <div class="mode-switch">
-                        <button class="mode-btn active" id="modeMeeting" onclick="setMode('meeting')">👥 Lịch Họp</button>
-                        <button class="mode-btn" id="modeInterview" onclick="setMode('interview')">🤝 Phỏng Vấn</button>
+                <!-- Setup Panel -->
+                <div class="panel">
+                    <h3>📝 Thiết lập lịch rảnh</h3>
+
+                    <label>Họ và tên của bạn</label>
+                    <input type="text" id="schedName" placeholder="VD: Nguyễn Văn A" autocomplete="off" aria-label="Họ tên">
+
+                    <label>Vai trò dự án</label>
+                    <select id="schedRole">
+                        <option value="member">Thành viên (Member)</option>
+                        <option value="btc">BTC / Người phỏng vấn</option>
+                        <option value="candidate">Ứng viên phỏng vấn</option>
+                        <option value="mentor">Mentor / Diễn giả</option>
+                    </select>
+
+                    <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 18px;">
+                        <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-muted)">
+                            💡 <strong>Quy định:</strong> Bạn có thể chọn nhiều khung giờ rảnh, nhưng <strong>phải tích tối thiểu 3 khung giờ</strong> trên bảng để hệ thống dễ ghép lịch.
+                        </p>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-bottom:12px">
+                        <button class="btn" onclick="submitSchedule()" style="flex:2">💾 Lưu lịch rảnh</button>
+                        <button class="btn" onclick="deleteMySchedule()" style="flex:1; background:linear-gradient(135deg, #ff8a8a, #f43f5e); color:white; box-shadow:none">🗑️ Xóa</button>
+                    </div>
+                    <div class="status-msg" id="statusMsg"></div>
+
+                    <div style="margin-top: 30px;">
+                        <h3>⚙️ Chế độ xem bảng</h3>
+                        <div class="mode-switch">
+                            <button class="mode-btn active" id="modeMeeting" onclick="setMode('meeting')">👥 Lịch Họp</button>
+                            <button class="mode-btn" id="modeInterview" onclick="setMode('interview')">🤝 Phỏng Vấn</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 15px; margin-bottom: 20px;">
+                        <label>Bộ lọc vai trò hiển thị:</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem; background: rgba(5,12,20,0.3); padding: 10px; border-radius: 8px; border: 1px solid var(--line);">
+                            <label style="margin:0; display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text-muted)"><input type="checkbox" id="fltBtc" checked onchange="renderTimetable()" style="width:auto; margin:0"> BTC / PV</label>
+                            <label style="margin:0; display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text-muted)"><input type="checkbox" id="fltMember" checked onchange="renderTimetable()" style="width:auto; margin:0"> Th.viên</label>
+                            <label style="margin:0; display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text-muted)"><input type="checkbox" id="fltCandidate" checked onchange="renderTimetable()" style="width:auto; margin:0"> Ứng viên</label>
+                            <label style="margin:0; display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text-muted)"><input type="checkbox" id="fltMentor" checked onchange="renderTimetable()" style="width:auto; margin:0"> Mentor</label>
+                        </div>
+                    </div>
+
+                    <div class="legend">
+                        <div class="legend-item"><span class="legend-color tag-btc"></span> <span>Ban tổ chức / PV</span></div>
+                        <div class="legend-item"><span class="legend-color tag-member"></span> <span>Thành viên</span></div>
+                        <div class="legend-item"><span class="legend-color tag-candidate"></span> <span>Ứng viên phỏng vấn</span></div>
+                        <div class="legend-item"><span class="legend-color tag-mentor"></span> <span>Mentor / Diễn giả</span></div>
                     </div>
                 </div>
 
-                <div class="legend">
-                    <div class="legend-item"><span class="legend-color tag-btc"></span> <span>Ban tổ chức / PV</span></div>
-                    <div class="legend-item"><span class="legend-color tag-member"></span> <span>Thành viên</span></div>
-                    <div class="legend-item"><span class="legend-color tag-candidate"></span> <span>Ứng viên phỏng vấn</span></div>
-                    <div class="legend-item"><span class="legend-color tag-mentor"></span> <span>Mentor / Diễn giả</span></div>
+                <!-- Recommendation & Summary Panel -->
+                <div class="panel">
+                    <h3>💡 Gợi ý lịch tối ưu</h3>
+                    <div id="recsContainer" style="display:flex; flex-direction:column; gap:8px;">
+                        <!-- Recommendations populated dynamically -->
+                    </div>
+                    <div id="analyticsSummary" style="margin-top:12px; font-size:0.8rem; color:var(--text-muted); border-top: 1px solid rgba(255,255,255,0.08); padding-top:10px">
+                        <!-- Submission count summary -->
+                    </div>
                 </div>
             </div>
 
             <!-- Timetable Grid -->
-            <div class="panel board-container">
+            <div class="panel board-container" style="flex:1; width: 100%;">
                 <h3 id="boardTitle">📅 Bảng Lưới Thời Gian Rảnh (Chế độ: Lịch Họp)</h3>
                 
                 <table class="timetable">
@@ -486,6 +549,11 @@
         let dbInstance = null;
         let useFirebase = false;
         let localDB = { meetingSchedules: [] };
+        let officialEvents = [];
+        let myBookings = [];
+        let currentUser = null;
+        let canManageSchedules = false;
+        const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
         
         let dynamicDates = [];
         let selectedSlots = new Set();
@@ -530,13 +598,80 @@
                     dbInstance = firebase.firestore();
                     useFirebase = true;
                     console.log("Firebase initialized successfully on schedules page.");
+                    firebase.auth().onAuthStateChanged(async function(user) {
+                        currentUser = user;
+                        await refreshSchedulePermissions();
+                        if (user) await fetchSchedulesFromFirestore();
+                        await fetchOfficialSchedule();
+                    });
                     await fetchSchedulesFromFirestore();
                 } catch (err) {
                     console.warn("Firebase Init failed, using local storage:", err);
                 }
             }
 
+            // Quick load previous schedule on name input
+            document.getElementById('schedName').addEventListener('input', function(e) {
+                var val = e.target.value.trim().toLowerCase();
+                if (!val) {
+                    selectedSlots.clear();
+                    renderTimetable();
+                    showStatus("", "");
+                    return;
+                }
+                var found = localDB.meetingSchedules.find(s => s.name.trim().toLowerCase() === val);
+                if (found) {
+                    document.getElementById('schedRole').value = found.role || 'member';
+                    selectedSlots = new Set(found.slots || []);
+                    renderTimetable();
+                    showStatus("💡 Đã tải lịch cũ của bạn. Có thể sửa và lưu lại.", "var(--gold-light)");
+                } else {
+                    showStatus("", "");
+                }
+            });
+
             renderTimetable();
+        }
+
+        async function refreshSchedulePermissions() {
+            canManageSchedules = !!(currentUser && currentUser.email && currentUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL);
+            if (currentUser && dbInstance && !canManageSchedules) {
+                try {
+                    const userDoc = await dbInstance.collection('users').doc(currentUser.uid).get();
+                    canManageSchedules = userDoc.exists && ['admin', 'organizer'].includes(userDoc.data().role);
+                } catch (error) { console.warn('Không thể kiểm tra quyền lịch:', error); }
+            }
+            document.getElementById('adminSchedulePanel').classList.toggle('hidden', !canManageSchedules);
+            document.getElementById('bookingNotice').textContent = currentUser
+                ? (canManageSchedules ? 'Bạn có quyền quản lý lịch. Có thể tạo lịch mới và xác nhận người đặt.' : 'Chọn lịch phù hợp để đặt chỗ. Bạn chỉ có thể quản lý lượt đặt của mình.')
+                : 'Vui lòng đăng nhập trước khi đặt lịch.';
+        }
+
+        function eventStartLabel(value) {
+            const date = new Date(value);
+            return isNaN(date) ? 'Chưa xác định thời gian' : date.toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' });
+        }
+
+        async function fetchOfficialSchedule() {
+            if (!useFirebase || !dbInstance) {
+                renderOfficialEvents();
+                return;
+            }
+            try {
+                const eventsSnap = await dbInstance.collection('scheduledEvents').orderBy('startAt', 'asc').get();
+                officialEvents = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(event => event.status !== 'cancelled');
+                myBookings = [];
+                if (currentUser) {
+                    const bookingsSnap = canManageSchedules
+                        ? await dbInstance.collection('scheduledBookings').get()
+                        : await dbInstance.collection('scheduledBookings').where('candidateId', '==', currentUser.uid).get();
+                    myBookings = bookingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                }
+            } catch (error) {
+                console.error('Lỗi tải lịch chính thức:', error);
+                showAdminStatus('Không thể tải lịch từ hệ thống. Kiểm tra quyền Firestore.', 'var(--danger)');
+            }
+            renderOfficialEvents();
         }
 
         async function fetchSchedulesFromFirestore() {
@@ -584,12 +719,22 @@
             const tbody = document.getElementById('timetableBody');
             tbody.innerHTML = '';
 
+            // Get show filters
+            const showBtc = document.getElementById('fltBtc')?.checked ?? true;
+            const showMember = document.getElementById('fltMember')?.checked ?? true;
+            const showCandidate = document.getElementById('fltCandidate')?.checked ?? true;
+            const showMentor = document.getElementById('fltMentor')?.checked ?? true;
+
             // Analyze overlaps
             let maxOverlap = 0;
             const slotCounts = {};
 
-            // Calculate overlaps for Meeting Mode
             localDB.meetingSchedules.forEach(sched => {
+                if (sched.role === 'btc' && !showBtc) return;
+                if (sched.role === 'member' && !showMember) return;
+                if (sched.role === 'candidate' && !showCandidate) return;
+                if (sched.role === 'mentor' && !showMentor) return;
+
                 (sched.slots || []).forEach(slotId => {
                     slotCounts[slotId] = (slotCounts[slotId] || 0) + 1;
                     if (slotCounts[slotId] > maxOverlap) {
@@ -624,12 +769,19 @@
 
                     // Populate people scheduled
                     const matches = localDB.meetingSchedules.filter(s => (s.slots || []).includes(slotId));
-                    
+                    const filteredMatches = matches.filter(p => {
+                        if (p.role === 'btc' && !showBtc) return false;
+                        if (p.role === 'member' && !showMember) return false;
+                        if (p.role === 'candidate' && !showCandidate) return false;
+                        if (p.role === 'mentor' && !showMentor) return false;
+                        return true;
+                    });
+
                     const peopleContainer = document.createElement('div');
                     peopleContainer.className = "slot-people";
 
-                    if (matches.length > 0) {
-                        matches.forEach(p => {
+                    if (filteredMatches.length > 0) {
+                        filteredMatches.forEach(p => {
                             const tag = document.createElement('span');
                             tag.className = "person-tag tag-" + (p.role || 'member');
                             tag.textContent = p.name;
@@ -640,14 +792,12 @@
 
                         // Highlight Logic based on Mode
                         if (currentMode === 'meeting') {
-                            // Highlights if it matches maximum availability
                             if (slotCounts[slotId] === maxOverlap && maxOverlap > 1) {
                                 td.classList.add('best-slot');
                             }
                         } else if (currentMode === 'interview') {
-                            // Highlights if there is at least 1 Interviewer/BTC and at least 1 Candidate
-                            const hasBTC = matches.some(p => p.role === 'btc');
-                            const hasCandidate = matches.some(p => p.role === 'candidate');
+                            const hasBTC = filteredMatches.some(p => p.role === 'btc');
+                            const hasCandidate = filteredMatches.some(p => p.role === 'candidate');
                             if (hasBTC && hasCandidate) {
                                 td.classList.add('interview-match');
                             }
@@ -664,25 +814,32 @@
 
                 tbody.appendChild(tr);
             });
+
+            updateRecommendations();
         }
 
         async function submitSchedule() {
             const name = document.getElementById('schedName').value.trim();
             const role = document.getElementById('schedRole').value;
-            const statusEl = document.getElementById('statusMsg');
 
             if (!name) {
-                showStatus("Vui lòng điền họ và tên.", "red");
+                showStatus("Vui lòng điền họ và tên.", "var(--danger)");
                 return;
             }
 
             if (selectedSlots.size < 3) {
-                showStatus("Lỗi: Bạn phải chọn ít nhất 3 khung giờ rảnh trên bảng lưới.", "red");
+                showStatus("Lỗi: Bạn phải chọn ít nhất 3 khung giờ rảnh trên bảng lưới.", "var(--danger)");
+                return;
+            }
+
+            if (useFirebase && !currentUser) {
+                showStatus("Vui lòng đăng nhập trước khi lưu lịch rảnh lên hệ thống.", "var(--danger)");
                 return;
             }
 
             const scheduleDoc = {
-                id: name.toLowerCase().replace(/\s+/g, '_'),
+                id: currentUser ? currentUser.uid : name.toLowerCase().replace(/\s+/g, '_'),
+                ownerId: currentUser ? currentUser.uid : null,
                 name: name,
                 role: role,
                 slots: Array.from(selectedSlots),
@@ -700,28 +857,251 @@
             }
             localStorage.setItem('ynda_db', JSON.stringify(localDB));
 
-            // 2. Save to Firebase Firestore (if useFirebase is active)
+            // Render immediately for instant responsiveness
+            showStatus("✅ Đã lưu lịch rảnh của bạn thành công!", "var(--ok)");
+            renderTimetable();
+
+            // 2. Save to Firebase Firestore (if useFirebase is active) in background
             if (useFirebase && dbInstance) {
-                try {
-                    await dbInstance.collection('meetingSchedules').doc(scheduleDoc.id).set(scheduleDoc);
-                    showStatus("✅ Đã cập nhật lịch rảnh của bạn thành công trên hệ thống!", "var(--ok)");
-                } catch(e) {
-                    console.error("Firebase write error:", e);
-                    showStatus("⚠️ Đã lưu offline. Không thể kết nối máy chủ.", "var(--danger)");
-                }
-            } else {
-                showStatus("✅ Đã lưu lịch rảnh của bạn thành công vào trình duyệt (Offline)!", "var(--ok)");
+                dbInstance.collection('meetingSchedules').doc(scheduleDoc.id).set(scheduleDoc)
+                    .then(() => {
+                        showStatus("✅ Đã đồng bộ lịch rảnh của bạn thành công lên hệ thống!", "var(--ok)");
+                        // Refresh background data silently
+                        fetchSchedulesFromFirestore().then(() => renderTimetable());
+                    })
+                    .catch(e => {
+                        console.error("Firebase write error:", e);
+                        showStatus("⚠️ Đã lưu offline. Không thể kết nối máy chủ.", "var(--danger)");
+                    });
+            }
+        }
+
+        async function deleteMySchedule() {
+            const name = document.getElementById('schedName').value.trim();
+            if (!name) {
+                showStatus("Vui lòng điền họ và tên cần xóa.", "var(--danger)");
+                return;
             }
 
-            // 3. Re-load and re-render
-            await fetchSchedulesFromFirestore();
+            if (!confirm("Bạn có chắc chắn muốn xóa lịch rảnh của '" + name + "'?")) {
+                return;
+            }
+
+            const matchingSchedule = localDB.meetingSchedules.find(s => s.name && s.name.trim().toLowerCase() === name.toLowerCase());
+            const docId = currentUser ? currentUser.uid : (matchingSchedule ? matchingSchedule.id : name.toLowerCase().replace(/\s+/g, '_'));
+            showStatus("⏳ Đang xóa dữ liệu...", "var(--gold)");
+
+            // 1. Delete from localDB
+            localDB.meetingSchedules = localDB.meetingSchedules.filter(s => s.id !== docId);
+            localStorage.setItem('ynda_db', JSON.stringify(localDB));
+
+            // Reset selection & UI
+            selectedSlots.clear();
+            document.getElementById('schedName').value = '';
+            showStatus("✅ Đã xóa lịch rảnh thành công!", "var(--ok)");
             renderTimetable();
+
+            // 2. Delete from Firebase in background
+            if (useFirebase && dbInstance) {
+                dbInstance.collection('meetingSchedules').doc(docId).delete()
+                    .then(() => {
+                        showStatus("✅ Đã xóa lịch rảnh thành công trên hệ thống!", "var(--ok)");
+                        fetchSchedulesFromFirestore().then(() => renderTimetable());
+                    })
+                    .catch(e => {
+                        console.error("Firebase delete error:", e);
+                        showStatus("⚠️ Đã xóa offline.", "var(--danger)");
+                    });
+            }
+        }
+
+        function showAdminStatus(message, color) {
+            const el = document.getElementById('adminStatus');
+            if (el) { el.textContent = message || ''; el.style.color = color || ''; }
+        }
+
+        function renderOfficialEvents() {
+            const container = document.getElementById('officialEvents');
+            if (!container) return;
+            container.innerHTML = '';
+            const futureEvents = officialEvents.filter(event => !event.startAt || new Date(event.startAt).getTime() >= Date.now() - 3600000);
+            if (!futureEvents.length) {
+                container.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem">Chưa có lịch họp hoặc phỏng vấn đang mở.</p>';
+                return;
+            }
+            futureEvents.forEach(function(event) {
+                const card = document.createElement('article');
+                card.className = 'event-card ' + (event.type === 'interview' ? 'interview' : '');
+                const heading = document.createElement('strong');
+                heading.textContent = (event.type === 'interview' ? '🤝 Phỏng vấn · ' : '👥 Họp · ') + (event.title || 'Không có tiêu đề');
+                const meta = document.createElement('div');
+                meta.className = 'event-meta';
+                const allEventBookings = myBookings.filter(booking => booking.eventId === event.id);
+                const confirmed = allEventBookings.filter(booking => booking.status === 'confirmed').length;
+                meta.innerHTML = '📅 ' + eventStartLabel(event.startAt) + ' · ' + Number(event.duration || 0) + ' phút<br>' +
+                    (event.location ? '📍 ' + escapeHtml(event.location) + '<br>' : '') +
+                    '👤 Số chỗ: ' + (event.capacity || 1) + (canManageSchedules ? ' · Đã xác nhận: ' + confirmed : '');
+                card.append(heading, meta);
+                if (event.notes) {
+                    const notes = document.createElement('div'); notes.className = 'event-meta'; notes.style.marginTop = '6px'; notes.textContent = '📝 ' + event.notes; card.appendChild(notes);
+                }
+                const actions = document.createElement('div'); actions.className = 'event-actions';
+                const ownBooking = currentUser && myBookings.find(booking => booking.eventId === event.id && booking.candidateId === currentUser.uid);
+                if (canManageSchedules) {
+                    const manage = document.createElement('button'); manage.className = 'btn small'; manage.textContent = 'Quản lý (' + allEventBookings.length + ')'; manage.onclick = () => manageEventBookings(event.id); actions.appendChild(manage);
+                    const remove = document.createElement('button'); remove.className = 'btn small'; remove.style.background = 'linear-gradient(135deg,#ff8a8a,#f43f5e)'; remove.style.color = '#fff'; remove.textContent = 'Hủy lịch'; remove.onclick = () => cancelOfficialEvent(event.id); actions.appendChild(remove);
+                } else if (!currentUser) {
+                    const login = document.createElement('a'); login.className = 'btn small'; login.href = '/'; login.textContent = 'Đăng nhập để đặt'; actions.appendChild(login);
+                } else if (ownBooking) {
+                    const status = document.createElement('span'); status.style.cssText = 'font-size:.78rem;color:var(--gold-light);padding:8px 0'; status.textContent = ownBooking.status === 'confirmed' ? '✓ Đã được xác nhận' : ownBooking.status === 'cancelled' ? 'Đã hủy' : '⏳ Đang chờ xác nhận'; actions.appendChild(status);
+                    if (ownBooking.status === 'requested') { const cancel = document.createElement('button'); cancel.className = 'btn small'; cancel.textContent = 'Hủy đặt chỗ'; cancel.onclick = () => cancelMyBooking(ownBooking.id); actions.appendChild(cancel); }
+                } else {
+                    const book = document.createElement('button'); book.className = 'btn small'; book.textContent = event.type === 'interview' ? 'Đặt lịch phỏng vấn' : 'Đăng ký tham dự'; book.onclick = () => bookEvent(event.id); actions.appendChild(book);
+                }
+                card.appendChild(actions); container.appendChild(card);
+            });
+        }
+
+        function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value || ''; return div.innerHTML; }
+
+        async function createOfficialEvent() {
+            if (!canManageSchedules || !currentUser || !dbInstance) return showAdminStatus('Bạn không có quyền tạo lịch.', 'var(--danger)');
+            const title = document.getElementById('eventTitle').value.trim();
+            const startAt = document.getElementById('eventStart').value;
+            const duration = Number(document.getElementById('eventDuration').value);
+            const capacity = Number(document.getElementById('eventCapacity').value);
+            if (!title || !startAt || !Number.isFinite(duration) || duration < 15 || !Number.isInteger(capacity) || capacity < 1) return showAdminStatus('Hãy nhập tiêu đề, thời điểm, thời lượng (ít nhất 15 phút) và số chỗ hợp lệ.', 'var(--danger)');
+            try {
+                showAdminStatus('Đang mở lịch...', 'var(--gold)');
+                await dbInstance.collection('scheduledEvents').add({ title, type: document.getElementById('eventType').value, startAt: new Date(startAt).toISOString(), duration, capacity, location: document.getElementById('eventLocation').value.trim(), notes: document.getElementById('eventNotes').value.trim(), status: 'open', createdBy: currentUser.uid, createdAt: new Date().toISOString() });
+                ['eventTitle','eventStart','eventLocation','eventNotes'].forEach(id => document.getElementById(id).value = '');
+                showAdminStatus('✓ Đã mở lịch. Người dùng có thể gửi yêu cầu đặt chỗ.', 'var(--ok)'); await fetchOfficialSchedule();
+            } catch (error) { console.error(error); showAdminStatus('Không thể tạo lịch. Kiểm tra quyền quản trị.', 'var(--danger)'); }
+        }
+
+        async function bookEvent(eventId) {
+            if (!currentUser || !dbInstance) return;
+            const event = officialEvents.find(item => item.id === eventId);
+            if (!event || !confirm('Gửi yêu cầu đặt lịch: ' + event.title + '?')) return;
+            try {
+                const id = eventId + '_' + currentUser.uid;
+                await dbInstance.collection('scheduledBookings').doc(id).set({ eventId, candidateId: currentUser.uid, candidateName: currentUser.displayName || currentUser.email || 'Người dùng', candidateEmail: currentUser.email || '', status: 'requested', createdAt: new Date().toISOString() });
+                await fetchOfficialSchedule();
+            } catch (error) { console.error(error); alert('Không thể đặt lịch. Vui lòng thử lại sau.'); }
+        }
+
+        async function cancelMyBooking(id) { if (dbInstance && confirm('Hủy yêu cầu đặt lịch này?')) { await dbInstance.collection('scheduledBookings').doc(id).delete(); await fetchOfficialSchedule(); } }
+        async function cancelOfficialEvent(id) { if (dbInstance && confirm('Hủy lịch này? Các yêu cầu đặt chỗ sẽ không còn hiển thị.')) { await dbInstance.collection('scheduledEvents').doc(id).update({ status: 'cancelled', cancelledAt: new Date().toISOString() }); await fetchOfficialSchedule(); } }
+        async function manageEventBookings(eventId) {
+            const bookings = myBookings.filter(item => item.eventId === eventId);
+            if (!bookings.length) return alert('Chưa có yêu cầu đặt chỗ.');
+            const message = bookings.map((b, index) => (index + 1) + '. ' + b.candidateName + ' — ' + (b.status === 'confirmed' ? 'Đã xác nhận' : 'Chờ xác nhận')).join('\n');
+            const choice = prompt(message + '\n\nNhập số thứ tự để xác nhận (hoặc để trống để đóng):');
+            const index = Number(choice) - 1;
+            const event = officialEvents.find(item => item.id === eventId);
+            const confirmedCount = bookings.filter(item => item.status === 'confirmed').length;
+            if (Number.isInteger(index) && bookings[index] && bookings[index].status === 'requested') {
+                if (event && confirmedCount >= Number(event.capacity || 1)) return alert('Lịch đã đủ số chỗ. Hãy tăng sức chứa hoặc không xác nhận thêm.');
+                await dbInstance.collection('scheduledBookings').doc(bookings[index].id).update({ status: 'confirmed', confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid }); await fetchOfficialSchedule();
+            }
+        }
+
+        function updateRecommendations() {
+            const recsContainer = document.getElementById('recsContainer');
+            const analyticsEl = document.getElementById('analyticsSummary');
+            if (!recsContainer) return;
+
+            recsContainer.innerHTML = '';
+
+            const totalSubmits = localDB.meetingSchedules.length;
+            const btcCount = localDB.meetingSchedules.filter(s => s.role === 'btc').length;
+            const memCount = localDB.meetingSchedules.filter(s => s.role === 'member').length;
+            const candCount = localDB.meetingSchedules.filter(s => s.role === 'candidate').length;
+            const mentCount = localDB.meetingSchedules.filter(s => s.role === 'mentor').length;
+
+            if (analyticsEl) {
+                analyticsEl.innerHTML = `<strong>Tổng số lượt gửi lịch: ${totalSubmits}</strong><br>
+                • BTC/PV: ${btcCount} | Thành viên: ${memCount}<br>
+                • Ứng viên: ${candCount} | Mentor: ${mentCount}`;
+            }
+
+            if (totalSubmits === 0) {
+                recsContainer.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;font-style:italic">Chưa đủ dữ liệu đề xuất lịch.</p>';
+                return;
+            }
+
+            // Get show filters
+            const showBtc = document.getElementById('fltBtc')?.checked ?? true;
+            const showMember = document.getElementById('fltMember')?.checked ?? true;
+            const showCandidate = document.getElementById('fltCandidate')?.checked ?? true;
+            const showMentor = document.getElementById('fltMentor')?.checked ?? true;
+
+            const slotCounts = {};
+            localDB.meetingSchedules.forEach(sched => {
+                if (sched.role === 'btc' && !showBtc) return;
+                if (sched.role === 'member' && !showMember) return;
+                if (sched.role === 'candidate' && !showCandidate) return;
+                if (sched.role === 'mentor' && !showMentor) return;
+
+                (sched.slots || []).forEach(slotId => {
+                    slotCounts[slotId] = (slotCounts[slotId] || 0) + 1;
+                });
+            });
+
+            const sortedSlots = Object.entries(slotCounts)
+                .filter(([_, count]) => count > 0)
+                .sort((a, b) => b[1] - a[1]);
+
+            const top3 = sortedSlots.slice(0, 3);
+            if (top3.length === 0) {
+                recsContainer.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;font-style:italic">Chưa có khung giờ trùng nào.</p>';
+                return;
+            }
+
+            top3.forEach(([slotId, count]) => {
+                const parts = slotId.split('_');
+                const dateStr = parts[0];
+                const shiftIdx = parseInt(parts[1]);
+
+                const dateObj = dynamicDates.find(d => d.id === dateStr);
+                const shiftObj = SHIFTS[shiftIdx];
+
+                if (dateObj && shiftObj) {
+                    const div = document.createElement('div');
+                    div.style.background = 'rgba(255,255,255,0.04)';
+                    div.style.border = '1px solid var(--line)';
+                    div.style.borderRadius = '6px';
+                    div.style.padding = '8px 10px';
+                    div.style.fontSize = '0.8rem';
+                    div.style.cursor = 'pointer';
+                    div.style.transition = 'background 0.2s';
+
+                    div.onclick = function() {
+                        const cell = document.getElementById('cell_' + slotId);
+                        if (cell) {
+                            cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            cell.style.transition = 'outline 0.1s';
+                            cell.style.outline = '3px solid var(--gold)';
+                            setTimeout(() => { cell.style.outline = 'none'; }, 2000);
+                        }
+                    };
+                    div.onmouseover = function() { div.style.background = 'rgba(228,184,102,0.1)'; };
+                    div.onmouseout = function() { div.style.background = 'rgba(255,255,255,0.04)'; };
+
+                    div.innerHTML = `<div style="font-weight:600;color:var(--gold-light)">${dateObj.label}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted)">${shiftObj.name} (${shiftObj.time})</div>
+                    <div style="font-size:0.75rem;color:var(--ok);margin-top:2px;font-weight:500">🔥 ${count} người rảnh</div>`;
+                    recsContainer.appendChild(div);
+                }
+            });
         }
 
         function showStatus(msg, color) {
             const statusEl = document.getElementById('statusMsg');
-            statusEl.textContent = msg;
-            statusEl.style.color = color;
+            if (statusEl) {
+                statusEl.textContent = msg;
+                statusEl.style.color = color;
+            }
         }
 
         window.onload = init;

@@ -1733,66 +1733,77 @@
             if (!candidateUser || !candidateUser.email) return showAdminStatus('Ứng viên chưa có tài khoản/email hợp lệ. Chưa tạo lịch để tránh thiếu thư mời.', 'var(--danger)');
             const startAt = autoPlanStartAt(item.choice.info);
             const generatedTitle = (activePoll ? activePoll.title + ' — ' : 'Phỏng vấn — ') + item.candidate.name;
-            if (officialEvents.some(event => event.generatedFromAvailability && event.title === generatedTitle && event.startAt === startAt)) {
-                return showAdminStatus('Lịch tự động cho ' + item.candidate.name + ' ở khung giờ này đã tồn tại.', 'var(--gold-light)');
-            }
-            const eventData = {
-                title: generatedTitle,
-                type: 'interview',
-                startAt: startAt,
-                duration: 30,
-                capacity: 1,
-                location: '',
-                notes: 'Tạo tự động theo phiếu giờ rảnh. Ứng viên vui lòng xác nhận lại lịch.',
-                assignedHrId: hr.id,
-                assignedHrName: hr.name || hr.email,
-                assignedHrEmail: hr.email || '',
-                assignedHrRole: hr.role || '',
-                assignedHrDept: hr.dept || '',
-                assignedHrPosition: hr.position || hr.title || '',
-                status: 'open',
-                generatedFromAvailability: true,
-                availabilityPollId: activePoll ? activePoll.id : null,
-                availabilityPollTitle: activePoll ? activePoll.title : '',
-                createdBy: currentUser.uid,
-                createdAt: new Date().toISOString()
-            };
-            const eventRef = dbInstance.collection('scheduledEvents').doc();
-            const eventId = eventRef.id;
+            const existingEvent = officialEvents.find(event => event.generatedFromAvailability && event.title === generatedTitle && event.startAt === startAt);
             let savedThroughApi = false;
-            eventData.id = eventId;
-            eventData.syncState = 'saving-event';
-            upsertOfficialEvent(eventData);
-            revealOfficialEvent(eventData.id);
-            showAdminStatus('✓ Lịch đã xuất hiện ngay trong “Lịch đã mở”. Đang lưu và tạo Google Meet...', 'var(--gold-light)');
-            const persistedEventData = Object.assign({}, eventData);
-            delete persistedEventData.syncState;
-            try {
-                await scheduleTimeout(eventRef.set(persistedEventData), 15000, 'Tạo lịch trên hệ thống quá thời gian.');
-            } catch (firestoreError) {
-                try {
-                    showAdminStatus('Cloud Firestore trên trình duyệt đang offline. Đang chuyển sang máy chủ để lưu lịch...', 'var(--gold)');
-                    await saveScheduleEventViaApi(eventId, eventData, 'create');
-                    savedThroughApi = true;
-                } catch (fallbackError) {
-                    eventData.syncState = 'save-failed';
-                    upsertOfficialEvent(eventData);
-                    throw fallbackError;
+            let eventData;
+            let eventId;
+            if (existingEvent) {
+                if (existingEvent.googleCalendarEventId || isGoogleMeetRoom(existingEvent.location)) {
+                    return showAdminStatus('Lịch tự động cho ' + item.candidate.name + ' đã có Google Meet. Mở “Quản lý” để gửi lại thư nếu cần.', 'var(--gold-light)');
                 }
+                eventId = existingEvent.id;
+                eventData = Object.assign({}, existingEvent, { syncState:'creating-calendar' });
+                upsertOfficialEvent(eventData);
+                revealOfficialEvent(eventId);
+                showAdminStatus('Đang tiếp tục tạo Google Meet và gửi email cho lịch đã tạo trước đó...', 'var(--gold-light)');
+            } else {
+                eventData = {
+                    title: generatedTitle,
+                    type: 'interview',
+                    startAt: startAt,
+                    duration: 30,
+                    capacity: 1,
+                    location: '',
+                    notes: 'Tạo tự động theo phiếu giờ rảnh. Ứng viên vui lòng xác nhận lại lịch.',
+                    assignedHrId: hr.id,
+                    assignedHrName: hr.name || hr.email,
+                    assignedHrEmail: hr.email || '',
+                    assignedHrRole: hr.role || '',
+                    assignedHrDept: hr.dept || '',
+                    assignedHrPosition: hr.position || hr.title || '',
+                    status: 'open',
+                    generatedFromAvailability: true,
+                    availabilityPollId: activePoll ? activePoll.id : null,
+                    availabilityPollTitle: activePoll ? activePoll.title : '',
+                    createdBy: currentUser.uid,
+                    createdAt: new Date().toISOString()
+                };
+                const eventRef = dbInstance.collection('scheduledEvents').doc();
+                eventId = eventRef.id;
+                eventData.id = eventId;
+                eventData.syncState = 'saving-event';
+                upsertOfficialEvent(eventData);
+                revealOfficialEvent(eventData.id);
+                showAdminStatus('✓ Lịch đã xuất hiện ngay trong “Lịch đã mở”. Đang lưu và tạo Google Meet...', 'var(--gold-light)');
+                const persistedEventData = Object.assign({}, eventData);
+                delete persistedEventData.syncState;
+                try {
+                    await scheduleTimeout(eventRef.set(persistedEventData), 15000, 'Tạo lịch trên hệ thống quá thời gian.');
+                } catch (firestoreError) {
+                    try {
+                        showAdminStatus('Cloud Firestore trên trình duyệt đang offline. Đang chuyển sang máy chủ để lưu lịch...', 'var(--gold)');
+                        await saveScheduleEventViaApi(eventId, eventData, 'create');
+                        savedThroughApi = true;
+                    } catch (fallbackError) {
+                        eventData.syncState = 'save-failed';
+                        upsertOfficialEvent(eventData);
+                        throw fallbackError;
+                    }
+                }
+                eventData.syncState = savedThroughApi ? 'creating-calendar-server' : 'creating-calendar';
+                upsertOfficialEvent(eventData);
             }
-            eventData.syncState = savedThroughApi ? 'creating-calendar-server' : 'creating-calendar';
-            upsertOfficialEvent(eventData);
             let calendarCreated = false;
             let calendarError = '';
             let invitationResult = null;
             try {
-                await createGoogleCalendarEvent(ref.id, eventData, candidateUser && candidateUser.email);
+                await createGoogleCalendarEvent(eventId, eventData, candidateUser && candidateUser.email);
                 calendarCreated = true;
                 eventData.syncState = 'sending-email';
                 upsertOfficialEvent(eventData);
             } catch (error) { calendarError = error.message || String(error); console.warn('Không tạo được Meet tự động:', error); }
             if (calendarCreated && candidateUser && candidateUser.email) {
-                const booking = { id: ref.id + '_' + candidateUser.id, eventId: ref.id, candidateId: candidateUser.id, candidateName: candidateUser.name || candidateUser.email, candidateEmail: candidateUser.email, status: 'confirmed', createdAt: new Date().toISOString(), confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid };
+                const booking = { id: eventId + '_' + candidateUser.id, eventId:eventId, candidateId: candidateUser.id, candidateName: candidateUser.name || candidateUser.email, candidateEmail: candidateUser.email, status: 'confirmed', createdAt: new Date().toISOString(), confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid };
                 try {
                     await scheduleTimeout(dbInstance.collection('scheduledBookings').doc(booking.id).set(booking), 15000, 'Xác nhận người tham gia quá thời gian.');
                 } catch (firestoreError) {

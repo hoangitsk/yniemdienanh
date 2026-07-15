@@ -206,6 +206,67 @@
         .event-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
         .btn.small { width:auto; padding:8px 10px; font-size:.78rem; box-shadow:none; }
 
+        .approval-actions {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .approval-actions .btn { flex: 1 1 auto; width: auto; margin: 0; }
+
+        .ai-personalize-toggle {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-width: 116px;
+            margin: 0;
+            padding: 7px 9px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(5, 12, 20, .5);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: .69rem;
+            line-height: 1.25;
+        }
+
+        .ai-personalize-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+
+        .ai-toggle-track {
+            position: relative;
+            width: 34px;
+            height: 19px;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            background: rgba(170, 182, 197, .25);
+            transition: background .2s ease;
+        }
+
+        .ai-toggle-track::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            transition: transform .2s ease, background .2s ease;
+        }
+
+        .ai-personalize-toggle input:checked + .ai-toggle-track { background: rgba(99, 209, 158, .38); }
+        .ai-personalize-toggle input:checked + .ai-toggle-track::after { transform: translateX(15px); background: var(--ok); }
+        .ai-personalize-toggle input:focus-visible + .ai-toggle-track { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+        .ai-personalize-toggle:has(input:checked) { color: var(--ok); border-color: rgba(99, 209, 158, .4); }
+
+        @media (max-width: 430px) {
+            .approval-actions { flex-wrap: wrap; }
+            .approval-actions .btn, .ai-personalize-toggle { width: 100%; }
+        }
+
         .btn {
             display: block;
             width: 100%;
@@ -1502,7 +1563,7 @@
                     const hrOptions = hrMembers.map(function(hr) {
                         return '<option value="' + escapeHtml(hr.id) + '"' + (hr.id === item.defaultHrId ? ' selected' : '') + '>' + escapeHtml(hr.name || hr.email) + '</option>';
                     }).join('');
-                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta" style="margin-bottom:7px">Các giờ dưới đây được xếp theo ưu tiên của ứng viên; phiếu BTC chỉ để tham khảo.</div><label style="font-size:.74rem">Khung giờ duyệt</label><select id="automaticSlot-' + index + '" style="margin:3px 0 7px">' + slotOptions + '</select><label style="font-size:.74rem">Người phỏng vấn</label><select id="automaticHr-' + index + '" style="margin:3px 0 0">' + hrOptions + '</select><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ')" style="margin-top:8px">✉️ Duyệt lịch & gửi mail</button></div>';
+                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta" style="margin-bottom:7px">Các giờ dưới đây được xếp theo ưu tiên của ứng viên; phiếu BTC chỉ để tham khảo.</div><label style="font-size:.74rem">Khung giờ duyệt</label><select id="automaticSlot-' + index + '" style="margin:3px 0 7px">' + slotOptions + '</select><label style="font-size:.74rem">Người phỏng vấn</label><select id="automaticHr-' + index + '" style="margin:3px 0 0">' + hrOptions + '</select><div class="approval-actions"><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ', this)">✉️ Duyệt lịch & gửi mail</button><label class="ai-personalize-toggle" title="Dùng AI để tối ưu và cá nhân hoá nội dung email cho ứng viên và người phỏng vấn"><input id="automaticAi-' + index + '" type="checkbox" checked><span class="ai-toggle-track" aria-hidden="true"></span><span>AI cá nhân hoá</span></label></div></div>';
                 }).join('') + '<p style="font-size:.76rem;color:var(--text-muted);margin-top:8px">Sau khi xác nhận, hệ thống sẽ tạo lịch Google Meet và gửi thư mời cho ứng viên cùng HR đã phân công.</p>';
         }
 
@@ -1529,7 +1590,7 @@
             return new Date(info.date.id + 'T' + startTime + ':00+07:00').toISOString();
         }
 
-        async function confirmAndCreateAutomaticInterview(index) {
+        async function confirmAndCreateAutomaticInterview(index, button) {
             const item = (window._autoInterviewPlan || [])[index];
             if (!item || !item.choice) return;
             const slotIndex = Number(document.getElementById('automaticSlot-' + index).value);
@@ -1541,8 +1602,39 @@
             const candidateName = item.candidate && item.candidate.name || 'ứng viên này';
             const hrName = selectedHr.name || selectedHr.email;
             const slotLabel = selectedChoice.info.date.label + ' · ' + selectedChoice.info.shift.name + ' (' + selectedChoice.info.shift.time + ')';
-            if (!confirm('Tạo lịch phỏng vấn cho ' + candidateName + ' vào ' + slotLabel + ' với ' + hrName + '?\n\nHệ thống sẽ tạo Google Meet và gửi email mời ngay.')) return;
-            await createAutomaticInterview(index);
+            item.aiPersonalized = !!document.getElementById('automaticAi-' + index)?.checked;
+            if (!confirm('Tạo lịch phỏng vấn cho ' + candidateName + ' vào ' + slotLabel + ' với ' + hrName + '?\n\nAI cá nhân hoá email: ' + (item.aiPersonalized ? 'Có' : 'Không') + '.\nHệ thống sẽ tạo Google Meet và gửi email mời ngay.')) return;
+            if (button) { button.disabled = true; button.textContent = 'Đang duyệt...'; }
+            try {
+                await createAutomaticInterview(index);
+            } catch (error) {
+                console.error('Không thể hoàn tất duyệt lịch:', error);
+                showAdminStatus('Không thể hoàn tất duyệt lịch: ' + (error.message || 'Lỗi không xác định') + '. Nếu thẻ lịch đã xuất hiện, bạn có thể mở thẻ để gửi lại email.', 'var(--danger)');
+            } finally {
+                if (button && document.body.contains(button)) { button.disabled = false; button.textContent = '✉️ Duyệt lịch & gửi mail'; }
+            }
+        }
+
+        function upsertOfficialEvent(eventData) {
+            const index = officialEvents.findIndex(event => event.id === eventData.id);
+            if (index === -1) officialEvents.push(eventData);
+            else officialEvents[index] = Object.assign({}, officialEvents[index], eventData);
+            officialEvents.sort((a, b) => String(a.startAt || '').localeCompare(String(b.startAt || '')));
+            renderOfficialEvents();
+        }
+
+        function revealOfficialEvent(eventId) {
+            requestAnimationFrame(function() {
+                const card = document.getElementById('official-event-' + eventId);
+                if (card) card.scrollIntoView({ behavior:'smooth', block:'nearest' });
+            });
+        }
+
+        function upsertBooking(bookingData) {
+            const index = myBookings.findIndex(booking => booking.id === bookingData.id);
+            if (index === -1) myBookings.push(bookingData);
+            else myBookings[index] = Object.assign({}, myBookings[index], bookingData);
+            renderOfficialEvents();
         }
 
         async function createAutomaticInterview(index) {
@@ -1580,15 +1672,32 @@
             };
             const ref = await dbInstance.collection('scheduledEvents').add(eventData);
             eventData.id = ref.id;
+            eventData.syncState = 'creating-calendar';
+            upsertOfficialEvent(eventData);
+            revealOfficialEvent(eventData.id);
+            showAdminStatus('✓ Lịch đã xuất hiện ngay trong “Lịch đã mở”. Đang tạo Google Meet và gửi email...', 'var(--gold-light)');
             let calendarCreated = false;
             let calendarError = '';
             let invitationResult = null;
-            try { await createGoogleCalendarEvent(ref.id, eventData, candidateUser && candidateUser.email); calendarCreated = true; } catch (error) { calendarError = error.message || String(error); console.warn('Không tạo được Meet tự động:', error); }
+            try {
+                await createGoogleCalendarEvent(ref.id, eventData, candidateUser && candidateUser.email);
+                calendarCreated = true;
+                eventData.syncState = 'sending-email';
+                upsertOfficialEvent(eventData);
+            } catch (error) { calendarError = error.message || String(error); console.warn('Không tạo được Meet tự động:', error); }
             if (calendarCreated && candidateUser && candidateUser.email) {
                 const booking = { id: ref.id + '_' + candidateUser.id, eventId: ref.id, candidateId: candidateUser.id, candidateName: candidateUser.name || candidateUser.email, candidateEmail: candidateUser.email, status: 'confirmed', createdAt: new Date().toISOString(), confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid };
                 await dbInstance.collection('scheduledBookings').doc(booking.id).set(booking);
-                invitationResult = await sendScheduleInvitation(eventData, booking);
+                upsertBooking(booking);
+                invitationResult = await sendScheduleInvitation(eventData, booking, { aiPersonalized:item.aiPersonalized !== false });
+                if (invitationResult.success) {
+                    booking.invitationSentAt = new Date().toISOString();
+                    booking.invitationProviders = invitationResult.providers || [];
+                    upsertBooking(booking);
+                }
             }
+            delete eventData.syncState;
+            upsertOfficialEvent(eventData);
             showAdminStatus(calendarCreated && invitationResult && invitationResult.success
                 ? '✓ Đã tạo lịch, Google Meet và gửi thư tự động cho ' + item.candidate.name + '.'
                 : calendarCreated
@@ -2029,17 +2138,27 @@
             futureEvents.forEach(function(event) {
                 const card = document.createElement('article');
                 card.className = 'event-card ' + (event.type === 'interview' ? 'interview' : '');
+                card.id = 'official-event-' + event.id;
                 const heading = document.createElement('strong');
                 heading.textContent = (event.type === 'interview' ? '🤝 Phỏng vấn · ' : '👥 Họp · ') + (event.title || 'Không có tiêu đề');
                 const meta = document.createElement('div');
                 meta.className = 'event-meta';
                 const allEventBookings = myBookings.filter(booking => booking.eventId === event.id);
                 const confirmed = allEventBookings.filter(booking => booking.status === 'confirmed').length;
+                const emailProviders = Array.from(new Set(allEventBookings.flatMap(booking => Array.isArray(booking.invitationProviders) ? booking.invitationProviders : [])));
                 meta.innerHTML = '📅 ' + eventStartLabel(event.startAt) + ' · ' + Number(event.duration || 0) + ' phút<br>' +
                     (event.location ? '📍 ' + escapeHtml(event.location) + '<br>' : '') +
                     (event.assignedHrName ? '🧑‍💼 Người phỏng vấn: ' + escapeHtml(event.assignedHrName) + '<br>' : '') +
-                    '👤 Số chỗ: ' + (event.capacity || 1) + (canManageSchedules ? ' · Đã xác nhận: ' + confirmed : '');
+                    '👤 Số chỗ: ' + (event.capacity || 1) + (canManageSchedules ? ' · Đã xác nhận: ' + confirmed : '') +
+                    (canManageSchedules && confirmed ? '<br>✉️ Email: ' + (emailProviders.length ? escapeHtml(emailProviders.map(provider => provider === 'brevo' ? 'Brevo' : 'Gmail dự phòng').join(' + ')) : 'Chưa gửi') : '');
                 card.append(heading, meta);
+                if (event.syncState) {
+                    const syncing = document.createElement('div');
+                    syncing.className = 'event-meta';
+                    syncing.style.cssText = 'margin-top:6px;color:var(--gold-light)';
+                    syncing.textContent = event.syncState === 'sending-email' ? '✉️ Đang gửi email mời qua Brevo...' : '⏳ Đang tạo Google Meet...';
+                    card.appendChild(syncing);
+                }
                 if (event.notes) {
                     const notes = document.createElement('div'); notes.className = 'event-meta'; notes.style.marginTop = '6px'; notes.textContent = '📝 ' + event.notes; card.appendChild(notes);
                 }
@@ -2290,20 +2409,21 @@
             }
         }
 
-        async function sendScheduleInvitation(event, booking) {
+        async function sendScheduleInvitation(event, booking, options) {
             try {
-                showAdminStatus('Đang gửi thư mời cho ứng viên và người phỏng vấn...', 'var(--gold)');
+                const aiPersonalized = !options || options.aiPersonalized !== false;
+                showAdminStatus('Đang gửi thư mời qua Brevo' + (aiPersonalized ? ' với nội dung AI cá nhân hoá...' : '...'), 'var(--gold)');
                 const idToken = await currentUser.getIdToken();
                 const response = await fetch('/api/schedule/send-invitations', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken: idToken, eventId: event.id, bookingId: booking.id })
+                    body: JSON.stringify({ idToken: idToken, eventId: event.id, bookingId: booking.id, aiPersonalized:aiPersonalized })
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || 'Không thể gửi thư mời.');
-                const providerNote = Array.isArray(result.providers) && result.providers.length ? ' Kênh gửi: ' + result.providers.map(provider => provider === 'gmail' ? 'Gmail dự phòng' : 'Brevo').join(' + ') + '.' : '';
+                const providerNote = Array.isArray(result.providers) && result.providers.length ? ' Kênh gửi: ' + result.providers.map(provider => provider === 'brevo' ? 'Brevo' : 'Gmail dự phòng').join(' + ') + '.' : '';
                 showAdminStatus('✓ Đã xác nhận và gửi thư cho ứng viên cùng người phỏng vấn, kèm lịch Google Meet.' + (result.personalized ? ' AI đã cá nhân hoá nội dung thư mời.' : '') + providerNote, 'var(--ok)');
-                return { success:true, personalized:!!result.personalized };
+                return { success:true, personalized:!!result.personalized, providers:result.providers || [] };
             } catch (error) {
                 console.error('Lỗi gửi thư lịch:', error);
                 showAdminStatus('Đã xác nhận lịch nhưng gửi thư thất bại: ' + error.message, 'var(--danger)');

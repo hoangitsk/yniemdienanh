@@ -173,7 +173,8 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var meetUrl = escapeHtml(event.location.trim());
         var notes = event.notes ? '<p><strong>Lưu ý:</strong> ' + escapeHtml(event.notes) + '</p>' : '';
         var candidateName = escapeHtml(booking.candidateName || 'bạn');
-        var aiCopy = event.type === 'interview'
+        var useAiPersonalization = body.aiPersonalized !== false;
+        var aiCopy = event.type === 'interview' && useAiPersonalization
             ? await generatePersonalizedInvitation(candidateProfile, assignedHr, event)
             : null;
         var candidatePersonalization = aiCopy && (aiCopy.candidateOpener || aiCopy.candidateFocus)
@@ -182,7 +183,8 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var interviewerPersonalization = aiCopy && aiCopy.interviewerBrief
             ? '<p><strong>Gợi ý chuẩn bị:</strong> ' + escapeHtml(aiCopy.interviewerBrief) + '</p>'
             : '';
-        var sender = preferredSender();
+        // Thư lịch ưu tiên Brevo; Gmail chỉ được dùng khi Brevo chưa cấu hình hoặc tạm thời lỗi.
+        var sender = preferredSender('brevo');
         if (!sender) throw new Error('Chưa cấu hình kênh gửi email trên máy chủ.');
         var fromEmail = sender.email;
         var candidateHtml = '<p>Chào ' + candidateName + ',</p>' + candidatePersonalization + '<p>Trân trọng mời bạn tham gia buổi phỏng vấn <strong>' + title + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes + '<p>Vui lòng vào phòng trước 5–10 phút. Nếu cần hỗ trợ, hãy phản hồi email này.</p>';
@@ -228,7 +230,7 @@ module.exports = async function sendInterviewInvitations(req, res) {
                 subject: '[Ý Niệm Điện Ảnh] Xác nhận ' + (event.type === 'interview' ? 'phỏng vấn' : 'lịch họp') + ' — ' + event.title,
                 html: wrap(candidateHtml),
                 icalEvent: { method: 'request', content: createIcs(candidateEmail) }
-            }, { fromName:sender.name })
+            }, { fromName:sender.name, preferredProvider:'brevo' })
         ];
         recipients.forEach(function(email) {
             messages.push(sendMailWithFallback({
@@ -236,7 +238,7 @@ module.exports = async function sendInterviewInvitations(req, res) {
                 subject: '[Người phỏng vấn] ' + (event.type === 'interview' ? 'Lịch phỏng vấn' : 'Lịch họp') + ' đã xác nhận — ' + event.title,
                 html: wrap(staffHtml),
                 icalEvent: { method: 'request', content: createIcs(email) }
-            }, { fromName:sender.name }));
+            }, { fromName:sender.name, preferredProvider:'brevo' }));
         });
         var results = await Promise.allSettled(messages);
         var failed = results.filter(function(result) { return result.status === 'rejected'; }).length;
@@ -247,7 +249,8 @@ module.exports = async function sendInterviewInvitations(req, res) {
 
         await bookingDoc.ref.update({
             invitationSentAt: new Date().toISOString(),
-            invitationSentBy: decoded.uid
+            invitationSentBy: decoded.uid,
+            invitationProviders: providers
         });
         return res.status(200).json({ success: true, recipients: recipients.length + 1, personalized: !!aiCopy, providers:providers });
     } catch (error) {

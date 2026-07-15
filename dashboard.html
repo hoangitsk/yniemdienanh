@@ -3176,6 +3176,31 @@
             return toast;
         }
 
+        // Modal helpers are also needed by the HR email composer.
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('open');
+        }
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.open').forEach(function(el) { el.classList.remove('open'); });
+            }
+        });
+
+        async function syncUserToRTDB(userData) {
+            if (!rtdbInstance || !userData) return;
+            try {
+                await rtdbInstance.ref('users/' + userData.id).set(userData);
+                if (userData.email) await rtdbInstance.ref('emailIndex/' + userData.email.replace(/\./g, ',')).set(userData.id);
+            } catch (e) {
+                console.warn('RTDB sync failed:', e.message || e);
+            }
+        }
+
         function showLoadingToast(msg) {
             return showToast(msg || 'Đang xử lý...', 'loading', 0);
         }

@@ -865,6 +865,9 @@
         let canManageSchedules = false;
         let canViewAllSchedules = false;
         let staffAvailabilityPromise = null;
+        let firestoreReconnectTimer = null;
+        let firestoreReconnectAttempt = 0;
+        let firestoreReconnectInFlight = false;
         const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
         const GOOGLE_OAUTH_CLIENT_ID = '69246326577-8mc3nrao3ea8ogm98orcfij1s32ipffn.apps.googleusercontent.com';
         const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
@@ -908,6 +911,37 @@
                 throw error;
             } finally {
                 clearTimeout(timer);
+            }
+        }
+
+        function requestFirestoreReconnect() {
+            if (!useFirebase || !dbInstance || firestoreReconnectTimer || firestoreReconnectInFlight) return;
+            const delay = Math.min(30000, 1000 * Math.pow(2, Math.min(firestoreReconnectAttempt, 5)));
+            firestoreReconnectTimer = setTimeout(async function() {
+                firestoreReconnectTimer = null;
+                firestoreReconnectInFlight = true;
+                let retry = false;
+                try {
+                    await dbInstance.enableNetwork();
+                    firestoreReconnectAttempt = 0;
+                    console.info('Firestore đã nối lại; đang đồng bộ lịch nền.');
+                    await fetchOfficialSchedule();
+                } catch (error) {
+                    firestoreReconnectAttempt += 1;
+                    retry = true;
+                    console.warn('Firestore vẫn offline, sẽ thử lại sau ' + Math.min(30, Math.pow(2, Math.min(firestoreReconnectAttempt, 5))) + ' giây.');
+                } finally {
+                    firestoreReconnectInFlight = false;
+                    if (retry) requestFirestoreReconnect();
+                }
+            }, delay);
+        }
+
+        function markFirestoreHealthy() {
+            firestoreReconnectAttempt = 0;
+            if (firestoreReconnectTimer) {
+                clearTimeout(firestoreReconnectTimer);
+                firestoreReconnectTimer = null;
             }
         }
 
@@ -995,7 +1029,17 @@
                 try {
                     firebase.initializeApp(FIREBASE_CONFIG);
                     dbInstance = firebase.firestore();
+                    // Một số VPN, proxy, antivirus và extension chặn WebChannel giữ kết nối
+                    // realtime. Long-polling chậm hơn một chút nhưng ổn định hơn cho mạng đó.
+                    dbInstance.settings({ experimentalForceLongPolling:true });
                     useFirebase = true;
+                    window.addEventListener('online', function() {
+                        firestoreReconnectAttempt = 0;
+                        requestFirestoreReconnect();
+                    });
+                    window.addEventListener('offline', function() {
+                        console.warn('Thiết bị đang offline; lịch sẽ tự đồng bộ lại khi có mạng.');
+                    });
                     console.log("Firebase initialized successfully on schedules page.");
                     firebase.auth().onAuthStateChanged(async function(user) {
                         currentUser = user;
@@ -1797,6 +1841,7 @@
                     'Tải lịch chính thức quá thời gian.'
                 );
                 officialEvents = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(event => event.status !== 'cancelled');
+                markFirestoreHealthy();
                 myBookings = [];
                 if (currentUser) {
                     const bookingsSnap = await scheduleTimeout(
@@ -1810,6 +1855,7 @@
                 }
             } catch (error) {
                 console.error('Lỗi tải lịch chính thức:', error);
+                requestFirestoreReconnect();
                 showAdminStatus('Không thể tải lịch từ hệ thống. Kiểm tra quyền Firestore.', 'var(--danger)');
             }
             renderOfficialEvents();
@@ -1836,6 +1882,7 @@
                 localStorage.setItem('ynda_db', JSON.stringify(localDB));
             } catch(e) {
                 console.warn("Lỗi tải Firestore schedules:", e);
+                requestFirestoreReconnect();
             }
         }
 

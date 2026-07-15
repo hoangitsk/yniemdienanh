@@ -1441,7 +1441,7 @@
             target.innerHTML = '<div style="font-size:.78rem;color:var(--gold-light);font-weight:600;margin-bottom:8px">Top khung giờ theo phiếu ' + (interviewOnly ? '(có cả HR và ứng viên)' : '') + '</div>' +
                 rows.map(function(row, index) {
                     return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>#' + (index + 1) + ' ' + escapeHtml(row.date.label) + ' · ' + row.shift.name + ' (' + row.shift.time + ')</strong><div class="event-meta">Điểm phù hợp: ' + row.weight + ' · ' + row.preferred + ' lượt ưu tiên<br>Tổng: ' + row.total + ' người · HR: ' + row.btc + ' · Ứng viên: ' + row.candidate + '</div></div>';
-                }).join('');
+                }).join('') + (interviewOnly ? '<button type="button" class="btn small" onclick="buildAutomaticInterviewPlan()" style="margin-top:4px">✉️ Chọn lịch & gửi email mời</button><p style="font-size:.75rem;color:var(--text-muted);margin:7px 0 0">Bước tiếp theo: chọn lịch đề xuất cho từng ứng viên, hệ thống sẽ tạo Meet và gửi thư ngay.</p>' : '');
         }
 
         function buildAutomaticInterviewPlan() {
@@ -1499,12 +1499,12 @@
                 return { candidate:entry.candidate, candidateAccount:entry.candidateAccount, choice:choice, optionCount:entry.combinations.length };
             });
             window._autoInterviewPlan = plan;
-            if (target) target.innerHTML = '<div style="font-size:.78rem;color:var(--gold-light);font-weight:600;margin-bottom:8px">Kế hoạch tự động · xếp người ít lựa chọn trước, không trùng HR</div>' +
+            if (target) target.innerHTML = '<div style="font-size:.78rem;color:var(--gold-light);font-weight:600;margin-bottom:8px">Chọn lịch để tạo Meet và gửi thư mời ngay</div>' +
                 plan.map(function(item, index) {
                     if (!item.choice) return '<div class="event-card" style="border-left-color:var(--danger)"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta">' + escapeHtml(item.reason || 'Không tìm thấy giao điểm giờ rảnh với HR.') + '</div></div>';
                     const preferenceLabel = item.choice.candidatePreferred && item.choice.hrPreferred ? '★ Cả hai cùng ưu tiên' : item.choice.candidatePreferred ? '★ Ưu tiên của ứng viên' : item.choice.hrPreferred ? '★ Ưu tiên của HR' : '✓ Cả hai đều có thể';
-                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta">📅 ' + escapeHtml(item.choice.info.date.label) + ' · ' + item.choice.info.shift.name + ' (' + item.choice.info.shift.time + ')<br>🧑‍💼 HR: ' + escapeHtml(item.choice.hrAccount.name || item.choice.hrAccount.email) + '<br>' + preferenceLabel + ' · ' + item.optionCount + ' phương án hợp lệ</div></div>';
-                }).join('') + '<p style="font-size:.76rem;color:var(--text-muted);margin-top:8px">Đây là bản xem trước. Hệ thống sẽ chốt và gửi Meet tự động lúc 0h Việt Nam; người chưa được chốt vẫn có thể tiếp tục vote đến hết đợt.</p>';
+                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta">📅 ' + escapeHtml(item.choice.info.date.label) + ' · ' + item.choice.info.shift.name + ' (' + item.choice.info.shift.time + ')<br>🧑‍💼 HR: ' + escapeHtml(item.choice.hrAccount.name || item.choice.hrAccount.email) + '<br>' + preferenceLabel + ' · ' + item.optionCount + ' phương án hợp lệ</div><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ')" style="margin-top:8px">✉️ Chọn lịch này & gửi mail</button></div>';
+                }).join('') + '<p style="font-size:.76rem;color:var(--text-muted);margin-top:8px">Sau khi xác nhận, hệ thống sẽ tạo lịch Google Meet và gửi thư mời cho ứng viên cùng HR đã phân công.</p>';
         }
 
         function findHrAccountForSchedule(schedule) {
@@ -1528,6 +1528,16 @@
         function autoPlanStartAt(info) {
             const startTime = info.shift.time.split(' - ')[0];
             return new Date(info.date.id + 'T' + startTime + ':00+07:00').toISOString();
+        }
+
+        async function confirmAndCreateAutomaticInterview(index) {
+            const item = (window._autoInterviewPlan || [])[index];
+            if (!item || !item.choice) return;
+            const candidateName = item.candidate && item.candidate.name || 'ứng viên này';
+            const hrName = item.choice.hrAccount && (item.choice.hrAccount.name || item.choice.hrAccount.email) || 'HR phụ trách';
+            const slotLabel = item.choice.info.date.label + ' · ' + item.choice.info.shift.name + ' (' + item.choice.info.shift.time + ')';
+            if (!confirm('Tạo lịch phỏng vấn cho ' + candidateName + ' vào ' + slotLabel + ' với ' + hrName + '?\n\nHệ thống sẽ tạo Google Meet và gửi email mời ngay.')) return;
+            await createAutomaticInterview(index);
         }
 
         async function createAutomaticInterview(index) {

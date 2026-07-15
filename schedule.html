@@ -613,7 +613,7 @@
                     <textarea id="eventNotes" maxlength="1000" placeholder="Chuẩn bị portfolio, đến trước 10 phút..."></textarea>
                     <button class="btn" onclick="createOfficialEvent()">+ Mở lịch</button>
                     <button type="button" class="btn small" onclick="calculateAvailabilityVotes()" style="margin-top:8px">📊 Tính phiếu giờ rảnh</button>
-                    <button type="button" class="btn small" disabled style="margin-top:8px;opacity:.7;cursor:not-allowed">🕛 Hệ thống tự chốt lúc 0h Việt Nam</button>
+                    <p style="font-size:.75rem;color:var(--text-muted);margin:10px 0 0">💡 Hệ thống chỉ gợi ý theo phiếu giờ rảnh; HR/Admin sẽ tự duyệt lịch trước khi gửi thư.</p>
                     <div class="status-msg" id="adminStatus"></div>
                     <div id="availabilityVotes" style="margin-top:14px"></div>
                 </div>
@@ -1449,61 +1449,50 @@
             if (activePoll.type !== 'interview') return showAdminStatus('Đợt đang chọn là lịch họp, không phải đợt phỏng vấn.', 'var(--danger)');
             const pollSchedules = schedulesForActivePoll();
             const candidates = pollSchedules.filter(item => item.role === 'candidate' && item.name);
-            const btcSchedules = pollSchedules.filter(item => item.role === 'btc' && item.name).map(function(schedule) {
-                return { schedule:schedule, account:findHrAccountForSchedule(schedule) };
-            }).filter(item => item.account);
             const target = document.getElementById('availabilityVotes');
-            if (!candidates.length || !btcSchedules.length) {
-                if (target) target.innerHTML = '<p style="font-size:.78rem;color:var(--danger)">Cần có ứng viên và ít nhất một phiếu BTC khớp với tài khoản Ban Nhân Sự.</p>';
+            if (!candidates.length) {
+                if (target) target.innerHTML = '<p style="font-size:.78rem;color:var(--danger)">Cần có ít nhất một ứng viên gửi phiếu giờ rảnh.</p>';
                 return;
             }
-            const feasibility = candidates.map(function(candidate) {
+            if (!hrMembers.length) {
+                if (target) target.innerHTML = '<p style="font-size:.78rem;color:var(--danger)">Chưa có tài khoản thuộc Ban Nhân Sự để phân công và gửi thư mời.</p>';
+                return;
+            }
+            const voteBySlot = getAvailabilityVotes(false).reduce(function(map, vote) {
+                map[vote.id] = vote;
+                return map;
+            }, {});
+            const currentHrId = hrMembers.some(user => user.id === currentUser.uid) ? currentUser.uid : hrMembers[0].id;
+            const plan = candidates.map(function(candidate) {
                 const candidateAccount = findCandidateAccountForSchedule(candidate);
-                const candidateSlots = new Set(candidate.slots || []);
-                const combinations = [];
-                btcSchedules.forEach(function(hrEntry) {
-                    (hrEntry.schedule.slots || []).forEach(function(slotId) {
-                        if (candidateSlots.has(slotId) && availabilitySlotInfo(slotId)) combinations.push({ slotId:slotId, hrSchedule:hrEntry.schedule, hrAccount:hrEntry.account });
-                    });
-                });
-                return { candidate:candidate, candidateAccount:candidateAccount, combinations:combinations };
-            }).sort(function(a,b) {
-                return a.combinations.length - b.combinations.length;
-            });
-
-            const usedHrSlots = new Set();
-            const dateLoad = {};
-            const plan = feasibility.map(function(entry) {
-                if (!entry.candidateAccount || !entry.candidateAccount.email) {
-                    return { candidate:entry.candidate, candidateAccount:null, choice:null, optionCount:entry.combinations.length, reason:'Ứng viên chưa có tài khoản/email hợp lệ nên chưa thể tạo Meet và gửi thư tự động.' };
+                if (!candidateAccount || !candidateAccount.email) {
+                    return { candidate:candidate, candidateAccount:null, options:[], choice:null, reason:'Ứng viên chưa có tài khoản/email hợp lệ nên chưa thể tạo Meet và gửi thư tự động.' };
                 }
-                const candidatePreferred = new Set(entry.candidate.preferredSlots || []);
-                const possible = entry.combinations.map(function(combo) {
-                    const hrKey = combo.hrAccount.id;
-                    if (usedHrSlots.has(hrKey + '|' + combo.slotId)) return null;
-                    const info = availabilitySlotInfo(combo.slotId);
-                    const hrPreferred = new Set(combo.hrSchedule.preferredSlots || []);
-                    const isCandidatePreferred = candidatePreferred.has(combo.slotId);
-                    const isHrPreferred = hrPreferred.has(combo.slotId);
-                    const score = (isCandidatePreferred ? 100 : 0) + (isHrPreferred ? 70 : 0) - ((dateLoad[info.date.id] || 0) * 6);
-                    return { info:info, hrSchedule:combo.hrSchedule, hrAccount:combo.hrAccount, candidatePreferred:isCandidatePreferred, hrPreferred:isHrPreferred, score:score };
+                const preferredSlots = new Set(candidate.preferredSlots || []);
+                const options = (candidate.slots || []).map(function(slotId) {
+                    const info = availabilitySlotInfo(slotId);
+                    if (!info) return null;
+                    const vote = voteBySlot[slotId] || {};
+                    const candidatePreferred = preferredSlots.has(slotId);
+                    return { info:info, candidatePreferred:candidatePreferred, score:(candidatePreferred ? 100 : 0) + (vote.weight || 0), btcVotes:vote.btc || 0 };
                 }).filter(Boolean).sort(function(a,b) {
-                    return (b.score - a.score) || ((dateLoad[a.info.date.id] || 0) - (dateLoad[b.info.date.id] || 0)) || a.info.id.localeCompare(b.info.id);
+                    return (b.score - a.score) || a.info.id.localeCompare(b.info.id);
                 });
-                const choice = possible[0] || null;
-                if (choice) {
-                    const hrKey = choice.hrAccount.id;
-                    usedHrSlots.add(hrKey + '|' + choice.info.id);
-                    dateLoad[choice.info.date.id] = (dateLoad[choice.info.date.id] || 0) + 1;
-                }
-                return { candidate:entry.candidate, candidateAccount:entry.candidateAccount, choice:choice, optionCount:entry.combinations.length };
+                return { candidate:candidate, candidateAccount:candidateAccount, options:options, choice:options[0] || null, defaultHrId:currentHrId };
             });
             window._autoInterviewPlan = plan;
             if (target) target.innerHTML = '<div style="font-size:.78rem;color:var(--gold-light);font-weight:600;margin-bottom:8px">Chọn lịch để tạo Meet và gửi thư mời ngay</div>' +
                 plan.map(function(item, index) {
-                    if (!item.choice) return '<div class="event-card" style="border-left-color:var(--danger)"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta">' + escapeHtml(item.reason || 'Không tìm thấy giao điểm giờ rảnh với HR.') + '</div></div>';
-                    const preferenceLabel = item.choice.candidatePreferred && item.choice.hrPreferred ? '★ Cả hai cùng ưu tiên' : item.choice.candidatePreferred ? '★ Ưu tiên của ứng viên' : item.choice.hrPreferred ? '★ Ưu tiên của HR' : '✓ Cả hai đều có thể';
-                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta">📅 ' + escapeHtml(item.choice.info.date.label) + ' · ' + item.choice.info.shift.name + ' (' + item.choice.info.shift.time + ')<br>🧑‍💼 HR: ' + escapeHtml(item.choice.hrAccount.name || item.choice.hrAccount.email) + '<br>' + preferenceLabel + ' · ' + item.optionCount + ' phương án hợp lệ</div><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ')" style="margin-top:8px">✉️ Chọn lịch này & gửi mail</button></div>';
+                    if (!item.choice) return '<div class="event-card" style="border-left-color:var(--danger)"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta">' + escapeHtml(item.reason || 'Ứng viên chưa chọn khung giờ phù hợp.') + '</div></div>';
+                    const slotOptions = item.options.map(function(option, optionIndex) {
+                        const priority = option.candidatePreferred ? '★ Ưu tiên' : 'Có thể tham gia';
+                        const btcHint = option.btcVotes ? ' · ' + option.btcVotes + ' BTC cũng chọn' : '';
+                        return '<option value="' + optionIndex + '">' + escapeHtml(option.info.date.label + ' · ' + option.info.shift.name + ' (' + option.info.shift.time + ') — ' + priority + btcHint) + '</option>';
+                    }).join('');
+                    const hrOptions = hrMembers.map(function(hr) {
+                        return '<option value="' + escapeHtml(hr.id) + '"' + (hr.id === item.defaultHrId ? ' selected' : '') + '>' + escapeHtml(hr.name || hr.email) + '</option>';
+                    }).join('');
+                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta" style="margin-bottom:7px">Các giờ dưới đây được xếp theo ưu tiên của ứng viên; phiếu BTC chỉ để tham khảo.</div><label style="font-size:.74rem">Khung giờ duyệt</label><select id="automaticSlot-' + index + '" style="margin:3px 0 7px">' + slotOptions + '</select><label style="font-size:.74rem">HR phụ trách</label><select id="automaticHr-' + index + '" style="margin:3px 0 0">' + hrOptions + '</select><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ')" style="margin-top:8px">✉️ Duyệt lịch & gửi mail</button></div>';
                 }).join('') + '<p style="font-size:.76rem;color:var(--text-muted);margin-top:8px">Sau khi xác nhận, hệ thống sẽ tạo lịch Google Meet và gửi thư mời cho ứng viên cùng HR đã phân công.</p>';
         }
 
@@ -1533,9 +1522,15 @@
         async function confirmAndCreateAutomaticInterview(index) {
             const item = (window._autoInterviewPlan || [])[index];
             if (!item || !item.choice) return;
+            const slotIndex = Number(document.getElementById('automaticSlot-' + index).value);
+            const selectedChoice = item.options && item.options[slotIndex];
+            const hrId = document.getElementById('automaticHr-' + index).value;
+            const selectedHr = hrMembers.find(user => user.id === hrId);
+            if (!selectedChoice || !selectedHr) return showAdminStatus('Hãy chọn khung giờ và HR phụ trách trước khi gửi thư.', 'var(--danger)');
+            item.choice = Object.assign({}, selectedChoice, { hrAccount:selectedHr });
             const candidateName = item.candidate && item.candidate.name || 'ứng viên này';
-            const hrName = item.choice.hrAccount && (item.choice.hrAccount.name || item.choice.hrAccount.email) || 'HR phụ trách';
-            const slotLabel = item.choice.info.date.label + ' · ' + item.choice.info.shift.name + ' (' + item.choice.info.shift.time + ')';
+            const hrName = selectedHr.name || selectedHr.email;
+            const slotLabel = selectedChoice.info.date.label + ' · ' + selectedChoice.info.shift.name + ' (' + selectedChoice.info.shift.time + ')';
             if (!confirm('Tạo lịch phỏng vấn cho ' + candidateName + ' vào ' + slotLabel + ' với ' + hrName + '?\n\nHệ thống sẽ tạo Google Meet và gửi email mời ngay.')) return;
             await createAutomaticInterview(index);
         }
@@ -1543,7 +1538,7 @@
         async function createAutomaticInterview(index) {
             const item = (window._autoInterviewPlan || [])[index];
             if (!item || !item.choice || !canManageSchedules || !dbInstance) return;
-            const hr = item.choice.hrAccount || findHrAccountForSchedule(item.choice.hrSchedule);
+            const hr = item.choice.hrAccount;
             if (!hr) return alert('HR này chưa có tài khoản hợp lệ trong hệ thống. Hãy kiểm tra Ban Nhân Sự.');
             const candidateUser = item.candidateAccount || findCandidateAccountForSchedule(item.candidate);
             if (!candidateUser || !candidateUser.email) return showAdminStatus('Ứng viên chưa có tài khoản/email hợp lệ. Chưa tạo lịch để tránh thiếu thư mời.', 'var(--danger)');

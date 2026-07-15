@@ -2294,7 +2294,7 @@
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || 'Không thể gửi thư mời.');
-                showAdminStatus('✓ Đã xác nhận và gửi thư cho ứng viên cùng người phỏng vấn, kèm lịch Google Meet.', 'var(--ok)');
+                showAdminStatus('✓ Đã xác nhận và gửi thư cho ứng viên cùng người phỏng vấn, kèm lịch Google Meet.' + (result.personalized ? ' AI đã cá nhân hoá nội dung thư mời.' : ''), 'var(--ok)');
             } catch (error) {
                 console.error('Lỗi gửi thư lịch:', error);
                 showAdminStatus('Đã xác nhận lịch nhưng gửi thư thất bại: ' + error.message, 'var(--danger)');

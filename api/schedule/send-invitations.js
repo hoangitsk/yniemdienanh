@@ -1,5 +1,7 @@
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
+const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
+const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('../../lib/projectIdentity');
 
 function escapeHtml(value) {
     return String(value || '').replace(/[&<>"']/g, function(char) {
@@ -30,6 +32,59 @@ function isEligibleInterviewer(profile) {
         leadership.indexOf('core') !== -1 || leadership.indexOf('president') !== -1 ||
         leadership.indexOf('chủ tịch') !== -1 || leadership.indexOf('chu tich') !== -1 ||
         leadership.indexOf('ban điều hành') !== -1 || leadership.indexOf('ban dieu hanh') !== -1;
+}
+
+function compactProfileText(value, limit) {
+    return String(value || '').replace(/\s+/g, ' ').trim().slice(0, limit);
+}
+
+async function generatePersonalizedInvitation(candidate, interviewer, event) {
+    // Không để AI chặn việc gửi thư: khi AI không khả dụng, email chuẩn bên dưới vẫn được gửi.
+    if (!getGeminiConfig().keys.length) return null;
+    const candidateIntro = compactProfileText(candidate.intro, 1000);
+    const candidateInterest = compactProfileText(candidate.interest, 300);
+    const interviewerIntro = compactProfileText(interviewer.intro, 700);
+    const interviewerDept = compactProfileText(interviewer.dept, 120);
+    const prompt = `Bạn là trợ lý soạn lời mời phỏng vấn cá nhân hoá cho dự án Ý Niệm Điện Ảnh.
+
+Ngữ cảnh dự án:
+${PROJECT_HANDBOOK_EMAIL_CONTEXT}
+
+Thông tin ứng viên (chỉ dùng để cá nhân hoá, không suy diễn thêm):
+- Tên: ${compactProfileText(candidate.name, 120)}
+- Ban/vai trò quan tâm: ${compactProfileText(candidate.dept, 160) || 'Chưa nêu'}
+- Sở thích: ${candidateInterest || 'Chưa nêu'}
+- Giới thiệu: ${candidateIntro || 'Chưa nêu'}
+
+Thông tin người phỏng vấn:
+- Tên: ${compactProfileText(interviewer.name, 120)}
+- Ban/vai trò: ${interviewerDept || 'Chưa nêu'}
+- Giới thiệu: ${interviewerIntro || 'Chưa nêu'}
+
+Lịch: ${compactProfileText(event.title, 180)}.
+
+Yêu cầu rất quan trọng:
+- Đây là thư mời phỏng vấn đã được HR/Admin duyệt lịch, KHÔNG phải thư báo đã qua vòng 1.
+- Không hứa hẹn kết quả tuyển chọn, không chấm điểm, không bịa kỹ năng hay thành tích.
+- Giọng văn ấm áp, cụ thể, tôn trọng; chỉ tham chiếu nhẹ đến chi tiết thật từ phần giới thiệu nếu có.
+- Trả về JSON thuần với đúng ba trường, mỗi trường là văn bản tiếng Việt ngắn, không HTML:
+{
+  "candidateOpener": "1-2 câu mở đầu cá nhân hoá gửi ứng viên",
+  "candidateFocus": "1 câu gợi ý nội dung hai bên có thể trao đổi trong buổi phỏng vấn",
+  "interviewerBrief": "1-2 câu tóm tắt trung lập để người phỏng vấn chuẩn bị"
+}`;
+    try {
+        const result = await generateGeminiJson(prompt);
+        const copy = result.data || {};
+        return {
+            candidateOpener: compactProfileText(copy.candidateOpener, 500),
+            candidateFocus: compactProfileText(copy.candidateFocus, 400),
+            interviewerBrief: compactProfileText(copy.interviewerBrief, 600)
+        };
+    } catch (error) {
+        console.warn('Không thể cá nhân hoá thư mời bằng AI:', error.message || error);
+        return null;
+    }
 }
 
 module.exports = async function sendInterviewInvitations(req, res) {
@@ -82,6 +137,10 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var staffEmails = event.type === 'interview'
             ? [assignedHr.email.trim().toLowerCase()]
             : [String(decoded.email || '').trim().toLowerCase()].filter(Boolean);
+        var candidateDoc = usersSnap.docs.find(function(doc) { return doc.id === booking.candidateId; });
+        var candidateProfile = candidateDoc ? candidateDoc.data() : {};
+        candidateProfile.name = candidateProfile.name || booking.candidateName || '';
+        candidateProfile.email = candidateProfile.email || booking.candidateEmail || '';
 
         var start = new Date(event.startAt);
         var time = isNaN(start) ? 'theo lịch đã thông báo' : start.toLocaleString('vi-VN', {
@@ -91,6 +150,15 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var meetUrl = escapeHtml(event.location.trim());
         var notes = event.notes ? '<p><strong>Lưu ý:</strong> ' + escapeHtml(event.notes) + '</p>' : '';
         var candidateName = escapeHtml(booking.candidateName || 'bạn');
+        var aiCopy = event.type === 'interview'
+            ? await generatePersonalizedInvitation(candidateProfile, assignedHr, event)
+            : null;
+        var candidatePersonalization = aiCopy && (aiCopy.candidateOpener || aiCopy.candidateFocus)
+            ? '<p>' + escapeHtml(aiCopy.candidateOpener) + '</p>' + (aiCopy.candidateFocus ? '<p>' + escapeHtml(aiCopy.candidateFocus) + '</p>' : '')
+            : '';
+        var interviewerPersonalization = aiCopy && aiCopy.interviewerBrief
+            ? '<p><strong>Gợi ý chuẩn bị:</strong> ' + escapeHtml(aiCopy.interviewerBrief) + '</p>'
+            : '';
         var transporter = nodemailer.createTransport({
             host: 'smtp-relay.brevo.com',
             port: 587,
@@ -100,8 +168,8 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var fromEmail = process.env.BREVO_FROM_EMAIL;
         if (!fromEmail) throw new Error('BREVO_FROM_EMAIL chưa được cấu hình.');
         var from = '"' + (process.env.BREVO_FROM_NAME || 'Ý Niệm Điện Ảnh') + '" <' + fromEmail + '>';
-        var candidateHtml = '<p>Chào ' + candidateName + ',</p><p>Lịch <strong>' + title + '</strong> của bạn đã được xác nhận.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes + '<p>Vui lòng vào phòng trước 5–10 phút. Nếu cần hỗ trợ, hãy phản hồi email này.</p>';
-        var staffHtml = '<p>Chào ' + escapeHtml((assignedHr && assignedHr.name) || 'người phụ trách') + ',</p><p>Bạn được phân công ' + (event.type === 'interview' ? 'phỏng vấn ứng viên ' : 'tham gia cùng ') + '<strong>' + candidateName + '</strong> trong lịch <strong>' + title + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes;
+        var candidateHtml = '<p>Chào ' + candidateName + ',</p>' + candidatePersonalization + '<p>Trân trọng mời bạn tham gia buổi phỏng vấn <strong>' + title + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes + '<p>Vui lòng vào phòng trước 5–10 phút. Nếu cần hỗ trợ, hãy phản hồi email này.</p>';
+        var staffHtml = '<p>Chào ' + escapeHtml((assignedHr && assignedHr.name) || 'người phụ trách') + ',</p><p>Bạn được phân công phỏng vấn ứng viên <strong>' + candidateName + '</strong> trong lịch <strong>' + title + '</strong>.</p>' + interviewerPersonalization + '<p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes;
         var wrap = function(html) {
             return '<div style="max-width:600px;margin:auto;padding:28px;font-family:Arial,sans-serif;line-height:1.65;color:#1f2937">' + html + '<hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0"><small>Ý Niệm Điện Ảnh · Thư mời lịch làm việc</small></div>';
         };
@@ -163,7 +231,7 @@ module.exports = async function sendInterviewInvitations(req, res) {
             invitationSentAt: new Date().toISOString(),
             invitationSentBy: decoded.uid
         });
-        return res.status(200).json({ success: true, recipients: recipients.length + 1 });
+        return res.status(200).json({ success: true, recipients: recipients.length + 1, personalized: !!aiCopy });
     } catch (error) {
         console.error('Schedule invitation error:', error);
         return res.status(500).json({ error: error.message || 'Không thể gửi thư mời.' });

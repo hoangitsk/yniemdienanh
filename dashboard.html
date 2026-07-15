@@ -3843,6 +3843,58 @@
             const collections = isOrg 
                 ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints']
                 : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints'];
+            const promises = collections.map(async (col) => {
+                try {
+                    const snap = await firestoreWithTimeout(dbInstance.collection(col).get());
+                    localDB[col] = [];
+                    snap.forEach(doc => {
+                        let docData = doc.data();
+                        if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
+                            docData.id = parseInt(docData.id);
+                        }
+                        localDB[col].push(docData);
+                    });
+                } catch (err) {
+                    console.warn(`Không thể đọc ${col}:`, err.message || err);
+                    localDB[col] = localDB[col] || [];
+                }
+            });
+            await Promise.all(promises);
+
+            // Thành viên chỉ được đọc giao dịch của chính mình theo Security Rules.
+            if (!isOrg) {
+                try {
+                    const snap = await firestoreWithTimeout(dbInstance.collection('transactions').where('userId', '==', uid).get());
+                    localDB.transactions = [];
+                    snap.forEach(doc => {
+                        let docData = doc.data();
+                        if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
+                            docData.id = parseInt(docData.id);
+                        }
+                        localDB.transactions.push(docData);
+                    });
+                } catch (err) {
+                    console.warn('Không thể đọc transactions cá nhân:', err.message || err);
+                    localDB.transactions = localDB.transactions || [];
+                }
+            }
+
+            try {
+                const seqDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('sequence').get());
+                localDB.seq = seqDoc.exists ? (seqDoc.data().val || 100) : 100;
+                await loadPublicConfigFromFirestore();
+            } catch (e) {
+                console.warn('Không thể đọc sequence, giữ giá trị cũ:', e.message || e);
+            }
+
+            localStorage.setItem('ynda_db', JSON.stringify(localDB));
+        }
+
+        async function resetPassword() {
+            const email = document.getElementById('liEmail').value.trim();
+            if (!email) {
+                showToast('Vui lòng nhập email trước khi bấm Quên mật khẩu.', 'info');
+                return;
             }
             try {
                 const ctrl = new AbortController();

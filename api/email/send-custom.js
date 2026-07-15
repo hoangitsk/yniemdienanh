@@ -1,15 +1,5 @@
-const nodemailer = require('nodemailer');
 const { normalizePdfAttachment } = require('../../lib/pdfAttachment');
-
-const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.BREVO_SMTP_LOGIN,
-        pass: process.env.BREVO_SMTP_KEY,
-    },
-});
+const { sendMailWithFallback } = require('../../lib/mailer');
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -37,14 +27,8 @@ module.exports = async (req, res) => {
         }
 
         const fromName = process.env.BREVO_FROM_NAME || 'Ý Niệm Điện Ảnh';
-        const fromEmail = process.env.BREVO_FROM_EMAIL;
-        if (!fromEmail) {
-            return res.status(500).json({ error: 'BREVO_FROM_EMAIL chưa được cấu hình.' });
-        }
-
         const pdfAttachment = normalizePdfAttachment(attachment);
-        await transporter.sendMail({
-            from: `"${fromName}" <${fromEmail}>`,
+        const delivery = await sendMailWithFallback({
             to,
             subject,
             html: `
@@ -59,9 +43,9 @@ module.exports = async (req, res) => {
                 </div>
             `,
             attachments: pdfAttachment ? [pdfAttachment] : []
-        });
+        }, { fromName });
 
-        res.status(200).json({ success: true });
+        res.status(200).json({ success: true, provider:delivery.provider });
     } catch (err) {
         console.error('Send custom email error:', err);
         res.status(err.status || 500).json({ error: err.message });

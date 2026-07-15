@@ -3310,7 +3310,7 @@
                 submissions: [],
                 votes: [],
                 feedback: [],
-                config: { stage: 'Khởi động', voteStart: '', voteEnd: '' },
+                config: { stage: 'Khởi động', voteStart: '', voteEnd: '', recruitment: { presidentOpen: true, cofounderOpen: true } },
                 content: { hero: { eyebrow: '', title: 'Ý Niệm<br>Điện Ảnh', lead: '', target: '', transparency: '', goal: '' }, events: { title: '', desc: '' }, about: { title: '', desc: '', cards: [] }, rules: { title: '', subtitle: '', col1Title: '', col1Items: [], col2Title: '', col2Text: '' }, apply: { title: '', desc: '', orgTitle: '', orgText: '', memberTitle: '', memberText: '', processTitle: 'Quy trình tuyển dụng', steps: [] }, footer: { text: '' } },
                 seq: 100
             };
@@ -3541,7 +3541,7 @@
                 useFirebase = false;
             }
 
-            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], registrations: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 }, voteStart: '', voteEnd: '' }, content: getMockData().content, seq: 100 };
+            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], registrations: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 }, voteStart: '', voteEnd: '', recruitment: { presidentOpen: true, cofounderOpen: true } }, content: getMockData().content, seq: 100 };
 
             const backupRaw = localStorage.getItem('ynda_db');
             if (backupRaw) {
@@ -3881,6 +3881,8 @@
                     if (settingsData.voteStart) localDB.config.voteStart = settingsData.voteStart;
                     if (settingsData.voteEnd) localDB.config.voteEnd = settingsData.voteEnd;
                 }
+                const recruitmentDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('recruitment').get());
+                if (recruitmentDoc.exists) localDB.config.recruitment = { presidentOpen: true, cofounderOpen: true, ...recruitmentDoc.data() };
             } catch (e) {
                 console.warn('Không thể đọc public config:', e.message || e);
             }
@@ -6224,6 +6226,14 @@
                         '<h2>🔐 Quản lý tài khoản</h2>',
                         '<div class="panel">',
                             '<p style="color:var(--text-muted);margin-bottom:16px">Quản lý tất cả tài khoản người dùng trong hệ thống.</p>',
+                            '<div style="margin-bottom:18px;padding:14px 16px;border:1px solid rgba(228,184,102,.3);border-radius:10px;background:rgba(228,184,102,.05)">',
+                                '<h3 style="margin:0 0 6px;color:var(--gold)">⚙️ Mở/tắt đơn lãnh đạo</h3>',
+                                '<p style="color:var(--text-muted);font-size:.85rem;margin:0 0 12px">Chỉ Admin được chỉnh trạng thái nhận đơn. Khi tắt, form sẽ ẩn ở trang đăng ký.</p>',
+                                '<div style="display:flex;flex-wrap:wrap;gap:18px">',
+                                    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.presidentOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'president\',this.checked)"> 👑 Nhận đơn President</label>',
+                                    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.cofounderOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'cofounder\',this.checked)"> 🤝 Nhận đơn Co-founder</label>',
+                                '</div>',
+                            '</div>',
                             '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">',
                                 '<input id="acctSearchInput" placeholder="Tìm theo tên, email, phòng ban..." value="', esc(window._acctSearch || ''), '" oninput="window._acctSearch=this.value;renderTab(\'accounts\')" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#e2e8f0;width:220px">',
                                 '<input type="date" id="acctDateFrom" value="', esc(dateFrom), '" onchange="window._acctDateFrom=this.value;renderTab(\'accounts\')" style="padding:6px;border-radius:6px;background:rgba(255,255,255,0.04);color:#e2e8f0;border:1px solid rgba(255,255,255,0.1)">',
@@ -10069,6 +10079,25 @@
         window.triggerCustomSponsor = triggerCustomSponsor;
 
         // ================= ADMIN ACCOUNT MANAGEMENT =================
+        async function toggleRecruitmentSetting(type, open) {
+            if (!session || session.role !== 'admin') return showToast('Chỉ Admin mới được chỉnh cài đặt này.', 'error');
+            const key = type === 'president' ? 'presidentOpen' : 'cofounderOpen';
+            if (!localDB.config) localDB.config = {};
+            if (!localDB.config.recruitment) localDB.config.recruitment = { presidentOpen: true, cofounderOpen: true };
+            const previous = localDB.config.recruitment[key] !== false;
+            localDB.config.recruitment[key] = !!open;
+            localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            try {
+                if (useFirebase && dbInstance) await dbInstance.collection('config').doc('recruitment').set(localDB.config.recruitment, { merge: true });
+                await addAuditLog('update_recruitment_setting', key + '=' + (!!open));
+                showToast((open ? 'Đã mở' : 'Đã tắt') + ' đơn ' + (type === 'president' ? 'President' : 'Co-founder') + '.', 'success');
+            } catch (e) {
+                localDB.config.recruitment[key] = previous;
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+                showToast('Không lưu được cài đặt: ' + (e.message || e), 'error');
+                renderTab('accounts');
+            }
+        }
         async function adminResetPass(email) {
             if (!(await showConfirmModal('Gửi email đặt lại mật khẩu cho ' + email + '?'))) return;
             try {
@@ -10617,7 +10646,7 @@
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Lỗi gửi email');
                 
-                showToast('Gửi email thành công!', 'success');
+                showToast('Gửi email thành công' + (data.provider ? ' qua ' + (data.provider === 'gmail' ? 'Gmail dự phòng' : 'Brevo') : '') + '!', 'success');
                 closeModal('emailModal');
             } catch (err) {
                 console.error(err);

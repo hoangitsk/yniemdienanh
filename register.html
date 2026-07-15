@@ -434,6 +434,13 @@
                     <p>Chủ tịch / Trưởng ban điều hành toàn bộ hoạt động của dự án và định hướng tương lai.</p>
                 </div>
             </div>
+            <div class="portal-card" id="card-cofounder" onclick="selectTab('cofounder')">
+                <div>
+                    <div class="icon">🤝</div>
+                    <h3>Apply Co-founder</h3>
+                    <p>Đồng sáng lập, cùng xây dựng chiến lược và phát triển dự án từ giai đoạn đầu.</p>
+                </div>
+            </div>
             <div class="portal-card" id="card-organizer" onclick="selectTab('organizer')">
                 <div>
                     <div class="icon">🎬</div>
@@ -473,6 +480,25 @@
                 
                 <div class="form-msg" id="cfMsg"></div>
                                 <button class="btn btn-gold" id="cfSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn ứng tuyển President</button>
+            </form>
+        </div>
+
+        <div class="form-card" id="form-cofounder">
+            <h2 style="color:var(--gold);margin-bottom:10px">🤝 Đơn Ứng Tuyển Co-founder</h2>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:20px">Chia sẻ kinh nghiệm, thế mạnh và cách bạn muốn đồng kiến tạo dự án.</p>
+            <form onsubmit="event.preventDefault();submitApplication('cofounder')">
+                <label for="coName">Họ và tên *</label>
+                <input id="coName" required placeholder="Họ và tên đầy đủ của bạn">
+                <label for="coEmail">Email liên hệ *</label>
+                <input id="coEmail" type="email" required placeholder="email@gmail.com">
+                <label for="coPhone">Số điện thoại / Zalo *</label>
+                <input id="coPhone" type="tel" required placeholder="Số điện thoại liên hệ (10 chữ số)">
+                <label for="coIntro">Giới thiệu bản thân & kinh nghiệm liên quan *</label>
+                <textarea id="coIntro" required placeholder="Kinh nghiệm, thế mạnh hoặc dự án bạn từng tham gia (tối thiểu 20 ký tự)..."></textarea>
+                <label for="coVision">Tầm nhìn & đóng góp dự kiến *</label>
+                <textarea id="coVision" required placeholder="Bạn muốn đồng hành và tạo giá trị gì cho Ý Niệm Điện Ảnh (tối thiểu 30 ký tự)..."></textarea>
+                <div class="form-msg" id="coMsg"></div>
+                <button class="btn btn-gold" id="coSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn ứng tuyển Co-founder</button>
             </form>
         </div>
 
@@ -698,6 +724,32 @@
         let session = null;
         let googleUserTemp = null;
         let currentTabId = '';
+        let recruitmentSettings = { presidentOpen:true, cofounderOpen:true };
+
+        function isRecruitmentOpen(type) {
+            return type === 'president' ? recruitmentSettings.presidentOpen !== false : recruitmentSettings.cofounderOpen !== false;
+        }
+
+        function renderRecruitmentAvailability() {
+            [['president', 'President'], ['cofounder', 'Co-founder']].forEach(function(item) {
+                const card = document.getElementById('card-' + item[0]);
+                if (!card) return;
+                const closed = !isRecruitmentOpen(item[0]);
+                card.style.opacity = closed ? '.5' : '';
+                card.style.filter = closed ? 'grayscale(.7)' : '';
+                let badge = card.querySelector('.recruitment-status-badge');
+                if (closed && !badge) {
+                    badge = document.createElement('small');
+                    badge.className = 'recruitment-status-badge';
+                    badge.style.cssText = 'display:inline-block;margin-top:10px;color:#f59e0b;font-weight:700';
+                    card.querySelector('div').appendChild(badge);
+                }
+                if (badge) {
+                    badge.textContent = closed ? '⏸ Đang tạm đóng nhận đơn' : '';
+                    badge.style.display = closed ? 'inline-block' : 'none';
+                }
+            });
+        }
 
         // Star Background Animation
         function initStars() {
@@ -774,10 +826,13 @@
                     console.warn("Could not read backup database:", e);
                 }
             }
+            if (localDB.config && localDB.config.recruitment) recruitmentSettings = { ...recruitmentSettings, ...localDB.config.recruitment };
 
             // Sync from Firebase on load
             if (useFirebase) {
                 try {
+                    const recruitmentDoc = await dbInstance.collection('config').doc('recruitment').get();
+                    if (recruitmentDoc.exists) recruitmentSettings = { ...recruitmentSettings, ...recruitmentDoc.data() };
                     // Check auth state
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
@@ -825,6 +880,7 @@
                     } catch (e) {}
                 }
             }
+            renderRecruitmentAvailability();
             fetchBTCUsers();
         }
 
@@ -847,7 +903,12 @@
             if (presForm) {
                 let loginPrompt = presForm.querySelector('.recruitment-login-prompt');
                 let formContent = presForm.querySelector('form');
-                if (loggedIn) {
+                if (!isRecruitmentOpen('president')) {
+                    if (formContent) formContent.style.display = 'none';
+                    if (!loginPrompt) { loginPrompt = document.createElement('div'); loginPrompt.className = 'recruitment-login-prompt'; presForm.appendChild(loginPrompt); }
+                    loginPrompt.style.display = 'block';
+                    loginPrompt.innerHTML = '<p style="padding:28px;text-align:center;color:#f59e0b">⏸ Đơn President hiện đang tạm đóng nhận đơn.</p>';
+                } else if (loggedIn) {
                     if (loginPrompt) loginPrompt.style.display = 'none';
                     if (formContent) {
                         formContent.style.display = 'block';
@@ -887,7 +948,42 @@
                 }
             }
             
-            // For Organizer (BTC) form
+        // For Co-founder form
+        const coForm = document.getElementById('form-cofounder');
+        if (coForm) {
+            let coPrompt = coForm.querySelector('.recruitment-login-prompt');
+            let coContent = coForm.querySelector('form');
+            if (!isRecruitmentOpen('cofounder')) {
+                if (coContent) coContent.style.display = 'none';
+                if (!coPrompt) {
+                    coPrompt = document.createElement('div');
+                    coPrompt.className = 'recruitment-login-prompt recruitment-closed-message';
+                    coForm.appendChild(coPrompt);
+                }
+                coPrompt.style.display = 'block';
+                coPrompt.innerHTML = '<p style="padding:28px;text-align:center;color:#f59e0b">⏸ Đơn Co-founder hiện đang tạm đóng nhận đơn.</p>';
+            } else if (loggedIn) {
+                if (coPrompt) coPrompt.style.display = 'none';
+                if (coContent) {
+                    coContent.style.display = 'block';
+                    const coName = document.getElementById('coName');
+                    const coEmail = document.getElementById('coEmail');
+                    if (coName) { coName.value = session.name || ''; coName.readOnly = true; }
+                    if (coEmail) { coEmail.value = session.email || ''; coEmail.readOnly = true; }
+                }
+            } else {
+                if (coContent) coContent.style.display = 'none';
+                if (!coPrompt) {
+                    coPrompt = document.createElement('div');
+                    coPrompt.className = 'recruitment-login-prompt';
+                    coForm.appendChild(coPrompt);
+                }
+                coPrompt.style.display = 'block';
+                coPrompt.innerHTML = '<div style="text-align:center;padding:40px 20px"><p style="color:var(--text-muted);margin-bottom:20px">Vui lòng đăng nhập để điền đơn Co-founder.</p><button class="btn btn-gold" onclick="event.preventDefault();submitGoogleLogin()">Đăng nhập bằng Google</button></div>';
+            }
+        }
+
+        // For Organizer (BTC) form
             const orgForm = document.getElementById('form-organizer');
             if (orgForm) {
                 let loginPrompt = orgForm.querySelector('.recruitment-login-prompt');
@@ -940,6 +1036,10 @@
 
         // Tab selection logic
         function selectTab(tabId) {
+            if ((tabId === 'president' || tabId === 'cofounder') && !isRecruitmentOpen(tabId)) {
+                showToast('Đơn ' + (tabId === 'president' ? 'President' : 'Co-founder') + ' hiện đang tạm đóng.', 'warning');
+                return;
+            }
             currentTabId = tabId;
             
             // Highlight card
@@ -955,7 +1055,7 @@
                 targetForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             
-            if (tabId === 'president' || tabId === 'organizer') {
+            if (tabId === 'president' || tabId === 'cofounder' || tabId === 'organizer') {
                 renderRecruitmentForms();
                 if (!session) {
                     openModal('recruitmentAuthModal');
@@ -1235,9 +1335,9 @@
         }
 
         // ================= FLOW: SUBMIT APPLICATIONS =================
-                async function submitApplication(type) {
+        async function submitApplication(type) {
             const isCoFounder = type === 'cofounder' || type === 'president';
-            const prefix = isCoFounder ? 'cf' : 'org';
+            const prefix = type === 'president' ? 'cf' : type === 'cofounder' ? 'co' : 'org';
             
             const msgEl = document.getElementById(prefix + 'Msg');
             const submitBtn = document.getElementById(prefix + 'SubmitBtn');

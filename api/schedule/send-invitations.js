@@ -1,7 +1,7 @@
 const admin = require('firebase-admin');
-const nodemailer = require('nodemailer');
 const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
 const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('../../lib/projectIdentity');
+const { preferredSender, sendMailWithFallback } = require('../../lib/mailer');
 
 function escapeHtml(value) {
     return String(value || '').replace(/[&<>"']/g, function(char) {
@@ -171,18 +171,9 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var interviewerPersonalization = aiCopy && aiCopy.interviewerBrief
             ? '<p><strong>Gợi ý chuẩn bị:</strong> ' + escapeHtml(aiCopy.interviewerBrief) + '</p>'
             : '';
-        var transporter = nodemailer.createTransport({
-            host: 'smtp-relay.brevo.com',
-            port: 587,
-            secure: false,
-            connectionTimeout: 5000,
-            greetingTimeout: 5000,
-            socketTimeout: 8000,
-            auth: { user: process.env.BREVO_SMTP_LOGIN, pass: process.env.BREVO_SMTP_KEY }
-        });
-        var fromEmail = process.env.BREVO_FROM_EMAIL;
-        if (!fromEmail) throw new Error('BREVO_FROM_EMAIL chưa được cấu hình.');
-        var from = '"' + (process.env.BREVO_FROM_NAME || 'Ý Niệm Điện Ảnh') + '" <' + fromEmail + '>';
+        var sender = preferredSender();
+        if (!sender) throw new Error('Chưa cấu hình kênh gửi email trên máy chủ.');
+        var fromEmail = sender.email;
         var candidateHtml = '<p>Chào ' + candidateName + ',</p>' + candidatePersonalization + '<p>Trân trọng mời bạn tham gia buổi phỏng vấn <strong>' + title + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes + '<p>Vui lòng vào phòng trước 5–10 phút. Nếu cần hỗ trợ, hãy phản hồi email này.</p>';
         var staffHtml = '<p>Chào ' + escapeHtml((assignedHr && assignedHr.name) || 'người phụ trách') + ',</p><p>Bạn được phân công phỏng vấn ứng viên <strong>' + candidateName + '</strong> trong lịch <strong>' + title + '</strong>.</p>' + interviewerPersonalization + '<p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes;
         var wrap = function(html) {
@@ -221,32 +212,33 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var candidateEmail = booking.candidateEmail.trim().toLowerCase();
         var recipients = Array.from(new Set(staffEmails)).filter(function(email) { return email !== candidateEmail; });
         var messages = [
-            transporter.sendMail({
-                from: from,
+            sendMailWithFallback({
                 to: candidateEmail,
                 subject: '[Ý Niệm Điện Ảnh] Xác nhận ' + (event.type === 'interview' ? 'phỏng vấn' : 'lịch họp') + ' — ' + event.title,
                 html: wrap(candidateHtml),
                 icalEvent: { method: 'request', content: createIcs(candidateEmail) }
-            })
+            }, { fromName:sender.name })
         ];
         recipients.forEach(function(email) {
-            messages.push(transporter.sendMail({
-                from: from,
+            messages.push(sendMailWithFallback({
                 to: email,
                 subject: '[Người phỏng vấn] ' + (event.type === 'interview' ? 'Lịch phỏng vấn' : 'Lịch họp') + ' đã xác nhận — ' + event.title,
                 html: wrap(staffHtml),
                 icalEvent: { method: 'request', content: createIcs(email) }
-            }));
+            }, { fromName:sender.name }));
         });
         var results = await Promise.allSettled(messages);
         var failed = results.filter(function(result) { return result.status === 'rejected'; }).length;
         if (failed) throw new Error('Không gửi được ' + failed + ' thư mời.');
+        var providers = Array.from(new Set(results.filter(function(result) {
+            return result.status === 'fulfilled' && result.value && result.value.provider;
+        }).map(function(result) { return result.value.provider; })));
 
         await bookingDoc.ref.update({
             invitationSentAt: new Date().toISOString(),
             invitationSentBy: decoded.uid
         });
-        return res.status(200).json({ success: true, recipients: recipients.length + 1, personalized: !!aiCopy });
+        return res.status(200).json({ success: true, recipients: recipients.length + 1, personalized: !!aiCopy, providers:providers });
     } catch (error) {
         console.error('Schedule invitation error:', error);
         return res.status(500).json({ error: error.message || 'Không thể gửi thư mời.' });

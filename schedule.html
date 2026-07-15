@@ -2367,68 +2367,24 @@
         }
 
         async function createGoogleCalendarEvent(eventId, eventData, candidateEmail) {
-            const token = await getGoogleCalendarToken();
-            const hr = hrMembers.find(user => user.id === eventData.assignedHrId);
-            const attendees = [];
-            if (hr && hr.email) attendees.push({ email: hr.email });
-            if (candidateEmail && !attendees.some(item => item.email.toLowerCase() === candidateEmail.toLowerCase())) attendees.push({ email: candidateEmail });
-            const times = calendarDateTime(eventData.startAt, eventData.duration);
-            const resource = {
-                summary: eventData.title,
-                description: (eventData.notes || '') + '\nLịch do Ý Niệm Điện Ảnh tạo tự động.',
-                start: times.start,
-                end: times.end,
-                attendees: attendees,
-                conferenceData: {
-                    createRequest: {
-                        requestId: 'ynda_' + eventId + '_' + Date.now(),
-                        conferenceSolutionKey: { type: 'hangoutsMeet' }
-                    }
-                }
-            };
-            const response = await scheduleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1&sendUpdates=all', {
+            const idToken = await scheduleTimeout(currentUser.getIdToken(), 5000, 'Không lấy được phiên đăng nhập để tạo Meet.');
+            const response = await scheduleFetch('/api/schedule/create-meet', {
                 method: 'POST',
-                headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-                body: JSON.stringify(resource)
-            }, 20000, 'Google Calendar không phản hồi khi tạo sự kiện.');
+                headers: { 'Content-Type':'application/json' },
+                body: JSON.stringify({ idToken, eventId, candidateEmail:candidateEmail || '' })
+            }, 30000, 'Máy chủ không phản hồi khi tạo Google Meet.');
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error && result.error.message || 'Google Calendar không tạo được sự kiện.');
-            let meetLink = result.hangoutLink || (result.conferenceData && result.conferenceData.entryPoints || []).find(item => item.entryPointType === 'video')?.uri;
-            if (!meetLink && result.id) {
-                for (let attempt = 0; attempt < 6 && !meetLink; attempt++) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    const poll = await scheduleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/' + encodeURIComponent(result.id), { headers: { Authorization: 'Bearer ' + token } }, 8000, 'Google Calendar không phản hồi khi lấy link Meet.');
-                    if (!poll.ok) continue;
-                    const latest = await poll.json();
-                    meetLink = latest.hangoutLink || (latest.conferenceData && latest.conferenceData.entryPoints || []).find(item => item.entryPointType === 'video')?.uri;
-                }
-            }
-            if (!meetLink) throw new Error('Google Calendar đang tạo Meet. Hãy mở lại lịch sau vài giây.');
-            const calendarUpdate = { location: meetLink, googleCalendarEventId: result.id, googleCalendarHtmlLink: result.htmlLink || '', googleCalendarOwner: currentUser.email, googleCalendarCreatedAt: new Date().toISOString() };
-            try {
-                await scheduleTimeout(dbInstance.collection('scheduledEvents').doc(eventId).update(calendarUpdate), 15000, 'Lưu liên kết Google Meet quá thời gian.');
-            } catch (firestoreError) {
-                await saveScheduleEventViaApi(eventId, calendarUpdate, 'update');
-            }
-            eventData.location = meetLink;
-            eventData.googleCalendarEventId = result.id;
-            return { meetLink: meetLink, calendarEventId: result.id };
+            if (!response.ok) throw new Error(result.error || 'Google Calendar không tạo được sự kiện.');
+            if (!result.meetLink) throw new Error('Google Calendar chưa trả về liên kết Meet.');
+            eventData.location = result.meetLink;
+            eventData.googleCalendarEventId = result.calendarEventId;
+            eventData.googleCalendarHtmlLink = result.calendarHtmlLink || '';
+            return { meetLink:result.meetLink, calendarEventId:result.calendarEventId };
         }
 
         async function addCandidateToGoogleEvent(event, booking) {
-            if (!event.googleCalendarEventId || !booking.candidateEmail) return;
-            const token = await getGoogleCalendarToken();
-            const hr = hrMembers.find(user => user.id === event.assignedHrId);
-            const attendees = [{ email: booking.candidateEmail }];
-            if (hr && hr.email && hr.email.toLowerCase() !== booking.candidateEmail.toLowerCase()) attendees.push({ email: hr.email });
-            const times = calendarDateTime(event.startAt, event.duration);
-            const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/' + encodeURIComponent(event.googleCalendarEventId) + '?conferenceDataVersion=1&sendUpdates=all', {
-                method: 'PATCH',
-                headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ start: times.start, end: times.end, attendees: attendees })
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error && result.error.message || 'Không thể thêm ứng viên vào Google Calendar.');
+            if (!booking.candidateEmail) return;
+            await createGoogleCalendarEvent(event.id, event, booking.candidateEmail);
         }
 
         function isGoogleMeetRoom(value) {

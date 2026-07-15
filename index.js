@@ -572,6 +572,8 @@ const saveScheduleEvent = require('./api/schedule/save-event');
 app.post('/api/schedule/save-event', saveScheduleEvent);
 const saveScheduleBooking = require('./api/schedule/save-booking');
 app.post('/api/schedule/save-booking', saveScheduleBooking);
+const createScheduleMeet = require('./api/schedule/create-meet');
+app.post('/api/schedule/create-meet', createScheduleMeet);
 const saveSchedulePoll = require('./api/schedule/save-poll');
 app.post('/api/schedule/save-poll', saveSchedulePoll);
 const listStaffAvailability = require('./api/schedule/list-availability');

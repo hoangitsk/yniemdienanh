@@ -1592,13 +1592,21 @@
                 return;
             }
             try {
-                const eventsSnap = await dbInstance.collection('scheduledEvents').orderBy('startAt', 'asc').get();
+                const eventsSnap = await scheduleTimeout(
+                    dbInstance.collection('scheduledEvents').orderBy('startAt', 'asc').get(),
+                    12000,
+                    'Tải lịch chính thức quá thời gian.'
+                );
                 officialEvents = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(event => event.status !== 'cancelled');
                 myBookings = [];
                 if (currentUser) {
-                    const bookingsSnap = canManageSchedules
-                        ? await dbInstance.collection('scheduledBookings').get()
-                        : await dbInstance.collection('scheduledBookings').where('candidateId', '==', currentUser.uid).get();
+                    const bookingsSnap = await scheduleTimeout(
+                        canManageSchedules
+                            ? dbInstance.collection('scheduledBookings').get()
+                            : dbInstance.collection('scheduledBookings').where('candidateId', '==', currentUser.uid).get(),
+                        12000,
+                        'Tải lịch đặt chỗ quá thời gian.'
+                    );
                     myBookings = bookingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 }
             } catch (error) {
@@ -1616,7 +1624,11 @@
                     return;
                 }
                 const collection = dbInstance.collection('meetingSchedules');
-                const snap = await collection.where('ownerId', '==', currentUser.uid).get();
+                const snap = await scheduleTimeout(
+                    collection.where('ownerId', '==', currentUser.uid).get(),
+                    12000,
+                    'Tải lịch rảnh quá thời gian.'
+                );
                 localDB.meetingSchedules = [];
                 snap.forEach(doc => {
                     localDB.meetingSchedules.push({ id: doc.id, ...doc.data() });
@@ -1839,6 +1851,29 @@
             updateSelectionSummary();
         }
 
+        async function requestAvailabilitySave(payload) {
+            if (!currentUser) throw new Error('Vui lòng đăng nhập trước khi lưu lịch rảnh.');
+            const idToken = await scheduleTimeout(currentUser.getIdToken(), 5000, 'Không lấy được phiên đăng nhập. Vui lòng tải lại trang.');
+            const controller = new AbortController();
+            const timer = setTimeout(function() { controller.abort(); }, 15000);
+            try {
+                const response = await fetch('/api/schedule/save-availability', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...payload, idToken: idToken }),
+                    signal: controller.signal
+                });
+                const result = await response.json().catch(function() { return {}; });
+                if (!response.ok) throw new Error(result.error || 'Máy chủ không thể lưu lịch rảnh.');
+                return result;
+            } catch (error) {
+                if (error && error.name === 'AbortError') throw new Error('Lưu lịch quá thời gian. Vui lòng kiểm tra mạng rồi chọn lại.');
+                throw error;
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
         async function submitSchedule(isAutoSave) {
             const name = document.getElementById('schedName').value.trim();
             const role = document.getElementById('schedRole').value;
@@ -1863,7 +1898,7 @@
                 return;
             }
 
-            const scheduleDoc = {
+            let scheduleDoc = {
                 id: activePoll.id + '_' + (currentUser ? currentUser.uid : name.toLowerCase().replace(/\s+/g, '_')),
                 ownerId: currentUser ? currentUser.uid : null,
                 pollId: activePoll.id,
@@ -1878,12 +1913,20 @@
             };
 
             showStatus(isAutoSave ? "⏳ Đang tự động lưu..." : "⏳ Đang lưu dữ liệu...", "var(--gold)");
-            if (useFirebase && dbInstance) {
+            if (useFirebase && currentUser) {
                 try {
-                    await dbInstance.collection('meetingSchedules').doc(scheduleDoc.id).set(scheduleDoc);
+                    const result = await requestAvailabilitySave({
+                        action: 'save',
+                        pollId: activePoll.id,
+                        name: scheduleDoc.name,
+                        role: scheduleDoc.role,
+                        slots: scheduleDoc.slots,
+                        preferredSlots: scheduleDoc.preferredSlots
+                    });
+                    if (result.schedule) scheduleDoc = result.schedule;
                 } catch (error) {
-                    console.error('Firebase write error:', error);
-                    showStatus('Không thể lưu phiếu. Đợt có thể vừa bị khóa hoặc kết nối bị gián đoạn.', 'var(--danger)');
+                    console.error('Schedule autosave error:', error);
+                    showStatus('❌ Chưa lưu được: ' + (error.message || 'Kết nối bị gián đoạn.'), 'var(--danger)');
                     return;
                 }
             }
@@ -1925,12 +1968,12 @@
             const docId = matchingSchedule ? matchingSchedule.id : activePoll.id + '_' + (currentUser ? currentUser.uid : name.toLowerCase().replace(/\s+/g, '_'));
             showStatus("⏳ Đang xóa dữ liệu...", "var(--gold)");
 
-            if (useFirebase && dbInstance) {
+            if (useFirebase && currentUser) {
                 try {
-                    await dbInstance.collection('meetingSchedules').doc(docId).delete();
+                    await requestAvailabilitySave({ action: 'delete', pollId: activePoll.id });
                 } catch (error) {
-                    console.error('Firebase delete error:', error);
-                    showStatus('Không thể xóa phiếu. Đợt có thể đã bị khóa.', 'var(--danger)');
+                    console.error('Schedule delete error:', error);
+                    showStatus('Không thể xóa phiếu: ' + (error.message || 'Đợt có thể đã bị khóa.'), 'var(--danger)');
                     return;
                 }
             }

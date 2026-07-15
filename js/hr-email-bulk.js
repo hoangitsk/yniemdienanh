@@ -60,26 +60,31 @@
         var name = esc(app.name || 'bạn');
         var dept = esc(app.dept || 'Ban Tổ Chức');
         var scheduleUrl = window.location.origin + '/schedule';
+        var sender = typeof window.currentEmailSenderIdentity === 'function' ? window.currentEmailSenderIdentity() : {};
+        var roleLabels = { admin: 'Quản trị viên', organizer: 'Ban Tổ Chức', member: 'Thành viên' };
+        var senderName = esc(sender.name || 'Đội ngũ Ý Niệm Điện Ảnh');
+        var senderPosition = esc(sender.dept || roleLabels[sender.role] || sender.role || 'Thành viên');
+        var signature = '<p>Trân trọng,<br><strong>' + senderName + '</strong><br>' + senderPosition + '<br>Ý Niệm Điện Ảnh</p>';
         var templates = {
             approve: {
                 subject: '[Ý Niệm Điện Ảnh] Kết quả ứng tuyển — ' + (app.name || ''),
-                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Ban Nhân Sự vui mừng thông báo hồ sơ ứng tuyển vào <strong>' + dept + '</strong> của bạn đã được thông qua.</p><p>Chúng tôi sẽ sớm liên hệ để hướng dẫn onboarding. Chào mừng bạn đến với Ý Niệm Điện Ảnh! ✨</p><p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>'
+                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Ban Nhân Sự vui mừng thông báo hồ sơ ứng tuyển vào <strong>' + dept + '</strong> của bạn đã được thông qua.</p><p>Chúng tôi sẽ sớm liên hệ để hướng dẫn onboarding. Chào mừng bạn đến với Ý Niệm Điện Ảnh! ✨</p>' + signature
             },
             round1_pass: {
                 subject: '[Ý Niệm Điện Ảnh] Chúc mừng bạn đã vượt qua vòng 1 — ' + (app.name || ''),
-                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Chúc mừng bạn đã chính thức <strong>vượt qua vòng 1</strong>.</p><p>Trong vòng <strong>3 ngày tới</strong>, Ban Nhân Sự sẽ gửi email tiếp theo để bạn lựa chọn lịch phỏng vấn phù hợp.</p><p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>'
+                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Chúc mừng bạn đã chính thức <strong>vượt qua vòng 1</strong>.</p><p>Trong vòng <strong>3 ngày tới</strong>, Ban Nhân Sự sẽ gửi email tiếp theo để bạn lựa chọn lịch phỏng vấn phù hợp.</p>' + signature
             },
             interview: {
                 subject: '[Ý Niệm Điện Ảnh] Mời chọn lịch phỏng vấn — ' + (app.name || ''),
-                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Chúng tôi trân trọng mời bạn tham gia vòng phỏng vấn.</p><p><a href="' + scheduleUrl + '" style="color:#b7791f;font-weight:700">Chọn các khung giờ bạn có thể tham gia tại đây</a>.</p><p>Hệ thống chốt lịch lúc 0h hằng ngày theo giờ Việt Nam. Nếu chưa được chốt, bạn vẫn có thể cập nhật lựa chọn đến hết hạn của đợt phỏng vấn.</p><p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>'
+                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Chúng tôi trân trọng mời bạn tham gia vòng phỏng vấn.</p><p><a href="' + scheduleUrl + '" style="color:#b7791f;font-weight:700">Chọn các khung giờ bạn có thể tham gia tại đây</a>.</p><p>Hệ thống chốt lịch lúc 0h hằng ngày theo giờ Việt Nam. Nếu chưa được chốt, bạn vẫn có thể cập nhật lựa chọn đến hết hạn của đợt phỏng vấn.</p>' + signature
             },
             reject: {
                 subject: '[Ý Niệm Điện Ảnh] Thư cảm ơn ứng tuyển — ' + (app.name || ''),
-                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Cảm ơn bạn đã dành thời gian ứng tuyển vào <strong>' + dept + '</strong>. Rất tiếc chúng tôi chưa thể đồng hành cùng bạn trong đợt này.</p><p>Chúc bạn luôn giữ vững đam mê và gặp nhiều may mắn.</p><p>Thân ái,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>'
+                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Cảm ơn bạn đã dành thời gian ứng tuyển vào <strong>' + dept + '</strong>. Rất tiếc chúng tôi chưa thể đồng hành cùng bạn trong đợt này.</p><p>Chúc bạn luôn giữ vững đam mê và gặp nhiều may mắn.</p>' + signature
             },
             attachment_followup: {
                 subject: '[Ý Niệm Điện Ảnh] Bổ sung tài liệu đính kèm',
-                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Ban Nhân Sự xin gửi bổ sung tài liệu còn thiếu trong email trước. Bạn vui lòng xem tệp đính kèm trong email này nhé.</p><p>Mong bạn thông cảm vì sự bất tiện.</p><p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>'
+                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Ban Nhân Sự xin gửi bổ sung tài liệu còn thiếu trong email trước. Bạn vui lòng xem tệp đính kèm trong email này nhé.</p><p>Mong bạn thông cảm vì sự bất tiện.</p>' + signature
             }
         };
         return templates[type] || templates.approve;
@@ -94,6 +99,9 @@
             sentAt: new Date().toISOString(),
             sentBy: typeof session !== 'undefined' && session && session.id ? session.id : '',
             sentByName: typeof session !== 'undefined' && session && session.name ? session.name : '',
+            sentByEmail: typeof session !== 'undefined' && session && session.email ? session.email : '',
+            sentByRole: typeof session !== 'undefined' && session && session.role ? session.role : '',
+            sentByDept: typeof session !== 'undefined' && session && session.dept ? session.dept : '',
             source: details.source || 'single',
             aiPersonalized: Boolean(details.aiPersonalized),
             attachmentName: details.attachmentName || ''
@@ -179,7 +187,7 @@
         var response = await fetch('/api/email/generate-gemini-bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ emailType: type, customDescription: customDescription, applications: apps.map(function (app) {
+            body: JSON.stringify({ emailType: type, customDescription: customDescription, sender: typeof window.currentEmailSenderIdentity === 'function' ? window.currentEmailSenderIdentity() : {}, applications: apps.map(function (app) {
                 return { id: app.id, type: app.type, name: app.name, dept: app.dept, intro: app.intro, vision: app.vision };
             }) })
         });

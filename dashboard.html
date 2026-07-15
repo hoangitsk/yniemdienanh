@@ -3008,6 +3008,10 @@
             
             <div style="display:grid; gap:14px; text-align:left">
                 <div>
+                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Người phụ trách gửi thư</label>
+                    <div id="emSenderIdentity" style="padding:10px;border-radius:8px;background:rgba(228,184,102,.08);border:1px solid rgba(228,184,102,.2);color:var(--gold-light);font-size:.85rem"></div>
+                </div>
+                <div>
                     <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Gửi đến</label>
                     <input id="emTo" type="email" readonly style="width:100%;background:rgba(0,0,0,0.2);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);padding:10px;border-radius:8px">
                 </div>
@@ -3227,6 +3231,11 @@
                 seq: 100
             };
         }
+
+        // Dashboard không render các khu vực nội dung của trang công khai.
+        // Giữ các hook này an toàn để luồng khởi tạo không bị dừng giữa chừng.
+        function updateStageDisplay() {}
+        function renderAllContent() {}
 
         async function checkPaymentRedirect() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -3481,12 +3490,6 @@
                 } catch (e) { console.warn('Không thể đọc backup:', e); }
             }
 
-            // Tải nội dung từ file JSON trước (AI có thể chỉnh sửa file này)
-            const fileContent = await loadContentFromFile();
-            if (fileContent) {
-                localDB.content = fileContent;
-            }
-
             renderEvents();
             renderVoting();
             renderNav();
@@ -3498,21 +3501,24 @@
 
             if (useFirebase) {
                 try {
-                    const stageDoc = await dbInstance.collection('config').doc('stage').get();
-                    localDB.config.stage = stageDoc.exists ? stageDoc.data().val : 'Xây dựng đội ngũ';
-                    try {
-                        const contentSnap = await dbInstance.collection('config').doc('content').get();
-                        if (contentSnap.exists) {
-                            // Firestore ghi đè lên nội dung từ file (ưu tiên Firestore)
-                            localDB.content = { ...(localDB.content || getMockData().content), ...contentSnap.data() };
-                        }
-                    } catch (e) { console.warn('Content load error:', e); }
+                    const initialCloudResults = await Promise.allSettled([
+                        firestoreWithTimeout(dbInstance.collection('config').doc('stage').get(), 5000),
+                        firestoreWithTimeout(dbInstance.collection('config').doc('content').get(), 5000),
+                        loadPublicEventsFromFirestore(),
+                        loadPublicSubmissionsFromFirestore(),
+                        loadPublicConfigFromFirestore()
+                    ]);
+                    const stageResult = initialCloudResults[0];
+                    const contentResult = initialCloudResults[1];
+                    if (stageResult.status === 'fulfilled') {
+                        const stageDoc = stageResult.value;
+                        localDB.config.stage = stageDoc.exists ? (stageDoc.data().val || stageDoc.data().stage || 'Xây dựng đội ngũ') : 'Xây dựng đội ngũ';
+                    }
+                    if (contentResult.status === 'fulfilled' && contentResult.value.exists) {
+                        localDB.content = { ...(localDB.content || getMockData().content), ...contentResult.value.data() };
+                    }
                     updateStageDisplay();
                     renderAllContent();
-
-                    await loadPublicEventsFromFirestore();
-                    await loadPublicSubmissionsFromFirestore();
-                    await loadPublicConfigFromFirestore();
                     renderEvents();
                     renderVoting();
                     renderAllPrizePools();
@@ -4960,6 +4966,7 @@
                         <div class="panel" style="padding:14px;margin-bottom:16px;border-color:rgba(228,184,102,.28)">
                             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                                 <strong style="color:var(--gold-light)">📨 Gửi email hàng loạt</strong>
+                                <span style="font-size:.78rem;color:var(--text-muted)">Người phụ trách: ${esc(session.name)} · ${esc(session.email || '')} · ${esc(session.dept || (session.role === 'admin' ? 'Quản trị viên' : session.role === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'))}</span>
                                 <select id="bulkEmailType" style="min-width:240px;padding:9px;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);border-radius:8px">
                                     <option value="">-- Chọn loại email --</option>
                                     <option value="round1_pass">Chúc mừng vượt qua vòng 1</option>
@@ -9856,11 +9863,33 @@
 
                 // --- EMAIL MODAL & AI REPLY GENERATOR ---
         window.currentEmailApp = null;
+
+        function currentEmailSenderIdentity() {
+            const activeSession = session || {};
+            return {
+                name: activeSession.name || 'Đội ngũ Ý Niệm Điện Ảnh',
+                email: activeSession.email || '',
+                role: activeSession.role || 'member',
+                dept: activeSession.dept || ''
+            };
+        }
+        window.currentEmailSenderIdentity = currentEmailSenderIdentity;
+
+        function currentEmailSenderSignature() {
+            const sender = currentEmailSenderIdentity();
+            const roleLabels = { admin: 'Quản trị viên', organizer: 'Ban Tổ Chức', member: 'Thành viên' };
+            const position = sender.dept || roleLabels[sender.role] || sender.role || 'Thành viên';
+            return '<p>Trân trọng,<br><strong>' + esc(sender.name) + '</strong><br>' + esc(position) + '<br>Ý Niệm Điện Ảnh</p>';
+        }
+
         function openEmailModal(appId) {
             const list = localDB.applications || [];
             const app = list.find(x => String(x.id) === String(appId));
             if (!app) return showToast('Không tìm thấy đơn ứng tuyển.', 'error');
             window.currentEmailApp = app;
+            const sender = currentEmailSenderIdentity();
+            const roleLabels = { admin: 'Quản trị viên', organizer: 'Ban Tổ Chức', member: 'Thành viên' };
+            document.getElementById('emSenderIdentity').textContent = sender.name + ' · ' + (sender.email || 'Chưa có email') + ' · ' + (sender.dept || roleLabels[sender.role] || sender.role);
             
             document.getElementById('emTo').value = app.email;
             document.getElementById('emTemplateSelect').value = '';
@@ -9881,6 +9910,7 @@
                 return;
             }
 
+            const senderSignature = currentEmailSenderSignature();
             const templates = {
                 approve: {
                     subject: `[Ý Niệm Điện Ảnh] Kết quả ứng tuyển Ban Tổ Chức — ${app.name}`,
@@ -9888,7 +9918,7 @@
 <p>Thay mặt Ban Nhân Sự dự án Ý Niệm Điện Ảnh, chúng tôi vô cùng vui mừng thông báo đơn ứng tuyển vị trí <strong>${app.dept || 'BTC'}</strong> của bạn đã được chính thức thông qua!</p>
 <p>Chúng tôi sẽ sớm liên hệ qua Zalo/Facebook để mời bạn tham gia nhóm làm việc chính thức và bắt đầu hành trình onboarding.</p>
 <p>Chào mừng bạn đến với đại gia đình Ý Niệm Điện Ảnh! ✨</p>
-<p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
+${senderSignature}`
                 },
                 round1_pass: {
                     subject: `[Ý Niệm Điện Ảnh] Chúc mừng bạn đã vượt qua vòng 1 — ${app.name}`,
@@ -9897,7 +9927,7 @@
 <p>Trong vòng <strong>3 ngày tới</strong>, chúng tôi sẽ gửi một email tiếp theo đến địa chỉ này để bạn lựa chọn khung giờ phỏng vấn phù hợp.</p>
 <p>Vui lòng theo dõi hộp thư đến, mục Quảng cáo và Thư rác để không bỏ lỡ thông báo nhé.</p>
 <p>Chúc mừng bạn và hẹn gặp lại ở vòng phỏng vấn!</p>
-<p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
+${senderSignature}`
                 },
                 interview: {
                     subject: `[Ý Niệm Điện Ảnh] Thư mời tham gia phỏng vấn — ${app.name}`,
@@ -9905,7 +9935,7 @@
 <p>Cảm ơn bạn đã quan tâm và nộp đơn ứng tuyển vào dự án Ý niệm Điện Ảnh. Chúng tôi rất ấn tượng với hồ sơ của bạn và muốn mời bạn tham gia một buổi phỏng vấn ngắn để trao đổi thêm.</p>
 <p>Vui lòng đăng nhập bằng email đã ứng tuyển và chọn các khung giờ bạn có thể tham gia tại <a href="${window.location.origin}/schedule" style="color:#e4b866;font-weight:700">trang chọn thời gian phỏng vấn</a>.</p>
 <p>Hệ thống chốt lịch vào 0h mỗi ngày theo giờ Việt Nam. Nếu chưa được chốt, bạn vẫn có thể cập nhật phiếu đến hết thời hạn của đợt phỏng vấn.</p>
-<p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
+${senderSignature}`
                 },
                 reject: {
                     subject: `[Ý Niệm Điện Ảnh] Thư cảm ơn ứng tuyển — ${app.name}`,
@@ -9913,7 +9943,7 @@
 <p>Cảm ơn bạn đã dành thời gian nộp đơn ứng tuyển vị trí <strong>${app.dept || 'BTC'}</strong> tại dự án Ý Niệm Điện Ảnh.</p>
 <p>Dù rất tiếc chưa thể đồng hành cùng bạn ở mùa giải năm nay do giới hạn số lượng nhân sự, chúng tôi vẫn rất trân trọng hồ sơ của bạn và hy chọn cơ hội hợp tác trong tương lai.</p>
 <p>Chúc bạn luôn giữ vững ngọn lửa đam mê điện ảnh và gặp nhiều may mắn!</p>
-<p>Thân ái,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
+${senderSignature}`
                 }
             };
 
@@ -9949,7 +9979,8 @@
                         intro: app.intro,
                         vision: app.vision,
                         emailType: emailType,
-                        customDescription: customDescription
+                        customDescription: customDescription,
+                        sender: currentEmailSenderIdentity()
                     })
                 });
                 const data = await res.json();

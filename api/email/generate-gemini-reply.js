@@ -1,6 +1,7 @@
 const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
 const { ensureInterviewScheduleContent } = require('../../lib/emailContent');
 const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('../../lib/projectIdentity');
+const { normalizeEmailSender, emailSenderPromptContext, applyEmailSenderIdentity } = require('../../lib/emailSender');
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -32,9 +33,12 @@ module.exports = async (req, res) => {
         }
 
         const scheduleUrl = process.env.SCHEDULE_PUBLIC_URL || 'https://yniemdienanh.vercel.app/schedule';
-        const prompt = `Bạn là Trưởng ban Nhân sự của Ý Niệm Điện Ảnh.
+        const sender = normalizeEmailSender(req.body);
+        const prompt = `Bạn là trợ lý soạn email cho dự án Ý Niệm Điện Ảnh.
 Thông tin chính thức từ Sổ tay dự án:
 ${PROJECT_HANDBOOK_EMAIL_CONTEXT}
+
+${emailSenderPromptContext(sender)}
 
 Hãy soạn thảo một email phản hồi ứng tuyển dựa trên thông tin dưới đây:
 - Tên ứng viên: ${name}
@@ -43,8 +47,8 @@ Hãy soạn thảo một email phản hồi ứng tuyển dựa trên thông tin
 - Giới thiệu bản thân: ${intro || 'N/A'}
 ${vision ? `- Tầm nhìn / Ý tưởng đóng góp: ${vision}` : ''}
 
-Loại email cần soạn: ${emailType === 'approve' ? 'Duyệt đơn và Chào mừng tham gia dự án (Email ấm áp, hào hứng, chào mừng họ gia nhập đội ngũ)' : emailType === 'round1_pass' ? 'Chúc mừng ứng viên đã vượt qua vòng 1. Thông báo rõ trong vòng 3 ngày tới Ban Nhân Sự sẽ gửi email tiếp theo để ứng viên lựa chọn lịch phỏng vấn; thư này chưa yêu cầu chọn lịch ngay.' : emailType === 'reject' ? 'Từ chối đơn ứng tuyển (Email chân thành, lịch sự, cảm ơn sự quan tâm và chúc họ may mắn trong hành trình sắp tới)' : emailType === 'custom' ? 'Thư tùy chỉnh theo yêu cầu riêng của HR bên dưới' : 'Mời tham gia phỏng vấn (Email hẹn phỏng vấn, đề xuất họ chọn lịch hẹn)'}.
-${customDescription ? `- Yêu cầu riêng của HR: ${String(customDescription).slice(0, 1000)}` : ''}
+Loại email cần soạn: ${emailType === 'approve' ? 'Duyệt đơn và Chào mừng tham gia dự án (Email ấm áp, hào hứng, chào mừng họ gia nhập đội ngũ)' : emailType === 'round1_pass' ? 'Chúc mừng ứng viên đã vượt qua vòng 1. Thông báo rõ trong vòng 3 ngày tới Ban Nhân Sự sẽ gửi email tiếp theo để ứng viên lựa chọn lịch phỏng vấn; thư này chưa yêu cầu chọn lịch ngay.' : emailType === 'reject' ? 'Từ chối đơn ứng tuyển (Email chân thành, lịch sự, cảm ơn sự quan tâm và chúc họ may mắn trong hành trình sắp tới)' : emailType === 'custom' ? 'Thư tùy chỉnh theo yêu cầu riêng của người phụ trách bên dưới' : 'Mời tham gia phỏng vấn (Email hẹn phỏng vấn, đề xuất họ chọn lịch hẹn)'}.
+${customDescription ? `- Yêu cầu riêng của người phụ trách: ${String(customDescription).slice(0, 1000)}` : ''}
 ${emailType === 'interview' ? `Bắt buộc có nút hoặc liên kết HTML đến "${scheduleUrl}" với lời mời chọn thời gian rảnh. Giải thích hệ thống chốt lịch lúc 0h hằng ngày theo giờ Việt Nam; nếu chưa được chốt, ứng viên vẫn có thể cập nhật phiếu đến hết thời hạn đợt phỏng vấn.` : ''}
 
 Yêu cầu định dạng:
@@ -54,10 +58,10 @@ Trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
   "body": "Nội dung email bằng tiếng Việt, trình bày đẹp mắt dưới dạng HTML (chỉ sử dụng các thẻ HTML cơ bản như <p>, <br>, <strong>, <ul>, <li> để định dạng. Không sử dụng thẻ <html>, <body>, <head>)."
 }
 
-Chú ý: Email cần viết bằng tiếng Việt, văn phong ấm áp, chuyên nghiệp, truyền cảm hứng và mang tính chất kết nối. Xưng hô là "Ban Nhân Sự Ý Niệm Điện Ảnh" và gọi ứng viên là "${name}".`;
+Chú ý: Email cần viết bằng tiếng Việt, văn phong ấm áp, chuyên nghiệp, truyền cảm hứng và mang tính chất kết nối. Có thể dùng "chúng tôi" khi đại diện dự án, gọi ứng viên là "${name}", nhưng chữ ký cuối thư phải đúng danh tính người phụ trách đã cung cấp.`;
 
         const result = await generateGeminiJson(prompt);
-        const email = ensureInterviewScheduleContent(result.data, emailType, scheduleUrl);
+        const email = applyEmailSenderIdentity(ensureInterviewScheduleContent(result.data, emailType, scheduleUrl), sender);
         res.setHeader('X-Gemini-Model', result.model);
         res.status(200).json(email);
     } catch (err) {

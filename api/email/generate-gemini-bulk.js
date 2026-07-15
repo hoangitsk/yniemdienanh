@@ -1,6 +1,7 @@
 const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
 const { ensureInterviewScheduleContent } = require('../../lib/emailContent');
 const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('../../lib/projectIdentity');
+const { normalizeEmailSender, emailSenderPromptContext, applyEmailSenderIdentity } = require('../../lib/emailSender');
 
 module.exports = async (req, res) => {
     const corsOrigin = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
@@ -35,22 +36,25 @@ module.exports = async (req, res) => {
     if (!safeApplications.length) return res.status(400).json({ error: 'Không có ứng viên hợp lệ.' });
 
     const scheduleUrl = process.env.SCHEDULE_PUBLIC_URL || 'https://yniemdienanh.vercel.app/schedule';
+    const sender = normalizeEmailSender(req.body);
     const typeInstruction = {
         approve: 'Thông báo được duyệt và chào mừng gia nhập dự án.',
         round1_pass: 'Chúc mừng vượt qua vòng 1; nói rõ trong 3 ngày tới sẽ có email khác để chọn lịch phỏng vấn, chưa yêu cầu chọn lịch trong thư này.',
         interview: `Mời phỏng vấn; bắt buộc có liên kết HTML đến ${scheduleUrl} để chọn thời gian rảnh; nói rõ hệ thống chốt lúc 0h hằng ngày theo giờ Việt Nam và ứng viên chưa được chốt vẫn có thể cập nhật đến hết hạn.`,
         reject: 'Từ chối lịch sự, chân thành, cảm ơn ứng viên và chúc họ may mắn.',
         attachment_followup: 'Gửi bổ sung tài liệu còn thiếu trong email trước; lời nhắn ngắn gọn, xin lỗi nhẹ nhàng và nhắc ứng viên xem file đính kèm.',
-        custom: 'Thư tùy chỉnh theo đúng mô tả riêng của HR bên dưới.'
+        custom: 'Thư tùy chỉnh theo đúng mô tả riêng của người phụ trách bên dưới.'
     }[emailType];
 
-    const prompt = `Bạn là Trưởng ban Nhân sự của Ý Niệm Điện Ảnh.
+    const prompt = `Bạn là trợ lý soạn email cho dự án Ý Niệm Điện Ảnh.
 Thông tin chính thức từ Sổ tay dự án:
 ${PROJECT_HANDBOOK_EMAIL_CONTEXT}
 
+${emailSenderPromptContext(sender)}
+
 Hãy viết RIÊNG một email tiếng Việt cho từng ứng viên trong danh sách JSON bên dưới.
 Loại thư: ${typeInstruction}
-${customDescription ? `Yêu cầu riêng của HR: ${customDescription}` : ''}
+${customDescription ? `Yêu cầu riêng của người phụ trách: ${customDescription}` : ''}
 Văn phong ấm áp, chuyên nghiệp, tự nhiên; cá nhân hóa dựa trên ban ứng tuyển, phần giới thiệu và tầm nhìn nhưng không bịa thông tin.
 Chỉ dùng HTML cơ bản trong body (<p>, <br>, <strong>, <ul>, <li>, <a>), không dùng <html>, <head>, <body>.
 
@@ -73,7 +77,7 @@ Phải trả đủ đúng một email cho mỗi id, không thêm id khác.`;
             .filter((email) => email && allowedIds.has(String(email.id)) && email.subject && email.body)
             .map((email) => ({
                 id: String(email.id),
-                ...ensureInterviewScheduleContent({ subject: String(email.subject), body: String(email.body) }, emailType, scheduleUrl)
+                ...applyEmailSenderIdentity(ensureInterviewScheduleContent({ subject: String(email.subject), body: String(email.body) }, emailType, scheduleUrl), sender)
             }));
         if (emails.length !== safeApplications.length) {
             return res.status(502).json({ error: 'Gemini không trả đủ email cho toàn bộ ứng viên.' });

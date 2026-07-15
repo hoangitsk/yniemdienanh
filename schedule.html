@@ -1578,15 +1578,18 @@
             const ref = await dbInstance.collection('scheduledEvents').add(eventData);
             eventData.id = ref.id;
             let calendarCreated = false;
+            let invitationResult = null;
             try { await createGoogleCalendarEvent(ref.id, eventData, candidateUser && candidateUser.email); calendarCreated = true; } catch (error) { console.warn('Không tạo được Meet tự động:', error); }
             if (calendarCreated && candidateUser && candidateUser.email) {
                 const booking = { id: ref.id + '_' + candidateUser.id, eventId: ref.id, candidateId: candidateUser.id, candidateName: candidateUser.name || candidateUser.email, candidateEmail: candidateUser.email, status: 'confirmed', createdAt: new Date().toISOString(), confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid };
                 await dbInstance.collection('scheduledBookings').doc(booking.id).set(booking);
-                await sendScheduleInvitation(eventData, booking);
+                invitationResult = await sendScheduleInvitation(eventData, booking);
             }
-            showAdminStatus(calendarCreated
+            showAdminStatus(calendarCreated && invitationResult && invitationResult.success
                 ? '✓ Đã tạo lịch, Google Meet và gửi thư tự động cho ' + item.candidate.name + '.'
-                : 'Đã tạo lịch trên hệ thống nhưng chưa tạo được Meet/email cho ' + item.candidate.name + '. Hãy mở lịch và bổ sung thủ công.', calendarCreated ? 'var(--ok)' : 'var(--danger)');
+                : calendarCreated
+                ? '⚠ Đã tạo lịch và Google Meet nhưng chưa gửi được thư cho ' + item.candidate.name + '. ' + ((invitationResult && invitationResult.error) || 'Hãy xem lỗi hiển thị bên dưới rồi gửi lại thư mời.')
+                : 'Đã tạo lịch trên hệ thống nhưng chưa tạo được Meet/email cho ' + item.candidate.name + '. Hãy mở lịch và bổ sung thủ công.', calendarCreated && invitationResult && invitationResult.success ? 'var(--ok)' : 'var(--danger)');
             await fetchOfficialSchedule();
         }
 
@@ -2295,9 +2298,11 @@
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || 'Không thể gửi thư mời.');
                 showAdminStatus('✓ Đã xác nhận và gửi thư cho ứng viên cùng người phỏng vấn, kèm lịch Google Meet.' + (result.personalized ? ' AI đã cá nhân hoá nội dung thư mời.' : ''), 'var(--ok)');
+                return { success:true, personalized:!!result.personalized };
             } catch (error) {
                 console.error('Lỗi gửi thư lịch:', error);
                 showAdminStatus('Đã xác nhận lịch nhưng gửi thư thất bại: ' + error.message, 'var(--danger)');
+                return { success:false, error:error.message || 'Không xác định được lỗi gửi thư.' };
             }
         }
 

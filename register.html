@@ -735,8 +735,13 @@
                 const card = document.getElementById('card-' + item[0]);
                 if (!card) return;
                 const closed = !isRecruitmentOpen(item[0]);
-                card.style.opacity = closed ? '.5' : '';
-                card.style.filter = closed ? 'grayscale(.7)' : '';
+                // Khi Admin tắt nhận đơn, ẩn hoàn toàn khỏi trang công khai.
+                card.style.display = closed ? 'none' : '';
+                card.setAttribute('aria-hidden', closed ? 'true' : 'false');
+                if (closed && currentTabId === item[0]) {
+                    currentTabId = '';
+                    document.querySelectorAll('.form-card').forEach(function(form) { form.classList.remove('active'); });
+                }
                 let badge = card.querySelector('.recruitment-status-badge');
                 if (closed && !badge) {
                     badge = document.createElement('small');

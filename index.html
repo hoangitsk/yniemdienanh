@@ -3140,7 +3140,7 @@
             
             <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
                 <button class="btn btn-line btn-sm" onclick="closeModal('emailModal')">Hủy</button>
-                <button class="btn btn-gold btn-sm" onclick="sendCustomEmailSubmit()" id="emSendBtn">📤 Gửi Email</button>
+                <button type="button" class="btn btn-gold btn-sm" onclick="sendCustomEmailSubmit(event)" id="emSendBtn">📤 Gửi Email</button>
             </div>
         </div>
     </div>
@@ -10609,11 +10609,19 @@
             }
         }
 
-        async function sendCustomEmailSubmit() {
-            const to = document.getElementById('emTo').value;
-            const subject = document.getElementById('emSubject').value;
-            const html = document.getElementById('emBody').value;
-            const pdfFile = document.getElementById('emPdfAttachment').files[0];
+        async function sendCustomEmailSubmit(event) {
+            if (event) event.preventDefault();
+            const toEl = document.getElementById('emTo');
+            const subjectEl = document.getElementById('emSubject');
+            const bodyEl = document.getElementById('emBody');
+            const pdfEl = document.getElementById('emPdfAttachment');
+            if (!toEl || !subjectEl || !bodyEl) {
+                return showToast('Không tải được biểu mẫu email. Hãy tải lại trang rồi thử lại.', 'error');
+            }
+            const to = toEl.value;
+            const subject = subjectEl.value;
+            const html = bodyEl.value;
+            const pdfFile = pdfEl && pdfEl.files ? pdfEl.files[0] : null;
             
             if (!subject.trim() || !html.trim()) {
                 return showToast('Vui lòng điền đầy đủ tiêu đề và nội dung email.', 'warning');
@@ -10624,6 +10632,7 @@
             }
 
             const btn = document.getElementById('emSendBtn');
+            if (!btn) return showToast('Không tìm thấy nút gửi email. Hãy tải lại trang.', 'error');
             btn.disabled = true;
             btn.textContent = '⏳ Đang gửi...';
 

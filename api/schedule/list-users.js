@@ -41,7 +41,8 @@ module.exports = async function listScheduleUsers(req, res) {
                     name: profile.name || user.displayName || String(user.email).split('@')[0],
                     email: user.email,
                     dept: profile.dept || '',
-                    role: profile.role || 'member'
+                    role: String(user.email || '').toLowerCase() === 'yniemdienanh@gmail.com' ? 'admin' : (profile.role || 'member'),
+                    position: profile.position || profile.title || ''
                 };
             });
         return res.status(200).json({ users });

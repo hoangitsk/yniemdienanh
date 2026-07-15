@@ -19,6 +19,19 @@ function getDb() {
     return admin.firestore();
 }
 
+function isEligibleInterviewer(profile) {
+    var role = String(profile && profile.role || '').trim().toLowerCase();
+    var dept = String(profile && profile.dept || '').trim().toLowerCase();
+    var position = String(profile && (profile.position || profile.title) || '').trim().toLowerCase();
+    var email = String(profile && profile.email || '').trim().toLowerCase();
+    var leadership = dept + ' ' + position;
+    return email === 'yniemdienanh@gmail.com' || ['admin', 'organizer', 'president', 'core'].indexOf(role) !== -1 ||
+        leadership.indexOf('nhân sự') !== -1 || leadership.indexOf('nhan su') !== -1 || leadership.indexOf('hr') !== -1 ||
+        leadership.indexOf('core') !== -1 || leadership.indexOf('president') !== -1 ||
+        leadership.indexOf('chủ tịch') !== -1 || leadership.indexOf('chu tich') !== -1 ||
+        leadership.indexOf('ban điều hành') !== -1 || leadership.indexOf('ban dieu hanh') !== -1;
+}
+
 module.exports = async function sendInterviewInvitations(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     try {
@@ -58,13 +71,13 @@ module.exports = async function sendInterviewInvitations(req, res) {
         }
         if (!booking.candidateEmail) return res.status(400).json({ error: 'Ứng viên chưa có email hợp lệ.' });
 
-        if (event.type === 'interview' && !event.assignedHrId) return res.status(400).json({ error: 'Lịch chưa được phân công HR phụ trách.' });
+        if (event.type === 'interview' && !event.assignedHrId) return res.status(400).json({ error: 'Lịch chưa được phân công người phỏng vấn.' });
         var assignedHrDoc = usersSnap.docs.find(function(doc) { return doc.id === event.assignedHrId; });
-        var assignedHr = assignedHrDoc ? assignedHrDoc.data() : null;
-        var hrDept = assignedHr ? String(assignedHr.dept || '').toLowerCase() : '';
-        var validHrDept = hrDept.indexOf('nhân sự') !== -1 || hrDept.indexOf('nhan su') !== -1 || hrDept === 'hr';
-        if (event.type === 'interview' && (!assignedHr || !assignedHr.email || !validHrDept)) {
-            return res.status(400).json({ error: 'HR được phân công không còn hợp lệ hoặc chưa có email.' });
+        var assignedHr = assignedHrDoc ? assignedHrDoc.data() : {};
+        assignedHr.email = assignedHr.email || event.assignedHrEmail || '';
+        assignedHr.name = assignedHr.name || event.assignedHrName || '';
+        if (event.type === 'interview' && (!assignedHr || !assignedHr.email || !isEligibleInterviewer(assignedHr))) {
+            return res.status(400).json({ error: 'Người phỏng vấn được phân công không hợp lệ hoặc chưa có email.' });
         }
         var staffEmails = event.type === 'interview'
             ? [assignedHr.email.trim().toLowerCase()]
@@ -137,7 +150,7 @@ module.exports = async function sendInterviewInvitations(req, res) {
             messages.push(transporter.sendMail({
                 from: from,
                 to: email,
-                subject: '[HR phụ trách] ' + (event.type === 'interview' ? 'Lịch phỏng vấn' : 'Lịch họp') + ' đã xác nhận — ' + event.title,
+                subject: '[Người phỏng vấn] ' + (event.type === 'interview' ? 'Lịch phỏng vấn' : 'Lịch họp') + ' đã xác nhận — ' + event.title,
                 html: wrap(staffHtml),
                 icalEvent: { method: 'request', content: createIcs(email) }
             }));

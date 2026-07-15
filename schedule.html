@@ -603,8 +603,8 @@
                     <input id="eventDuration" type="number" min="15" max="480" value="30">
                     <label>Số chỗ tối đa</label>
                     <input id="eventCapacity" type="number" min="1" max="500" value="1">
-                    <label>HR phụ trách phỏng vấn</label>
-                    <select id="eventHr"><option value="">Đang tải danh sách HR...</option></select>
+                    <label>Người phỏng vấn phụ trách</label>
+                    <select id="eventHr"><option value="">Đang tải danh sách người phỏng vấn...</option></select>
                     <label>Địa điểm hoặc liên kết họp</label>
                     <input id="eventLocation" maxlength="300" placeholder="Google Meet / Phòng họp / địa chỉ">
                     <button type="button" class="btn small" onclick="openNewMeetRoom()" style="margin:-8px 0 16px">🎥 Mở phòng Google Meet mới</button>
@@ -797,6 +797,7 @@
         let myBookings = [];
         let availabilityPolls = [];
         let activePoll = null;
+        // Danh sách người có thể được phân công phỏng vấn: HR, Core, President, Admin hoặc BTC.
         let hrMembers = [];
         let directoryUsers = [];
         let currentUser = null;
@@ -986,6 +987,18 @@
             }
         }
 
+        function isEligibleInterviewer(user) {
+            const role = String(user && user.role || '').trim().toLowerCase();
+            const dept = String(user && user.dept || '').trim().toLowerCase();
+            const position = String(user && (user.position || user.title) || '').trim().toLowerCase();
+            const leadership = [dept, position].join(' ');
+            return ['admin', 'organizer', 'president', 'core'].includes(role) ||
+                leadership.includes('nhân sự') || leadership.includes('nhan su') || leadership.includes('hr') ||
+                leadership.includes('core') || leadership.includes('president') ||
+                leadership.includes('chủ tịch') || leadership.includes('chu tich') ||
+                leadership.includes('ban điều hành') || leadership.includes('ban dieu hanh');
+        }
+
         async function refreshSchedulePermissions() {
             canManageSchedules = !!(currentUser && currentUser.email && currentUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL);
             let currentProfile = {};
@@ -1014,10 +1027,7 @@
                     const result = await response.json().catch(() => ({}));
                     if (!response.ok || !Array.isArray(result.users)) throw new Error(result.error || 'Không tải được danh sách tài khoản.');
                     directoryUsers = result.users;
-                    hrMembers = directoryUsers.filter(user => {
-                        const dept = String(user.dept || '').toLowerCase();
-                        return dept.includes('nhân sự') || dept.includes('nhan su') || dept === 'hr';
-                    });
+                    hrMembers = directoryUsers.filter(isEligibleInterviewer);
                     showPollAdminStatus('✓ Đã tải ' + directoryUsers.length + ' tài khoản đăng ký.', 'var(--ok)');
                 } catch (error) {
                     console.warn('Không thể tải danh sách tài khoản qua API:', error);
@@ -1041,7 +1051,7 @@
         function renderHrOptions() {
             const select = document.getElementById('eventHr');
             if (!select) return;
-            select.innerHTML = '<option value="">-- Chọn HR phụ trách --</option>' + hrMembers.map(user =>
+            select.innerHTML = '<option value="">-- Chọn người phỏng vấn --</option>' + hrMembers.map(user =>
                 '<option value="' + escapeHtml(user.id) + '">' + escapeHtml(user.name || user.email) + '</option>'
             ).join('');
         }
@@ -1455,7 +1465,7 @@
                 return;
             }
             if (!hrMembers.length) {
-                if (target) target.innerHTML = '<p style="font-size:.78rem;color:var(--danger)">Chưa có tài khoản thuộc Ban Nhân Sự để phân công và gửi thư mời.</p>';
+                if (target) target.innerHTML = '<p style="font-size:.78rem;color:var(--danger)">Chưa có tài khoản thuộc nhóm phỏng vấn (Admin/BTC/President/Core/HR) để phân công và gửi thư mời.</p>';
                 return;
             }
             const voteBySlot = getAvailabilityVotes(false).reduce(function(map, vote) {
@@ -1492,7 +1502,7 @@
                     const hrOptions = hrMembers.map(function(hr) {
                         return '<option value="' + escapeHtml(hr.id) + '"' + (hr.id === item.defaultHrId ? ' selected' : '') + '>' + escapeHtml(hr.name || hr.email) + '</option>';
                     }).join('');
-                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta" style="margin-bottom:7px">Các giờ dưới đây được xếp theo ưu tiên của ứng viên; phiếu BTC chỉ để tham khảo.</div><label style="font-size:.74rem">Khung giờ duyệt</label><select id="automaticSlot-' + index + '" style="margin:3px 0 7px">' + slotOptions + '</select><label style="font-size:.74rem">HR phụ trách</label><select id="automaticHr-' + index + '" style="margin:3px 0 0">' + hrOptions + '</select><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ')" style="margin-top:8px">✉️ Duyệt lịch & gửi mail</button></div>';
+                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta" style="margin-bottom:7px">Các giờ dưới đây được xếp theo ưu tiên của ứng viên; phiếu BTC chỉ để tham khảo.</div><label style="font-size:.74rem">Khung giờ duyệt</label><select id="automaticSlot-' + index + '" style="margin:3px 0 7px">' + slotOptions + '</select><label style="font-size:.74rem">Người phỏng vấn</label><select id="automaticHr-' + index + '" style="margin:3px 0 0">' + hrOptions + '</select><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ')" style="margin-top:8px">✉️ Duyệt lịch & gửi mail</button></div>';
                 }).join('') + '<p style="font-size:.76rem;color:var(--text-muted);margin-top:8px">Sau khi xác nhận, hệ thống sẽ tạo lịch Google Meet và gửi thư mời cho ứng viên cùng HR đã phân công.</p>';
         }
 
@@ -1526,7 +1536,7 @@
             const selectedChoice = item.options && item.options[slotIndex];
             const hrId = document.getElementById('automaticHr-' + index).value;
             const selectedHr = hrMembers.find(user => user.id === hrId);
-            if (!selectedChoice || !selectedHr) return showAdminStatus('Hãy chọn khung giờ và HR phụ trách trước khi gửi thư.', 'var(--danger)');
+            if (!selectedChoice || !selectedHr) return showAdminStatus('Hãy chọn khung giờ và người phỏng vấn trước khi gửi thư.', 'var(--danger)');
             item.choice = Object.assign({}, selectedChoice, { hrAccount:selectedHr });
             const candidateName = item.candidate && item.candidate.name || 'ứng viên này';
             const hrName = selectedHr.name || selectedHr.email;
@@ -1539,7 +1549,7 @@
             const item = (window._autoInterviewPlan || [])[index];
             if (!item || !item.choice || !canManageSchedules || !dbInstance) return;
             const hr = item.choice.hrAccount;
-            if (!hr) return alert('HR này chưa có tài khoản hợp lệ trong hệ thống. Hãy kiểm tra Ban Nhân Sự.');
+            if (!hr) return alert('Người phỏng vấn chưa có tài khoản hợp lệ trong hệ thống.');
             const candidateUser = item.candidateAccount || findCandidateAccountForSchedule(item.candidate);
             if (!candidateUser || !candidateUser.email) return showAdminStatus('Ứng viên chưa có tài khoản/email hợp lệ. Chưa tạo lịch để tránh thiếu thư mời.', 'var(--danger)');
             const startAt = autoPlanStartAt(item.choice.info);
@@ -1557,6 +1567,7 @@
                 notes: 'Tạo tự động theo phiếu giờ rảnh. Ứng viên vui lòng xác nhận lại lịch.',
                 assignedHrId: hr.id,
                 assignedHrName: hr.name || hr.email,
+                assignedHrEmail: hr.email || '',
                 status: 'open',
                 generatedFromAvailability: true,
                 availabilityPollId: activePoll ? activePoll.id : null,
@@ -2019,7 +2030,7 @@
                 const confirmed = allEventBookings.filter(booking => booking.status === 'confirmed').length;
                 meta.innerHTML = '📅 ' + eventStartLabel(event.startAt) + ' · ' + Number(event.duration || 0) + ' phút<br>' +
                     (event.location ? '📍 ' + escapeHtml(event.location) + '<br>' : '') +
-                    (event.assignedHrName ? '🧑‍💼 HR phụ trách: ' + escapeHtml(event.assignedHrName) + '<br>' : '') +
+                    (event.assignedHrName ? '🧑‍💼 Người phỏng vấn: ' + escapeHtml(event.assignedHrName) + '<br>' : '') +
                     '👤 Số chỗ: ' + (event.capacity || 1) + (canManageSchedules ? ' · Đã xác nhận: ' + confirmed : '');
                 card.append(heading, meta);
                 if (event.notes) {
@@ -2163,11 +2174,11 @@
             const assignedHrId = document.getElementById('eventHr').value;
             if (!title || !startAt || !Number.isFinite(duration) || duration < 15 || !Number.isInteger(capacity) || capacity < 1) return showAdminStatus('Hãy nhập tiêu đề, thời điểm, thời lượng (ít nhất 15 phút) và số chỗ hợp lệ.', 'var(--danger)');
             if (eventType === 'interview' && location && !isGoogleMeetRoom(location)) return showAdminStatus('Link Meet phải có dạng https://meet.google.com/xxx-xxxx-xxx. Không dùng link /new.', 'var(--danger)');
-            if (eventType === 'interview' && !assignedHrId) return showAdminStatus('Hãy chọn HR phụ trách phỏng vấn.', 'var(--danger)');
+            if (eventType === 'interview' && !assignedHrId) return showAdminStatus('Hãy chọn người phỏng vấn phụ trách.', 'var(--danger)');
             try {
                 showAdminStatus('Đang mở lịch...', 'var(--gold)');
                 const assignedHr = hrMembers.find(user => user.id === assignedHrId);
-                const eventData = { title, type: eventType, startAt: new Date(startAt).toISOString(), duration, capacity, location: location, notes: document.getElementById('eventNotes').value.trim(), assignedHrId: assignedHrId || null, assignedHrName: assignedHr ? (assignedHr.name || assignedHr.email) : '', status: 'open', createdBy: currentUser.uid, createdAt: new Date().toISOString() };
+                const eventData = { title, type: eventType, startAt: new Date(startAt).toISOString(), duration, capacity, location: location, notes: document.getElementById('eventNotes').value.trim(), assignedHrId: assignedHrId || null, assignedHrName: assignedHr ? (assignedHr.name || assignedHr.email) : '', assignedHrEmail: assignedHr ? (assignedHr.email || '') : '', status: 'open', createdBy: currentUser.uid, createdAt: new Date().toISOString() };
                 const eventRef = await dbInstance.collection('scheduledEvents').add(eventData);
                 eventData.id = eventRef.id;
                 try {
@@ -2208,12 +2219,12 @@
         }
         async function assignEventHr(id) {
             const event = officialEvents.find(item => item.id === id);
-            if (!event || !hrMembers.length) return alert('Chưa có tài khoản thuộc Ban Nhân Sự. Hãy phân ban cho HR trong Quản lý tài khoản trước.');
+            if (!event || !hrMembers.length) return alert('Chưa có tài khoản thuộc nhóm phỏng vấn. Hãy phân quyền Admin/BTC hoặc đặt ban Core/HR/President trong Quản lý tài khoản.');
             const list = hrMembers.map((user, index) => (index + 1) + '. ' + (user.name || user.email)).join('\n');
-            const choice = Number(prompt('Chọn HR phụ trách:\n\n' + list)) - 1;
+            const choice = Number(prompt('Chọn người phỏng vấn:\n\n' + list)) - 1;
             if (!Number.isInteger(choice) || !hrMembers[choice]) return;
             const hr = hrMembers[choice];
-            await dbInstance.collection('scheduledEvents').doc(id).update({ assignedHrId: hr.id, assignedHrName: hr.name || hr.email, updatedAt: new Date().toISOString(), updatedBy: currentUser.uid });
+            await dbInstance.collection('scheduledEvents').doc(id).update({ assignedHrId: hr.id, assignedHrName: hr.name || hr.email, assignedHrEmail: hr.email || '', updatedAt: new Date().toISOString(), updatedBy: currentUser.uid });
             showAdminStatus('✓ Đã phân công ' + (hr.name || hr.email) + ' phụ trách phỏng vấn.', 'var(--ok)');
             await fetchOfficialSchedule();
         }
@@ -2222,7 +2233,7 @@
             if (!event || event.type !== 'interview' || event.completedAt) return;
             if (new Date(event.startAt).getTime() > Date.now()) return alert('Chỉ cộng điểm sau khi buổi phỏng vấn đã bắt đầu.');
             const hr = hrMembers.find(user => user.id === event.assignedHrId);
-            if (!hr) return alert('Lịch chưa có HR phụ trách hợp lệ.');
+            if (!hr) return alert('Lịch chưa có người phỏng vấn hợp lệ.');
             if (!confirm('Xác nhận HR ' + (hr.name || hr.email) + ' đã hoàn thành buổi phỏng vấn và cộng 10 điểm?')) return;
             const pointId = 'interview_' + id + '_' + hr.id;
             await dbInstance.collection('staffPoints').doc(pointId).set({
@@ -2274,7 +2285,7 @@
 
         async function sendScheduleInvitation(event, booking) {
             try {
-                showAdminStatus('Đang gửi thư mời cho ứng viên và HR được phân công...', 'var(--gold)');
+                showAdminStatus('Đang gửi thư mời cho ứng viên và người phỏng vấn...', 'var(--gold)');
                 const idToken = await currentUser.getIdToken();
                 const response = await fetch('/api/schedule/send-invitations', {
                     method: 'POST',
@@ -2283,7 +2294,7 @@
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || 'Không thể gửi thư mời.');
-                showAdminStatus('✓ Đã xác nhận và gửi thư cho ứng viên cùng HR phụ trách, kèm lịch Google Meet.', 'var(--ok)');
+                showAdminStatus('✓ Đã xác nhận và gửi thư cho ứng viên cùng người phỏng vấn, kèm lịch Google Meet.', 'var(--ok)');
             } catch (error) {
                 console.error('Lỗi gửi thư lịch:', error);
                 showAdminStatus('Đã xác nhận lịch nhưng gửi thư thất bại: ' + error.message, 'var(--danger)');

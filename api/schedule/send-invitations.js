@@ -40,7 +40,8 @@ function compactProfileText(value, limit) {
 
 async function generatePersonalizedInvitation(candidate, interviewer, event) {
     // Không để AI chặn việc gửi thư: khi AI không khả dụng, email chuẩn bên dưới vẫn được gửi.
-    if (!getGeminiConfig().keys.length) return null;
+    const geminiConfig = getGeminiConfig();
+    if (!geminiConfig.keys.length) return null;
     const candidateIntro = compactProfileText(candidate.intro, 1000);
     const candidateInterest = compactProfileText(candidate.interest, 300);
     const interviewerIntro = compactProfileText(interviewer.intro, 700);
@@ -73,8 +74,17 @@ Yêu cầu rất quan trọng:
   "candidateFocus": "1 câu gợi ý nội dung hai bên có thể trao đổi trong buổi phỏng vấn",
   "interviewerBrief": "1-2 câu tóm tắt trung lập để người phỏng vấn chuẩn bị"
 }`;
+    const controller = new AbortController();
+    const timeout = setTimeout(function() { controller.abort(); }, 2000);
+    const timedFetch = function(url, options) {
+        return fetch(url, Object.assign({}, options, { signal:controller.signal }));
+    };
     try {
-        const result = await generateGeminiJson(prompt);
+        const result = await generateGeminiJson(prompt, {
+            keys:geminiConfig.keys,
+            models:geminiConfig.models,
+            fetchImpl:timedFetch
+        });
         const copy = result.data || {};
         return {
             candidateOpener: compactProfileText(copy.candidateOpener, 500),
@@ -84,6 +94,8 @@ Yêu cầu rất quan trọng:
     } catch (error) {
         console.warn('Không thể cá nhân hoá thư mời bằng AI:', error.message || error);
         return null;
+    } finally {
+        clearTimeout(timeout);
     }
 }
 
@@ -163,6 +175,9 @@ module.exports = async function sendInterviewInvitations(req, res) {
             host: 'smtp-relay.brevo.com',
             port: 587,
             secure: false,
+            connectionTimeout: 5000,
+            greetingTimeout: 5000,
+            socketTimeout: 8000,
             auth: { user: process.env.BREVO_SMTP_LOGIN, pass: process.env.BREVO_SMTP_KEY }
         });
         var fromEmail = process.env.BREVO_FROM_EMAIL;

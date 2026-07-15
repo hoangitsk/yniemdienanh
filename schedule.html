@@ -911,6 +911,30 @@
             }
         }
 
+        async function saveScheduleEventViaApi(eventId, event, mode) {
+            const idToken = await scheduleTimeout(currentUser.getIdToken(), 5000, 'Không lấy được phiên đăng nhập.');
+            const response = await scheduleFetch('/api/schedule/save-event', {
+                method:'POST',
+                headers:{ 'Content-Type':'application/json' },
+                body:JSON.stringify({ idToken, eventId, event, mode:mode || 'create' })
+            }, 20000, 'Máy chủ dự phòng không phản hồi khi lưu lịch.');
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || 'Máy chủ dự phòng không thể lưu lịch.');
+            return result;
+        }
+
+        async function saveScheduleBookingViaApi(booking) {
+            const idToken = await scheduleTimeout(currentUser.getIdToken(), 5000, 'Không lấy được phiên đăng nhập.');
+            const response = await scheduleFetch('/api/schedule/save-booking', {
+                method:'POST',
+                headers:{ 'Content-Type':'application/json' },
+                body:JSON.stringify({ idToken, bookingId:booking.id, booking })
+            }, 20000, 'Máy chủ dự phòng không phản hồi khi xác nhận lịch.');
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || 'Máy chủ dự phòng không thể xác nhận lịch.');
+            return result;
+        }
+
         // Calculate the admin-configured availability window, starting tomorrow by default.
         function generateDates(startDateId, dayCount) {
             dynamicDates = [];
@@ -1076,7 +1100,9 @@
         async function refreshSchedulePermissions() {
             canManageSchedules = !!(currentUser && currentUser.email && currentUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL);
             let currentProfile = {};
-            if (currentUser && dbInstance) {
+            // Tài khoản quản trị dự án đã được xác định bằng email; không cần chờ
+            // thêm một truy vấn Firestore có thể đang offline để mở công cụ duyệt lịch.
+            if (currentUser && dbInstance && !canManageSchedules) {
                 try {
                     const userDoc = await scheduleTimeout(dbInstance.collection('users').doc(currentUser.uid).get(), 10000, 'Kiểm tra quyền quá thời gian.');
                     currentProfile = userDoc.exists ? userDoc.data() : {};
@@ -1687,16 +1713,31 @@
                 createdBy: currentUser.uid,
                 createdAt: new Date().toISOString()
             };
-            const ref = await scheduleTimeout(
-                dbInstance.collection('scheduledEvents').add(eventData),
-                15000,
-                'Tạo lịch trên hệ thống quá thời gian.'
-            );
-            eventData.id = ref.id;
-            eventData.syncState = 'creating-calendar';
+            const eventRef = dbInstance.collection('scheduledEvents').doc();
+            const eventId = eventRef.id;
+            let savedThroughApi = false;
+            eventData.id = eventId;
+            eventData.syncState = 'saving-event';
             upsertOfficialEvent(eventData);
             revealOfficialEvent(eventData.id);
-            showAdminStatus('✓ Lịch đã xuất hiện ngay trong “Lịch đã mở”. Đang tạo Google Meet và gửi email...', 'var(--gold-light)');
+            showAdminStatus('✓ Lịch đã xuất hiện ngay trong “Lịch đã mở”. Đang lưu và tạo Google Meet...', 'var(--gold-light)');
+            const persistedEventData = Object.assign({}, eventData);
+            delete persistedEventData.syncState;
+            try {
+                await scheduleTimeout(eventRef.set(persistedEventData), 15000, 'Tạo lịch trên hệ thống quá thời gian.');
+            } catch (firestoreError) {
+                try {
+                    showAdminStatus('Cloud Firestore trên trình duyệt đang offline. Đang chuyển sang máy chủ để lưu lịch...', 'var(--gold)');
+                    await saveScheduleEventViaApi(eventId, eventData, 'create');
+                    savedThroughApi = true;
+                } catch (fallbackError) {
+                    eventData.syncState = 'save-failed';
+                    upsertOfficialEvent(eventData);
+                    throw fallbackError;
+                }
+            }
+            eventData.syncState = savedThroughApi ? 'creating-calendar-server' : 'creating-calendar';
+            upsertOfficialEvent(eventData);
             let calendarCreated = false;
             let calendarError = '';
             let invitationResult = null;
@@ -1708,11 +1749,11 @@
             } catch (error) { calendarError = error.message || String(error); console.warn('Không tạo được Meet tự động:', error); }
             if (calendarCreated && candidateUser && candidateUser.email) {
                 const booking = { id: ref.id + '_' + candidateUser.id, eventId: ref.id, candidateId: candidateUser.id, candidateName: candidateUser.name || candidateUser.email, candidateEmail: candidateUser.email, status: 'confirmed', createdAt: new Date().toISOString(), confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid };
-                await scheduleTimeout(
-                    dbInstance.collection('scheduledBookings').doc(booking.id).set(booking),
-                    15000,
-                    'Xác nhận người tham gia quá thời gian.'
-                );
+                try {
+                    await scheduleTimeout(dbInstance.collection('scheduledBookings').doc(booking.id).set(booking), 15000, 'Xác nhận người tham gia quá thời gian.');
+                } catch (firestoreError) {
+                    await saveScheduleBookingViaApi(booking);
+                }
                 upsertBooking(booking);
                 invitationResult = await sendScheduleInvitation(eventData, booking, { aiPersonalized:item.aiPersonalized !== false });
                 if (invitationResult.success) {
@@ -2182,7 +2223,7 @@
                     const syncing = document.createElement('div');
                     syncing.className = 'event-meta';
                     syncing.style.cssText = 'margin-top:6px;color:var(--gold-light)';
-                    syncing.textContent = event.syncState === 'sending-email' ? '✉️ Đang gửi email mời qua Brevo...' : '⏳ Đang tạo Google Meet...';
+                    syncing.textContent = event.syncState === 'sending-email' ? '✉️ Đang gửi email mời qua Brevo...' : event.syncState === 'creating-calendar-server' ? '⏳ Đang tạo Google Meet (đã lưu qua máy chủ)...' : event.syncState === 'saving-event' ? '⏳ Đang lưu lịch...' : event.syncState === 'save-failed' ? '⚠ Chưa lưu được lịch. Kiểm tra kết nối rồi thử lại.' : '⏳ Đang tạo Google Meet...';
                     card.appendChild(syncing);
                 }
                 if (event.notes) {
@@ -2305,11 +2346,12 @@
                 }
             }
             if (!meetLink) throw new Error('Google Calendar đang tạo Meet. Hãy mở lại lịch sau vài giây.');
-            await scheduleTimeout(
-                dbInstance.collection('scheduledEvents').doc(eventId).update({ location: meetLink, googleCalendarEventId: result.id, googleCalendarHtmlLink: result.htmlLink || '', googleCalendarOwner: currentUser.email, googleCalendarCreatedAt: new Date().toISOString() }),
-                15000,
-                'Lưu liên kết Google Meet quá thời gian.'
-            );
+            const calendarUpdate = { location: meetLink, googleCalendarEventId: result.id, googleCalendarHtmlLink: result.htmlLink || '', googleCalendarOwner: currentUser.email, googleCalendarCreatedAt: new Date().toISOString() };
+            try {
+                await scheduleTimeout(dbInstance.collection('scheduledEvents').doc(eventId).update(calendarUpdate), 15000, 'Lưu liên kết Google Meet quá thời gian.');
+            } catch (firestoreError) {
+                await saveScheduleEventViaApi(eventId, calendarUpdate, 'update');
+            }
             eventData.location = meetLink;
             eventData.googleCalendarEventId = result.id;
             return { meetLink: meetLink, calendarEventId: result.id };

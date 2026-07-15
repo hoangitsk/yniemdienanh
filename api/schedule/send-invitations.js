@@ -139,10 +139,21 @@ module.exports = async function sendInterviewInvitations(req, res) {
         if (!booking.candidateEmail) return res.status(400).json({ error: 'Ứng viên chưa có email hợp lệ.' });
 
         if (event.type === 'interview' && !event.assignedHrId) return res.status(400).json({ error: 'Lịch chưa được phân công người phỏng vấn.' });
-        var assignedHrDoc = usersSnap.docs.find(function(doc) { return doc.id === event.assignedHrId; });
+        // Người phỏng vấn có thể được lưu bằng Firebase UID hoặc id số của hồ sơ
+        // (list-users trả về cả hai kiểu), nên tìm theo UID, id, hoặc email.
+        var assignedHrId = String(event.assignedHrId || '');
+        var assignedHrEmail = String(event.assignedHrEmail || '').trim().toLowerCase();
+        var assignedHrDoc = usersSnap.docs.find(function(doc) {
+            var profile = doc.data() || {};
+            return doc.id === assignedHrId || String(profile.id || '') === assignedHrId ||
+                String(profile.email || '').trim().toLowerCase() === assignedHrEmail;
+        });
         var assignedHr = assignedHrDoc ? assignedHrDoc.data() : {};
         assignedHr.email = assignedHr.email || event.assignedHrEmail || '';
         assignedHr.name = assignedHr.name || event.assignedHrName || '';
+        assignedHr.role = assignedHr.role || event.assignedHrRole || '';
+        assignedHr.dept = assignedHr.dept || event.assignedHrDept || '';
+        assignedHr.position = assignedHr.position || event.assignedHrPosition || '';
         if (event.type === 'interview' && (!assignedHr || !assignedHr.email || !isEligibleInterviewer(assignedHr))) {
             return res.status(400).json({ error: 'Người phỏng vấn được phân công không hợp lệ hoặc chưa có email.' });
         }

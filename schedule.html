@@ -1568,6 +1568,9 @@
                 assignedHrId: hr.id,
                 assignedHrName: hr.name || hr.email,
                 assignedHrEmail: hr.email || '',
+                assignedHrRole: hr.role || '',
+                assignedHrDept: hr.dept || '',
+                assignedHrPosition: hr.position || hr.title || '',
                 status: 'open',
                 generatedFromAvailability: true,
                 availabilityPollId: activePoll ? activePoll.id : null,
@@ -1578,8 +1581,9 @@
             const ref = await dbInstance.collection('scheduledEvents').add(eventData);
             eventData.id = ref.id;
             let calendarCreated = false;
+            let calendarError = '';
             let invitationResult = null;
-            try { await createGoogleCalendarEvent(ref.id, eventData, candidateUser && candidateUser.email); calendarCreated = true; } catch (error) { console.warn('Không tạo được Meet tự động:', error); }
+            try { await createGoogleCalendarEvent(ref.id, eventData, candidateUser && candidateUser.email); calendarCreated = true; } catch (error) { calendarError = error.message || String(error); console.warn('Không tạo được Meet tự động:', error); }
             if (calendarCreated && candidateUser && candidateUser.email) {
                 const booking = { id: ref.id + '_' + candidateUser.id, eventId: ref.id, candidateId: candidateUser.id, candidateName: candidateUser.name || candidateUser.email, candidateEmail: candidateUser.email, status: 'confirmed', createdAt: new Date().toISOString(), confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid };
                 await dbInstance.collection('scheduledBookings').doc(booking.id).set(booking);
@@ -1589,7 +1593,7 @@
                 ? '✓ Đã tạo lịch, Google Meet và gửi thư tự động cho ' + item.candidate.name + '.'
                 : calendarCreated
                 ? '⚠ Đã tạo lịch và Google Meet nhưng chưa gửi được thư cho ' + item.candidate.name + '. ' + ((invitationResult && invitationResult.error) || 'Hãy xem lỗi hiển thị bên dưới rồi gửi lại thư mời.')
-                : 'Đã tạo lịch trên hệ thống nhưng chưa tạo được Meet/email cho ' + item.candidate.name + '. Hãy mở lịch và bổ sung thủ công.', calendarCreated && invitationResult && invitationResult.success ? 'var(--ok)' : 'var(--danger)');
+                : 'Đã tạo lịch trên hệ thống nhưng chưa tạo được Meet/email cho ' + item.candidate.name + '. ' + (calendarError || 'Hãy mở lịch và bổ sung thủ công.'), calendarCreated && invitationResult && invitationResult.success ? 'var(--ok)' : 'var(--danger)');
             await fetchOfficialSchedule();
         }
 

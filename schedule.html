@@ -541,21 +541,26 @@
                 grid-template-columns: 1fr;
             }
             .layout.admin-layout { grid-template-columns: 1fr; }
-            .layout.admin-layout > .admin-tools-column {
+            .layout > .board-container,
+            .layout.admin-layout > .board-container {
                 grid-column: 1;
                 grid-row: 1;
+                position: static;
+                max-height: none;
+            }
+            .layout > #scheduleSidebar,
+            .layout.admin-layout > #scheduleSidebar {
+                grid-column: 1;
+                grid-row: 2;
+            }
+            .layout.admin-layout > .admin-tools-column {
+                grid-column: 1;
+                grid-row: 3;
                 position: static;
                 max-height: none;
                 overflow: visible;
                 padding-right: 0;
             }
-            .layout.admin-layout > .board-container {
-                grid-column: 1;
-                grid-row: 2;
-                position: static;
-                max-height: none;
-            }
-            .layout.admin-layout > #scheduleSidebar { grid-column: 1; grid-row: 3; }
             #scheduleSidebar {
                 position: static;
                 max-height: none;
@@ -663,10 +668,10 @@
                     <div id="activePollInfo" style="font-size:.78rem;color:var(--text-muted);line-height:1.5;margin:-8px 0 16px"></div>
 
                     <label>Họ và tên của bạn</label>
-                    <input type="text" id="schedName" placeholder="VD: Nguyễn Văn A" autocomplete="off" aria-label="Họ tên">
+                    <input type="text" id="schedName" placeholder="VD: Nguyễn Văn A" autocomplete="off" aria-label="Họ tên" onchange="queueScheduleMetadataAutoSave()">
 
                     <label>Vai trò dự án</label>
-                    <select id="schedRole">
+                    <select id="schedRole" onchange="queueScheduleMetadataAutoSave()">
                         <option value="member">Thành viên (Member)</option>
                         <option value="btc">BTC / Người phỏng vấn</option>
                         <option value="candidate">Ứng viên phỏng vấn</option>
@@ -675,7 +680,7 @@
 
                     <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 18px;">
                         <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-muted)">
-                            💡 <strong>Cách chọn:</strong> Đánh dấu ít nhất <strong>3 khung giờ có thể tham gia</strong>, sau đó chọn những giờ bạn mong muốn nhất ở chế độ <strong>Ưu tiên</strong>. Giờ ưu tiên được tính trọng số cao hơn khi tự xếp phỏng vấn.
+                            💡 <strong>Cách chọn:</strong> Chạm vào khung giờ bạn có thể tham gia. Mỗi thay đổi được <strong>tự động lưu</strong>; không cần bấm nút lưu. Chế độ <strong>Ưu tiên</strong> dùng cho những giờ bạn mong muốn nhất.
                         </p>
                     </div>
 
@@ -684,7 +689,7 @@
                             <button type="button" class="mode-btn active" id="selectAvailableMode" onclick="setAvailabilitySelectionMode('available')">✓ Có thể tham gia</button>
                             <button type="button" class="mode-btn" id="selectPreferredMode" onclick="setAvailabilitySelectionMode('preferred')">★ Giờ ưu tiên</button>
                         </div>
-                        <div class="selection-summary" id="selectionSummary">Đã chọn 0/3 khung giờ tối thiểu.</div>
+                        <div class="selection-summary" id="selectionSummary">Đã chọn 0 khung giờ · tự động lưu.</div>
                         <label for="availabilityStartDate" style="margin:0">Khoảng ngày do admin thiết lập (GMT+7)</label>
                         <input type="date" id="availabilityStartDate" disabled style="margin:0">
                         <label style="margin:0">Chọn nhanh theo ngày</label>
@@ -698,8 +703,7 @@
                     </div>
 
                     <div style="display:flex; gap:10px; margin-bottom:12px">
-                        <button class="btn" onclick="submitSchedule()" style="flex:2">💾 Lưu lịch rảnh</button>
-                        <button class="btn" onclick="deleteMySchedule()" style="flex:1; background:linear-gradient(135deg, #ff8a8a, #f43f5e); color:white; box-shadow:none">🗑️ Xóa</button>
+                        <button class="btn" onclick="deleteMySchedule()" style="width:100%; background:linear-gradient(135deg, #ff8a8a, #f43f5e); color:white; box-shadow:none">🗑️ Xóa toàn bộ lịch rảnh</button>
                     </div>
                     <div class="status-msg" id="statusMsg"></div>
 
@@ -745,6 +749,7 @@
             <!-- Timetable Grid -->
             <div class="panel board-container" style="flex:1; width: 100%;">
                 <h3 id="boardTitle">📅 Bảng Lưới Thời Gian Rảnh (Chế độ: Lịch Họp)</h3>
+                <p id="boardSaveStatus" aria-live="polite" style="font-size:.8rem;color:var(--text-muted);margin:-8px 0 12px">Chạm vào một khung giờ để chọn; hệ thống sẽ tự động lưu.</p>
                 
                 <table class="timetable">
                     <thead>
@@ -808,6 +813,8 @@
         let preferredSlots = new Set();
         let availabilitySelectionMode = 'available';
         let currentMode = 'meeting'; // 'meeting' or 'interview'
+        let scheduleSavePromise = null;
+        let scheduleSaveQueued = false;
 
         function localDateId(date) {
             const year = date.getFullYear();
@@ -1643,9 +1650,29 @@
         function updateSelectionSummary() {
             const summary = document.getElementById('selectionSummary');
             if (!summary) return;
-            const remaining = Math.max(0, 3 - selectedSlots.size);
             summary.innerHTML = '<strong>' + selectedSlots.size + '</strong> giờ có thể · <strong>' + preferredSlots.size + '</strong> giờ ưu tiên' +
-                (remaining ? ' · còn thiếu <strong>' + remaining + '</strong> giờ' : ' · <span style="color:var(--ok)">đã đủ tối thiểu</span>');
+                ' · <span style="color:var(--ok)">tự động lưu</span>';
+        }
+
+        function queueScheduleAutoSave() {
+            scheduleSaveQueued = true;
+            if (scheduleSavePromise) return;
+            scheduleSavePromise = (async function() {
+                while (scheduleSaveQueued) {
+                    scheduleSaveQueued = false;
+                    await submitSchedule(true);
+                }
+            })().catch(function(error) {
+                console.error('Auto-save schedule error:', error);
+                showStatus('Không thể tự động lưu. Vui lòng kiểm tra kết nối rồi chọn lại khung giờ.', 'var(--danger)');
+            }).finally(function() {
+                scheduleSavePromise = null;
+                if (scheduleSaveQueued) queueScheduleAutoSave();
+            });
+        }
+
+        function queueScheduleMetadataAutoSave() {
+            if (selectedSlots.size > 0 && canEditActiveAvailability()) queueScheduleAutoSave();
         }
 
         function applyQuickDay(action) {
@@ -1663,6 +1690,7 @@
                 }
             });
             renderTimetable();
+            queueScheduleAutoSave();
         }
 
         function clearAvailabilitySelection() {
@@ -1670,7 +1698,7 @@
             selectedSlots.clear();
             preferredSlots.clear();
             renderTimetable();
-            showStatus('Đã xóa toàn bộ lựa chọn chưa lưu.', 'var(--text-muted)');
+            queueScheduleAutoSave();
         }
 
         function toggleCellSelection(slotId) {
@@ -1691,6 +1719,7 @@
                 }
             }
             renderTimetable();
+            queueScheduleAutoSave();
         }
 
         function renderTimetable() {
@@ -1810,7 +1839,7 @@
             updateSelectionSummary();
         }
 
-        async function submitSchedule() {
+        async function submitSchedule(isAutoSave) {
             const name = document.getElementById('schedName').value.trim();
             const role = document.getElementById('schedRole').value;
 
@@ -1826,11 +1855,6 @@
 
             if (!name) {
                 showStatus("Vui lòng điền họ và tên.", "var(--danger)");
-                return;
-            }
-
-            if (selectedSlots.size < 3) {
-                showStatus("Lỗi: Bạn phải chọn ít nhất 3 khung giờ rảnh trên bảng lưới.", "var(--danger)");
                 return;
             }
 
@@ -1853,7 +1877,7 @@
                 submittedAt: new Date().toISOString()
             };
 
-            showStatus("⏳ Đang lưu dữ liệu...", "var(--gold)");
+            showStatus(isAutoSave ? "⏳ Đang tự động lưu..." : "⏳ Đang lưu dữ liệu...", "var(--gold)");
             if (useFirebase && dbInstance) {
                 try {
                     await dbInstance.collection('meetingSchedules').doc(scheduleDoc.id).set(scheduleDoc);
@@ -1868,7 +1892,7 @@
             if (idx >= 0) localDB.meetingSchedules[idx] = scheduleDoc;
             else localDB.meetingSchedules.push(scheduleDoc);
             localStorage.setItem('ynda_db', JSON.stringify(localDB));
-            showStatus('✅ Đã lưu phiếu giờ rảnh cho đợt “' + activePoll.title + '”.', 'var(--ok)');
+            showStatus((isAutoSave ? '✅ Đã tự động lưu ' : '✅ Đã lưu ') + selectedSlots.size + ' khung giờ cho đợt “' + activePoll.title + '”.', 'var(--ok)');
             renderTimetable();
             renderAdminPollList();
         }
@@ -1893,6 +1917,9 @@
             if (!confirm("Bạn có chắc chắn muốn xóa lịch rảnh của '" + name + "'?")) {
                 return;
             }
+
+            scheduleSaveQueued = false;
+            if (scheduleSavePromise) await scheduleSavePromise;
 
             const matchingSchedule = schedulesForActivePoll().find(s => s.name && s.name.trim().toLowerCase() === name.toLowerCase());
             const docId = matchingSchedule ? matchingSchedule.id : activePoll.id + '_' + (currentUser ? currentUser.uid : name.toLowerCase().replace(/\s+/g, '_'));
@@ -2317,6 +2344,11 @@
             if (statusEl) {
                 statusEl.textContent = msg;
                 statusEl.style.color = color;
+            }
+            const boardStatus = document.getElementById('boardSaveStatus');
+            if (boardStatus) {
+                boardStatus.textContent = msg || 'Chạm vào một khung giờ để chọn; hệ thống sẽ tự động lưu.';
+                boardStatus.style.color = color || 'var(--text-muted)';
             }
         }
 

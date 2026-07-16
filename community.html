@@ -2895,6 +2895,14 @@
                     </select>
                 </div>
 
+                <div id="emScheduleField" class="hidden">
+                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Đợt vote lịch phỏng vấn *</label>
+                    <select id="emScheduleCode" onchange="setEmailScheduleCode(this.value)" style="width:100%;padding:10px;background:rgba(0,0,0,0.3);color:#e2e8f0;border-radius:8px;border:1px solid rgba(228,184,102,0.2)">
+                        <option value="">-- Chọn lịch vote để gửi --</option>
+                    </select>
+                    <div id="emScheduleHint" style="margin-top:5px;font-size:.76rem;color:var(--text-muted)">Đang tải lịch vote phỏng vấn…</div>
+                </div>
+
                 <div>
                     <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Mô tả loại thư cho AI <span style="color:#64748b">(không bắt buộc)</span></label>
                     <textarea id="emCustomDescription" rows="3" maxlength="1000" placeholder="Ví dụ: Viết thư nhắc ứng viên bổ sung portfolio, giọng văn thân thiện..." style="width:100%;resize:vertical;background:rgba(0,0,0,0.3);color:#e2e8f0;border:1px solid rgba(228,184,102,0.2);padding:10px;border-radius:8px"></textarea>
@@ -10172,12 +10180,63 @@
             
             document.getElementById('emTo').value = app.email;
             document.getElementById('emTemplateSelect').value = '';
+            document.getElementById('emScheduleCode').innerHTML = '<option value="">-- Chọn lịch vote để gửi --</option>';
+            document.getElementById('emScheduleHint').textContent = 'Đang tải lịch vote phỏng vấn…';
             document.getElementById('emCustomDescription').value = '';
             document.getElementById('emPdfAttachment').value = '';
             document.getElementById('emSubject').value = '';
             document.getElementById('emBody').value = '';
             openModal('emailModal');
+            loadEmailScheduleOptions(app);
         }
+
+        function setEmailScheduleCode(code) {
+            if (!window.currentEmailApp) return;
+            window.currentEmailApp.activeScheduleCode = String(code || '').trim().toUpperCase();
+            applyEmailTemplate();
+        }
+
+        async function loadEmailScheduleOptions(app) {
+            const select = document.getElementById('emScheduleCode');
+            const hint = document.getElementById('emScheduleHint');
+            try {
+                const idToken = (authInstance && authInstance.currentUser) ? await authInstance.currentUser.getIdToken() : '';
+                const response = await fetch('/api/schedule/list-availability', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !Array.isArray(result.polls)) throw new Error(result.error || 'Không tải được lịch vote.');
+                const polls = result.polls.filter(poll => poll && poll.status === 'open' && poll.type === 'interview' && poll.code);
+                select.innerHTML = '<option value="">-- Chọn lịch vote để gửi --</option>' + polls.map(poll => '<option value="' + esc(poll.code) + '">' + esc(poll.title || 'Lịch phỏng vấn') + '</option>').join('');
+                const preferred = app.activeScheduleCode || app.interviewPollCode || (polls[0] && polls[0].code) || '';
+                select.value = preferred;
+                if (select.value) app.activeScheduleCode = select.value;
+                hint.textContent = polls.length ? 'Chọn đúng đợt vote; hệ thống sẽ cấp quyền account trước khi gửi.' : 'Chưa có lịch vote phỏng vấn đang mở.';
+                applyEmailTemplate();
+            } catch (error) {
+                hint.textContent = 'Không tải được lịch vote. Thư phỏng vấn chưa thể gửi.';
+            }
+        }
+
+        async function assignApplicationToSelectedSchedule(app, emailType) {
+            if (emailType !== 'interview') return null;
+            const pollCode = String(document.getElementById('emScheduleCode').value || '').trim().toUpperCase();
+            if (!pollCode) throw new Error('Hãy chọn một đợt vote lịch phỏng vấn trước khi gửi thư.');
+            const idToken = (authInstance && authInstance.currentUser) ? await authInstance.currentUser.getIdToken() : '';
+            const response = await fetch('/api/schedule/assign-participant', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken, pollCode, expectedType: 'interview', applicationId: app.id, candidateEmail: app.email, candidateName: app.name })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) throw new Error(result.error || 'Không thể cấp lịch cho ứng viên.');
+            app.activeScheduleCode = pollCode;
+            app.interviewPollCode = pollCode;
+            app.approvedUserId = result.user && result.user.id || app.approvedUserId;
+            app.recruitmentStage = 'interview_vote';
+            await saveItem('applications', app);
+            return result;
+        }
+        window.assignApplicationToSelectedSchedule = assignApplicationToSelectedSchedule;
 
         function applyEmailTemplate() {
             const app = window.currentEmailApp;
@@ -10235,6 +10294,8 @@
         }
 
         function handleEmailTemplateChange() {
+            const scheduleField = document.getElementById('emScheduleField');
+            if (scheduleField) scheduleField.classList.toggle('hidden', document.getElementById('emTemplateSelect').value !== 'interview');
             applyEmailTemplate();
             if (document.getElementById('emTemplateSelect').value) generateEmailWithAI();
         }
@@ -10279,6 +10340,8 @@
         }
 
         async function sendCustomEmailSubmit() {
+            const app = window.currentEmailApp;
+            const emailType = document.getElementById('emTemplateSelect').value || 'custom';
             const to = document.getElementById('emTo').value;
             const subject = document.getElementById('emSubject').value;
             const html = document.getElementById('emBody').value;
@@ -10297,6 +10360,7 @@
             btn.textContent = '⏳ Đang gửi...';
 
             try {
+                if (app) await assignApplicationToSelectedSchedule(app, emailType);
                 let attachment;
                 if (pdfFile) {
                     const dataUrl = await new Promise((resolve, reject) => {

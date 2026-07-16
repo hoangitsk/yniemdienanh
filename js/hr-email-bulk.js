@@ -145,6 +145,12 @@
         btn.disabled = true;
         btn.textContent = '⏳ Đang gửi...';
         try {
+            if (app && typeof window.assignApplicationToSelectedSchedule === 'function') {
+                await window.assignApplicationToSelectedSchedule(app, type);
+                applyEmailTemplate();
+                subject = document.getElementById('emSubject').value;
+                html = document.getElementById('emBody').value;
+            }
             var attachment;
             if (pdfFile) {
                 var dataUrl = await new Promise(function (resolve, reject) {

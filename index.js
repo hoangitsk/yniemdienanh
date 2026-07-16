@@ -606,6 +606,8 @@ const listScheduleEvents = require('./api/schedule/list-events');
 app.post('/api/schedule/list-events', listScheduleEvents);
 const completeScheduleInterview = require('./api/schedule/complete-interview');
 app.post('/api/schedule/complete-interview', completeScheduleInterview);
+const assignScheduleParticipant = require('./api/schedule/assign-participant');
+app.post('/api/schedule/assign-participant', assignScheduleParticipant);
 const saveAvailability = require('./api/schedule/save-availability');
 app.post('/api/schedule/save-availability', saveAvailability);
 const upsertManagedUser = require('./api/admin/upsert-user');

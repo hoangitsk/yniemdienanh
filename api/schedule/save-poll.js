@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const { isScheduleManager } = require('../../lib/schedulePermissions');
 
 function getDb() {
     if (!admin.apps.length) {
@@ -25,7 +26,7 @@ module.exports = async function saveAvailabilityPoll(req, res) {
         const operatorDoc = await db.collection('users').doc(decoded.uid).get();
         const operator = operatorDoc.exists ? operatorDoc.data() : {};
         const isProjectAdmin = String(decoded.email || '').toLowerCase() === 'yniemdienanh@gmail.com';
-        if (!decoded.email_verified || (!isProjectAdmin && !['admin', 'organizer'].includes(operator.role))) {
+        if (!decoded.email_verified || !isScheduleManager(decoded, operator)) {
             return res.status(403).json({ error: 'Chỉ Admin/BTC mới được tạo đợt vote.' });
         }
 

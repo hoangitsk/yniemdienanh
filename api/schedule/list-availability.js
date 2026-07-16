@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const { isScheduleManager } = require('../../lib/schedulePermissions');
 
 function getDb() {
     if (!admin.apps.length) {
@@ -28,7 +29,7 @@ module.exports = async function listAvailabilityForStaff(req, res) {
         const profileDoc = await db.collection('users').doc(decoded.uid).get();
         const profile = profileDoc.exists ? profileDoc.data() : {};
         const projectAdmin = String(decoded.email || '').toLowerCase() === 'yniemdienanh@gmail.com';
-        const allowed = projectAdmin || ['admin', 'organizer'].includes(profile.role) || isHrProfile(profile);
+        const allowed = isScheduleManager(decoded, profile);
         if (!decoded.email_verified || !allowed) {
             return res.status(403).json({ error: 'Chỉ Admin/BTC/Ban Nhân sự mới được xem toàn bộ lịch.' });
         }

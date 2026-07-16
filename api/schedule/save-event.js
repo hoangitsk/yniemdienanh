@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const { isScheduleManager } = require('../../lib/schedulePermissions');
 
 function getDb() {
     if (!admin.apps.length) {
@@ -20,7 +21,7 @@ async function authorize(req, db) {
     const profileDoc = await db.collection('users').doc(decoded.uid).get();
     const profile = profileDoc.exists ? profileDoc.data() : {};
     const isProjectAdmin = String(decoded.email || '').toLowerCase() === 'yniemdienanh@gmail.com';
-    if (!decoded.email_verified || (!isProjectAdmin && !['admin', 'organizer'].includes(profile.role))) {
+    if (!decoded.email_verified || !isScheduleManager(decoded, profile)) {
         throw Object.assign(new Error('Chỉ Admin/BTC mới được lưu lịch.'), { status:403 });
     }
     return decoded;

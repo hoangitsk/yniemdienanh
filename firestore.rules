@@ -51,6 +51,20 @@ service cloud.firestore {
         || (signedIn() && hasUserDoc() && (myRole() == 'admin' || myRole() == 'organizer'));
     }
 
+    // HR/PR staff coordinate polls, interviews and meeting attendance.
+    function isScheduleManager() {
+      return isOrganizer() || (signedIn() && hasUserDoc() && (
+        myUserDoc().data.dept == 'Ban Nhân Sự' ||
+        myUserDoc().data.dept == 'Ban Nhan Su' ||
+        myUserDoc().data.dept == 'HR' ||
+        myUserDoc().data.dept == 'Ban Truyền Thông' ||
+        myUserDoc().data.dept == 'Ban Truyen Thong' ||
+        myUserDoc().data.dept == 'PR' ||
+        myUserDoc().data.dept == 'Ban PR/MKT' ||
+        myUserDoc().data.dept == 'Marketing'
+      ));
+    }
+
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
@@ -62,7 +76,7 @@ service cloud.firestore {
         && (
           get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.isPublic == true
           || request.auth.uid in get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.participantIds
-          || isOrganizer()
+          || isScheduleManager()
         );
     }
 
@@ -194,22 +208,22 @@ service cloud.firestore {
     // Lịch rảnh cá nhân và lịch chính thức do BTC/Admin điều phối.
     match /availabilityPolls/{pollId} {
       allow read: if signedIn();
-      allow create, update, delete: if isOrganizer();
+      allow create, update, delete: if isScheduleManager();
     }
 
     match /meetingSchedules/{docId} {
-      allow read: if isOrganizer() || (signedIn() && resource.data.ownerId == request.auth.uid);
+      allow read: if isScheduleManager() || (signedIn() && resource.data.ownerId == request.auth.uid);
       allow create: if signedIn()
         && request.resource.data.ownerId == request.auth.uid
         && ('pollId' in request.resource.data)
         && docId == request.resource.data.pollId + '_' + request.auth.uid
         && canRespondToAvailabilityPoll(request.resource.data.pollId);
       allow update: if signedIn()
-        && (resource.data.ownerId == request.auth.uid || isOrganizer())
+        && (resource.data.ownerId == request.auth.uid || isScheduleManager())
         && request.resource.data.ownerId == resource.data.ownerId
         && request.resource.data.pollId == resource.data.pollId
         && (isOrganizer() || canRespondToAvailabilityPoll(resource.data.pollId));
-      allow delete: if isOrganizer()
+      allow delete: if isScheduleManager()
         || (signedIn() && resource.data.ownerId == request.auth.uid
           && ('pollId' in resource.data)
           && canRespondToAvailabilityPoll(resource.data.pollId));
@@ -217,20 +231,20 @@ service cloud.firestore {
 
     match /scheduledEvents/{eventId} {
       allow read: if signedIn();
-      allow create, update, delete: if isOrganizer();
+      allow create, update, delete: if isScheduleManager();
     }
 
     match /scheduledBookings/{bookingId} {
-      allow read: if signedIn() && (resource.data.candidateId == request.auth.uid || isOrganizer());
+      allow read: if signedIn() && (resource.data.candidateId == request.auth.uid || isScheduleManager());
       allow create: if signedIn()
         && bookingId == request.resource.data.eventId + '_' + request.auth.uid
         && request.resource.data.candidateId == request.auth.uid
         && request.resource.data.status == 'requested';
-      allow create: if isOrganizer()
+      allow create: if isScheduleManager()
         && bookingId == request.resource.data.eventId + '_' + request.resource.data.candidateId
         && request.resource.data.status in ['requested', 'confirmed'];
-      allow update: if isOrganizer();
-      allow delete: if signedIn() && (resource.data.candidateId == request.auth.uid || isOrganizer());
+      allow update: if isScheduleManager();
+      allow delete: if signedIn() && (resource.data.candidateId == request.auth.uid || isScheduleManager());
     }
 
     match /staffPoints/{pointId} {

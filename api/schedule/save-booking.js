@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const { isScheduleManager } = require('../../lib/schedulePermissions');
 
 function getDb() {
     if (!admin.apps.length) {
@@ -23,7 +24,7 @@ module.exports = async function saveScheduleBooking(req, res) {
         const profileDoc = await db.collection('users').doc(decoded.uid).get();
         const profile = profileDoc.exists ? profileDoc.data() : {};
         const isProjectAdmin = String(decoded.email || '').toLowerCase() === 'yniemdienanh@gmail.com';
-        if (!decoded.email_verified || (!isProjectAdmin && !['admin', 'organizer'].includes(profile.role))) {
+        if (!decoded.email_verified || !isScheduleManager(decoded, profile)) {
             return res.status(403).json({ error:'Chỉ Admin/BTC mới được xác nhận lịch.' });
         }
         const booking = { ...body.booking, id:String(body.bookingId), updatedAt:new Date().toISOString(), updatedBy:decoded.uid };

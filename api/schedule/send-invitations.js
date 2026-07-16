@@ -2,6 +2,7 @@ const admin = require('firebase-admin');
 const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
 const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('../../lib/projectIdentity');
 const { preferredSender, sendMailWithFallback } = require('../../lib/mailer');
+const { isScheduleManager, isInterviewStaff: isInterviewStaffProfile } = require('../../lib/schedulePermissions');
 
 function escapeHtml(value) {
     return String(value || '').replace(/[&<>"']/g, function(char) {
@@ -22,6 +23,7 @@ function getDb() {
 }
 
 function isEligibleInterviewer(profile) {
+    if (isInterviewStaffProfile(null, profile)) return true;
     var role = String(profile && profile.role || '').trim().toLowerCase();
     var dept = String(profile && profile.dept || '').trim().toLowerCase();
     var position = String(profile && (profile.position || profile.title) || '').trim().toLowerCase();
@@ -112,7 +114,7 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var operatorDoc = await db.collection('users').doc(decoded.uid).get();
         var operator = operatorDoc.exists ? operatorDoc.data() : {};
         var isProjectAdmin = String(decoded.email || '').toLowerCase() === 'yniemdienanh@gmail.com';
-        if (!decoded.email_verified || (!isProjectAdmin && ['admin', 'organizer'].indexOf(operator.role) === -1)) {
+        if (!decoded.email_verified || !isScheduleManager(decoded, operator)) {
             return res.status(403).json({ error: 'Chỉ Admin/BTC mới có thể gửi thư mời.' });
         }
 
@@ -252,6 +254,14 @@ module.exports = async function sendInterviewInvitations(req, res) {
             invitationSentBy: decoded.uid,
             invitationProviders: providers
         });
+        try {
+            await eventDoc.ref.set({
+                lastInvitationSentAt: new Date().toISOString(),
+                lastInvitationProviders: providers
+            }, { merge: true });
+        } catch (metadataError) {
+            console.warn('KhÃ´ng thÃªm Ä‘Æ°á»£c metadata email vÃ o lá»‹ch:', metadataError.message || metadataError);
+        }
         return res.status(200).json({ success: true, recipients: recipients.length + 1, personalized: !!aiCopy, providers:providers });
     } catch (error) {
         console.error('Schedule invitation error:', error);

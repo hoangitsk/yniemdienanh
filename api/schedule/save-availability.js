@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const { isScheduleManager, isInterviewStaff: isInterviewStaffProfile } = require('../../lib/schedulePermissions');
 
 function getDb() {
     if (!admin.apps.length) {
@@ -14,11 +15,11 @@ function getDb() {
 }
 
 function isOrganizer(decoded, profile) {
-    return String(decoded.email || '').toLowerCase() === 'yniemdienanh@gmail.com' ||
-        ['admin', 'organizer'].includes(String(profile.role || '').toLowerCase());
+    return isScheduleManager(decoded, profile);
 }
 
 function isInterviewStaff(decoded, profile) {
+    if (isInterviewStaffProfile(decoded, profile)) return true;
     const role = String(profile.role || '').trim().toLowerCase();
     const context = [profile.dept, profile.position, profile.title].map(value => String(value || '').trim().toLowerCase()).join(' ');
     return isOrganizer(decoded, profile) || ['president', 'core'].includes(role) ||
@@ -67,12 +68,22 @@ module.exports = async function saveAvailability(req, res) {
         const docId = String(body.pollId) + '_' + decoded.uid;
         const ref = db.collection('meetingSchedules').doc(docId);
         if (body.action === 'delete') {
+            const deleteEnd = new Date(String(poll.startDate || '') + 'T00:00:00+07:00');
+            deleteEnd.setUTCDate(deleteEnd.getUTCDate() + Math.max(1, Math.min(14, Number(poll.dayCount || 7))));
+            if (!organizer && (Number.isNaN(deleteEnd.getTime()) || Date.now() >= deleteEnd.getTime())) {
+                return res.status(403).json({ error: 'Availability poll has expired.' });
+            }
             if (!organizer && poll.status !== 'open') return res.status(403).json({ error: 'Đợt vote đã khóa nên không thể xóa.' });
             await ref.delete();
             return res.status(200).json({ success: true, deleted: true, id: docId });
         }
 
         if (poll.status !== 'open') return res.status(403).json({ error: 'Đợt vote đã khóa nên không thể lưu.' });
+        const end = new Date(String(poll.startDate || '') + 'T00:00:00+07:00');
+        end.setUTCDate(end.getUTCDate() + Math.max(1, Math.min(14, Number(poll.dayCount || 7))));
+        if (poll.status !== 'open' || Number.isNaN(end.getTime()) || Date.now() >= end.getTime()) {
+            return res.status(403).json({ error: 'Availability poll is closed or expired.' });
+        }
         const validSlots = allowedSlotIds(poll);
         const slots = Array.from(new Set(Array.isArray(body.slots) ? body.slots.map(String) : []))
             .filter((slotId) => validSlots.has(slotId));

@@ -10650,7 +10650,7 @@
                 const res = await fetch('/api/email/send-custom', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ to, subject, html, attachment })
+                    body: JSON.stringify({ to, subject, html, attachment, idToken: (window.firebase && firebase.auth && firebase.auth().currentUser) ? await firebase.auth().currentUser.getIdToken() : '' })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Lỗi gửi email');

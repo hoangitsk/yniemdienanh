@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 const { createGoogleMeet, addGoogleCalendarAttendees } = require('../../lib/interviewFinalizer');
+const { isScheduleManager } = require('../../lib/schedulePermissions');
 
 function getDb() {
     if (!admin.apps.length) {
@@ -24,7 +25,7 @@ module.exports = async function createScheduleMeet(req, res) {
         const profileDoc = await db.collection('users').doc(decoded.uid).get();
         const profile = profileDoc.exists ? profileDoc.data() : {};
         const isProjectAdmin = String(decoded.email || '').toLowerCase() === 'yniemdienanh@gmail.com';
-        if (!decoded.email_verified || (!isProjectAdmin && !['admin', 'organizer'].includes(profile.role))) {
+        if (!decoded.email_verified || !isScheduleManager(decoded, profile)) {
             return res.status(403).json({ error:'Chỉ Admin/BTC mới có thể tạo Google Meet.' });
         }
         const eventRef = db.collection('scheduledEvents').doc(String(body.eventId));

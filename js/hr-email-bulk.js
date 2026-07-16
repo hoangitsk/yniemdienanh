@@ -116,6 +116,9 @@
     }
 
     async function sendEmail(payload) {
+        if (window.firebase && firebase.auth && firebase.auth().currentUser) {
+            payload = Object.assign({}, payload, { idToken: await firebase.auth().currentUser.getIdToken() });
+        }
         var response = await fetch('/api/email/send-custom', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

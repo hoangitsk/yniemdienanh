@@ -697,6 +697,7 @@
                     <input id="pollDayCount" type="number" min="1" max="14" value="7">
                     <label>Người được tham gia vote</label>
                     <input id="pollParticipantSearch" placeholder="Tìm theo tên, email hoặc ban..." oninput="filterPollParticipants()" style="margin-bottom:8px">
+                    <select id="pollParticipantDeptFilter" onchange="filterPollParticipants()" style="margin-bottom:8px"><option value="">Tất cả ban</option></select>
                     <div id="pollParticipants" class="participant-picker" role="group" aria-label="Chọn người được tham gia vote"></div>
                     <div style="display:flex;gap:7px;margin:-8px 0 12px">
                         <button type="button" class="btn small" onclick="selectVisiblePollParticipants(true)">Chọn kết quả đang hiện</button>
@@ -727,6 +728,7 @@
 
                     <div id="activePollChooser">
                         <label>Đợt vote lịch</label>
+                        <select id="activePollTypeFilter" onchange="renderAvailabilityPolls()" style="margin-bottom:8px"><option value="">Tất cả loại lịch</option><option value="interview">Chỉ phỏng vấn</option><option value="meeting">Chỉ cuộc họp</option></select>
                         <select id="activePollSelect" onchange="selectAvailabilityPoll(this.value)"><option value="">Đang tải các đợt...</option></select>
                     </div>
                     <div id="activePollInfo" style="font-size:.78rem;color:var(--text-muted);line-height:1.5;margin:-8px 0 16px"></div>
@@ -892,6 +894,38 @@
         let currentMode = 'meeting'; // 'meeting' or 'interview'
         let scheduleSavePromise = null;
         let scheduleSaveQueued = false;
+
+        function normalizeScheduleText(value) {
+            return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        }
+
+        function isHrOrPrProfile(user) {
+            const context = [user && user.dept, user && user.position, user && user.title]
+                .map(normalizeScheduleText).join(' ');
+            return context.includes('nhan su') || context.includes('hr') ||
+                context.includes('truyen thong') || context.includes('pr') ||
+                context.includes('marketing') || context.includes('mkt');
+        }
+
+        function isScheduleManagerProfile(user) {
+            const role = normalizeScheduleText(user && user.role);
+            const email = normalizeScheduleText(user && user.email);
+            return email === PROJECT_ADMIN_EMAIL || ['admin', 'organizer'].includes(role) || isHrOrPrProfile(user);
+        }
+
+        function pollEndAt(poll) {
+            if (!poll || !/^\d{4}-\d{2}-\d{2}$/.test(String(poll.startDate || ''))) return 0;
+            const end = new Date(String(poll.startDate) + 'T00:00:00+07:00');
+            end.setUTCDate(end.getUTCDate() + Math.max(1, Math.min(14, Number(poll.dayCount || 7))));
+            return end.getTime();
+        }
+
+        function pollIsExpired(poll) { return !!pollEndAt(poll) && Date.now() >= pollEndAt(poll); }
+
+        function currentUserHasPollResponse(poll) {
+            return !!(currentUser && poll && (localDB.meetingSchedules || []).some(item =>
+                item.pollId === poll.id && item.ownerId === currentUser.uid));
+        }
 
         function localDateId(date) {
             const year = date.getFullYear();
@@ -1146,6 +1180,7 @@
         }
 
         function isEligibleInterviewer(user) {
+            if (isHrOrPrProfile(user)) return true;
             const role = String(user && user.role || '').trim().toLowerCase();
             const dept = String(user && user.dept || '').trim().toLowerCase();
             const position = String(user && (user.position || user.title) || '').trim().toLowerCase();
@@ -1195,12 +1230,13 @@
                 try {
                     const userDoc = await scheduleTimeout(dbInstance.collection('users').doc(currentUser.uid).get(), 10000, 'Kiểm tra quyền quá thời gian.');
                     currentProfile = userDoc.exists ? userDoc.data() : {};
-                    canManageSchedules = canManageSchedules || ['admin', 'organizer'].includes(currentProfile.role);
+                    canManageSchedules = canManageSchedules || isScheduleManagerProfile({ ...currentProfile, email: currentUser.email });
                 } catch (error) { console.warn('Không thể kiểm tra quyền lịch:', error); }
             }
             const currentDept = String(currentProfile.dept || '').trim().toLowerCase();
             const isHrMember = currentDept === 'hr' || currentDept.includes('nhân sự') || currentDept.includes('nhan su');
-            canViewAllSchedules = canManageSchedules || isHrMember;
+            canManageSchedules = canManageSchedules || isScheduleManagerProfile({ ...currentProfile, email: currentUser && currentUser.email });
+            canViewAllSchedules = canManageSchedules;
             currentUserIsInterviewer = !!(currentUser && (canManageSchedules || isEligibleInterviewer({ ...currentProfile, email:currentUser.email })));
             document.getElementById('adminSchedulePanel').classList.toggle('hidden', !canManageSchedules || !!SHARED_POLL_CODE);
             document.getElementById('adminPollPanel').classList.toggle('hidden', !canManageSchedules || !!SHARED_POLL_CODE);
@@ -1250,6 +1286,15 @@
             return status === 'open' ? 'Đang nhận vote' : status === 'closed' ? 'Đã khóa' : status === 'archived' ? 'Lưu trữ' : 'Bản nháp';
         }
 
+        function pollTypeLabel(poll) {
+            return poll && poll.type === 'meeting' ? 'Họp' : 'Phỏng vấn';
+        }
+
+        function pollOptionLabel(poll) {
+            const status = pollIsExpired(poll) ? 'Hết hạn' : pollStatusLabel(poll.status);
+            return (poll.title || 'Lịch chưa đặt tên') + ' · ' + pollTypeLabel(poll) + ' · ' + status;
+        }
+
         function schedulesForActivePoll() {
             if (!activePoll) return [];
             if (activePoll.isLegacy) return (localDB.meetingSchedules || []).filter(schedule => !schedule.pollId);
@@ -1274,7 +1319,7 @@
         }
 
         function canEditActiveAvailability() {
-            return !!(currentUser && activePoll && activePoll.status === 'open' && (canManageSchedules || isPollAssignedToCurrentUser(activePoll)));
+            return !!(currentUser && activePoll && activePoll.status === 'open' && !pollIsExpired(activePoll) && (canManageSchedules || (isPollAssignedToCurrentUser(activePoll) && !currentUserHasPollResponse(activePoll))));
         }
 
         function visibleAvailabilityPolls() {
@@ -1285,17 +1330,26 @@
                 return result.filter(pollMatchesSharedCode);
             }
             return availabilityPolls.filter(poll =>
-                ['open', 'closed'].includes(poll.status) && isPollAssignedToCurrentUser(poll) && pollMatchesSharedCode(poll)
+                poll.status === 'open' && !pollIsExpired(poll) && isPollAssignedToCurrentUser(poll) &&
+                !currentUserHasPollResponse(poll) && pollMatchesSharedCode(poll)
             );
         }
 
         function renderPollParticipantOptions() {
             const picker = document.getElementById('pollParticipants');
             if (!picker || !canManageSchedules) return;
+            const deptFilter = document.getElementById('pollParticipantDeptFilter');
+            const selectedDept = deptFilter ? deptFilter.value : '';
+            if (deptFilter) {
+                const depts = Array.from(new Set(directoryUsers.map(user => String(user.dept || '').trim()).filter(Boolean)))
+                    .sort((a, b) => a.localeCompare(b, 'vi'));
+                deptFilter.innerHTML = '<option value="">Tất cả ban</option>' + depts.map(dept => '<option value="' + escapeHtml(dept) + '">' + escapeHtml(dept) + '</option>').join('');
+                if (depts.includes(selectedDept)) deptFilter.value = selectedDept;
+            }
             const selected = new Set(Array.from(picker.querySelectorAll('.poll-participant-checkbox:checked')).map(input => input.value));
             picker.innerHTML = directoryUsers.slice().sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'vi')).map(user => {
                 const label = (user.name || user.email || user.id) + (user.dept ? ' · ' + user.dept : '') + (user.email ? ' · ' + user.email : '');
-                return '<label class="participant-option"><input class="poll-participant-checkbox" type="checkbox" value="' + escapeHtml(user.id) + '"' + (selected.has(user.id) ? ' checked' : '') + ' onchange="updatePollParticipantCount()"><span>' + escapeHtml(label) + '</span></label>';
+                return '<label class="participant-option" data-dept="' + escapeHtml(user.dept || '') + '"><input class="poll-participant-checkbox" type="checkbox" value="' + escapeHtml(user.id) + '"' + (selected.has(user.id) ? ' checked' : '') + ' onchange="updatePollParticipantCount()"><span>' + escapeHtml(label) + '</span></label>';
             }).join('') || '<div style="padding:12px;color:var(--text-muted);font-size:.76rem">Không tải được tài khoản đăng ký</div>';
             filterPollParticipants();
             updatePollParticipantCount();
@@ -1304,10 +1358,14 @@
         function filterPollParticipants() {
             const select = document.getElementById('pollParticipants');
             const input = document.getElementById('pollParticipantSearch');
+            const deptFilter = document.getElementById('pollParticipantDeptFilter');
             if (!select || !input) return;
             const query = input.value.trim().toLowerCase();
+            const dept = deptFilter ? deptFilter.value.trim().toLowerCase() : '';
             select.querySelectorAll('.participant-option').forEach(option => {
-                option.style.display = !!query && !option.textContent.toLowerCase().includes(query) ? 'none' : '';
+                const matchesQuery = !query || option.textContent.toLowerCase().includes(query);
+                const matchesDept = !dept || String(option.dataset.dept || '').toLowerCase() === dept;
+                option.style.display = matchesQuery && matchesDept ? '' : 'none';
             });
         }
 
@@ -1328,7 +1386,10 @@
 
         function renderAvailabilityPolls() {
             const select = document.getElementById('activePollSelect');
-            const visible = visibleAvailabilityPolls().sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+            const typeFilter = document.getElementById('activePollTypeFilter');
+            const selectedType = typeFilter ? typeFilter.value : '';
+            const visible = visibleAvailabilityPolls().filter(poll => !selectedType || poll.type === selectedType)
+                .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
             const previousId = activePoll && activePoll.id;
             if (!visible.length) {
                 select.innerHTML = '<option value="">' + (SHARED_POLL_CODE ? 'Không tìm thấy lịch ' + escapeHtml(SHARED_POLL_CODE) : 'Chưa có đợt vote dành cho bạn') + '</option>';
@@ -1343,7 +1404,7 @@
                 updateScheduleRoleField();
                 return;
             }
-            select.innerHTML = visible.map(poll => '<option value="' + escapeHtml(poll.id) + '">' + escapeHtml(poll.title) + ' — ' + pollStatusLabel(poll.status) + '</option>').join('');
+            select.innerHTML = visible.map(poll => '<option value="' + escapeHtml(poll.id) + '">' + escapeHtml(pollOptionLabel(poll)) + '</option>').join('');
             const nextPoll = visible.find(poll => poll.id === previousId) || visible.find(poll => poll.status === 'open') || visible[0];
             select.value = nextPoll.id;
             selectAvailabilityPoll(nextPoll.id);

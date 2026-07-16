@@ -17,8 +17,8 @@ module.exports = async function saveAvailabilityPoll(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     try {
         const body = req.body || {};
-        if (!body.idToken || !body.pollId || !body.poll) {
-            return res.status(400).json({ error: 'Thiếu thông tin xác thực hoặc đợt vote.' });
+        if (!body.idToken || !body.pollId) {
+            return res.status(400).json({ error: 'Thiếu thông tin xác thực hoặc mã đợt vote.' });
         }
         const db = getDb();
         const decoded = await admin.auth().verifyIdToken(body.idToken);
@@ -28,6 +28,23 @@ module.exports = async function saveAvailabilityPoll(req, res) {
         if (!decoded.email_verified || (!isProjectAdmin && !['admin', 'organizer'].includes(operator.role))) {
             return res.status(403).json({ error: 'Chỉ Admin/BTC mới được tạo đợt vote.' });
         }
+
+        const pollId = String(body.pollId).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 150);
+        if (!pollId) return res.status(400).json({ error: 'Mã đợt vote không hợp lệ.' });
+        const ref = db.collection('availabilityPolls').doc(pollId);
+
+        if (body.action === 'delete') {
+            const schedulesSnap = await db.collection('meetingSchedules').where('pollId', '==', pollId).get();
+            const refs = [ref, ...schedulesSnap.docs.map(doc => doc.ref)];
+            for (let offset = 0; offset < refs.length; offset += 450) {
+                const batch = db.batch();
+                refs.slice(offset, offset + 450).forEach(docRef => batch.delete(docRef));
+                await batch.commit();
+            }
+            return res.status(200).json({ success: true, deleted: true, pollId, deletedResponses: schedulesSnap.size });
+        }
+
+        if (!body.poll) return res.status(400).json({ error: 'Thiếu dữ liệu đợt vote.' });
 
         const input = body.poll;
         const title = String(input.title || '').trim().slice(0, 200);
@@ -48,22 +65,32 @@ module.exports = async function saveAvailabilityPoll(req, res) {
             return res.status(400).json({ error: 'Hãy chọn ít nhất một tài khoản hoặc cho phép tất cả.' });
         }
 
-        const pollId = String(body.pollId).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 150);
-        if (!pollId) return res.status(400).json({ error: 'Mã đợt vote không hợp lệ.' });
-        const ref = db.collection('availabilityPolls').doc(pollId);
-        const existingDoc = await ref.get();
-        const existing = existingDoc.exists ? existingDoc.data() : null;
         const now = new Date().toISOString();
         const allowedStatuses = ['draft', 'open', 'closed', 'archived'];
-        const requestedStatus = allowedStatuses.includes(input.status) ? input.status : (existing ? existing.status : 'draft');
-        const poll = {
-            title, type, startDate, dayCount, participantIds, participantNames, isPublic,
-            status: requestedStatus,
-            createdBy: existing ? existing.createdBy : decoded.uid,
-            createdAt: existing ? existing.createdAt : now,
-            updatedAt: now
-        };
-        await ref.set(poll, { merge: false });
+        const counterRef = db.collection('systemCounters').doc('availabilityPollCodes');
+        let poll;
+        await db.runTransaction(async transaction => {
+            const [existingDoc, counterDoc] = await Promise.all([
+                transaction.get(ref),
+                transaction.get(counterRef)
+            ]);
+            const existing = existingDoc.exists ? existingDoc.data() : null;
+            let code = String(existing && existing.code || '').toUpperCase();
+            if (!/^YNDA\d+$/.test(code)) {
+                const next = Math.max(1, Number(counterDoc.exists && counterDoc.data().next || 1));
+                code = 'YNDA' + next;
+                transaction.set(counterRef, { next: next + 1, updatedAt: now }, { merge: true });
+            }
+            const requestedStatus = allowedStatuses.includes(input.status) ? input.status : (existing ? existing.status : 'draft');
+            poll = {
+                code, title, type, startDate, dayCount, participantIds, participantNames, isPublic,
+                status: requestedStatus,
+                createdBy: existing ? existing.createdBy : decoded.uid,
+                createdAt: existing ? existing.createdAt : now,
+                updatedAt: now
+            };
+            transaction.set(ref, poll, { merge: false });
+        });
         return res.status(200).json({ poll: { id: pollId, ...poll } });
     } catch (error) {
         console.error('Save availability poll error:', error);

@@ -800,6 +800,10 @@ app.get('/schedule', (req, res) => {
     res.sendFile(path.join(__dirname, 'schedule.html'));
 });
 
+app.get('/schedule/:code', (req, res) => {
+    res.sendFile(path.join(__dirname, 'schedule.html'));
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });

@@ -205,6 +205,7 @@
         .event-card .event-meta { color: var(--text-muted); font-size: .78rem; line-height: 1.65; }
         .event-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
         .btn.small { width:auto; padding:8px 10px; font-size:.78rem; box-shadow:none; }
+        .automatic-role { margin:-8px 0 16px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; color:var(--gold-light); background:rgba(255,255,255,.04); font-size:.8rem; line-height:1.45; }
 
         .approval-actions {
             display: flex;
@@ -724,20 +725,25 @@
                 <div class="panel">
                     <h3>📝 Thiết lập lịch rảnh</h3>
 
-                    <label>Đợt vote lịch</label>
-                    <select id="activePollSelect" onchange="selectAvailabilityPoll(this.value)"><option value="">Đang tải các đợt...</option></select>
+                    <div id="activePollChooser">
+                        <label>Đợt vote lịch</label>
+                        <select id="activePollSelect" onchange="selectAvailabilityPoll(this.value)"><option value="">Đang tải các đợt...</option></select>
+                    </div>
                     <div id="activePollInfo" style="font-size:.78rem;color:var(--text-muted);line-height:1.5;margin:-8px 0 16px"></div>
 
                     <label>Họ và tên của bạn</label>
                     <input type="text" id="schedName" placeholder="VD: Nguyễn Văn A" autocomplete="off" aria-label="Họ tên" onchange="queueScheduleMetadataAutoSave()">
 
-                    <label>Vai trò dự án</label>
-                    <select id="schedRole" onchange="queueScheduleMetadataAutoSave()">
-                        <option value="member">Thành viên (Member)</option>
-                        <option value="btc">BTC / Người phỏng vấn</option>
-                        <option value="candidate">Ứng viên phỏng vấn</option>
-                        <option value="mentor">Mentor / Diễn giả</option>
-                    </select>
+                    <div id="schedRoleField">
+                        <label>Vai trò trong lịch</label>
+                        <select id="schedRole" onchange="queueScheduleMetadataAutoSave()">
+                            <option value="member">Thành viên</option>
+                            <option value="btc">BTC / Người phỏng vấn</option>
+                            <option value="candidate">Ứng viên phỏng vấn</option>
+                            <option value="mentor">Mentor / Diễn giả</option>
+                        </select>
+                    </div>
+                    <div id="automaticScheduleRole" class="automatic-role hidden"></div>
 
                     <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 18px;">
                         <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-muted)">
@@ -864,11 +870,17 @@
         let currentUser = null;
         let canManageSchedules = false;
         let canViewAllSchedules = false;
+        let currentUserIsInterviewer = false;
         let staffAvailabilityPromise = null;
         let firestoreReconnectTimer = null;
         let firestoreReconnectAttempt = 0;
         let firestoreReconnectInFlight = false;
         const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
+        const SHARED_POLL_CODE = (() => {
+            const pathMatch = decodeURIComponent(location.pathname).match(/^\/schedule\/([^/]+)\/?$/i);
+            const queryValue = new URLSearchParams(location.search).get('poll');
+            return String(pathMatch ? pathMatch[1] : (queryValue || '')).trim().toUpperCase();
+        })();
         const GOOGLE_OAUTH_CLIENT_ID = '69246326577-8mc3nrao3ea8ogm98orcfij1s32ipffn.apps.googleusercontent.com';
         const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
         let googleTokenClient = null;
@@ -1093,7 +1105,10 @@
             const validSlots = new Set();
             dynamicDates.forEach(date => SHIFTS.forEach((_, shiftIndex) => validSlots.add(date.id + '_' + shiftIndex)));
             document.getElementById('schedName').value = schedule.name || '';
-            document.getElementById('schedRole').value = schedule.role || 'member';
+            document.getElementById('schedRole').value = activePoll && activePoll.type === 'interview'
+                ? (currentUserIsInterviewer ? 'btc' : 'candidate')
+                : (schedule.role || 'member');
+            updateScheduleRoleField();
             selectedSlots = new Set((schedule.slots || []).filter(slotId => validSlots.has(slotId)));
             preferredSlots = new Set((schedule.preferredSlots || []).filter(slotId => selectedSlots.has(slotId)));
             renderTimetable();
@@ -1118,9 +1133,10 @@
             const schedulePanel = document.getElementById('adminSchedulePanel');
             const pollPanel = document.getElementById('adminPollPanel');
             if (!layout || !sidebar || !tools || !schedulePanel || !pollPanel) return;
-            layout.classList.toggle('admin-layout', canManageSchedules);
-            tools.classList.toggle('hidden', !canManageSchedules);
-            if (canManageSchedules) {
+            const showAdminTools = canManageSchedules && !SHARED_POLL_CODE;
+            layout.classList.toggle('admin-layout', showAdminTools);
+            tools.classList.toggle('hidden', !showAdminTools);
+            if (showAdminTools) {
                 tools.appendChild(schedulePanel);
                 tools.appendChild(pollPanel);
             } else {
@@ -1141,6 +1157,35 @@
                 leadership.includes('ban điều hành') || leadership.includes('ban dieu hanh');
         }
 
+        function pollMatchesSharedCode(poll) {
+            if (!SHARED_POLL_CODE) return true;
+            return String(poll && (poll.code || poll.id) || '').toUpperCase() === SHARED_POLL_CODE;
+        }
+
+        function effectiveScheduleRole(schedule) {
+            const savedRole = String(schedule && schedule.role || 'member');
+            if (!activePoll || activePoll.type !== 'interview' || ['btc', 'candidate'].includes(savedRole)) return savedRole;
+            const account = directoryUsers.find(user => user.id === schedule.ownerId);
+            if ((account && isEligibleInterviewer(account)) || (currentUser && schedule.ownerId === currentUser.uid && currentUserIsInterviewer)) return 'btc';
+            return 'candidate';
+        }
+
+        function updateScheduleRoleField() {
+            const field = document.getElementById('schedRoleField');
+            const hint = document.getElementById('automaticScheduleRole');
+            const select = document.getElementById('schedRole');
+            if (!field || !hint || !select) return;
+            const automatic = !!(activePoll && activePoll.type === 'interview');
+            field.classList.toggle('hidden', automatic);
+            hint.classList.toggle('hidden', !automatic);
+            if (automatic) {
+                select.value = currentUserIsInterviewer ? 'btc' : 'candidate';
+                hint.textContent = currentUserIsInterviewer
+                    ? '🧑‍💼 Vai trò tự động: Người phỏng vấn / BTC'
+                    : '🎬 Vai trò tự động: Ứng viên phỏng vấn';
+            }
+        }
+
         async function refreshSchedulePermissions() {
             canManageSchedules = !!(currentUser && currentUser.email && currentUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL);
             let currentProfile = {};
@@ -1156,8 +1201,9 @@
             const currentDept = String(currentProfile.dept || '').trim().toLowerCase();
             const isHrMember = currentDept === 'hr' || currentDept.includes('nhân sự') || currentDept.includes('nhan su');
             canViewAllSchedules = canManageSchedules || isHrMember;
-            document.getElementById('adminSchedulePanel').classList.toggle('hidden', !canManageSchedules);
-            document.getElementById('adminPollPanel').classList.toggle('hidden', !canManageSchedules);
+            currentUserIsInterviewer = !!(currentUser && (canManageSchedules || isEligibleInterviewer({ ...currentProfile, email:currentUser.email })));
+            document.getElementById('adminSchedulePanel').classList.toggle('hidden', !canManageSchedules || !!SHARED_POLL_CODE);
+            document.getElementById('adminPollPanel').classList.toggle('hidden', !canManageSchedules || !!SHARED_POLL_CODE);
             arrangeAdminToolsColumn();
             if (canManageSchedules && dbInstance) {
                 try {
@@ -1236,10 +1282,10 @@
                 const result = availabilityPolls.slice();
                 const legacy = legacyAvailabilityPoll();
                 if (legacy) result.push(legacy);
-                return result;
+                return result.filter(pollMatchesSharedCode);
             }
             return availabilityPolls.filter(poll =>
-                ['open', 'closed'].includes(poll.status) && isPollAssignedToCurrentUser(poll)
+                ['open', 'closed'].includes(poll.status) && isPollAssignedToCurrentUser(poll) && pollMatchesSharedCode(poll)
             );
         }
 
@@ -1285,7 +1331,7 @@
             const visible = visibleAvailabilityPolls().sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
             const previousId = activePoll && activePoll.id;
             if (!visible.length) {
-                select.innerHTML = '<option value="">Chưa có đợt vote dành cho bạn</option>';
+                select.innerHTML = '<option value="">' + (SHARED_POLL_CODE ? 'Không tìm thấy lịch ' + escapeHtml(SHARED_POLL_CODE) : 'Chưa có đợt vote dành cho bạn') + '</option>';
                 activePoll = null;
                 selectedSlots.clear();
                 preferredSlots.clear();
@@ -1294,6 +1340,7 @@
                 renderActivePollInfo();
                 renderTimetable();
                 renderAdminPollList();
+                updateScheduleRoleField();
                 return;
             }
             select.innerHTML = visible.map(poll => '<option value="' + escapeHtml(poll.id) + '">' + escapeHtml(poll.title) + ' — ' + pollStatusLabel(poll.status) + '</option>').join('');
@@ -1315,12 +1362,15 @@
                 currentMode = activePoll.type === 'meeting' ? 'meeting' : 'interview';
                 const pollSelect = document.getElementById('activePollSelect');
                 if (Array.from(pollSelect.options).some(option => option.value === activePoll.id)) pollSelect.value = activePoll.id;
-                if (!canViewAllSchedules) document.getElementById('schedRole').value = activePoll.type === 'interview' ? 'candidate' : 'member';
+                document.getElementById('schedRole').value = activePoll.type === 'interview'
+                    ? (currentUserIsInterviewer ? 'btc' : 'candidate')
+                    : 'member';
                 document.getElementById('modeMeeting').className = 'mode-btn' + (currentMode === 'meeting' ? ' active' : '');
                 document.getElementById('modeInterview').className = 'mode-btn' + (currentMode === 'interview' ? ' active' : '');
             } else {
                 generateDates();
             }
+            updateScheduleRoleField();
             renderDateControls();
             loadCurrentUserAvailability();
             renderActivePollInfo();
@@ -1330,6 +1380,8 @@
         function renderActivePollInfo() {
             const info = document.getElementById('activePollInfo');
             const title = document.getElementById('boardTitle');
+            const chooser = document.getElementById('activePollChooser');
+            if (chooser) chooser.classList.toggle('hidden', !!SHARED_POLL_CODE);
             if (!activePoll) {
                 info.innerHTML = '<span style="color:var(--danger)">Hiện chưa có đợt vote lịch phù hợp với tài khoản này.</span>';
                 title.textContent = '📅 Bảng thời gian rảnh — chưa chọn đợt';
@@ -1339,11 +1391,17 @@
             end.setDate(end.getDate() + Number(activePoll.dayCount || 1) - 1);
             const editable = canEditActiveAvailability();
             info.innerHTML = '<strong style="color:var(--gold-light)">' + escapeHtml(activePoll.title) + '</strong> ' +
+                (activePoll.code ? '<span class="poll-badge">' + escapeHtml(activePoll.code) + '</span>' : '') +
                 '<span class="poll-badge">' + pollStatusLabel(activePoll.status) + '</span><br>' +
                 escapeHtml(activePoll.startDate) + ' → ' + localDateId(end) + ' · ' + activePoll.dayCount + ' ngày · ' +
                 (activePoll.isPublic ? 'Mọi tài khoản' : (activePoll.participantIds || []).length + ' người được chọn') +
                 (editable ? '' : '<br><span style="color:var(--danger)">Chỉ xem — đợt này chưa mở hoặc đã khóa.</span>');
             title.textContent = '📅 ' + activePoll.title + ' · ' + (currentMode === 'meeting' ? 'Lịch họp' : 'Phỏng vấn');
+            if (SHARED_POLL_CODE) {
+                document.querySelector('header h1').textContent = activePoll.type === 'meeting' ? 'Lịch Họp' : 'Lịch Phỏng Vấn';
+                document.querySelector('header .subtitle').textContent = activePoll.title + ' · ' + (activePoll.code || SHARED_POLL_CODE);
+                document.title = activePoll.title + ' — Ý Niệm Điện Ảnh';
+            }
         }
 
         async function fetchAllAvailabilityForStaff() {
@@ -1526,6 +1584,74 @@
             } catch (error) { showPollAdminStatus('Không đổi được trạng thái: ' + error.message, 'var(--danger)'); }
         }
 
+        function availabilityPollUrl(poll) {
+            return poll && poll.code ? location.origin + '/schedule/' + encodeURIComponent(poll.code) : '';
+        }
+
+        async function copyAvailabilityPollLink(pollId) {
+            const poll = availabilityPolls.find(item => item.id === pollId);
+            const url = availabilityPollUrl(poll);
+            if (!url) return ensureAvailabilityPollCode(pollId, true);
+            try {
+                await navigator.clipboard.writeText(url);
+                showPollAdminStatus('✓ Đã sao chép liên kết ' + poll.code + '.', 'var(--ok)');
+            } catch (error) {
+                window.prompt('Sao chép liên kết lịch:', url);
+            }
+        }
+
+        async function ensureAvailabilityPollCode(pollId, copyAfter) {
+            const poll = availabilityPolls.find(item => item.id === pollId);
+            if (!poll || !canManageSchedules || !currentUser) return;
+            showPollAdminStatus('⏳ Đang cấp mã lịch...', 'var(--gold)');
+            try {
+                const idToken = await currentUser.getIdToken();
+                const response = await scheduleTimeout(fetch('/api/schedule/save-poll', {
+                    method:'POST', headers:{ 'Content-Type':'application/json' },
+                    body:JSON.stringify({ idToken, pollId, poll })
+                }), 15000, 'Cấp mã lịch quá thời gian.');
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.poll) throw new Error(result.error || 'Không cấp được mã lịch.');
+                const index = availabilityPolls.findIndex(item => item.id === pollId);
+                if (index !== -1) availabilityPolls[index] = result.poll;
+                localDB.availabilityPolls = availabilityPolls;
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+                renderAdminPollList();
+                showPollAdminStatus('✓ Đã cấp mã ' + result.poll.code + '.', 'var(--ok)');
+                if (copyAfter) await copyAvailabilityPollLink(pollId);
+            } catch (error) {
+                showPollAdminStatus('Không cấp được mã lịch: ' + error.message, 'var(--danger)');
+            }
+        }
+
+        async function deleteAvailabilityPoll(pollId) {
+            const poll = availabilityPolls.find(item => item.id === pollId);
+            if (!poll || !canManageSchedules || !currentUser) return;
+            const responseCount = (localDB.meetingSchedules || []).filter(schedule => schedule.pollId === pollId).length;
+            const warning = 'Xóa vĩnh viễn “' + poll.title + '”' + (poll.code ? ' (' + poll.code + ')' : '') + '?\n\n' +
+                (responseCount ? 'Toàn bộ ' + responseCount + ' phiếu giờ rảnh trong lịch này cũng sẽ bị xóa.' : 'Lịch này chưa có phiếu giờ rảnh.') + '\nKhông thể hoàn tác.';
+            if (!confirm(warning)) return;
+            showPollAdminStatus('⏳ Đang xóa lịch...', 'var(--gold)');
+            try {
+                const idToken = await currentUser.getIdToken();
+                const response = await scheduleTimeout(fetch('/api/schedule/save-poll', {
+                    method:'POST', headers:{ 'Content-Type':'application/json' },
+                    body:JSON.stringify({ idToken, pollId, action:'delete' })
+                }), 20000, 'Xóa lịch quá thời gian.');
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.deleted) throw new Error(result.error || 'Không xóa được lịch.');
+                availabilityPolls = availabilityPolls.filter(item => item.id !== pollId);
+                localDB.availabilityPolls = availabilityPolls;
+                localDB.meetingSchedules = (localDB.meetingSchedules || []).filter(schedule => schedule.pollId !== pollId);
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+                if (activePoll && activePoll.id === pollId) activePoll = null;
+                renderAvailabilityPolls();
+                showPollAdminStatus('✓ Đã xóa lịch và ' + Number(result.deletedResponses || 0) + ' phiếu liên quan.', 'var(--ok)');
+            } catch (error) {
+                showPollAdminStatus('Không xóa được lịch: ' + error.message, 'var(--danger)');
+            }
+        }
+
         function renderAdminPollList() {
             const target = document.getElementById('adminPollList');
             if (!target || !canManageSchedules) return;
@@ -1539,10 +1665,13 @@
                 const responses = (localDB.meetingSchedules || []).filter(schedule => schedule.pollId === poll.id).length;
                 const actions = '<button class="btn" onclick="selectAvailabilityPoll(\'' + poll.id + '\')">Xem phiếu</button>' +
                     '<button class="btn" onclick="editAvailabilityPoll(\'' + poll.id + '\')">⚙ Điều chỉnh</button>' +
+                    (poll.code ? '<button class="btn" onclick="copyAvailabilityPollLink(\'' + poll.id + '\')">🔗 Sao chép link</button>' : '<button class="btn" onclick="ensureAvailabilityPollCode(\'' + poll.id + '\',true)">🏷️ Cấp mã & link</button>') +
                     (poll.status !== 'open' ? '<button class="btn" onclick="setAvailabilityPollStatus(\'' + poll.id + '\',\'open\')">Mở vote</button>' : '<button class="btn" onclick="setAvailabilityPollStatus(\'' + poll.id + '\',\'closed\')">Khóa vote</button>') +
                     (poll.status !== 'draft' ? '<button class="btn" onclick="setAvailabilityPollStatus(\'' + poll.id + '\',\'draft\')">Ẩn</button>' : '') +
-                    (poll.status !== 'archived' ? '<button class="btn" onclick="setAvailabilityPollStatus(\'' + poll.id + '\',\'archived\')">Lưu trữ</button>' : '');
-                return '<div class="poll-card ' + (poll.status === 'archived' ? 'archived' : '') + '"><strong>' + escapeHtml(poll.title) + '</strong><span class="poll-badge">' + pollStatusLabel(poll.status) + '</span><div class="event-meta">' + escapeHtml(poll.startDate) + ' · ' + poll.dayCount + ' ngày · ' + (poll.isPublic ? 'Tất cả tài khoản' : (poll.participantIds || []).length + ' người') + ' · ' + responses + ' phản hồi</div><div class="poll-actions">' + actions + '</div></div>';
+                    (poll.status !== 'archived' ? '<button class="btn" onclick="setAvailabilityPollStatus(\'' + poll.id + '\',\'archived\')">Lưu trữ</button>' : '') +
+                    '<button class="btn" style="background:linear-gradient(135deg,#ff8a8a,#f43f5e);color:#fff" onclick="deleteAvailabilityPoll(\'' + poll.id + '\')">Xóa lịch</button>';
+                const code = poll.code ? '<span class="poll-badge">' + escapeHtml(poll.code) + '</span>' : '';
+                return '<div class="poll-card ' + (poll.status === 'archived' ? 'archived' : '') + '"><strong>' + escapeHtml(poll.title) + '</strong>' + code + '<span class="poll-badge">' + pollStatusLabel(poll.status) + '</span><div class="event-meta">' + escapeHtml(poll.startDate) + ' · ' + poll.dayCount + ' ngày · ' + (poll.isPublic ? 'Tất cả tài khoản' : (poll.participantIds || []).length + ' người') + ' · ' + responses + ' phản hồi' + (poll.code ? '<br>🔗 ' + escapeHtml(availabilityPollUrl(poll)) : '') + '</div><div class="poll-actions">' + actions + '</div></div>';
             }).join('') + (legacy ? '<div class="poll-card archived"><strong>Dữ liệu lịch rảnh cũ</strong><span class="poll-badge">Chỉ đọc</span><div class="event-meta">' + (localDB.meetingSchedules || []).filter(schedule => !schedule.pollId).length + ' phản hồi trước khi nâng cấp</div><div class="poll-actions"><button class="btn" onclick="selectAvailabilityPoll(\'__legacy__\')">Xem dữ liệu cũ</button></div></div>' : '');
         }
 
@@ -1556,7 +1685,8 @@
         function getAvailabilityVotes(interviewOnly) {
             const votes = {};
             schedulesForActivePoll().forEach(function(schedule) {
-                if (interviewOnly && ['btc', 'candidate'].indexOf(schedule.role) === -1) return;
+                const role = effectiveScheduleRole(schedule);
+                if (interviewOnly && ['btc', 'candidate'].indexOf(role) === -1) return;
                 const preferred = new Set(schedule.preferredSlots || []);
                 (schedule.slots || []).forEach(function(slotId) {
                     if (!votes[slotId]) votes[slotId] = { total:0, preferred:0, weight:0, btc:0, btcWeight:0, candidate:0, candidateWeight:0, names:[] };
@@ -1564,8 +1694,8 @@
                     votes[slotId].total++;
                     votes[slotId].weight += slotWeight;
                     if (preferred.has(slotId)) votes[slotId].preferred++;
-                    if (schedule.role === 'btc') { votes[slotId].btc++; votes[slotId].btcWeight += slotWeight; }
-                    if (schedule.role === 'candidate') { votes[slotId].candidate++; votes[slotId].candidateWeight += slotWeight; }
+                    if (role === 'btc') { votes[slotId].btc++; votes[slotId].btcWeight += slotWeight; }
+                    if (role === 'candidate') { votes[slotId].candidate++; votes[slotId].candidateWeight += slotWeight; }
                     if (schedule.name && votes[slotId].names.indexOf(schedule.name) === -1) votes[slotId].names.push(schedule.name);
                 });
             });
@@ -1602,7 +1732,9 @@
             if (!activePoll) return showAdminStatus('Hãy chọn một đợt vote trước khi xếp lịch.', 'var(--danger)');
             if (activePoll.type !== 'interview') return showAdminStatus('Đợt đang chọn là lịch họp, không phải đợt phỏng vấn.', 'var(--danger)');
             const pollSchedules = schedulesForActivePoll();
-            const candidates = pollSchedules.filter(item => item.role === 'candidate' && item.name);
+            const candidates = pollSchedules
+                .filter(item => effectiveScheduleRole(item) === 'candidate' && item.name)
+                .map(item => Object.assign({}, item, { role:'candidate' }));
             const target = document.getElementById('availabilityVotes');
             if (!candidates.length) {
                 if (target) target.innerHTML = '<p style="font-size:.78rem;color:var(--danger)">Cần có ít nhất một ứng viên gửi phiếu giờ rảnh.</p>';
@@ -1994,7 +2126,7 @@
         function renderTimetable() {
             const tbody = document.getElementById('timetableBody');
             tbody.innerHTML = '';
-            const pollSchedules = schedulesForActivePoll();
+            const pollSchedules = schedulesForActivePoll().map(schedule => Object.assign({}, schedule, { role:effectiveScheduleRole(schedule) }));
 
             // Get show filters
             const showBtc = document.getElementById('fltBtc')?.checked ?? true;
@@ -2255,7 +2387,10 @@
             if (!container) return;
             container.innerHTML = '';
             const historyWindow = canViewAllSchedules ? 7 * 86400000 : 3600000;
-            const futureEvents = officialEvents.filter(event => !event.startAt || new Date(event.startAt).getTime() >= Date.now() - historyWindow);
+            const futureEvents = officialEvents.filter(event =>
+                (!event.startAt || new Date(event.startAt).getTime() >= Date.now() - historyWindow) &&
+                (!SHARED_POLL_CODE || (activePoll && event.availabilityPollId === activePoll.id))
+            );
             if (!futureEvents.length) {
                 container.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem">Chưa có lịch họp hoặc phỏng vấn đang mở.</p>';
                 return;
@@ -2539,7 +2674,7 @@
             if (!recsContainer) return;
 
             recsContainer.innerHTML = '';
-            const pollSchedules = schedulesForActivePoll();
+            const pollSchedules = schedulesForActivePoll().map(schedule => Object.assign({}, schedule, { role:effectiveScheduleRole(schedule) }));
             const totalSubmits = pollSchedules.length;
             const btcCount = pollSchedules.filter(s => s.role === 'btc').length;
             const memCount = pollSchedules.filter(s => s.role === 'member').length;

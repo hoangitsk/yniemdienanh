@@ -18,6 +18,15 @@ function isOrganizer(decoded, profile) {
         ['admin', 'organizer'].includes(String(profile.role || '').toLowerCase());
 }
 
+function isInterviewStaff(decoded, profile) {
+    const role = String(profile.role || '').trim().toLowerCase();
+    const context = [profile.dept, profile.position, profile.title].map(value => String(value || '').trim().toLowerCase()).join(' ');
+    return isOrganizer(decoded, profile) || ['president', 'core'].includes(role) ||
+        context.includes('nhân sự') || context.includes('nhan su') || context.includes('hr') ||
+        context.includes('core') || context.includes('president') ||
+        context.includes('chủ tịch') || context.includes('chu tich');
+}
+
 function allowedSlotIds(poll) {
     const result = new Set();
     const start = new Date(String(poll.startDate || '') + 'T00:00:00+07:00');
@@ -71,7 +80,12 @@ module.exports = async function saveAvailability(req, res) {
         const preferredSlots = Array.from(new Set(Array.isArray(body.preferredSlots) ? body.preferredSlots.map(String) : []))
             .filter((slotId) => slotSet.has(slotId));
         const allowedRoles = new Set(['member', 'btc', 'candidate', 'mentor']);
-        const role = allowedRoles.has(body.role) ? body.role : 'member';
+        const requestedRole = allowedRoles.has(body.role) ? body.role : 'member';
+        // Người tham gia không phải hiểu vai trò nội bộ: đợt phỏng vấn tự phân biệt
+        // người phỏng vấn và ứng viên dựa trên hồ sơ tài khoản.
+        const role = poll.type === 'interview'
+            ? (isInterviewStaff(decoded, profile) ? 'btc' : 'candidate')
+            : requestedRole;
         const name = String(body.name || decoded.name || profile.name || String(decoded.email || '').split('@')[0] || 'Thành viên').trim().slice(0, 150);
         const schedule = {
             id: docId,

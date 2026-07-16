@@ -2,6 +2,21 @@ const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
 const { ensureInterviewScheduleContent } = require('../../lib/emailContent');
 const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('../../lib/projectIdentity');
 const { normalizeEmailSender, emailSenderPromptContext, applyEmailSenderIdentity } = require('../../lib/emailSender');
+const admin = require('firebase-admin');
+const { isPeopleManager } = require('../../lib/schedulePermissions');
+
+function getDb() {
+    if (!admin.apps.length) {
+        let raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+        if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT chưa được cấu hình.');
+        raw = raw.trim().replace(/^"|"$/g, '');
+        let account = JSON.parse(raw);
+        if (typeof account === 'string') account = JSON.parse(account);
+        if (account.private_key) account.private_key = account.private_key.replace(/\\n/g, '\n');
+        admin.initializeApp({ credential: admin.credential.cert(account) });
+    }
+    return admin.firestore();
+}
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -22,6 +37,19 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    try {
+        const idToken = req.body && req.body.idToken;
+        if (!idToken) return res.status(401).json({ error: 'Vui lòng đăng nhập để dùng AI soạn email.' });
+        const db = getDb();
+        const decoded = await admin.auth().verifyIdToken(idToken);
+        const operatorDoc = await db.collection('users').doc(decoded.uid).get();
+        if (!decoded.email_verified || !isPeopleManager(decoded, operatorDoc.exists ? operatorDoc.data() : {})) {
+            return res.status(403).json({ error: 'Chỉ Admin/BTC/Ban Nhân sự mới được dùng AI soạn email.' });
+        }
+    } catch (authError) {
+        return res.status(401).json({ error: authError.message || 'Phiên đăng nhập không hợp lệ.' });
+    }
+
     const { keys } = getGeminiConfig();
     if (keys.length === 0) {
         return res.status(500).json({ error: 'GEMINI_API_KEY chưa được cấu hình trên server.' });
@@ -32,7 +60,10 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Thiếu thông tin ứng viên (name) hoặc loại email (emailType)' });
         }
 
-        const scheduleUrl = process.env.SCHEDULE_PUBLIC_URL || 'https://yniemdienanh.vercel.app/schedule';
+        const scheduleBaseUrl = (process.env.SCHEDULE_PUBLIC_URL || 'https://yniemdienanh.vercel.app/schedule').replace(/\/$/, '');
+        const scheduleCode = String(req.body.scheduleCode || '').trim().toUpperCase();
+        const safeScheduleCode = /^[A-Z][A-Z0-9_-]{3,29}$/.test(scheduleCode) ? scheduleCode : '';
+        const scheduleUrl = scheduleBaseUrl + (safeScheduleCode ? '/' + encodeURIComponent(safeScheduleCode) : '');
         const sender = normalizeEmailSender(req.body);
         const prompt = `Bạn là trợ lý soạn email cho dự án Ý Niệm Điện Ảnh.
 Thông tin chính thức từ Sổ tay dự án:

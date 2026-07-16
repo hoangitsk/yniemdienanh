@@ -59,7 +59,8 @@
     function fallbackEmail(app, type) {
         var name = esc(app.name || 'bạn');
         var dept = esc(app.dept || 'Ban Tổ Chức');
-        var scheduleUrl = window.location.origin + '/schedule';
+        var scheduleCode = app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '';
+        var scheduleUrl = window.location.origin + (scheduleCode ? '/schedule/' + encodeURIComponent(scheduleCode) : '/schedule');
         var sender = typeof window.currentEmailSenderIdentity === 'function' ? window.currentEmailSenderIdentity() : {};
         var roleLabels = { admin: 'Quản trị viên', organizer: 'Ban Tổ Chức', member: 'Thành viên' };
         var senderName = esc(sender.name || 'Đội ngũ Ý Niệm Điện Ảnh');
@@ -187,11 +188,14 @@
     };
 
     async function generateBulkContent(apps, type, customDescription) {
+        var idToken = window.firebase && firebase.auth && firebase.auth().currentUser
+            ? await firebase.auth().currentUser.getIdToken()
+            : '';
         var response = await fetch('/api/email/generate-gemini-bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ emailType: type, customDescription: customDescription, sender: typeof window.currentEmailSenderIdentity === 'function' ? window.currentEmailSenderIdentity() : {}, applications: apps.map(function (app) {
-                return { id: app.id, type: app.type, name: app.name, dept: app.dept, intro: app.intro, vision: app.vision };
+            body: JSON.stringify({ idToken: idToken, emailType: type, customDescription: customDescription, sender: typeof window.currentEmailSenderIdentity === 'function' ? window.currentEmailSenderIdentity() : {}, applications: apps.map(function (app) {
+                return { id: app.id, type: app.type, name: app.name, dept: app.dept, intro: app.intro, vision: app.vision, scheduleCode: app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '' };
             }) })
         });
         var data = await response.json().catch(function () { return {}; });

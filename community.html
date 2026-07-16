@@ -10182,6 +10182,8 @@
         function applyEmailTemplate() {
             const app = window.currentEmailApp;
             if (!app) return;
+            const scheduleCode = app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '';
+            const scheduleUrl = window.location.origin + (scheduleCode ? '/schedule/' + encodeURIComponent(scheduleCode) : '/schedule');
             const type = document.getElementById('emTemplateSelect').value;
             if (!type) {
                 document.getElementById('emSubject').value = '';
@@ -10211,7 +10213,7 @@
                     subject: `[Ý Niệm Điện Ảnh] Thư mời tham gia phỏng vấn — ${app.name}`,
                     body: `<p>Xin chào <strong>${app.name}</strong>,</p>
 <p>Cảm ơn bạn đã quan tâm và nộp đơn ứng tuyển vào dự án Ý niệm Điện Ảnh. Chúng tôi rất ấn tượng với hồ sơ của bạn và muốn mời bạn tham gia một buổi phỏng vấn ngắn để trao đổi thêm.</p>
-<p>Vui lòng đăng nhập bằng email đã ứng tuyển và chọn các khung giờ bạn có thể tham gia tại <a href="${window.location.origin}/schedule" style="color:#e4b866;font-weight:700">trang chọn thời gian phỏng vấn</a>.</p>
+<p>Vui lòng đăng nhập bằng email đã ứng tuyển và chọn các khung giờ bạn có thể tham gia tại <a href="${scheduleUrl}" style="color:#e4b866;font-weight:700">trang chọn thời gian phỏng vấn</a>.</p>
 <p>Hệ thống chốt lịch vào 0h mỗi ngày theo giờ Việt Nam. Nếu chưa được chốt, bạn vẫn có thể cập nhật phiếu đến hết thời hạn của đợt phỏng vấn.</p>
 <p>Trân trọng,<br>Ban Nhân Sự Ý Niệm Điện Ảnh</p>`
                 },
@@ -10251,11 +10253,13 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        idToken: (authInstance && authInstance.currentUser) ? await authInstance.currentUser.getIdToken() : '',
                         type: app.type,
                         name: app.name,
                         dept: app.dept,
                         intro: app.intro,
                         vision: app.vision,
+                        scheduleCode: app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '',
                         emailType: emailType,
                         customDescription: customDescription
                     })
@@ -10306,7 +10310,7 @@
                 const res = await fetch('/api/email/send-custom', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ to, subject, html, attachment })
+                    body: JSON.stringify({ to, subject, html, attachment, idToken: (authInstance && authInstance.currentUser) ? await authInstance.currentUser.getIdToken() : '' })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Lỗi gửi email');

@@ -3028,6 +3028,14 @@
                 </div>
 
                 <div>
+                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Liên kết lịch trong email</label>
+                    <select id="emScheduleCode" onchange="setEmailScheduleCode(this.value)" style="width:100%;padding:10px;background:rgba(0,0,0,0.3);color:#e2e8f0;border-radius:8px;border:1px solid rgba(228,184,102,0.2)">
+                        <option value="">Tự động mở trang lịch</option>
+                    </select>
+                    <div id="emScheduleHint" style="margin-top:5px;font-size:.76rem;color:var(--text-muted)">Đang dò các đợt vote được cấp quyền…</div>
+                </div>
+
+                <div>
                     <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Mô tả loại thư cho AI <span style="color:#64748b">(không bắt buộc)</span></label>
                     <textarea id="emCustomDescription" rows="3" maxlength="1000" placeholder="Ví dụ: Viết thư nhắc ứng viên bổ sung portfolio, giọng văn thân thiện..." style="width:100%;resize:vertical;background:rgba(0,0,0,0.3);color:#e2e8f0;border:1px solid rgba(228,184,102,0.2);padding:10px;border-radius:8px"></textarea>
                 </div>
@@ -3578,7 +3586,8 @@
                                 const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get();
                                 const userData = userDoc.exists ? userDoc.data() : null;
 
-                                await loadInternalDataFromFirestore(firebaseUser.uid, session ? session.role : 'member');
+                                const dataRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (userData && userData.role || 'member');
+                                await loadInternalDataFromFirestore(firebaseUser.uid, dataRole, userData && userData.dept || '');
 
                                 if (userDoc.exists) {
                                     const u = userData;
@@ -3868,14 +3877,16 @@
             ]);
         }
 
-        async function loadInternalDataFromFirestore(uid, role) {
+        async function loadInternalDataFromFirestore(uid, role, dept) {
             if (!useFirebase || !dbInstance) {
                 return;
             }
             const isOrg = ['admin', 'organizer'].includes(role);
+            const normalizedDept = String(dept || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const isPeopleManager = normalizedDept.includes('nhan su') || normalizedDept.includes('hr') || normalizedDept.includes('truyen thong') || normalizedDept.includes('pr') || normalizedDept.includes('marketing') || normalizedDept.includes('mkt');
             const collections = isOrg 
                 ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints']
-                : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints'];
+                : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints'].concat(isPeopleManager ? ['users', 'applications'] : []);
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await firestoreWithTimeout(dbInstance.collection(col).get());
@@ -3921,6 +3932,71 @@
             }
 
             localStorage.setItem('ynda_db', JSON.stringify(localDB));
+        }
+
+        async function saveItem(collection, item) {
+            if (!collection) throw new Error('Thiếu tên bộ dữ liệu cần lưu.');
+            if (Array.isArray(item)) {
+                localDB[collection] = item;
+                if (useFirebase && dbInstance) {
+                    const validItems = item.filter(entry => entry && entry.id !== undefined && entry.id !== null);
+                    for (let offset = 0; offset < validItems.length; offset += 400) {
+                        const batch = dbInstance.batch();
+                        validItems.slice(offset, offset + 400).forEach(entry => {
+                            batch.set(dbInstance.collection(collection).doc(String(entry.id)), entry);
+                        });
+                        await batch.commit();
+                    }
+                }
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+                return;
+            }
+            if (!item || typeof item !== 'object') throw new Error('Dữ liệu lưu không hợp lệ.');
+            if (item.id === undefined || item.id === null || item.id === '') {
+                localDB[collection] = item;
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+                return;
+            }
+
+            const list = Array.isArray(localDB[collection]) ? localDB[collection] : [];
+            localDB[collection] = list;
+            const index = list.findIndex(entry => String(entry.id) === String(item.id));
+            const isNew = index === -1;
+            if (isNew) list.push(item); else list[index] = item;
+            if (useFirebase && dbInstance) {
+                await dbInstance.collection(collection).doc(String(item.id)).set(item);
+            }
+            localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            const auditCollections = ['users', 'events', 'submissions', 'tasks', 'budget', 'docs', 'feedback', 'posts', 'transactions', 'applications'];
+            if (auditCollections.includes(collection) && typeof addAuditLog === 'function') {
+                addAuditLog((isNew ? 'create_' : 'update_') + collection, item.title || item.name || item.label || String(item.id));
+            }
+        }
+
+        async function deleteItemFromDB(collection, id) {
+            const list = Array.isArray(localDB[collection]) ? localDB[collection] : [];
+            localDB[collection] = list.filter(entry => String(entry.id) !== String(id));
+            if (useFirebase && dbInstance) {
+                await dbInstance.collection(collection).doc(String(id)).delete();
+            }
+            localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            const auditCollections = ['users', 'events', 'submissions', 'tasks', 'budget', 'docs', 'feedback', 'posts', 'transactions', 'applications'];
+            if (auditCollections.includes(collection) && typeof addAuditLog === 'function') addAuditLog('delete_' + collection, 'ID: ' + id);
+        }
+
+        async function getNextId() {
+            localDB.seq = Math.max(100, Number(localDB.seq || 100)) + 1;
+            if (useFirebase && dbInstance) {
+                const sequenceRef = dbInstance.collection('config').doc('sequence');
+                localDB.seq = await dbInstance.runTransaction(async transaction => {
+                    const snapshot = await transaction.get(sequenceRef);
+                    const next = Math.max(localDB.seq, Number(snapshot.exists && snapshot.data().val || 100) + 1);
+                    transaction.set(sequenceRef, { val: next });
+                    return next;
+                });
+            }
+            localStorage.setItem('ynda_db', JSON.stringify(localDB));
+            return localDB.seq;
         }
 
         async function resetPassword() {
@@ -4500,10 +4576,22 @@
         };
 
         let curTab = 'overview';
+        function normalizedSessionDept() {
+            return String(session && session.dept || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
+        function canAccessDashboardTab(tab) {
+            const config = TABS[tab];
+            if (!config || !session) return false;
+            if (config.roles.includes(session.role || 'member')) return true;
+            const dept = normalizedSessionDept();
+            return tab === 'members' && (dept.includes('nhan su') || dept.includes('hr') || dept.includes('truyen thong') || dept.includes('pr') || dept.includes('marketing') || dept.includes('mkt'));
+        }
+
         function openDash() {
             const params = new URLSearchParams(window.location.search);
             const tabParam = params.get('tab');
-            if (tabParam && TABS[tabParam]) {
+            if (tabParam && canAccessDashboardTab(tabParam)) {
                 curTab = tabParam;
             }
             showPage('dash');
@@ -4520,7 +4608,7 @@
 
         function renderSideMenu() {
             const role = session?.role || 'member';
-            const tabs = Object.entries(TABS).filter(([k, t]) => t.roles.includes(role));
+            const tabs = Object.entries(TABS).filter(([k]) => canAccessDashboardTab(k));
             document.getElementById('sideMenu').innerHTML = tabs
                 .map(([k, t]) => `<a class="${k === curTab ? 'active' : ''}" onclick="renderTab('${k}')">${t.icon} ${t.label}</a>`).join('') +
                 `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0">` +
@@ -4530,6 +4618,7 @@
 
         function renderTab(tab) {
             if (!session) return;
+            if (!canAccessDashboardTab(tab)) tab = 'overview';
             curTab = tab;
             renderSideMenu();
             const d = localDB;
@@ -4950,8 +5039,14 @@
                     renderVoting();
                 },
                 members() {
-                    const pendings = d.applications.filter(a => a.status === 'pending');
-                    const processed = d.applications.filter(a => a.status === 'approved' || a.status === 'rejected');
+                    const applicationSearch = String(window._applicationSearch || '').trim().toLowerCase();
+                    const applicationDept = String(window._applicationDept || '');
+                    const filteredApplications = d.applications.filter(a => {
+                        const haystack = [a.name, a.email, a.phone, a.dept, a.position, a.type].map(value => String(value || '').toLowerCase()).join(' ');
+                        return (!applicationSearch || haystack.includes(applicationSearch)) && (!applicationDept || a.dept === applicationDept);
+                    });
+                    const pendings = filteredApplications.filter(a => a.status === 'pending');
+                    const processed = filteredApplications.filter(a => a.status === 'approved' || a.status === 'rejected');
                     const departmentNames = [
                         'Ban Media (Thiết kế&Edit)', 'Ban duyệt bài', 'Ban Nội Dung', 'Ban Nhân Sự', 'Ban Truyền Thông'
                     ];
@@ -4967,6 +5062,16 @@
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px">
                             <h2 style="margin:0">👥 Quản lý Nhân sự & Đơn Tuyển dụng</h2>
                             <button class="btn btn-gold btn-sm" onclick="exportCSV('applications')">📥 Xuất tất cả đơn apply (CSV)</button>
+                        </div>
+
+                        <div class="panel" style="padding:12px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                            <input value="${esc(window._applicationSearch || '')}" placeholder="Tìm tên, email, số điện thoại, ban..." oninput="window._applicationSearch=this.value;clearTimeout(window._applicationFilterTimer);window._applicationFilterTimer=setTimeout(function(){renderTab('members')},250)" style="flex:1 1 300px;margin:0">
+                            <select onchange="window._applicationDept=this.value;renderTab('members')" style="min-width:210px;margin:0">
+                                <option value="">Tất cả ban</option>
+                                ${departmentNames.map(dept => `<option value="${esc(dept)}" ${window._applicationDept === dept ? 'selected' : ''}>${esc(dept)}</option>`).join('')}
+                            </select>
+                            <button class="btn btn-line btn-sm" onclick="window._applicationSearch='';window._applicationDept='';renderTab('members')">Xóa bộ lọc</button>
+                            <span style="font-size:.78rem;color:var(--text-muted)">${filteredApplications.length}/${d.applications.length} đơn</span>
                         </div>
 
                         <div class="panel" style="margin-bottom:16px">
@@ -5099,7 +5204,7 @@
                                 <div class="row">
                                     <div><label>Họ và tên *</label><input id="usName" placeholder="Nguyễn Văn A"></div>
                                     <div><label>Email đăng nhập *</label><input id="usEmail" type="email" placeholder="email@gmail.com"></div>
-                                    <div><label>Mật khẩu khởi tạo *</label><input id="usPass" type="password" placeholder="••••••"></div>
+                                    <div><label>Thiết lập đăng nhập</label><input value="Hệ thống sẽ gửi link đặt mật khẩu" disabled></div>
                                     <div><label>Quyền hạn</label><select id="usRole">
                                         <option value="member">Thành viên</option>
                                         <option value="organizer">Ban tổ chức (BTC)</option>
@@ -9947,16 +10052,63 @@
             
             document.getElementById('emTo').value = app.email;
             document.getElementById('emTemplateSelect').value = '';
+            document.getElementById('emScheduleCode').innerHTML = '<option value="">Tự động mở trang lịch</option>';
+            document.getElementById('emScheduleHint').textContent = 'Đang dò các đợt vote được cấp quyền…';
             document.getElementById('emCustomDescription').value = '';
             document.getElementById('emPdfAttachment').value = '';
             document.getElementById('emSubject').value = '';
             document.getElementById('emBody').value = '';
             openModal('emailModal');
+            loadEmailScheduleOptions(app);
+        }
+
+        function setEmailScheduleCode(code) {
+            const app = window.currentEmailApp;
+            if (!app) return;
+            app.activeScheduleCode = String(code || '').trim().toUpperCase();
+            applyEmailTemplate();
+        }
+
+        async function loadEmailScheduleOptions(app) {
+            const select = document.getElementById('emScheduleCode');
+            const hint = document.getElementById('emScheduleHint');
+            if (!select || !app) return;
+            try {
+                const token = (authInstance && authInstance.currentUser) ? await authInstance.currentUser.getIdToken() : '';
+                if (!token) throw new Error('Chưa đăng nhập');
+                const response = await fetch('/api/schedule/list-availability', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken: token })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !Array.isArray(result.polls)) throw new Error(result.error || 'Không tải được đợt vote');
+                const userId = String(app.approvedUserId || app.userId || '');
+                const dept = String(app.dept || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+                const hrDept = dept.includes('nhan su') || /(^|\s)hr($|\s)/.test(dept);
+                const prDept = dept.includes('truyen thong') || /(^|\s)pr($|\s)/.test(dept) || dept.includes('marketing') || dept.includes('mkt');
+                const polls = result.polls.filter(poll => poll && poll.status === 'open' && poll.code).sort((a, b) => {
+                    const score = poll => {
+                        const text = String((poll.code || '') + ' ' + (poll.title || '')).toLowerCase();
+                        const code = String(poll.code || '').toUpperCase();
+                        return (poll.isPublic ? 1 : 0) + (userId && Array.isArray(poll.participantIds) && poll.participantIds.includes(userId) ? 100 : 0) + (dept && text.includes(dept.replace(/^ban\s+/, '')) ? 20 : 0) + (hrDept && /^YNDAHR/.test(code) ? 50 : 0) + (prDept && /^YNDAPR/.test(code) ? 50 : 0) + (/^YNDA(?:HR|PR)/.test(code) ? 5 : 0);
+                    };
+                    return score(b) - score(a);
+                });
+                select.innerHTML = '<option value="">Tự động mở trang lịch</option>' + polls.map(poll => '<option value="' + esc(poll.code) + '">' + esc(poll.code + ' · ' + (poll.title || 'Lịch')) + '</option>').join('');
+                const preferred = app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || (polls[0] && polls[0].code) || '';
+                select.value = preferred;
+                if (select.value) app.activeScheduleCode = select.value;
+                hint.textContent = polls.length ? 'Đã tải ' + polls.length + ' đợt vote đang mở. Chọn đúng mã để chèn vào email.' : 'Chưa có đợt vote đang mở; email sẽ dùng trang lịch chung.';
+                applyEmailTemplate();
+            } catch (error) {
+                hint.textContent = 'Không tải được danh sách mã lịch; bạn vẫn có thể gửi email với trang lịch chung.';
+            }
         }
 
         function applyEmailTemplate() {
             const app = window.currentEmailApp;
             if (!app) return;
+            const scheduleCode = app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '';
+            const scheduleUrl = window.location.origin + (scheduleCode ? '/schedule/' + encodeURIComponent(scheduleCode) : '/schedule');
             const type = document.getElementById('emTemplateSelect').value;
             if (!type) {
                 document.getElementById('emSubject').value = '';
@@ -9987,7 +10139,7 @@ ${senderSignature}`
                     subject: `[Ý Niệm Điện Ảnh] Thư mời tham gia phỏng vấn — ${app.name}`,
                     body: `<p>Xin chào <strong>${app.name}</strong>,</p>
 <p>Cảm ơn bạn đã quan tâm và nộp đơn ứng tuyển vào dự án Ý niệm Điện Ảnh. Chúng tôi rất ấn tượng với hồ sơ của bạn và muốn mời bạn tham gia một buổi phỏng vấn ngắn để trao đổi thêm.</p>
-<p>Vui lòng đăng nhập bằng email đã ứng tuyển và chọn các khung giờ bạn có thể tham gia tại <a href="${window.location.origin}/schedule" style="color:#e4b866;font-weight:700">trang chọn thời gian phỏng vấn</a>.</p>
+<p>Vui lòng đăng nhập bằng email đã ứng tuyển và chọn các khung giờ bạn có thể tham gia tại <a href="${scheduleUrl}" style="color:#e4b866;font-weight:700">trang chọn thời gian phỏng vấn</a>.</p>
 <p>Hệ thống chốt lịch vào 0h mỗi ngày theo giờ Việt Nam. Nếu chưa được chốt, bạn vẫn có thể cập nhật phiếu đến hết thời hạn của đợt phỏng vấn.</p>
 ${senderSignature}`
                 },
@@ -10027,11 +10179,13 @@ ${senderSignature}`
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        idToken: (authInstance && authInstance.currentUser) ? await authInstance.currentUser.getIdToken() : '',
                         type: app.type,
                         name: app.name,
                         dept: app.dept,
                         intro: app.intro,
                         vision: app.vision,
+                        scheduleCode: app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '',
                         emailType: emailType,
                         customDescription: customDescription,
                         sender: currentEmailSenderIdentity()
@@ -10987,6 +11141,155 @@ ${senderSignature}`
         }
 
         // ================================================
+
+        window._applicationActionInFlight = window._applicationActionInFlight || new Set();
+
+        function applicationAccountRole(application) {
+            return ['organizer', 'cofounder', 'president'].includes(application && application.type) ? 'organizer' : 'member';
+        }
+
+        function openApplicationDecisionEmail(application, type) {
+            if (!application || typeof openEmailModal !== 'function') return;
+            openEmailModal(application.id);
+            const selector = document.getElementById('emTemplateSelect');
+            if (selector) {
+                selector.value = type;
+                applyEmailTemplate();
+            }
+        }
+
+        async function approveApplication(id) {
+            const application = (localDB.applications || []).find(item => String(item.id) === String(id));
+            if (!application || window._applicationActionInFlight.has(String(id))) return;
+            if (application.status === 'approved') return showToast('Đơn này đã được duyệt trước đó.', 'info');
+            const confirmed = await showConfirmModal('Duyệt đơn của ' + application.name + ' vào ' + (application.dept || 'dự án') + '? Hệ thống sẽ tạo/cập nhật tài khoản và chuẩn bị email chào mừng.');
+            if (!confirmed) return;
+
+            window._applicationActionInFlight.add(String(id));
+            const previousStatus = application.status;
+            try {
+                let managedUser;
+                let accountCreated = false;
+                if (useFirebase && authInstance && authInstance.currentUser) {
+                    const idToken = await authInstance.currentUser.getIdToken();
+                    const response = await fetch('/api/admin/upsert-user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            idToken,
+                            name: application.name,
+                            email: application.email,
+                            role: applicationAccountRole(application),
+                            dept: application.dept || '',
+                            position: application.position || ''
+                        })
+                    });
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok || !result.user) throw new Error(result.error || 'Không thể tạo hoặc cập nhật tài khoản.');
+                    managedUser = result.user;
+                    accountCreated = !!result.created;
+                } else {
+                    const email = String(application.email || '').toLowerCase();
+                    managedUser = (localDB.users || []).find(user => String(user.email || '').toLowerCase() === email) || {
+                        id: await getNextId(), name: application.name, email
+                    };
+                    managedUser.role = applicationAccountRole(application);
+                    managedUser.dept = application.dept || '';
+                    managedUser.position = application.position || '';
+                    await saveItem('users', managedUser);
+                }
+
+                const users = Array.isArray(localDB.users) ? localDB.users : (localDB.users = []);
+                const userIndex = users.findIndex(user => String(user.id) === String(managedUser.id) || String(user.email || '').toLowerCase() === String(managedUser.email || '').toLowerCase());
+                if (userIndex === -1) users.push(managedUser); else users[userIndex] = { ...users[userIndex], ...managedUser };
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+
+                application.status = 'approved';
+                application.reviewedAt = new Date().toISOString();
+                application.reviewedBy = session && session.id || '';
+                application.reviewedByName = session && session.name || '';
+                application.approvedUserId = managedUser.id;
+                await saveItem('applications', application);
+
+                if (accountCreated) {
+                    const resetResponse = await fetch('/api/email/send-password-reset', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: managedUser.email })
+                    });
+                    if (!resetResponse.ok) showToast('Đã duyệt và tạo tài khoản, nhưng email đặt mật khẩu chưa gửi được.', 'warning');
+                }
+                renderTab('members');
+                showToast('Đã duyệt đơn và đồng bộ tài khoản cho ' + application.name + '.', 'success');
+                openApplicationDecisionEmail(application, 'approve');
+            } catch (error) {
+                application.status = previousStatus;
+                console.error('Approve application error:', error);
+                showToast('Chưa thể duyệt đơn: ' + (error.message || 'Lỗi không xác định'), 'error');
+            } finally {
+                window._applicationActionInFlight.delete(String(id));
+            }
+        }
+
+        async function rejectApplication(id) {
+            const application = (localDB.applications || []).find(item => String(item.id) === String(id));
+            if (!application || window._applicationActionInFlight.has(String(id))) return;
+            if (application.status === 'rejected') return showToast('Đơn này đã được từ chối trước đó.', 'info');
+            if (!(await showConfirmModal('Từ chối đơn của ' + application.name + '? Hệ thống sẽ giữ lại lịch sử và chuẩn bị email phản hồi.'))) return;
+            window._applicationActionInFlight.add(String(id));
+            const previousStatus = application.status;
+            try {
+                application.status = 'rejected';
+                application.reviewedAt = new Date().toISOString();
+                application.reviewedBy = session && session.id || '';
+                application.reviewedByName = session && session.name || '';
+                await saveItem('applications', application);
+                renderTab('members');
+                showToast('Đã chuyển đơn sang trạng thái từ chối.', 'success');
+                openApplicationDecisionEmail(application, 'reject');
+            } catch (error) {
+                application.status = previousStatus;
+                console.error('Reject application error:', error);
+                showToast('Không thể cập nhật đơn: ' + (error.message || 'Lỗi không xác định'), 'error');
+            } finally {
+                window._applicationActionInFlight.delete(String(id));
+            }
+        }
+
+        async function addNewUserFromDash() {
+            const name = document.getElementById('usName').value.trim();
+            const email = document.getElementById('usEmail').value.trim().toLowerCase();
+            const role = document.getElementById('usRole').value;
+            const dept = document.getElementById('usDept').value;
+            const position = document.getElementById('usPosition').value;
+            if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showToast('Vui lòng nhập họ tên và email hợp lệ.', 'error');
+            if (!useFirebase || !authInstance || !authInstance.currentUser) return showToast('Tính năng tạo tài khoản cần kết nối Firebase.', 'error');
+            try {
+                const idToken = await authInstance.currentUser.getIdToken();
+                const response = await fetch('/api/admin/upsert-user', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken, name, email, role, dept, position })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.user) throw new Error(result.error || 'Không thể tạo tài khoản.');
+                const users = Array.isArray(localDB.users) ? localDB.users : (localDB.users = []);
+                const index = users.findIndex(user => String(user.id) === String(result.user.id) || String(user.email || '').toLowerCase() === email);
+                if (index === -1) users.push(result.user); else users[index] = { ...users[index], ...result.user };
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+                if (result.created) {
+                    const resetResponse = await fetch('/api/email/send-password-reset', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+                    });
+                    if (!resetResponse.ok) showToast('Đã tạo tài khoản nhưng chưa gửi được link đặt mật khẩu.', 'warning');
+                }
+                document.getElementById('usName').value = '';
+                document.getElementById('usEmail').value = '';
+                renderTab('members');
+                showToast(result.created ? 'Đã tạo tài khoản và gửi link đặt mật khẩu.' : 'Đã cập nhật tài khoản hiện có.', 'success');
+            } catch (error) {
+                console.error('Create managed user error:', error);
+                showToast('Không thể tạo tài khoản: ' + (error.message || 'Lỗi không xác định'), 'error');
+            }
+        }
 
         // Helper: save entire collection to localStorage
         function persistDB() { localStorage.setItem('ynda_db', JSON.stringify(localDB)); }

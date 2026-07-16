@@ -14,9 +14,11 @@ function getDb() {
     return admin.firestore();
 }
 
-function isHrProfile(profile) {
-    const dept = String(profile.dept || '').trim().toLowerCase();
-    return dept === 'hr' || dept.includes('nhân sự') || dept.includes('nhan su');
+function pollEndAt(poll) {
+    if (!poll || !/^\d{4}-\d{2}-\d{2}$/.test(String(poll.startDate || ''))) return 0;
+    const end = new Date(String(poll.startDate) + 'T00:00:00+07:00');
+    end.setUTCDate(end.getUTCDate() + Math.max(1, Math.min(14, Number(poll.dayCount || 7))));
+    return end.getTime();
 }
 
 module.exports = async function listAvailabilityForStaff(req, res) {
@@ -28,18 +30,27 @@ module.exports = async function listAvailabilityForStaff(req, res) {
         const decoded = await admin.auth().verifyIdToken(body.idToken);
         const profileDoc = await db.collection('users').doc(decoded.uid).get();
         const profile = profileDoc.exists ? profileDoc.data() : {};
-        const projectAdmin = String(decoded.email || '').toLowerCase() === 'yniemdienanh@gmail.com';
         const allowed = isScheduleManager(decoded, profile);
-        if (!decoded.email_verified || !allowed) {
-            return res.status(403).json({ error: 'Chỉ Admin/BTC/Ban Nhân sự mới được xem toàn bộ lịch.' });
+        if (!decoded.email_verified) {
+            return res.status(403).json({ error: 'Tài khoản chưa xác minh email.' });
         }
         const [pollsSnap, schedulesSnap] = await Promise.all([
             db.collection('availabilityPolls').get(),
-            db.collection('meetingSchedules').get()
+            allowed ? db.collection('meetingSchedules').get() : db.collection('meetingSchedules').where('ownerId', '==', decoded.uid).get()
         ]);
+        const schedules = schedulesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const respondedPollIds = new Set(schedules.filter(item => item.ownerId === decoded.uid && (item.completedAt || item.finalizedAt)).map(item => String(item.pollId || '')));
+        const visibleSchedules = allowed ? schedules : schedules.filter(item => !(item.completedAt || item.finalizedAt));
+        const now = Date.now();
+        const polls = pollsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(poll => {
+            if (allowed) return true;
+            const assigned = poll.isPublic === true || (Array.isArray(poll.participantIds) && poll.participantIds.includes(decoded.uid));
+            const active = poll.status === 'open' && (!pollEndAt(poll) || now < pollEndAt(poll));
+            return assigned && active && !respondedPollIds.has(String(poll.id));
+        });
         return res.status(200).json({
-            polls: pollsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-            schedules: schedulesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+            polls,
+            schedules: visibleSchedules
         });
     } catch (error) {
         console.error('List staff availability error:', error);

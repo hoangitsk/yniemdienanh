@@ -65,6 +65,19 @@ service cloud.firestore {
       ));
     }
 
+    function isPeopleManager() {
+      return isOrganizer() || (signedIn() && hasUserDoc() && (
+        myUserDoc().data.dept == 'Ban Nhân Sự' ||
+        myUserDoc().data.dept == 'Ban Nhan Su' ||
+        myUserDoc().data.dept == 'HR' ||
+        myUserDoc().data.dept == 'Ban Truyền Thông' ||
+        myUserDoc().data.dept == 'Ban Truyen Thong' ||
+        myUserDoc().data.dept == 'PR' ||
+        myUserDoc().data.dept == 'Ban PR/MKT' ||
+        myUserDoc().data.dept == 'Marketing'
+      ));
+    }
+
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
@@ -72,10 +85,10 @@ service cloud.firestore {
     function canRespondToAvailabilityPoll(pollId) {
       return signedIn()
         && exists(/databases/$(database)/documents/availabilityPolls/$(pollId))
-        && get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.status == 'open'
+        && ("status" in get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data && get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.status == 'open')
         && (
-          get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.isPublic == true
-          || request.auth.uid in get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.participantIds
+          ("isPublic" in get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data && get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.isPublic == true)
+          || ("participantIds" in get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data && request.auth.uid in get(/databases/$(database)/documents/availabilityPolls/$(pollId)).data.participantIds)
           || isScheduleManager()
         );
     }
@@ -109,14 +122,14 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow create: if request.auth != null && request.auth.uid == userId && validUserRoleOnCreate();
-      allow read: if request.auth != null && (request.auth.uid == userId || isOrganizer());
+      allow read: if request.auth != null && (request.auth.uid == userId || isPeopleManager());
       allow update: if signedIn() && ((request.auth.uid == userId && keepsOwnRole()) || isAdmin());
       allow delete: if isAdmin();
     }
 
     match /applications/{docId} {
       allow create: if signedIn();
-      allow read, update, delete: if isOrganizer();
+      allow read, update, delete: if isPeopleManager();
     }
 
     match /tasks/{docId} {
@@ -207,30 +220,48 @@ service cloud.firestore {
 
     // Lịch rảnh cá nhân và lịch chính thức do BTC/Admin điều phối.
     match /availabilityPolls/{pollId} {
-      allow read: if signedIn();
+      allow read: if isScheduleManager()
+        || (signedIn()
+          && ("status" in resource.data && resource.data.status == 'open')
+          && (!exists(/databases/$(database)/documents/meetingSchedules/$(pollId + '_' + request.auth.uid))
+            || !("completedAt" in get(/databases/$(database)/documents/meetingSchedules/$(pollId + '_' + request.auth.uid)).data))
+          && (("isPublic" in resource.data && resource.data.isPublic == true)
+            || ("participantIds" in resource.data && request.auth.uid in resource.data.participantIds)));
       allow create, update, delete: if isScheduleManager();
     }
 
     match /meetingSchedules/{docId} {
-      allow read: if isScheduleManager() || (signedIn() && resource.data.ownerId == request.auth.uid);
+      allow read: if isScheduleManager()
+        || (signedIn() && resource.data.ownerId == request.auth.uid && !("completedAt" in resource.data));
       allow create: if signedIn()
         && request.resource.data.ownerId == request.auth.uid
         && ('pollId' in request.resource.data)
+        && !("completedAt" in request.resource.data)
         && docId == request.resource.data.pollId + '_' + request.auth.uid
         && canRespondToAvailabilityPoll(request.resource.data.pollId);
       allow update: if signedIn()
         && (resource.data.ownerId == request.auth.uid || isScheduleManager())
         && request.resource.data.ownerId == resource.data.ownerId
         && request.resource.data.pollId == resource.data.pollId
-        && (isOrganizer() || canRespondToAvailabilityPoll(resource.data.pollId));
+        && (isScheduleManager()
+          || (!("completedAt" in resource.data)
+            && !("completedAt" in request.resource.data)
+            && canRespondToAvailabilityPoll(resource.data.pollId)));
       allow delete: if isScheduleManager()
         || (signedIn() && resource.data.ownerId == request.auth.uid
           && ('pollId' in resource.data)
+          && !("completedAt" in resource.data)
           && canRespondToAvailabilityPoll(resource.data.pollId));
     }
 
     match /scheduledEvents/{eventId} {
-      allow read: if signedIn();
+      allow read: if isScheduleManager()
+        || (signedIn() && (
+          ("isPublic" in resource.data && resource.data.isPublic == true)
+          || ("participantIds" in resource.data && request.auth.uid in resource.data.participantIds)
+          || exists(/databases/$(database)/documents/scheduledBookings/$(eventId + '_' + request.auth.uid))
+          || ("availabilityPollId" in resource.data && canRespondToAvailabilityPoll(resource.data.availabilityPollId))
+        ));
       allow create, update, delete: if isScheduleManager();
     }
 
@@ -239,7 +270,14 @@ service cloud.firestore {
       allow create: if signedIn()
         && bookingId == request.resource.data.eventId + '_' + request.auth.uid
         && request.resource.data.candidateId == request.auth.uid
-        && request.resource.data.status == 'requested';
+        && request.resource.data.status == 'requested'
+        && exists(/databases/$(database)/documents/scheduledEvents/$(request.resource.data.eventId))
+        && get(/databases/$(database)/documents/scheduledEvents/$(request.resource.data.eventId)).data.status != 'cancelled'
+        && (
+          ("isPublic" in get(/databases/$(database)/documents/scheduledEvents/$(request.resource.data.eventId)).data && get(/databases/$(database)/documents/scheduledEvents/$(request.resource.data.eventId)).data.isPublic == true)
+          || ("participantIds" in get(/databases/$(database)/documents/scheduledEvents/$(request.resource.data.eventId)).data && request.auth.uid in get(/databases/$(database)/documents/scheduledEvents/$(request.resource.data.eventId)).data.participantIds)
+          || ("availabilityPollId" in get(/databases/$(database)/documents/scheduledEvents/$(request.resource.data.eventId)).data && canRespondToAvailabilityPoll(get(/databases/$(database)/documents/scheduledEvents/$(request.resource.data.eventId)).data.availabilityPollId))
+        );
       allow create: if isScheduleManager()
         && bookingId == request.resource.data.eventId + '_' + request.resource.data.candidateId
         && request.resource.data.status in ['requested', 'confirmed'];

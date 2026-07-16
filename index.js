@@ -11,6 +11,7 @@ const { ensureInterviewScheduleContent } = require('./lib/emailContent');
 const { normalizeEmailSender, emailSenderPromptContext, applyEmailSenderIdentity } = require('./lib/emailSender');
 const { normalizePdfAttachment } = require('./lib/pdfAttachment');
 const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('./lib/projectIdentity');
+const { isPeopleManager, isScheduleManager } = require('./lib/schedulePermissions');
 const generateGeminiBulkEmails = require('./api/email/generate-gemini-bulk');
 require('dotenv').config();
 
@@ -77,10 +78,33 @@ function rateLimit(limit, windowMs) {
 
 // Apply rate limiting to sensitive endpoints
 app.use('/api/email/', rateLimit(5, 60000));       // 5 requests per minute for email
+app.use('/api/send-notification-email', rateLimit(5, 60000));
 app.use('/api/create-payment', rateLimit(10, 60000)); // 10 per minute for payments
 app.use('/api/verify-turnstile', rateLimit(20, 60000)); // 20 per minute for turnstile
 app.use('/api/admin/', rateLimit(10, 60000));       // 10 per minute for admin APIs
 app.use('/api/schedule/', rateLimit(60, 60000));    // Autosave lịch có thể tạo nhiều yêu cầu liên tiếp
+
+function requireAuthorizedProfile(permissionCheck) {
+    return async function(req, res, next) {
+        try {
+            const idToken = req.body && req.body.idToken;
+            if (!idToken) return res.status(401).json({ error: 'Vui lòng đăng nhập lại.' });
+            const decoded = await admin.auth().verifyIdToken(idToken);
+            const profileDoc = await admin.firestore().collection('users').doc(decoded.uid).get();
+            const profile = profileDoc.exists ? profileDoc.data() : {};
+            if (!decoded.email_verified || !permissionCheck(decoded, profile)) {
+                return res.status(403).json({ error: 'Tài khoản không có quyền thực hiện thao tác này.' });
+            }
+            req.authUser = decoded;
+            next();
+        } catch (error) {
+            return res.status(error.code === 'auth/id-token-expired' ? 401 : 500).json({ error: error.message || 'Không thể xác thực tài khoản.' });
+        }
+    };
+}
+
+const requirePeopleManager = requireAuthorizedProfile(isPeopleManager);
+const requireScheduleManager = requireAuthorizedProfile(isScheduleManager);
 
 const PORT = process.env.PORT || 24687;
 const PYTHON_PORT = process.env.PYTHON_PORT || 8000;
@@ -443,7 +467,7 @@ app.post('/api/payos-webhook', async (req, res) => {
 });
 
 // API: Send notification email (support questions, deadline extensions, etc.)
-app.post('/api/send-notification-email', async (req, res) => {
+app.post('/api/send-notification-email', requireScheduleManager, async (req, res) => {
     try {
         const { to, subject, html } = req.body;
         if (!to || !subject || !html) return res.status(400).json({ error: 'Missing required fields' });
@@ -473,7 +497,7 @@ app.post('/api/send-notification-email', async (req, res) => {
 // API: Generate personalized email with Gemini
 app.post('/api/email/generate-gemini-bulk', generateGeminiBulkEmails);
 
-app.post('/api/email/generate-gemini-reply', async (req, res) => {
+app.post('/api/email/generate-gemini-reply', requirePeopleManager, async (req, res) => {
     const { keys } = getGeminiConfig();
     if (keys.length === 0) {
         return res.status(500).json({ error: 'GEMINI_API_KEY chưa được cấu hình trên server.' });
@@ -524,7 +548,7 @@ Trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
 });
 
 // API: Send custom email
-app.post('/api/email/send-custom', async (req, res) => {
+app.post('/api/email/send-custom', requireScheduleManager, async (req, res) => {
     try {
         const { to, subject, html, attachment } = req.body;
         if (!to || !subject || !html) {
@@ -578,8 +602,14 @@ const saveSchedulePoll = require('./api/schedule/save-poll');
 app.post('/api/schedule/save-poll', saveSchedulePoll);
 const listStaffAvailability = require('./api/schedule/list-availability');
 app.post('/api/schedule/list-availability', listStaffAvailability);
+const listScheduleEvents = require('./api/schedule/list-events');
+app.post('/api/schedule/list-events', listScheduleEvents);
+const completeScheduleInterview = require('./api/schedule/complete-interview');
+app.post('/api/schedule/complete-interview', completeScheduleInterview);
 const saveAvailability = require('./api/schedule/save-availability');
 app.post('/api/schedule/save-availability', saveAvailability);
+const upsertManagedUser = require('./api/admin/upsert-user');
+app.post('/api/admin/upsert-user', upsertManagedUser);
 const finalizeInterviewCron = require('./api/cron/finalize-interviews');
 app.get('/api/cron/finalize-interviews', finalizeInterviewCron);
 app.post('/api/cron/finalize-interviews', finalizeInterviewCron);

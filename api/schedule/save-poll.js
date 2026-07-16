@@ -50,6 +50,7 @@ module.exports = async function saveAvailabilityPoll(req, res) {
         const input = body.poll;
         const title = String(input.title || '').trim().slice(0, 200);
         const type = input.type === 'meeting' ? 'meeting' : 'interview';
+        const requestedCode = String(input.code || '').trim().toUpperCase().replace(/\s+/g, '');
         const startDate = String(input.startDate || '');
         const dayCount = Math.max(1, Math.min(14, Number(input.dayCount || 7)));
         const participantIds = Array.isArray(input.participantIds)
@@ -59,6 +60,22 @@ module.exports = async function saveAvailabilityPoll(req, res) {
             ? input.participantNames.map(name => String(name).slice(0, 200)).slice(0, participantIds.length)
             : [];
         const isPublic = input.isPublic === true;
+        if (requestedCode && !/^[A-Z][A-Z0-9_-]{3,29}$/.test(requestedCode)) {
+            return res.status(400).json({ error: 'Mã lịch chỉ được gồm chữ in hoa, số, dấu gạch ngang hoặc gạch dưới (4–30 ký tự).' });
+        }
+        // Quy ước: YNDAHR*/YNDAPR* là phiếu vote phỏng vấn theo ban; HOPYNDA* là phiếu vote họp.
+        if (requestedCode && type === 'interview' && /^HOP/i.test(requestedCode)) {
+            return res.status(400).json({ error: 'Mã HOP* dành cho lịch họp. Phiếu vote phỏng vấn nên dùng YNDAHR1, YNDAPR1 hoặc mã YNDA*.' });
+        }
+        if (requestedCode && type === 'meeting' && /^YNDA(?:HR|PR)/i.test(requestedCode)) {
+            return res.status(400).json({ error: 'Mã YNDAHR*/YNDAPR* dành cho phiếu vote phỏng vấn. Lịch họp nên dùng HOPYNDA1 hoặc mã HOP*.' });
+        }
+        if (requestedCode) {
+            const duplicate = await db.collection('availabilityPolls').where('code', '==', requestedCode).limit(2).get();
+            if (duplicate.docs.some(doc => doc.id !== pollId)) {
+                return res.status(409).json({ error: 'Mã lịch này đã được sử dụng. Hãy chọn mã khác.' });
+            }
+        }
         if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
             return res.status(400).json({ error: 'Tên đợt hoặc ngày bắt đầu không hợp lệ.' });
         }
@@ -68,7 +85,7 @@ module.exports = async function saveAvailabilityPoll(req, res) {
 
         const now = new Date().toISOString();
         const allowedStatuses = ['draft', 'open', 'closed', 'archived'];
-        const counterRef = db.collection('systemCounters').doc('availabilityPollCodes');
+        const counterRef = db.collection('systemCounters').doc(type === 'meeting' ? 'meetingPollCodes' : 'availabilityPollCodes');
         let poll;
         await db.runTransaction(async transaction => {
             const [existingDoc, counterDoc] = await Promise.all([
@@ -76,10 +93,12 @@ module.exports = async function saveAvailabilityPoll(req, res) {
                 transaction.get(counterRef)
             ]);
             const existing = existingDoc.exists ? existingDoc.data() : null;
-            let code = String(existing && existing.code || '').toUpperCase();
-            if (!/^YNDA\d+$/.test(code)) {
+            let code = requestedCode || String(existing && existing.code || '').toUpperCase();
+            const generatedPrefix = type === 'meeting' ? 'HOPYNDA' : 'YNDA';
+            const generatedPattern = type === 'meeting' ? /^HOPYNDA\d+$/ : /^YNDA\d+$/;
+            if (!requestedCode && !generatedPattern.test(code)) {
                 const next = Math.max(1, Number(counterDoc.exists && counterDoc.data().next || 1));
-                code = 'YNDA' + next;
+                code = generatedPrefix + next;
                 transaction.set(counterRef, { next: next + 1, updatedAt: now }, { merge: true });
             }
             const requestedStatus = allowedStatuses.includes(input.status) ? input.status : (existing ? existing.status : 'draft');

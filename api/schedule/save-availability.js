@@ -67,7 +67,12 @@ module.exports = async function saveAvailability(req, res) {
 
         const docId = String(body.pollId) + '_' + decoded.uid;
         const ref = db.collection('meetingSchedules').doc(docId);
+        const existingDoc = await ref.get();
+        const existingSchedule = existingDoc.exists ? existingDoc.data() : null;
         if (body.action === 'delete') {
+            if (!organizer && existingSchedule && (existingSchedule.completedAt || existingSchedule.finalizedAt)) {
+                return res.status(403).json({ error: 'Phiếu đã hoàn tất nên chỉ Admin/HR/PR có thể thay đổi.' });
+            }
             const deleteEnd = new Date(String(poll.startDate || '') + 'T00:00:00+07:00');
             deleteEnd.setUTCDate(deleteEnd.getUTCDate() + Math.max(1, Math.min(14, Number(poll.dayCount || 7))));
             if (!organizer && (Number.isNaN(deleteEnd.getTime()) || Date.now() >= deleteEnd.getTime())) {
@@ -78,7 +83,29 @@ module.exports = async function saveAvailability(req, res) {
             return res.status(200).json({ success: true, deleted: true, id: docId });
         }
 
+        if (body.action === 'finalize') {
+            if (!existingSchedule || !Array.isArray(existingSchedule.slots) || !existingSchedule.slots.length) {
+                return res.status(400).json({ error: 'Hãy chọn và lưu ít nhất một khung giờ trước khi hoàn tất.' });
+            }
+            if (existingSchedule.completedAt || existingSchedule.finalizedAt) {
+                return res.status(200).json({ success: true, schedule: { id: docId, ...existingSchedule } });
+            }
+            if (!organizer && poll.status !== 'open') return res.status(403).json({ error: 'Đợt vote đã khóa.' });
+            const finalizeEnd = new Date(String(poll.startDate || '') + 'T00:00:00+07:00');
+            finalizeEnd.setUTCDate(finalizeEnd.getUTCDate() + Math.max(1, Math.min(14, Number(poll.dayCount || 7))));
+            if (!organizer && (Number.isNaN(finalizeEnd.getTime()) || Date.now() >= finalizeEnd.getTime())) {
+                return res.status(403).json({ error: 'Đợt vote đã hết hạn.' });
+            }
+            const completedAt = new Date().toISOString();
+            const schedule = { ...existingSchedule, id: docId, completedAt, finalizedAt: completedAt, finalizedBy: decoded.uid };
+            await ref.set({ completedAt, finalizedAt: completedAt, finalizedBy: decoded.uid }, { merge: true });
+            return res.status(200).json({ success: true, schedule });
+        }
+
         if (poll.status !== 'open') return res.status(403).json({ error: 'Đợt vote đã khóa nên không thể lưu.' });
+        if (!organizer && existingSchedule && (existingSchedule.completedAt || existingSchedule.finalizedAt)) {
+            return res.status(403).json({ error: 'Phiếu đã hoàn tất nên không thể chỉnh sửa.' });
+        }
         const end = new Date(String(poll.startDate || '') + 'T00:00:00+07:00');
         end.setUTCDate(end.getUTCDate() + Math.max(1, Math.min(14, Number(poll.dayCount || 7))));
         if (poll.status !== 'open' || Number.isNaN(end.getTime()) || Date.now() >= end.getTime()) {
@@ -111,6 +138,9 @@ module.exports = async function saveAvailability(req, res) {
             dayCount: Math.max(1, Math.min(14, Number(poll.dayCount || 7))),
             submittedAt: new Date().toISOString()
         };
+        if (existingSchedule && existingSchedule.completedAt) schedule.completedAt = existingSchedule.completedAt;
+        if (existingSchedule && existingSchedule.finalizedAt) schedule.finalizedAt = existingSchedule.finalizedAt;
+        if (existingSchedule && existingSchedule.finalizedBy) schedule.finalizedBy = existingSchedule.finalizedBy;
         await ref.set(schedule);
         return res.status(200).json({ success: true, schedule });
     } catch (error) {

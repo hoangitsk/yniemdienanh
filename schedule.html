@@ -1353,7 +1353,7 @@
 
         function pollOptionLabel(poll) {
             const status = pollIsExpired(poll) ? 'Hết hạn' : pollStatusLabel(poll.status);
-            return (poll.code || poll.id || 'Lịch') + ' · ' + (poll.title || 'Lịch chưa đặt tên') + ' · ' + pollTypeLabel(poll) + ' · ' + status;
+            return (poll.title || 'Lịch chưa đặt tên') + ' · ' + pollTypeLabel(poll) + ' · ' + status;
         }
 
         function schedulesForActivePoll() {
@@ -1402,18 +1402,32 @@
             const deptFilter = document.getElementById('pollParticipantDeptFilter');
             const selectedDept = deptFilter ? deptFilter.value : '';
             if (deptFilter) {
-                const depts = Array.from(new Set(directoryUsers.map(user => String(user.dept || '').trim()).filter(Boolean)))
-                    .sort((a, b) => a.localeCompare(b, 'vi'));
-                deptFilter.innerHTML = '<option value="">Tất cả ban</option>' + depts.map(dept => '<option value="' + escapeHtml(dept) + '">' + escapeHtml(dept) + '</option>').join('');
+                const standardDepts = ['Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Nội Dung', 'Ban Media (Thiết kế&Edit)', 'Ban duyệt bài'];
+                const observedDepts = directoryUsers.map(user => departmentGroupLabel(user)).filter(dept => dept && dept !== 'Chưa phân ban');
+                const depts = Array.from(new Set(standardDepts.concat(observedDepts)));
+                deptFilter.innerHTML = '<option value="">Tất cả ban</option>' + depts.map(dept => '<option value="' + escapeHtml(dept) + '">' + escapeHtml(dept) + '</option>').join('') + '<option value="Chưa phân ban">Chưa phân ban</option>';
                 if (depts.includes(selectedDept)) deptFilter.value = selectedDept;
+                else if (selectedDept === 'Chưa phân ban') deptFilter.value = selectedDept;
             }
             const selected = new Set(Array.from(picker.querySelectorAll('.poll-participant-checkbox:checked')).map(input => input.value));
             picker.innerHTML = directoryUsers.slice().sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'vi')).map(user => {
-                const label = (user.name || user.email || user.id) + (user.dept ? ' · ' + user.dept : '') + (user.email ? ' · ' + user.email : '');
-                return '<label class="participant-option" data-dept="' + escapeHtml(user.dept || '') + '"><input class="poll-participant-checkbox" type="checkbox" value="' + escapeHtml(user.id) + '"' + (selected.has(user.id) ? ' checked' : '') + ' onchange="updatePollParticipantCount()"><span>' + escapeHtml(label) + '</span></label>';
+                const deptGroup = departmentGroupLabel(user);
+                const label = (user.name || user.email || user.id) + ' · ' + deptGroup + (user.email ? ' · ' + user.email : '');
+                return '<label class="participant-option" data-dept="' + escapeHtml(deptGroup) + '"><input class="poll-participant-checkbox" type="checkbox" value="' + escapeHtml(user.id) + '"' + (selected.has(user.id) ? ' checked' : '') + ' onchange="updatePollParticipantCount()"><span>' + escapeHtml(label) + '</span></label>';
             }).join('') || '<div style="padding:12px;color:var(--text-muted);font-size:.76rem">Không tải được tài khoản đăng ký</div>';
             filterPollParticipants();
             updatePollParticipantCount();
+        }
+
+        function departmentGroupLabel(user) {
+            const raw = String(user && (user.dept || user.department) || '').trim();
+            const normalized = normalizeScheduleText(raw + ' ' + String(user && (user.position || user.title) || ''));
+            if (normalized.includes('nhan su') || /(^|\s)hr($|\s)/.test(normalized)) return 'Ban Nhân Sự';
+            if (normalized.includes('truyen thong') || /(^|\s)pr($|\s)/.test(normalized) || normalized.includes('marketing') || normalized.includes('mkt')) return 'Ban Truyền Thông';
+            if (normalized.includes('noi dung')) return 'Ban Nội Dung';
+            if (normalized.includes('media') || normalized.includes('thiet ke') || normalized.includes('edit')) return 'Ban Media (Thiết kế&Edit)';
+            if (normalized.includes('duyet bai')) return 'Ban duyệt bài';
+            return raw || 'Chưa phân ban';
         }
 
         function filterPollParticipants() {

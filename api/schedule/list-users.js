@@ -28,22 +28,34 @@ module.exports = async function listScheduleUsers(req, res) {
             return res.status(403).json({ error: 'Chỉ Admin/BTC mới được xem danh sách tài khoản.' });
         }
 
-        const [authPage, profilesSnap] = await Promise.all([
+        const [authPage, profilesSnap, applicationsSnap] = await Promise.all([
             admin.auth().listUsers(1000),
-            db.collection('users').get()
+            db.collection('users').get(),
+            db.collection('applications').get()
         ]);
         const profiles = new Map(profilesSnap.docs.map(doc => [doc.id, doc.data()]));
+        const applicationsByEmail = new Map();
+        applicationsSnap.docs.forEach(doc => {
+            const application = doc.data() || {};
+            const email = String(application.email || '').trim().toLowerCase();
+            if (!email) return;
+            const current = applicationsByEmail.get(email);
+            const currentTime = String(current && (current.reviewedAt || current.createdAt || current.submittedAt) || '');
+            const nextTime = String(application.reviewedAt || application.createdAt || application.submittedAt || '');
+            if (!current || nextTime >= currentTime) applicationsByEmail.set(email, application);
+        });
         const users = authPage.users
             .filter(user => user.email && !user.disabled)
             .map(user => {
                 const profile = profiles.get(user.uid) || {};
+                const application = applicationsByEmail.get(String(user.email).toLowerCase()) || {};
                 return {
                     id: user.uid,
                     name: profile.name || user.displayName || String(user.email).split('@')[0],
                     email: user.email,
-                    dept: profile.dept || '',
+                    dept: profile.dept || application.dept || '',
                     role: String(user.email || '').toLowerCase() === 'yniemdienanh@gmail.com' ? 'admin' : (profile.role || 'member'),
-                    position: profile.position || profile.title || ''
+                    position: profile.position || profile.title || application.position || ''
                 };
             });
         return res.status(200).json({ users });

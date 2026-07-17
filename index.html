@@ -2757,6 +2757,7 @@
                 <a href="#" onclick="event.preventDefault();goSection('events');closeMobileMenu()" role="button">Sự kiện</a>
                 <a href="#" onclick="event.preventDefault();showPage('voting');closeMobileMenu()" role="button">Bình chọn</a>
                 <a href="/community">Cộng đồng</a>
+                <a href="/vinh-danh">Vinh danh</a>
                 <a href="/verify">Tra cứu chứng nhận</a>
                 <a href="/schedule">Lịch họp & PV</a>
                 <a href="#" onclick="event.preventDefault();goSection('apply');closeMobileMenu()" role="button">Tuyển dụng</a>
@@ -2829,29 +2830,6 @@
                         <p>Đồng hành duy trì website — Season 1 · <strong>100.000 VNĐ</strong></p>
                         <p>Khoản đóng góp dành riêng cho nền tảng trực tuyến, không thuộc quỹ giải thưởng.</p>
                     </div>
-                </article>
-            </section>
-
-            <!-- PERMANENT SHORT RECOGNITION CARD -->
-            <section id="vinh-danh" class="honor-roll scroll-reveal" aria-labelledby="honorRollTitle">
-                <p class="honor-roll__eyebrow">Khu vinh danh</p>
-                <h2 id="honorRollTitle" class="honor-roll__heading">Những Người Đồng Hành</h2>
-                <p class="honor-roll__intro">Những sự tin tưởng đã giúp ngôi nhà trực tuyến của Ý Niệm Điện Ảnh tiếp tục sáng đèn.</p>
-                <article class="honoree-card">
-                    <div class="honoree-card__story">
-                        <h3>Trần Đại Lục Châu</h3>
-                        <p class="honoree-card__affiliation">Người đồng hành duy trì website — Season 1</p>
-                        <p>Cảm ơn bạn đã đóng góp <strong>100.000 VNĐ</strong> để hỗ trợ duy trì website Ý Niệm Điện Ảnh.</p>
-                        <p>Khoản đóng góp được dành riêng cho nền tảng trực tuyến và <strong>không thuộc quỹ giải thưởng</strong>.</p>
-                        <p class="honoree-card__thanks">Cảm ơn bạn vì đã giúp ngôi nhà trực tuyến của chúng mình tiếp tục sáng đèn.</p>
-                    </div>
-                    <aside class="honoree-card__meta" aria-label="Thông tin vinh danh">
-                        <dl>
-                            <div><dt>Hạng mục</dt><dd>Duy trì website</dd></div>
-                            <div><dt>Ghi nhận</dt><dd>Season 1</dd></div>
-                            <div><dt>Danh hiệu</dt><dd>Người Donate Đầu Tiên</dd></div>
-                        </dl>
-                    </aside>
                 </article>
             </section>
 
@@ -10281,6 +10259,10 @@
 
         // ================= SCROLL AND REVEAL EFFECTS =================
         document.addEventListener('DOMContentLoaded', () => {
+            // Khối vinh danh có thời hạn luôn nằm ngay dưới Hero/Spotlight trên Trang chủ.
+            const homepageHonor = document.getElementById('homepage-honor-tran-dai-luc-chau');
+            const homepageHero = document.querySelector('#page-home > .hero');
+            if (homepageHonor && homepageHero) homepageHero.insertAdjacentElement('afterend', homepageHonor);
             // Nội dung vinh danh nổi bật ở Trang chủ chỉ hiển thị trong thời hạn đã công bố.
             document.querySelectorAll('[data-display-start][data-display-end]').forEach(el => {
                 const start = new Date(el.dataset.displayStart).getTime();

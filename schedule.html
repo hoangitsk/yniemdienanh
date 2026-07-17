@@ -2464,6 +2464,66 @@
             queueScheduleAutoSave();
         }
 
+        async function addMemberToSlotAsAdmin(slotId) {
+            if (!canManageSchedules || !activePoll || !currentUser || !dbInstance) {
+                return showAdminStatus('Chỉ Admin/BTC mới có thể thêm lịch cho thành viên.', 'var(--danger)');
+            }
+            if (!directoryUsers.length) return showAdminStatus('Danh sách thành viên chưa tải xong. Hãy thử lại sau vài giây.', 'var(--danger)');
+            const members = directoryUsers.slice().sort(function(a, b) {
+                return String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'vi');
+            });
+            const choices = members.map(function(member, index) {
+                return (index + 1) + '. ' + (member.name || member.email) + (member.dept ? ' · ' + member.dept : '') + ' · ' + member.email;
+            }).join('\n');
+            const selectedIndex = Number(prompt('Thêm khung giờ này cho thành viên nào?\n\n' + choices + '\n\nNhập số thứ tự:')) - 1;
+            const member = members[selectedIndex];
+            if (!Number.isInteger(selectedIndex) || !member || !member.id) return;
+            const slot = availabilitySlotInfo(slotId);
+            if (!slot) return;
+            const memberName = member.name || member.email;
+            if (!confirm('Ghi nhận ' + memberName + ' có thể tham gia ' + slot.date.label + ' · ' + slot.shift.name + ' (' + slot.shift.time + ')?')) return;
+
+            const docId = activePoll.id + '_' + member.id;
+            const existing = (localDB.meetingSchedules || []).find(function(schedule) {
+                return schedule.id === docId || (schedule.pollId === activePoll.id && schedule.ownerId === member.id);
+            });
+            const slots = new Set(existing && existing.slots || []);
+            if (slots.has(slotId)) return showAdminStatus(memberName + ' đã có khung giờ này.', 'var(--gold-light)');
+            slots.add(slotId);
+            const defaultRole = activePoll.type === 'interview'
+                ? (isEligibleInterviewer(member) ? 'btc' : 'candidate')
+                : 'member';
+            const now = new Date().toISOString();
+            const schedule = Object.assign({}, existing || {}, {
+                id: docId,
+                ownerId: member.id,
+                pollId: activePoll.id,
+                pollTitle: activePoll.title || '',
+                name: memberName,
+                role: existing && existing.role || defaultRole,
+                slots: Array.from(slots),
+                preferredSlots: (existing && existing.preferredSlots || []).filter(function(id) { return slots.has(id); }),
+                rangeStart: activePoll.startDate || null,
+                dayCount: Math.max(1, Math.min(14, Number(activePoll.dayCount || 7))),
+                submittedAt: existing && existing.submittedAt || now,
+                updatedAt: now,
+                updatedBy: currentUser.uid,
+                manuallyUpdatedByAdmin: true
+            });
+            try {
+                showAdminStatus('Đang thêm khung giờ cho ' + memberName + '...', 'var(--gold)');
+                await scheduleTimeout(dbInstance.collection('meetingSchedules').doc(docId).set(schedule, { merge:true }), 15000, 'Lưu lịch thành viên quá thời gian.');
+                const index = localDB.meetingSchedules.findIndex(function(item) { return item.id === docId; });
+                if (index === -1) localDB.meetingSchedules.push(schedule); else localDB.meetingSchedules[index] = schedule;
+                renderTimetable();
+                renderAdminPollList();
+                showAdminStatus('✓ Đã thêm ' + slot.shift.name + ' cho ' + memberName + '.', 'var(--ok)');
+            } catch (error) {
+                console.error('Không thể thêm lịch thành viên:', error);
+                showAdminStatus('Không thể thêm lịch: ' + (error.message || 'Lỗi không xác định'), 'var(--danger)');
+            }
+        }
+
         function renderTimetable() {
             const tbody = document.getElementById('timetableBody');
             tbody.innerHTML = '';
@@ -2527,6 +2587,13 @@
                             toggleCellSelection(slotId);
                         }
                     };
+                    if (canManageSchedules) {
+                        td.oncontextmenu = function(event) {
+                            event.preventDefault();
+                            addMemberToSlotAsAdmin(slotId);
+                        };
+                        td.title = 'Chuột phải để thêm khung giờ cho thành viên';
+                    }
 
                     // Populate people scheduled
                     const matches = pollSchedules.filter(s => (s.slots || []).includes(slotId));
@@ -2760,17 +2827,27 @@
             if (!container) return;
             container.innerHTML = '';
             const historyWindow = canViewAllSchedules ? 7 * 86400000 : 3600000;
-            const futureEvents = officialEvents.filter(event => {
-                const inWindow = !event.startAt || new Date(event.startAt).getTime() >= Date.now() - historyWindow;
+            const completedHistoryWindow = 90 * 86400000;
+            const canViewEvent = event => {
                 const inSharedPoll = !SHARED_POLL_CODE || (activePoll && event.availabilityPollId === activePoll.id);
                 const ownBooking = currentUser && myBookings.some(booking => booking.eventId === event.id && booking.candidateId === currentUser.uid);
                 const visibleToAccount = canManageSchedules || (!event.generatedFromAvailability || ownBooking);
-                return inWindow && inSharedPoll && visibleToAccount;
+                return inSharedPoll && visibleToAccount;
+            };
+            const futureEvents = officialEvents.filter(event => {
+                const inWindow = !event.startAt || new Date(event.startAt).getTime() >= Date.now() - historyWindow;
+                const isCompletedInterview = event.type === 'interview' && !!event.completedAt;
+                return inWindow && !isCompletedInterview && canViewEvent(event);
             });
-            if (!futureEvents.length) {
+            const completedInterviews = officialEvents.filter(event => {
+                const completedAt = event.completedAt ? new Date(event.completedAt).getTime() : 0;
+                return event.type === 'interview' && completedAt && completedAt >= Date.now() - completedHistoryWindow && canViewEvent(event);
+            }).sort((a, b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
+            if (!futureEvents.length && !completedInterviews.length) {
                 container.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem">Chưa có lịch họp hoặc phỏng vấn đang mở.</p>';
                 return;
             }
+            if (!futureEvents.length) container.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem">Chưa có lịch họp hoặc phỏng vấn đang mở.</p>';
             futureEvents.forEach(function(event) {
                 const card = document.createElement('article');
                 card.className = 'event-card ' + (event.type === 'interview' ? 'interview' : '');
@@ -2822,6 +2899,26 @@
                 }
                 card.appendChild(actions); container.appendChild(card);
             });
+            if (completedInterviews.length) {
+                const history = document.createElement('details');
+                history.style.cssText = 'margin-top:24px;border:1px solid rgba(228,184,102,0.18);border-radius:12px;padding:14px 16px;background:rgba(5,12,20,0.28)';
+                const summary = document.createElement('summary');
+                summary.style.cssText = 'cursor:pointer;color:var(--gold-light);font-weight:700';
+                summary.textContent = '📚 Lịch sử phỏng vấn (' + completedInterviews.length + ')';
+                history.appendChild(summary);
+                const list = document.createElement('div');
+                list.style.cssText = 'display:grid;gap:10px;margin-top:14px';
+                completedInterviews.forEach(function(event) {
+                    const booking = myBookings.find(item => item.eventId === event.id && item.status === 'confirmed');
+                    const item = document.createElement('div');
+                    item.className = 'event-card interview';
+                    item.style.cssText = 'margin:0;opacity:.78;border-left-color:var(--ok)';
+                    item.innerHTML = '<strong>✓ Đã hoàn tất · ' + escapeHtml(event.title || 'Phỏng vấn') + '</strong><div class="event-meta">📅 ' + eventStartLabel(event.startAt) + (event.assignedHrName ? '<br>🧑‍💼 Người phỏng vấn: ' + escapeHtml(event.assignedHrName) : '') + (canManageSchedules && booking ? '<br>👤 Ứng viên: ' + escapeHtml(booking.candidateName || '') : '') + '<br>Hoàn tất: ' + eventStartLabel(event.completedAt) + '</div>';
+                    list.appendChild(item);
+                });
+                history.appendChild(list);
+                container.appendChild(history);
+            }
         }
 
         function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value || ''; return div.innerHTML; }

@@ -694,6 +694,10 @@ app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
+app.get('/vinh-danh', (req, res) => {
+    res.sendFile(path.join(__dirname, 'vinh-danh.html'));
+});
+
 app.get('/community', (req, res) => {
     res.sendFile(path.join(__dirname, 'community.html'));
 });

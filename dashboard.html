@@ -1235,6 +1235,18 @@
             border-bottom: none;
         }
 
+        /* Bảng tài khoản: chỉ giữ thông tin vận hành, không phơi ID kỹ thuật. */
+        #accountsTable { min-width: 980px; table-layout: fixed; }
+        #accountsTable th, #accountsTable td { padding: 10px 12px; }
+        #accountsTable th:nth-child(1) { width: 16%; }
+        #accountsTable th:nth-child(2) { width: 23%; }
+        #accountsTable th:nth-child(3) { width: 13%; }
+        #accountsTable th:nth-child(4) { width: 16%; }
+        #accountsTable th:nth-child(5) { width: 12%; }
+        #accountsTable th:nth-child(6) { width: 20%; }
+        .account-actions { display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+        .account-actions .btn { font-size:.68rem; padding:4px 6px; white-space:nowrap; }
+
         /* KANBAN BOARD */
         .kanban {
             display: grid;
@@ -5809,7 +5821,7 @@
                     var dateFrom = window._acctDateFrom || '';
                     var dateTo = window._acctDateTo || '';
                     var filteredUsers = d.users.filter(function(u) {
-                        if (searchQ && !(u.name && u.name.toLowerCase().indexOf(searchQ) !== -1) && !(u.email && u.email.toLowerCase().indexOf(searchQ) !== -1) && !(u.dept && u.dept.toLowerCase().indexOf(searchQ) !== -1)) return false;
+                        if (searchQ && !accountMatchesSearch(u, searchQ)) return false;
                         if (dateFrom && u.createdAt && u.createdAt < dateFrom) return false;
                         if (dateTo && u.createdAt && u.createdAt > dateTo + 'T23:59:59') return false;
                         return true;
@@ -5827,22 +5839,21 @@
                                 '</div>',
                             '</div>',
                             '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">',
-                                '<input id="acctSearchInput" placeholder="Tìm theo tên, email, phòng ban..." value="', esc(window._acctSearch || ''), '" oninput="window._acctSearch=this.value;renderTab(\'accounts\')" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#e2e8f0;width:220px">',
+                                '<input id="acctSearchInput" placeholder="Tìm tên, email, ban, vị trí..." value="', esc(window._acctSearch || ''), '" oninput="filterAccountsLive(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#e2e8f0;width:260px">',
                                 '<input type="date" id="acctDateFrom" value="', esc(dateFrom), '" onchange="window._acctDateFrom=this.value;renderTab(\'accounts\')" style="padding:6px;border-radius:6px;background:rgba(255,255,255,0.04);color:#e2e8f0;border:1px solid rgba(255,255,255,0.1)">',
                                 '<span style="color:var(--text-muted)">→</span>',
                                 '<input type="date" id="acctDateTo" value="', esc(dateTo), '" onchange="window._acctDateTo=this.value;renderTab(\'accounts\')" style="padding:6px;border-radius:6px;background:rgba(255,255,255,0.04);color:#e2e8f0;border:1px solid rgba(255,255,255,0.1)">',
-                                '<button class="btn btn-line btn-sm" onclick="window._acctSearch=\'\';window._acctDateFrom=\'\';window._acctDateTo=\'\';document.getElementById(\'acctSearchInput\').value=\'\';document.getElementById(\'acctDateFrom\').value=\'\';document.getElementById(\'acctDateTo\').value=\'\';renderTab(\'accounts\')">Xóa lọc</button>',
+                                '<button class="btn btn-line btn-sm" onclick="clearAccountFilters()">Xóa lọc</button>',
                                 '<button class="btn btn-gold btn-sm" onclick="exportUsersCSV()" style="margin-left:auto">📥 Xuất CSV</button>',
                             '</div>',
                             '<div class="table-wrap">',
-                                '<table>',
-                                    '<tr><th>ID</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Phòng ban</th><th>Xác thực</th><th>Trạng thái</th><th>Hoạt động</th><th>Ghi chú</th><th>Thao tác</th></tr>',
-                                    filteredUsers.map(function(u) {
+                                '<table id="accountsTable">',
+                                    '<tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Ban</th><th>Vị trí</th><th>Trạng thái & thao tác</th></tr>',
+                                    '<tbody id="accountsTableBody">', filteredUsers.map(function(u) {
                                         var locked = u.locked ? '🔒 Đã khóa' : '🔓 Hoạt động';
                                         var lockColor = u.locked ? '#ef4444' : '#63d19e';
-                                        var lastAct = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('vi-VN') : (u.lastAction ? new Date(u.lastAction).toLocaleDateString('vi-VN') : '—');
-                                        return '<tr>' +
-                                            '<td data-label="ID">' + u.id + '</td>' +
+                                        var searchable = [u.name, u.email, u.dept, u.position, u.role].join(' ').toLowerCase();
+                                        return '<tr data-account-search="' + esc(searchable) + '">' +
                                             '<td data-label="Họ tên"><b>' + esc(u.name || 'N/A') + '</b></td>' +
                                             '<td data-label="Email">' + esc(u.email) + '</td>' +
                                             '<td data-label="Vai trò">' + (String(u.id) !== String(session.id) ?
@@ -5854,31 +5865,24 @@
                                                 (u.role === 'admin' ? '👑 Admin' : u.role === 'organizer' ? '💼 BTC' : '🍿 Thành viên')) +
                                             '</td>' +
                                             '<td data-label="Phòng ban">' + esc(u.dept || '—') + '</td>' +
-                                            '<td data-label="Xác thực">' + (u.emailVerified ? '<span style="color:var(--ok)">✔ Đã XT</span>' : '<span style="color:var(--danger)">✘ Chưa XT</span>') + '</td>' +
-                                            '<td data-label="Trạng thái"><span style="color:' + lockColor + ';font-weight:600">' + locked + '</span></td>' +
-                                            '<td data-label="Hoạt động" style="font-size:0.75rem;color:var(--text-muted)">' + lastAct + '</td>' +
-                                            '<td data-label="Ghi chú" style="font-size:0.75rem;max-width:120px;overflow:hidden;text-overflow:ellipsis">' + esc((u.notes || '').slice(0, 50)) + '</td>' +
+                                            '<td data-label="Vị trí">' + esc(u.position || '—') + '</td>' +
                                             '<td data-label="Thao tác">' +
                                                 (String(u.id) !== String(session.id) ?
-                                                    '<div style="display:flex;flex-direction:column;gap:4px">' +
+                                                    '<div><div style="color:' + lockColor + ';font-weight:600;margin-bottom:5px">' + locked + ' · ' + (u.emailVerified ? 'Đã xác thực' : 'Chưa xác thực') + '</div><div class="account-actions">' +
                                                         '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px" onclick="adminResetPass(\'' + esc(u.email) + '\')">🔄 Reset Pass</button>' +
                                                         '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px;color:var(--ok);border-color:var(--ok)" onclick="adminVerifyUser(\'' + u.id + '\')">✔ Xác thực</button>' +
                                                         '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px;color:' + (u.locked ? '#63d19e' : '#ef4444') + ';border-color:' + (u.locked ? '#63d19e' : '#ef4444') + '" onclick="adminToggleLock(\'' + u.id + '\')">' + (u.locked ? '🔓 Mở khóa' : '🔒 Khóa') + '</button>' +
                                                         '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px;color:var(--gold-light);border-color:rgba(228,184,102,0.3)" onclick="adminEditNotes(\'' + u.id + '\')">📝 Ghi chú</button>' +
                                                         '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px;color:var(--danger);border-color:var(--danger)" onclick="adminDeleteUser(\'' + u.id + '\')">🗑 Xóa</button>' +
-                                                    '</div>' :
+                                                    '</div></div>' :
                                                     '<span style="color:var(--text-muted)">—</span>') +
                                             '</td>' +
                                         '</tr>';
-                                    }).join('') + '</table>' +
+                                    }).join('') + '</tbody></table>' +
                                 (filteredUsers.length === 0 ? '<p style="color:var(--text-muted);text-align:center;padding:20px">Không tìm thấy tài khoản phù hợp.</p>' : '') +
                             '</div>',
                         '</div>',
                     ].join('');
-                    setTimeout(function() {
-                        var inp = document.getElementById('acctSearchInput');
-                        if (inp && window._acctSearch) inp.focus();
-                    }, 100);
                 },
                 content() {
                     const c = getContent();
@@ -7105,6 +7109,29 @@
             await deleteItemFromDB('applications', id);
             showToast(`Đã xóa lịch sử đơn của ${application.name}.`, 'success');
             renderTab('members');
+        }
+
+        function accountMatchesSearch(user, query) {
+            const needle = String(query || '').trim().toLowerCase();
+            if (!needle) return true;
+            return [user && user.name, user && user.email, user && user.dept, user && user.position, user && user.role]
+                .join(' ').toLowerCase().includes(needle);
+        }
+
+        // Lọc ngay trên các hàng đang có, không render lại cả trang khi đang gõ.
+        function filterAccountsLive(value) {
+            const query = String(value || '').trim().toLowerCase();
+            window._acctSearch = query;
+            document.querySelectorAll('#accountsTableBody tr').forEach(function(row) {
+                row.style.display = !query || String(row.dataset.accountSearch || '').includes(query) ? '' : 'none';
+            });
+        }
+
+        function clearAccountFilters() {
+            window._acctSearch = '';
+            window._acctDateFrom = '';
+            window._acctDateTo = '';
+            renderTab('accounts');
         }
 
         async function updateUserRole(id, newRole) {

@@ -42,8 +42,11 @@ module.exports = async function listScheduleEvents(req, res) {
         if (manager) return res.status(200).json({ events: allEvents, bookings });
 
         const now = Date.now();
+        const signedInEmail = String(decoded.email || '').trim().toLowerCase();
         const visiblePollIds = new Set((pollsSnap ? pollsSnap.docs : []).map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(poll => poll.status === 'open' && (!pollEndAt(poll) || now < pollEndAt(poll)) && (poll.isPublic === true || (Array.isArray(poll.participantIds) && poll.participantIds.includes(decoded.uid))))
+            .filter(poll => poll.status === 'open' && (!pollEndAt(poll) || now < pollEndAt(poll)) && (poll.isPublic === true ||
+                (Array.isArray(poll.participantIds) && poll.participantIds.includes(decoded.uid)) ||
+                (signedInEmail && Array.isArray(poll.participantEmails) && poll.participantEmails.some(email => String(email).trim().toLowerCase() === signedInEmail))))
             .map(poll => String(poll.id)));
         const ownBookingEventIds = new Set(bookings.filter(item => item.candidateId === decoded.uid).map(item => String(item.eventId)));
         const events = allEvents.filter(event =>

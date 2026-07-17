@@ -61,7 +61,10 @@ module.exports = async function saveAvailability(req, res) {
         const profile = profileDoc.exists ? profileDoc.data() : {};
         const poll = pollDoc.data();
         const organizer = isOrganizer(decoded, profile);
-        const assigned = poll.isPublic === true || (Array.isArray(poll.participantIds) && poll.participantIds.includes(decoded.uid));
+        const signedInEmail = String(decoded.email || '').trim().toLowerCase();
+        const assigned = poll.isPublic === true ||
+            (Array.isArray(poll.participantIds) && poll.participantIds.includes(decoded.uid)) ||
+            (signedInEmail && Array.isArray(poll.participantEmails) && poll.participantEmails.some(email => String(email).trim().toLowerCase() === signedInEmail));
         if (!decoded.email_verified && !organizer) return res.status(403).json({ error: 'Tài khoản chưa xác thực email.' });
         if (!organizer && !assigned) return res.status(403).json({ error: 'Tài khoản không nằm trong danh sách của đợt vote.' });
 

@@ -39,17 +39,27 @@ module.exports = async function listAvailabilityForStaff(req, res) {
             allowed ? db.collection('meetingSchedules').get() : db.collection('meetingSchedules').where('ownerId', '==', decoded.uid).get()
         ]);
         const schedules = schedulesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const signedInEmail = String(decoded.email || '').trim().toLowerCase();
         const respondedPollIds = new Set(schedules.filter(item => item.ownerId === decoded.uid && (item.completedAt || item.finalizedAt)).map(item => String(item.pollId || '')));
         const visibleSchedules = allowed ? schedules : schedules.filter(item => !(item.completedAt || item.finalizedAt));
         const now = Date.now();
         const polls = pollsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(poll => {
             if (allowed) return true;
-            const assigned = poll.isPublic === true || (Array.isArray(poll.participantIds) && poll.participantIds.includes(decoded.uid));
+            const assigned = poll.isPublic === true ||
+                (Array.isArray(poll.participantIds) && poll.participantIds.includes(decoded.uid)) ||
+                (signedInEmail && Array.isArray(poll.participantEmails) && poll.participantEmails.some(email => String(email).trim().toLowerCase() === signedInEmail));
             const active = poll.status === 'open' && (!pollEndAt(poll) || now < pollEndAt(poll));
             return assigned && active && !respondedPollIds.has(String(poll.id));
         });
+        const safePolls = allowed ? polls : polls.map(poll => ({
+            ...poll,
+            // Không gửi danh sách Gmail của các ứng viên khác xuống trình duyệt.
+            participantEmails: (Array.isArray(poll.participantEmails) && poll.participantEmails.some(email => String(email).trim().toLowerCase() === signedInEmail))
+                ? [signedInEmail]
+                : []
+        }));
         return res.status(200).json({
-            polls,
+            polls: safePolls,
             schedules: visibleSchedules
         });
     } catch (error) {

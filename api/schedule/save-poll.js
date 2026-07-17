@@ -59,6 +59,10 @@ module.exports = async function saveAvailabilityPoll(req, res) {
         const participantNames = Array.isArray(input.participantNames)
             ? input.participantNames.map(name => String(name).slice(0, 200)).slice(0, participantIds.length)
             : [];
+        const participantEmails = Array.isArray(input.participantEmails)
+            ? [...new Set(input.participantEmails.map(email => String(email).trim().toLowerCase())
+                .filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))].slice(0, 1000)
+            : [];
         const isPublic = input.isPublic === true;
         if (requestedCode && !/^[A-Z][A-Z0-9_-]{3,29}$/.test(requestedCode)) {
             return res.status(400).json({ error: 'Mã lịch chỉ được gồm chữ in hoa, số, dấu gạch ngang hoặc gạch dưới (4–30 ký tự).' });
@@ -79,8 +83,8 @@ module.exports = async function saveAvailabilityPoll(req, res) {
         if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
             return res.status(400).json({ error: 'Tên đợt hoặc ngày bắt đầu không hợp lệ.' });
         }
-        if (!isPublic && !participantIds.length) {
-            return res.status(400).json({ error: 'Hãy chọn ít nhất một tài khoản hoặc cho phép tất cả.' });
+        if (!isPublic && !participantIds.length && !participantEmails.length) {
+            return res.status(400).json({ error: 'Hãy chọn ít nhất một tài khoản, thêm Gmail hoặc cho phép tất cả.' });
         }
 
         const now = new Date().toISOString();
@@ -103,7 +107,7 @@ module.exports = async function saveAvailabilityPoll(req, res) {
             }
             const requestedStatus = allowedStatuses.includes(input.status) ? input.status : (existing ? existing.status : 'draft');
             poll = {
-                code, title, type, startDate, dayCount, participantIds, participantNames, isPublic,
+                code, title, type, startDate, dayCount, participantIds, participantNames, participantEmails, isPublic,
                 status: requestedStatus,
                 createdBy: existing ? existing.createdBy : decoded.uid,
                 createdAt: existing ? existing.createdAt : now,

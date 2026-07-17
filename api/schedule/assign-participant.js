@@ -23,6 +23,9 @@ module.exports = async function assignScheduleParticipant(req, res) {
         if (!body.idToken || !email || !pollCode) {
             return res.status(400).json({ error: 'Thiếu tài khoản ứng viên hoặc mã lịch cần gửi.' });
         }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ error: 'Email ứng viên không hợp lệ.' });
+        }
 
         const db = getDb();
         const decoded = await admin.auth().verifyIdToken(body.idToken);
@@ -32,17 +35,11 @@ module.exports = async function assignScheduleParticipant(req, res) {
             return res.status(403).json({ error: 'Chỉ Admin/BTC/HR/PR mới được cấp lịch cho ứng viên.' });
         }
 
-        let candidate;
+        let candidate = null;
         try {
             candidate = await admin.auth().getUserByEmail(email);
         } catch (error) {
-            if (error.code === 'auth/user-not-found') {
-                return res.status(409).json({ error: 'Ứng viên chưa có account. Hãy duyệt hoặc tạo account trước khi gửi lịch.' });
-            }
-            throw error;
-        }
-        if (!candidate.emailVerified) {
-            return res.status(409).json({ error: 'Account ứng viên chưa xác minh email. Hãy hoàn tất xác minh trước khi gửi lịch.' });
+            if (error.code !== 'auth/user-not-found') throw error;
         }
 
         const pollSnap = await db.collection('availabilityPolls').where('code', '==', pollCode).limit(1).get();
@@ -54,22 +51,28 @@ module.exports = async function assignScheduleParticipant(req, res) {
             return res.status(409).json({ error: body.expectedType === 'interview' ? 'Thư phỏng vấn chỉ được gửi với lịch vote phỏng vấn.' : 'Loại lịch không phù hợp với thư đang gửi.' });
         }
 
-        const candidateName = String(body.candidateName || candidate.displayName || email.split('@')[0]).trim().slice(0, 150);
+        const candidateName = String(body.candidateName || (candidate && candidate.displayName) || email.split('@')[0]).trim().slice(0, 150);
         await db.runTransaction(async transaction => {
             const freshDoc = await transaction.get(pollDoc.ref);
             if (!freshDoc.exists || freshDoc.data().status !== 'open') throw new Error('Đợt vote vừa bị đóng.');
             const fresh = freshDoc.data();
             const participantIds = Array.isArray(fresh.participantIds) ? fresh.participantIds.slice() : [];
             const participantNames = Array.isArray(fresh.participantNames) ? fresh.participantNames.slice(0, participantIds.length) : [];
+            const participantEmails = Array.isArray(fresh.participantEmails)
+                ? fresh.participantEmails.map(item => String(item).trim().toLowerCase()).filter(Boolean)
+                : [];
             while (participantNames.length < participantIds.length) participantNames.push('');
-            const existingIndex = participantIds.indexOf(candidate.uid);
-            if (existingIndex === -1) {
-                participantIds.push(candidate.uid);
-                participantNames.push(candidateName);
-            } else {
-                participantNames[existingIndex] = candidateName;
+            if (candidate) {
+                const existingIndex = participantIds.indexOf(candidate.uid);
+                if (existingIndex === -1) {
+                    participantIds.push(candidate.uid);
+                    participantNames.push(candidateName);
+                } else {
+                    participantNames[existingIndex] = candidateName;
+                }
             }
-            transaction.update(pollDoc.ref, { participantIds, participantNames, updatedAt: new Date().toISOString() });
+            if (!participantEmails.includes(email)) participantEmails.push(email);
+            transaction.update(pollDoc.ref, { participantIds, participantNames, participantEmails, updatedAt: new Date().toISOString() });
         });
 
         const now = new Date().toISOString();
@@ -81,24 +84,25 @@ module.exports = async function assignScheduleParticipant(req, res) {
         };
         if (poll.type === 'meeting') profileUpdate.meetingPollCode = pollCode;
         else profileUpdate.interviewPollCode = pollCode;
-        await db.collection('users').doc(candidate.uid).set(profileUpdate, { merge: true });
+        if (candidate) await db.collection('users').doc(candidate.uid).set(profileUpdate, { merge: true });
 
         if (body.applicationId !== undefined && body.applicationId !== null && String(body.applicationId).trim()) {
-            await db.collection('applications').doc(String(body.applicationId)).set({
-                approvedUserId: candidate.uid,
+            const applicationUpdate = {
                 activeScheduleCode: pollCode,
                 interviewPollCode: poll.type === 'interview' ? pollCode : null,
                 meetingPollCode: poll.type === 'meeting' ? pollCode : null,
                 recruitmentStage: profileUpdate.recruitmentStage,
                 scheduleAssignedAt: now,
                 scheduleAssignedBy: decoded.uid
-            }, { merge: true });
+            };
+            if (candidate) applicationUpdate.approvedUserId = candidate.uid;
+            await db.collection('applications').doc(String(body.applicationId)).set(applicationUpdate, { merge: true });
         }
 
         return res.status(200).json({
             success: true,
             poll: { id: pollDoc.id, code: pollCode, title: poll.title || '', type: poll.type },
-            user: { id: candidate.uid, email: candidate.email, name: candidateName }
+            user: { id: candidate ? candidate.uid : null, email, name: candidateName, accountExists: !!candidate }
         });
     } catch (error) {
         console.error('Assign schedule participant error:', error);

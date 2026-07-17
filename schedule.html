@@ -715,6 +715,9 @@
                         <button type="button" class="btn small" onclick="selectVisiblePollParticipants(false)" style="background:rgba(255,255,255,.08);color:var(--text)">Bỏ chọn tất cả</button>
                     </div>
                     <div id="pollParticipantCount" style="font-size:.75rem;color:var(--text-muted);margin:-5px 0 12px">Đã chọn 0 tài khoản</div>
+                    <label>Gmail được phép tham gia (không cần có account trước)</label>
+                    <textarea id="pollParticipantEmails" rows="3" placeholder="ungvien1@gmail.com, ungvien2@gmail.com&#10;Có thể nhập cách nhau bằng dấu phẩy hoặc xuống dòng" oninput="updatePollParticipantCount()"></textarea>
+                    <p style="font-size:.75rem;color:var(--text-muted);margin:-8px 0 14px">Người được thêm chỉ cần đăng nhập Google bằng đúng Gmail này để thấy và vote lịch.</p>
                     <label style="display:flex;align-items:center;gap:8px;color:var(--text-muted);cursor:pointer">
                         <input id="pollPublic" type="checkbox" style="width:auto;margin:0"> Cho phép tất cả tài khoản đã đăng nhập tham gia
                     </label>
@@ -1376,7 +1379,9 @@
 
         function isPollAssignedToCurrentUser(poll) {
             if (!currentUser || !poll) return false;
-            return !!poll.isPublic || (poll.participantIds || []).includes(currentUser.uid);
+            const signedInEmail = String(currentUser.email || '').trim().toLowerCase();
+            return !!poll.isPublic || (poll.participantIds || []).includes(currentUser.uid) ||
+                (!!signedInEmail && (poll.participantEmails || []).some(email => String(email).trim().toLowerCase() === signedInEmail));
         }
 
         function canEditActiveAvailability() {
@@ -1456,7 +1461,17 @@
         function updatePollParticipantCount() {
             const select = document.getElementById('pollParticipants');
             const target = document.getElementById('pollParticipantCount');
-            if (select && target) target.textContent = 'Đã chọn ' + select.querySelectorAll('.poll-participant-checkbox:checked').length + ' tài khoản';
+            if (select && target) {
+                const accountCount = select.querySelectorAll('.poll-participant-checkbox:checked').length;
+                const emailCount = parsePollParticipantEmails().length;
+                target.textContent = 'Đã chọn ' + accountCount + ' tài khoản' + (emailCount ? ' · thêm ' + emailCount + ' Gmail' : '');
+            }
+        }
+
+        function parsePollParticipantEmails() {
+            const input = document.getElementById('pollParticipantEmails');
+            if (!input) return [];
+            return Array.from(new Set(input.value.split(/[\s,;]+/).map(email => email.trim().toLowerCase()).filter(Boolean)));
         }
 
         function renderAvailabilityPolls() {
@@ -1532,7 +1547,7 @@
                 (activePoll.code ? '<span class="poll-badge">' + escapeHtml(activePoll.code) + '</span>' : '') +
                 '<span class="poll-badge">' + pollStatusLabel(activePoll.status) + '</span><br>' +
                 escapeHtml(activePoll.startDate) + ' → ' + localDateId(end) + ' · ' + activePoll.dayCount + ' ngày · ' +
-                (activePoll.isPublic ? 'Mọi tài khoản' : (activePoll.participantIds || []).length + ' người được chọn') +
+                (activePoll.isPublic ? 'Mọi tài khoản' : ((activePoll.participantIds || []).length + (activePoll.participantEmails || []).length) + ' người/Gmail được chọn') +
                 (editable ? '' : '<br><span style="color:var(--danger)">Chỉ xem — đợt này chưa mở hoặc đã khóa.</span>');
             title.textContent = '📅 ' + activePoll.title + ' · ' + (currentMode === 'meeting' ? 'Lịch họp' : 'Phỏng vấn');
             if (SHARED_POLL_CODE) {
@@ -1610,9 +1625,12 @@
             const startDate = document.getElementById('pollStartDate').value;
             const dayCount = Math.max(1, Math.min(14, Number(document.getElementById('pollDayCount').value || 7)));
             const participantIds = Array.from(document.querySelectorAll('#pollParticipants .poll-participant-checkbox:checked')).map(input => input.value);
+            const participantEmails = parsePollParticipantEmails();
             const isPublic = document.getElementById('pollPublic').checked;
             if (!title || !startDate) return showPollAdminStatus('Vui lòng nhập tên đợt và ngày bắt đầu.', 'var(--danger)');
-            if (!isPublic && !participantIds.length) return showPollAdminStatus('Hãy chọn ít nhất một người hoặc bật “Cho phép tất cả”.', 'var(--danger)');
+            const invalidEmail = participantEmails.find(email => !/^[^\s@]+@gmail\.com$/i.test(email));
+            if (invalidEmail) return showPollAdminStatus('Gmail không hợp lệ: ' + invalidEmail, 'var(--danger)');
+            if (!isPublic && !participantIds.length && !participantEmails.length) return showPollAdminStatus('Hãy chọn ít nhất một người, thêm Gmail hoặc bật “Cho phép tất cả”.', 'var(--danger)');
             const existing = availabilityPolls.find(poll => poll.id === editingId);
             const responseCount = editingId ? (localDB.meetingSchedules || []).filter(schedule => schedule.pollId === editingId).length : 0;
             if (existing && responseCount && (existing.startDate !== startDate || Number(existing.dayCount) !== dayCount) && !confirm('Đợt này đã có ' + responseCount + ' phiếu. Đổi khoảng ngày có thể làm một số lựa chọn cũ không còn hiển thị. Vẫn tiếp tục?')) return;
@@ -1623,7 +1641,7 @@
             const targetId = editingId || window._pendingPollSaveId || dbInstance.collection('availabilityPolls').doc().id;
             if (!editingId) window._pendingPollSaveId = targetId;
             const data = {
-                title, code, type, startDate, dayCount, participantIds, participantNames, isPublic,
+                title, code, type, startDate, dayCount, participantIds, participantNames, participantEmails, isPublic,
                 status: document.getElementById('pollInitialStatus').value,
                 createdBy: existing ? existing.createdBy : currentUser.uid,
                 createdAt: existing ? existing.createdAt : (window._pendingPollCreatedAt || (window._pendingPollCreatedAt = new Date().toISOString())),
@@ -1673,6 +1691,7 @@
             document.getElementById('pollStartDate').value = poll.startDate || '';
             document.getElementById('pollDayCount').value = poll.dayCount || 7;
             document.getElementById('pollPublic').checked = !!poll.isPublic;
+            document.getElementById('pollParticipantEmails').value = (poll.participantEmails || []).join('\n');
             document.getElementById('pollInitialStatus').value = ['draft', 'open', 'closed', 'archived'].includes(poll.status) ? poll.status : 'draft';
             document.getElementById('pollInitialStatus').disabled = false;
             document.getElementById('pollStatusFieldLabel').textContent = 'Trạng thái sau khi lưu';
@@ -1698,6 +1717,7 @@
             document.getElementById('pollStartDate').value = localDateId(tomorrow);
             document.getElementById('pollDayCount').value = 7;
             document.getElementById('pollPublic').checked = false;
+            document.getElementById('pollParticipantEmails').value = '';
             document.getElementById('pollParticipantSearch').value = '';
             document.getElementById('pollInitialStatus').value = 'draft';
             document.getElementById('pollInitialStatus').disabled = false;
@@ -1825,7 +1845,8 @@
                     (poll.status !== 'archived' ? '<button class="btn" onclick="setAvailabilityPollStatus(\'' + poll.id + '\',\'archived\')">Lưu trữ</button>' : '') +
                     '<button class="btn" style="background:linear-gradient(135deg,#ff8a8a,#f43f5e);color:#fff" onclick="deleteAvailabilityPoll(\'' + poll.id + '\')">Xóa lịch</button>';
                 const code = poll.code ? '<span class="poll-badge">' + escapeHtml(poll.code) + '</span>' : '';
-                return '<div class="poll-card ' + (poll.status === 'archived' ? 'archived' : (expired ? 'expired' : '')) + '"><strong>' + escapeHtml(poll.title) + '</strong>' + code + '<span class="poll-badge">' + (expired ? 'Hết hạn' : pollStatusLabel(poll.status)) + '</span><div class="event-meta">' + escapeHtml(poll.startDate) + ' · ' + poll.dayCount + ' ngày · ' + (poll.isPublic ? 'Tất cả tài khoản' : (poll.participantIds || []).length + ' người') + ' · ' + responses + ' phản hồi' + (poll.code ? '<br>🔗 ' + escapeHtml(availabilityPollUrl(poll)) : '') + '</div><div class="poll-actions">' + actions + '</div></div>';
+                const accessCount = (poll.participantIds || []).length + (poll.participantEmails || []).length;
+                return '<div class="poll-card ' + (poll.status === 'archived' ? 'archived' : (expired ? 'expired' : '')) + '"><strong>' + escapeHtml(poll.title) + '</strong>' + code + '<span class="poll-badge">' + (expired ? 'Hết hạn' : pollStatusLabel(poll.status)) + '</span><div class="event-meta">' + escapeHtml(poll.startDate) + ' · ' + poll.dayCount + ' ngày · ' + (poll.isPublic ? 'Tất cả tài khoản' : accessCount + ' người/Gmail') + ' · ' + responses + ' phản hồi' + (poll.code ? '<br>🔗 ' + escapeHtml(availabilityPollUrl(poll)) : '') + '</div><div class="poll-actions">' + actions + '</div></div>';
             }).join('') + (legacy ? '<div class="poll-card archived"><strong>Dữ liệu lịch rảnh cũ</strong><span class="poll-badge">Chỉ đọc</span><div class="event-meta">' + (localDB.meetingSchedules || []).filter(schedule => !schedule.pollId).length + ' phản hồi trước khi nâng cấp</div><div class="poll-actions"><button class="btn" onclick="selectAvailabilityPoll(\'__legacy__\')">Xem dữ liệu cũ</button></div></div>' : '');
         }
 

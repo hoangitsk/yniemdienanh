@@ -1,6 +1,6 @@
 # Ý Niệm Điện Ảnh
 
-Website phi lợi nhuận cho dự án Ý Niệm Điện Ảnh — cuộc thi làm phim ngắn cho học sinh, sinh viên.
+Website cộng đồng cho dự án Ý Niệm Điện Ảnh — cuộc thi làm phim ngắn cho học sinh, sinh viên.
 
 ## Công nghệ
 

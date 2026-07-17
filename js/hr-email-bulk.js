@@ -41,12 +41,17 @@
 
     window.renderApplicationEmailStatus = function (app) {
         var history = Array.isArray(app.emailHistory) ? app.emailHistory : [];
-        var last = history.length ? history[history.length - 1] : null;
+        var sortedHistory = history.slice().sort(function (a, b) {
+            var aTime = new Date(a && a.sentAt || 0).getTime() || 0;
+            var bTime = new Date(b && b.sentAt || 0).getTime() || 0;
+            return bTime - aTime;
+        });
+        var last = sortedHistory.length ? sortedHistory[0] : null;
         var type = (last && last.type) || app.lastEmailType;
         var sentAt = (last && last.sentAt) || app.lastEmailSentAt;
         if (!type) return '<span style="font-size:.76rem;color:var(--text-muted)">Chưa gửi email</span>';
         var latest = last || { type: type, sentAt: sentAt, subject: app.lastEmailSubject };
-        var older = history.length > 1 ? history.slice(0, -1).reverse() : [];
+        var older = sortedHistory.length > 1 ? sortedHistory.slice(1) : [];
         var output = renderEmailHistoryItem(latest);
         if (older.length) {
             output += '<button type="button" class="btn btn-line btn-sm" data-count="' + older.length + '" aria-expanded="false" onclick="toggleApplicationEmailHistory(this)" style="width:auto;margin-top:6px;padding:3px 8px;font-size:.68rem;color:var(--text-muted);border-color:rgba(148,163,184,.28)">🕘 Lịch sử (' + older.length + ')</button>' +

@@ -70,6 +70,7 @@ Yêu cầu rất quan trọng:
 - Đây là thư mời phỏng vấn đã được HR/Admin duyệt lịch, KHÔNG phải thư báo đã qua vòng 1.
 - Không hứa hẹn kết quả tuyển chọn, không chấm điểm, không bịa kỹ năng hay thành tích.
 - Giọng văn ấm áp, cụ thể, tôn trọng; chỉ tham chiếu nhẹ đến chi tiết thật từ phần giới thiệu nếu có.
+- Quy tắc xưng hô bắt buộc: luôn gọi người nhận là "bạn" và xưng từ phía dự án là "chúng tôi" hoặc lược chủ ngữ. Không dùng "em", "anh", "chị", "cô", "chú" hay suy đoán tuổi, giới tính hoặc vai vế từ thông tin hồ sơ. Quy tắc này áp dụng cho mọi trường JSON, kể cả khi ứng viên tự xưng là "em" trong phần giới thiệu.
 - Trả về JSON thuần với đúng ba trường, mỗi trường là văn bản tiếng Việt ngắn, không HTML:
 {
   "candidateOpener": "1-2 câu mở đầu cá nhân hoá gửi ứng viên",

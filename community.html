@@ -14,7 +14,8 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh">
     <meta name="twitter:image" content="https://yniemdienanh.vercel.app/Logo/avtar.png">
-    <title>Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</title>
+    <title>Cộng đồng Ý Niệm Điện Ảnh — Kết nối, học hỏi, sáng tạo</title>
+    <link rel="canonical" href="https://yniemdienanh.vercel.app/community.html">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/Logo/avtar.png">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2565,11 +2566,9 @@
             <div class="links" id="navLinks">
                 <a href="/">Trang chủ</a>
                 <a href="/#events">Sự kiện</a>
-                <a href="/#voting">Bình chọn</a>
+                <a href="/#voting">Tác phẩm</a>
                 <a href="/community" class="active">Cộng đồng</a>
                 <a href="/verify">Tra cứu chứng nhận</a>
-                <a href="/schedule">Lịch họp & PV</a>
-                <a href="/#apply">Tuyển dụng</a>
                 <span id="navAuth"></span>
             </div>
         </nav>
@@ -2649,7 +2648,10 @@
                     <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.01 1.63 4.13 1.13.99 2.62 1.51 4.12 1.58v3.83c-1.85-.02-3.66-.75-4.97-2.07-.3-.27-.56-.57-.79-.89v7.92c.04 3.49-2.31 6.76-5.73 7.42-3.32.74-6.84-.96-8.15-4.1C1.03 14.59 2.5 10.74 5.92 9.4c1.11-.47 2.33-.59 3.52-.37v3.9c-.83-.24-1.74-.11-2.48.33-.94.51-1.46 1.56-1.39 2.62.06 1.34 1.25 2.43 2.59 2.37 1.36-.01 2.47-1.16 2.47-2.52V.02z"/></svg>
                 </a>
             </div>
-            <p id="footerText">Ý Niệm Điện Ảnh là dự án phi lợi nhuận dành cho thế hệ trẻ. "Nơi những khung hình đầu tiên cất lời" ✨</p>
+            <p id="footerText">Ý Niệm Điện Ảnh là dự án cộng đồng dành cho thế hệ trẻ. "Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức."</p>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.4; text-align: center;">
+                Phí tham gia được tái đầu tư vào hoạt động của sự kiện, bao gồm giải thưởng, chứng nhận và chi phí vận hành theo kế hoạch công khai.
+            </p>
         </footer>
     </div>
 
@@ -3627,18 +3629,30 @@
             }
         }
 
-        async function loadPublicSubmissionsFromFirestore() {
+                        async function loadPublicSubmissionsFromFirestore() {
             if (!useFirebase || !dbInstance) return;
             try {
                 const snap = await firestoreWithTimeout(dbInstance.collection('submissions').get());
                 localDB.submissions = [];
+                const promises = [];
                 snap.forEach(doc => {
                     let docData = doc.data();
                     if (docData.id && typeof docData.id === 'string' && !isNaN(docData.id)) {
                         docData.id = parseInt(docData.id);
                     }
+                    // Fetch live vote count from the subcollection in parallel
+                    const promise = dbInstance.collection('submissions').doc(String(docData.id)).collection('votes').count().get()
+                        .then(countSnap => {
+                            docData.votes = countSnap.data().count;
+                        })
+                        .catch(err => {
+                            console.warn("Failed to get vote count for submission:", docData.id, err);
+                            docData.votes = docData.votes || 0;
+                        });
+                    promises.push(promise);
                     localDB.submissions.push(docData);
                 });
+                await Promise.all(promises);
                 if (localDB.submissions.length === 0 && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.search.includes('dev'))) {
                     localDB.submissions = getMockData().submissions;
                 }
@@ -4038,7 +4052,7 @@
             function getDefaultContent() {
                 return {
                     hero: {
-                        eyebrow: "Dự án phi lợi nhuận về điện ảnh",
+                        eyebrow: "Dự án cộng đồng về điện ảnh",
                         title: "Ý Niệm<br>Điện Ảnh",
                         lead: "Kiến tạo sân chơi và bệ phóng cho các nhà làm phim học sinh, sinh viên trên toàn quốc.<br>Chính thức khởi động Tháng 7 này! Hãy cùng đồng hành với tụi mình trong hành trình đầy hứa hẹn.",
                         target: "Học sinh - Sinh viên toàn quốc",
@@ -4051,7 +4065,7 @@
                     },
                     about: {
                         title: "Về Dự Án",
-                        desc: "Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án phi lợi nhuận, minh bạch 100%.",
+                        desc: "Kiến tạo bệ phóng cho các nhà làm phim học sinh - sinh viên toàn quốc. Dự án cộng đồng, minh bạch 100%.",
                         cards: [
                             { title: "Sứ mệnh", text: "Kiến tạo bệ phóng cho thế hệ làm phim trẻ tuổi tài năng." },
                             { title: "Tầm nhìn", text: "Trở thành cộng đồng điện ảnh học sinh - sinh viên lớn nhất Việt Nam." },
@@ -4068,7 +4082,7 @@
                             "<b>Thời lượng tác phẩm:</b> Từ 3 đến 7 phút (tính cả credit đầu/cuối), nộp bài qua liên kết Drive hoặc Youtube ẩn."
                         ],
                         col2Title: "Hình thức chấm điểm",
-                        col2Text: "Điểm đánh giá các tác phẩm dự thi được quyết định 100% bằng lượt **Bình chọn trực tuyến** từ cộng đồng.<br><br>Để đảm bảo tính công bằng tối đa và tránh gian lận vote, hệ thống tích hợp công nghệ quét địa chỉ IP và mã thiết bị đặc biệt. Mỗi địa chỉ IP hoặc thiết bị chỉ được bình chọn 1 lần duy nhất cho mỗi tác phẩm."
+                        col2Text: "Giải chuyên môn do Hội đồng giám khảo độc lập chấm theo tiêu chí công khai. Giải Bình chọn của Cộng đồng (Audience Choice) là hạng mục riêng, không ảnh hưởng đến điểm chuyên môn. Hệ thống áp dụng giới hạn một lượt bình chọn hợp lệ cho mỗi tác phẩm."
                     },
                     apply: {
                         title: "Đồng hành cùng dự án",
@@ -4366,19 +4380,44 @@
             showPage('home');
         }
 
-        function renderNav() {
-            const el = document.getElementById('navAuth');
+                function renderNav() {
+            const el = document.getElementById('navLinks');
+            if (!el) return;
+            
+            let linksHtml = '';
+            linksHtml += `<a href="/">Trang chủ</a>`;
+            linksHtml += `<a href="/#events">Sự kiện & Workshop</a>`;
+            linksHtml += `<a href="/#voting">Tác phẩm</a>`;
+            linksHtml += `<a href="/community" class="active">Cộng đồng</a>`;
+            
             if (session) {
-                const isMember = session.role === 'member';
-                var unreadCount = (localDB.notifications||[]).filter(function(n){return n.targetAll||n.userId===session.id;}).filter(function(n){return !n.read;}).length;
-                el.innerHTML = `<span class="chip" style="margin-right:10px">👤 ${esc(session.name)} (${session.role === 'admin' ? 'Admin' : session.role === 'organizer' ? 'BTC' : 'Thành viên'})</span>
-                                <a href="/dashboard?tab=notifications" class="btn btn-line btn-sm" style="position:relative;margin-right:6px" title="Thông báo">🔔${unreadCount>0?'<span style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:10px;font-weight:700">'+unreadCount+'</span>':''}</a>
-                                <a href="${isMember ? '/dashboard?tab=profile' : '/dashboard'}" class="btn btn-gold btn-sm">${isMember ? '👤 Hồ sơ' : '🔐 Khu vực nội bộ'}</a>
-                                <button class="btn btn-line btn-sm" style="margin-left:8px" onclick="logout()">Thoát</button>`;
+                linksHtml += `<a href="/verify">Chứng nhận</a>`;
+                const isStaff = session.role === 'admin' || session.role === 'organizer' || 
+                                (session.dept && ['Ban Nhân Sự', 'Ban Nhan Su', 'HR', 'PR'].includes(session.dept));
+                if (isStaff) {
+                    linksHtml += `<a href="/schedule">Lịch họp & PV</a>`;
+                }
             } else {
-                el.innerHTML = `<a href="/register?tab=organizer" target="_blank" class="btn btn-gold btn-sm" style="margin-right:6px">🔥 Apply BTC</a>
-                                <a href="/register?tab=register" target="_blank" class="btn btn-line btn-sm" style="margin-right:6px">Tạo Tài Khoản</a>
-                                <a href="/register?tab=login" target="_blank" style="font-size:0.85rem;color:var(--text-muted);cursor:pointer;font-weight:500">Đăng nhập</a>`;
+                linksHtml += `<a href="/#apply">Tuyển dụng</a>`;
+            }
+            
+            linksHtml += `<span id="navAuth"></span>`;
+            el.innerHTML = linksHtml;
+            
+            const authEl = document.getElementById('navAuth');
+            if (authEl) {
+                if (session) {
+                    const isMember = session.role === 'member';
+                    var unreadCount = (localDB.notifications||[]).filter(function(n){return n.targetAll||n.userId===session.id;}).filter(function(n){return !n.read;}).length;
+                    authEl.innerHTML = `<span class="chip" style="margin-right:10px">👤 ${esc(session.name)} (${session.role === 'admin' ? 'Admin' : session.role === 'organizer' ? 'BTC' : 'Thành viên'})</span>
+                                    <a href="/dashboard?tab=notifications" class="btn btn-line btn-sm" style="position:relative;margin-right:6px" title="Thông báo">🔔${unreadCount>0?'<span style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:10px;font-weight:700">'+unreadCount+'</span>':''}</a>
+                                    <a href="${isMember ? '/dashboard?tab=profile' : '/dashboard'}" class="btn btn-gold btn-sm">	ext{isMember ? '👤 Hồ sơ' : '🔐 Khu vực nội bộ'}</a>
+                                    <button class="btn btn-line btn-sm" style="margin-left:8px" onclick="logout()">Thoát</button>`;
+                } else {
+                    authEl.innerHTML = `<a href="/register?tab=organizer" target="_blank" class="btn btn-gold btn-sm" style="margin-right:6px">🔥 Apply BTC</a>
+                                    <a href="/register?tab=register" target="_blank" class="btn btn-line btn-sm" style="margin-right:6px">Tạo Tài Khoản</a>
+                                    <a href="/register?tab=login" target="_blank" style="font-size:0.85rem;color:var(--text-muted);cursor:pointer;font-weight:500">Đăng nhập</a>`;
+                }
             }
         }
 
@@ -4394,7 +4433,8 @@
             const el = document.getElementById('eventList');
             if (!el) return;
             el.innerHTML = list.map(e => {
-                const feeText = e.feeOption === 'paid' ? 'Có phí (5.000đ)' : e.feeOption === 'free' ? 'Miễn phí' : '';
+                const fee = e.price || 5000;
+                const feeText = e.feeOption === 'paid' ? `Có phí (${fee.toLocaleString('vi-VN')}đ)` : e.feeOption === 'free' ? 'Miễn phí' : '';
                 const isReg = isRegistered(e.id);
                 let regButton = '';
                 if (e.status !== 'done' && e.feeOption && e.feeOption !== 'none') {
@@ -4402,7 +4442,7 @@
                         regButton = `<span class="chip chip-ok" style="margin-top:10px;display:inline-block;background:rgba(99,209,158,0.15);color:var(--ok)">✅ Đã đăng ký tham gia</span>`;
                     } else {
                         if (e.feeOption === 'paid') {
-                            regButton = `<button class="btn btn-gold btn-sm" style="margin-top:12px;width:100%" onclick="openRegisterEvent('${e.id}', '${esc(e.title)}')">🎟️ Đăng ký tham gia (5k)</button>`;
+                            regButton = `<button class="btn btn-gold btn-sm" style="margin-top:12px;width:100%" onclick="openRegisterEvent('${e.id}', '${esc(e.title)}')">🎟️ Đăng ký tham gia (${fee.toLocaleString('vi-VN')}đ)</button>`;
                         } else {
                             regButton = `<button class="btn btn-gold btn-sm" style="margin-top:12px;width:100%" onclick="registerFreeEvent('${e.id}', '${esc(e.title)}')">🎟️ Đăng ký tham gia (Miễn phí)</button>`;
                         }
@@ -4503,7 +4543,7 @@
                             </div>
                         </div>
                         
-                        ${session ? `<button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>` : `<div style="text-align:center;margin-top:16px"><p style="color:var(--text-muted);font-size:0.85rem"><a href="/register?tab=login" target="_blank" style="color:var(--gold);cursor:pointer;font-weight:600">Đăng ký / Đăng nhập</a> để bình chọn</p></div>`}
+                        ${session ? `<button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">Bình chọn (Audience Choice)</button>` : `<div style="text-align:center;margin-top:16px"><p style="color:var(--text-muted);font-size:0.85rem"><a href="/register?tab=login" target="_blank" style="color:var(--gold);cursor:pointer;font-weight:600">Đăng ký / Đăng nhập</a> để bình chọn (Audience Choice)</p></div>`}
                         <div style="display:flex;gap:8px;margin-top:10px">
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${s.id}, '${esc(s.title)}')">📤 Share Facebook</button>
                             <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="copyVoteLink(${s.id})">🔗 Copy link</button>
@@ -4514,7 +4554,7 @@
         }
 
         // Chức năng bình chọn chống gian lận (quét IP thiết bị và chặn cookie/localstorage)
-        async function castVote(id, e) {
+                        async function castVote(id, e) {
             if (!session) { window.open('/register?tab=login', '_blank'); return showToast('Vui lòng đăng ký / đăng nhập để bình chọn!', 'info'); }
             const vOpen = isVoteOpen();
             if (!vOpen.open) return showToast(vOpen.msg, 'info');
@@ -4536,6 +4576,17 @@
                 
                 localDB.votes = localDB.votes || [];
                 
+                // 2.5. Kiểm tra trên Firestore xem user đã vote tác phẩm này chưa
+                if (useFirebase) {
+                    const existingVote = await dbInstance.collection('submissions').doc(String(id)).collection('votes').doc(session.id).get();
+                    if (existingVote.exists) {
+                        showToast("Bạn đã bình chọn tác phẩm này rồi!", "info");
+                        localStorage.setItem('voted_sub_' + id, 'true');
+                        if (btn) btn.disabled = false;
+                        return;
+                    }
+                }
+                
                 // 3. Kiểm tra địa chỉ IP đã tồn tại trong danh sách đã bình chọn cho tác phẩm này chưa
                 const ipHasVoted = localDB.votes.some(v => v.submissionId === id && v.ip === userIp);
                 if (ipHasVoted) {
@@ -4552,9 +4603,8 @@
                     const newVote = { submissionId: id, userId: session.id, ip: userIp, date: new Date().toISOString() };
                     localDB.votes.push(newVote);
                     
-                    // Chỉ ghi votes document — không ghi submissions từ client vì Firestore rules chặn
                     if (useFirebase) {
-                        await dbInstance.collection('votes').add(newVote);
+                        await dbInstance.collection('submissions').doc(String(id)).collection('votes').doc(session.id).set(newVote);
                     } else {
                         if (!localDB.votes) localDB.votes = [];
                         localDB.votes.push(newVote);
@@ -5061,7 +5111,7 @@
                                     '<div class="table-wrap"><table><tr><th>Mã giao dịch</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th>Ngày</th></tr>' + myTxs.map(function(t) {
                                         var sc2 = t.status === 'confirmed' ? '#22c55e' : t.status === 'pending' ? '#eab308' : '#ef4444';
                                         var sl2 = t.status === 'confirmed' ? 'Đã xác nhận' : t.status === 'pending' ? 'Chờ xử lý' : 'Thất bại';
-                                        var typeLabel = t.type === 'registration' ? 'Đăng ký' : t.type === 'vote' ? 'Bình chọn' : 'Tài trợ';
+                                        var typeLabel = t.type === 'registration' ? 'Đăng ký' : t.type === 'vote' ? 'Ủng hộ' : 'Tài trợ';
                                         return '<tr><td data-label="Mã giao dịch">' + esc(t.orderCode || t.id) + '</td><td data-label="Loại">' + typeLabel + '</td><td data-label="Số tiền">' + (t.amount || 0).toLocaleString() + 'đ</td><td data-label="Trạng thái"><span style="color:' + sc2 + '">' + sl2 + '</span></td><td data-label="Ngày">' + (t.date || '') + '</td></tr>';
                                     }).join('') + '</table></div>'
                                 }
@@ -7847,7 +7897,9 @@
         function openRegisterEvent(eventId, eventTitle) {
             if (!session) return showToast('Vui lòng đăng nhập!', 'error');
             if (isRegistered(eventId)) return showToast('Bạn đã đăng ký tham gia dự án này rồi!', 'info');
-            openPaymentModal('registration', { eventId, eventTitle });
+            const event = (localDB.events || []).find(e => String(e.id) === String(eventId));
+            const customAmount = event ? (event.price || 5000) : 5000;
+            openPaymentModal('registration', { eventId, eventTitle, customAmount });
         }
 
         async function registerFreeEvent(eventId, eventTitle) {
@@ -9358,19 +9410,46 @@
             createPayOSPayment(type, fee, memo, extra);
         }
 
-        async function createPayOSPayment(type, amount, description, extra) {
-    var orderCode = parseInt(Date.now().toString().slice(-10) + Math.floor(Math.random() * 100).toString().padStart(2, '0'));
-    var lt = showLoadingToast('Dang tao lien ket thanh toan...');
+                        async function createPayOSPayment(type, amount, description, extra) {
+            var lt = showLoadingToast('Đang tạo liên kết thanh toán...');
             try {
+                if (!firebase.auth().currentUser) {
+                    throw new Error("Vui lòng đăng nhập để tiếp tục.");
+                }
+                const idToken = await firebase.auth().currentUser.getIdToken(true);
+                const targetId = extra?.eventId || extra?.submissionId || 'sponsor';
+                const title = extra?.submissionTitle || '';
+
                 const res = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount, description, orderCode })
+                    body: JSON.stringify({ idToken, type, targetId, title, amount })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Không thể tạo liên kết thanh toán');
-                // Chỉ tạo giao dịch khi API thanh toán thành công
-                await addTransaction(type, extra?.submissionId, description, extra, orderCode, data.checkoutUrl, data.qrCode);
+
+                const orderCode = data.orderCode;
+                // Add to local DB temporarily for frontend rendering
+                const localTx = {
+                    orderCode: orderCode,
+                    userId: session.id,
+                    userName: session.name,
+                    type: type,
+                    submissionId: type === 'vote' ? String(targetId) : '',
+                    submissionTitle: type === 'vote' ? (extra?.submissionTitle || '') : '',
+                    eventId: type === 'registration' || type === 'team_registration' ? String(targetId) : '',
+                    eventTitle: extra?.eventTitle || '',
+                    amount: amount,
+                    status: 'pending',
+                    time: new Date().toISOString(),
+                    checkoutUrl: data.checkoutUrl,
+                    qrCode: data.qrCode
+                };
+                if (!localDB.transactions) localDB.transactions = [];
+                localDB.transactions = localDB.transactions.filter(t => t.orderCode !== orderCode);
+                localDB.transactions.push(localTx);
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+
                 try {
                     startPaymentPolling(orderCode);
                 } catch (e) {
@@ -9385,7 +9464,7 @@
                         <div>
                             <a href="${data.checkoutUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-gold" style="text-decoration:none">Thanh toán ngay</a>
                         </div>
-                        <p style="margin-top:16px;font-size:0.82rem;color:var(--text-muted)">Sau khi thanh toán, quay lại trang này. Admin sẽ xác nhận trong thời gian sớm nhất.</p>
+                        <p style="margin-top:16px;font-size:0.82rem;color:var(--text-muted)">Sau khi thanh toán, quay lại trang này. Hệ thống sẽ tự động xác nhận sau khi quét được giao dịch.</p>
                     `;
                 }
                 if (status) status.textContent = '✅ Chọn phương thức thanh toán:';
@@ -9411,7 +9490,7 @@
                 String(t.submissionId) === String(submissionId) &&
                 t.status === 'confirmed'
             ).length;
-            if (userVotes >= 5) return showToast('Đã mua tối đa 5 vote cho tác phẩm này!', 'info');
+            if (userVotes >= 1) return showToast('Bạn đã bình chọn tác phẩm này. Mỗi tài khoản chỉ được bình chọn một lần cho mỗi tác phẩm.', 'info');
             openPaymentModal('vote', { submissionId, submissionTitle });
         }
 
@@ -9724,7 +9803,7 @@
             modal.innerHTML = `
                 <h3 style="margin-bottom:12px">💖 Đồng hành & Tài trợ dự án</h3>
                 <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:14px;line-height:1.4">
-                    Ý Niệm Điện Ảnh là dự án phi lợi nhuận. Khoản tài trợ của bạn sẽ được phân bổ: 70% cộng vào Quỹ giải thưởng cho các thí sinh xuất sắc, 30% dùng để duy trì máy chủ & vận hành dự án.
+                    Ý Niệm Điện Ảnh là dự án cộng đồng. Khoản đóng góp được tái đầu tư vào hoạt động của dự án, bao gồm giải thưởng, chứng nhận và chi phí vận hành. Chi tiết ngân sách được cập nhật trong báo cáo tài chính định kỳ.
                 </p>
                 <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;border:1px solid var(--line);line-height:1.4">
                     <div style="margin-bottom:6px">🌱 <b>Gói dưới 100k (Cơ bản/Đồng hành/Phát triển):</b> Vinh danh tại Bảng vàng trên Website.</div>
@@ -10536,7 +10615,7 @@
             if (elBase) elBase.textContent = baseFee.toLocaleString('vi-VN')+'đ';
             if (elFinal) elFinal.textContent = finalFee.toLocaleString('vi-VN')+'đ';
         }
-        async function registerTeamForCompetition() {
+                        async function registerTeamForCompetition() {
             var sel = document.getElementById('regTeam');
             var title = document.getElementById('regSubTitle');
             if (!sel||!sel.value) return showToast('Vui lòng chọn đội thi','error');
@@ -10546,40 +10625,45 @@
             var members = (localDB.teamMembers||[]).filter(function(m){return m.teamId===team.id;});
             var totalMembers = members.length + 1;
             var fee = Math.round(totalMembers * 5000 * 0.8);
-            // Generate certificates for ALL members (including leader) upfront
-            var certIds = [];
-            var allMemberIds = [{id:team.leaderId,role:'Trưởng nhóm'}];
-            members.forEach(function(m){allMemberIds.push({id:m.userId,role:m.role||'Thành viên'});});
-            if (!localDB.certificates) localDB.certificates = [];
-            allMemberIds.forEach(function(member){
-                var u = localDB.users.find(function(x){return String(x.id)===String(member.id);});
-                if (!u) return;
-                var certId = (localDB.certificates.length+1001).toString();
-                localDB.certificates.push({
-                    id:certId, userId:member.id, userName:u.name,
-                    type:'participation', achievement:'Tham gia cuộc thi - '+esc(team.name),
-                    teamId:team.id, teamName:team.name, role:member.role,
-                    issuedAt:new Date().toISOString()
-                });
-                certIds.push(certId);
-            });
-            // Save submission
-            if (!localDB.submissions) localDB.submissions = [];
-            localDB.submissions.push({
-                id:genId(), title:title.value.trim(), teamId:team.id, teamName:team.name,
-                userId:team.leaderId, userName:session.name,
-                status:'pending', fee:fee, memberCount:totalMembers,
-                certIssued:true, certCount:allMemberIds.length,
-                createdAt:new Date().toISOString()
-            });
-            persistDB();
-            showToast('🎉 Đăng ký thành công! Phí: '+fee.toLocaleString('vi-VN')+'đ ('+totalMembers+' TV × 5.000 × 80%). '+allMemberIds.length+' chứng chỉ đã được tạo.','success',6000);
-            renderTab('myteam');
-            // If fee > 0, trigger payment via existing PayOS flow
+            
             if (fee > 0 && typeof openPaymentModal === 'function') {
-                var orderCode = Math.floor(Date.now() % 100000000);
-                var txData = { teamId: team.id, teamName: team.name, memberCount: totalMembers, certCount: allMemberIds.length };
-                openPaymentModal('team_registration', { eventId: team.id, eventTitle: 'Đăng ký đội '+team.name, customAmount: fee, orderCode: orderCode, extra: txData });
+                // Paid registration: only trigger payment. The server will create the submission and certificates upon successful payment verification.
+                var txData = { eventId: team.id, eventTitle: 'Đăng ký đội '+team.name, submissionTitle: title.value.trim(), customAmount: fee };
+                openPaymentModal('team_registration', txData);
+            } else {
+                // Free registration (e.g. fee is 0 due to 0 members or custom setting)
+                var certIds = [];
+                var allMemberIds = [{id:team.leaderId,role:'Trưởng nhóm'}];
+                members.forEach(function(m){allMemberIds.push({id:m.userId,role:m.role||'Thành viên'});});
+                if (!localDB.certificates) localDB.certificates = [];
+                allMemberIds.forEach(function(member){
+                    var u = localDB.users.find(function(x){return String(x.id)===String(member.id);});
+                    if (!u) return;
+                    var certId = (localDB.certificates.length+1001).toString();
+                    localDB.certificates.push({
+                        id:certId, userId:member.id, userName:u.name,
+                        type:'participation', achievement:'Tham gia cuộc thi - '+esc(team.name),
+                        teamId:team.id, teamName:team.name, role:member.role,
+                        issuedAt:new Date().toISOString()
+                    });
+                    certIds.push(certId);
+                });
+                
+                if (!localDB.submissions) localDB.submissions = [];
+                const newSub = {
+                    id:genId(), title:title.value.trim(), teamId:team.id, teamName:team.name,
+                    userId:team.leaderId, userName:session.name,
+                    status:'pending', fee:0, memberCount:totalMembers,
+                    certIssued:true, certCount:allMemberIds.length,
+                    createdAt:new Date().toISOString()
+                };
+                localDB.submissions.push(newSub);
+                if (useFirebase) {
+                    await saveItem('submissions', newSub);
+                }
+                persistDB();
+                showToast('🎉 Đăng ký thành công! Đội thi miễn phí.','success');
+                renderTab('myteam');
             }
         }
 

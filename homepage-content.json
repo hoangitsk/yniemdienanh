@@ -1,9 +1,10 @@
 {
   "hero": {
-    "eyebrow": "Dự án phi lợi nhuận về điện ảnh",
-    "title": "Ý Niệm<br>Điện Ảnh"
+    "eyebrow": "Dự án cộng đồng về điện ảnh",
+    "title": "Ý Niệm<br>Điện Ảnh",
+    "tagline": "Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức."
   },
   "footer": {
-    "text": "Ý Niệm Điện Ảnh là dự án phi lợi nhuận dành cho thế hệ trẻ. \"Nơi những khung hình đầu tiên cất lời\" ✨"
+    "text": "Ý Niệm Điện Ảnh là dự án cộng đồng dành cho thế hệ trẻ. \"Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức.\""
   }
 }

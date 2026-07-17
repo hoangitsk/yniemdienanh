@@ -103,16 +103,25 @@ service cloud.firestore {
       allow write: if isOrganizer();
     }
 
-    match /submissions/{docId} {
+    match /submissions/{submissionId} {
       allow read: if true;
-      allow create: if signedIn();
+      allow create: if signedIn() && request.resource.data.status == 'pending' && !('fee' in request.resource.data && request.resource.data.fee > 0);
       allow update, delete: if isOrganizer();
-    }
 
-    match /votes/{docId} {
-      allow read: if isOrganizer();
-      allow create: if signedIn();
-      allow update, delete: if false;
+      match /votes/{userId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && request.auth.uid == userId
+          && userId == request.resource.data.userId
+          && submissionId == request.resource.data.submissionId
+          && (!exists(/databases/$(database)/documents/config/settings) || (
+              let settings = get(/databases/$(database)/documents/config/settings).data;
+              (!("voteStart" in settings) || settings.voteStart == "" || request.time >= timestamp(settings.voteStart)) &&
+              (!("voteEnd" in settings) || settings.voteEnd == "" || request.time <= timestamp(settings.voteEnd))
+             ));
+        allow update: if false;
+        allow delete: if isOrganizer();
+      }
     }
 
     match /feedback/{docId} {
@@ -177,14 +186,12 @@ service cloud.firestore {
 
     match /transactions/{docId} {
       allow read: if isOrganizer() || (signedIn() && resource.data.userId == request.auth.uid);
-      allow create: if signedIn();
-      allow update: if isOrganizer();
-      allow delete: if isOrganizer();
+      allow write: if false;
     }
 
     match /registrations/{docId} {
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || isOrganizer());
-      allow create: if signedIn();
+      allow create: if signedIn() && (!('price' in request.resource.data) || request.resource.data.price == 0);
       allow update, delete: if isOrganizer();
     }
 

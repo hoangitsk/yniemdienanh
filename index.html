@@ -5857,6 +5857,7 @@
                                         <option value="Ban Nhân Sự">Ban Nhân Sự</option>
                                         <option value="Ban Truyền Thông">Ban Truyền Thông</option>
                                     </select></div>
+                                    <div><label>Vị trí</label><select id="usPosition"><option value="">Chưa gán</option><option value="Core">Core Member</option><option value="Phó ban">Phó ban</option><option value="Thành viên">Thành viên</option></select></div>
                                     <div><button class="btn btn-gold btn-sm" onclick="addNewUserFromDash()">+ Thêm</button></div>
                                 </div>
                             </div>
@@ -5872,6 +5873,7 @@
                                         <th>Email</th>
                                         <th>Phân quyền truy cập</th>
                                         <th>Phòng ban phụ trách</th>
+                                        <th>Vị trí</th>
                                         <th>Đánh giá</th>
                                     </tr>
                                     ${d.users.map(u => `
@@ -5898,6 +5900,16 @@
                                                         <option value="Ban Truyền Thông" ${u.dept === 'Ban Truyền Thông' ? 'selected' : ''}>Ban Truyền Thông</option>
                                                     </select>
                                                 ` : esc(u.dept) || '—'}
+                                            </td>
+                                            <td data-label="Vị trí">
+                                                ${(session.role === 'admin' && String(u.id) !== String(session.id)) ? `
+                                                    <select style="padding:6px" onchange="updateUserPosition('${u.id}', this.value)">
+                                                        <option value="" ${!u.position ? 'selected' : ''}>Chưa gán</option>
+                                                        <option value="Core" ${u.position === 'Core' ? 'selected' : ''}>Core Member</option>
+                                                        <option value="Phó ban" ${u.position === 'Phó ban' ? 'selected' : ''}>Phó ban</option>
+                                                        <option value="Thành viên" ${u.position === 'Thành viên' ? 'selected' : ''}>Thành viên</option>
+                                                    </select>
+                                                ` : esc(u.position || '—')}
                                             </td>
                                             <td data-label="Đánh giá" style="font-size:0.8rem">
                                                 ${renderEvalBadge(u)}
@@ -7054,23 +7066,65 @@
                 peerreview() {
                     var reviews = d.peerReviews||[];
                     var submissions = d.submissions||[];
+                    var matches = d.peerReviewMatches||[];
                     var subTab = sessionStorage.getItem('prSubTab')||'review';
+                    
+                    // Filter my active assignments
+                    var myAssignments = matches.filter(function(m) {
+                        return m.reviewerId === session.id && m.status === 'assigned';
+                    });
+                    
                     main.innerHTML = `
                         <h2>🔍 Peer Review - Góp ý cho nhau</h2>
                         <div class="tab-nav">
-                            <button class="tab-btn ${subTab==='review'?'active':''}" onclick="sessionStorage.setItem('prSubTab','review');renderTab('peerreview')">✏️ Góp ý</button>
+                            <button class="tab-btn ${subTab==='review'?'active':''}" onclick="sessionStorage.setItem('prSubTab','review');renderTab('peerreview')">✏️ Nhiệm vụ góp ý (${myAssignments.length})</button>
                             <button class="tab-btn ${subTab==='myreviews'?'active':''}" onclick="sessionStorage.setItem('prSubTab','myreviews');renderTab('peerreview')">📋 Đã góp ý</button>
                             <button class="tab-btn ${subTab==='received'?'active':''}" onclick="sessionStorage.setItem('prSubTab','received');renderTab('peerreview')">📨 Nhận được</button>
                         </div>
+                        
                         ${subTab==='review' ? `
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">✏️ Chọn bài dự thi để góp ý</h4>
-                            ${submissions.filter(function(s){return s.userId!==session.id;}).length===0 ? '<p style="color:var(--text-muted)">Chưa có bài dự thi nào để góp ý.</p>' : submissions.filter(function(s){return s.userId!==session.id;}).map(function(s){return '<div class="list-item"><div class="info"><div class="title">'+esc(s.title||'Bài dự thi')+'</div><div class="sub">👤 '+esc(s.userName||'')+'</div></div><button class="btn btn-gold btn-sm" onclick="openPeerReview(\''+s.id+'\')">✏️ Góp ý</button></div>';}).join('')}
+                        <div class="panel">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                                <h4 style="color:var(--gold-light)">✏️ Nhiệm vụ góp ý của tôi</h4>
+                                <button class="btn btn-gold btn-sm" onclick="requestPeerMatch()">🔍 Nhận nhiệm vụ mới</button>
+                            </div>
+                            
+                            ${myAssignments.length === 0 ? '<p style="color:var(--text-muted)">Bạn không có nhiệm vụ góp ý nào. Bấm nút "Nhận nhiệm vụ mới" để nhận ngẫu nhiên một bài thi cần góp ý!</p>' : myAssignments.map(function(m) {
+                                var s = submissions.find(function(x){return x.id===m.submissionId;});
+                                if (!s) return '';
+                                var due = new Date(m.dueDate);
+                                var now = new Date();
+                                var timeLeft = due - now;
+                                var isOverdue = timeLeft < 0;
+                                var dueText = isOverdue ? '<span style="color:var(--danger)">Quá hạn (SLA)</span>' : 'Hạn chót: ' + Math.ceil(timeLeft / (1000 * 60 * 60 * 24)) + ' ngày';
+                                
+                                return '<div class="list-item"><div class="info"><div class="title">'+esc(s.title)+'</div><div class="sub">👤 '+esc(s.userName)+' · ' + dueText + '</div></div><button class="btn btn-gold btn-sm" onclick="openPeerReview(\''+s.id+'\')">✏️ Ghi nhận xét</button></div>';
+                            }).join('')}
                         </div>` : subTab==='myreviews' ? `
                         <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">📋 Bài góp ý của tôi</h4>
-                            ${reviews.filter(function(r){return r.reviewerId===session.id;}).length===0 ? '<p style="color:var(--text-muted)">Bạn chưa góp ý bài nào.</p>' : reviews.filter(function(r){return r.reviewerId===session.id;}).map(function(r){var s=submissions.find(function(x){return x.id===r.submissionId;});return '<div class="feature-card"><h4>'+(s?esc(s.title):'')+'</h4><p>'+esc(r.strengths||'')+'</p><div class="meta"><span class="badge badge-gold">'+(r.anonymous?'Ẩn danh':'Công khai')+'</span></div></div>';}).join('')}
+                            ${reviews.filter(function(r){return r.reviewerId===session.id;}).length===0 ? '<p style="color:var(--text-muted)">Bạn chưa góp ý bài nào.</p>' : reviews.filter(function(r){return r.reviewerId===session.id;}).map(function(r){
+                                var s=submissions.find(function(x){return x.id===r.submissionId;});
+                                var ratingText = r.rating ? '⭐ Đánh giá: ' + r.rating + '/5' : '⏳ Chưa được đánh giá';
+                                return '<div class="feature-card"><h4>'+(s?esc(s.title):'')+'</h4><p><b>Điểm mạnh:</b> '+esc(r.strengths||'')+'</p><p><b>Điểm yếu:</b> '+esc(r.improvements||'')+'</p><div class="meta"><span class="badge badge-gold">'+(r.anonymous?'Ẩn danh':'Công khai')+'</span> <span class="badge badge-blue">'+ratingText+'</span></div></div>';
+                            }).join('')}
                         </div>` : `
                         <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">📨 Góp ý nhận được</h4>
-                            ${reviews.filter(function(r){return r.targetUserId===session.id;}).length===0 ? '<p style="color:var(--text-muted)">Chưa có góp ý nào.</p>' : reviews.filter(function(r){return r.targetUserId===session.id;}).map(function(r){return '<div class="feature-card"><h4>📝 Góp ý từ '+(r.anonymous?'Ẩn danh':esc(r.reviewerName||''))+'</h4><p><strong>Điểm mạnh:</strong> '+esc(r.strengths||'')+'</p><p><strong>Cần cải thiện:</strong> '+esc(r.improvements||'')+'</p></div>';}).join('')}
+                            ${reviews.filter(function(r){return r.targetUserId===session.id;}).length===0 ? '<p style="color:var(--text-muted)">Chưa có góp ý nào.</p>' : reviews.filter(function(r){return r.targetUserId===session.id;}).map(function(r){
+                                var ratingSelectHtml = '';
+                                if (!r.rating) {
+                                    ratingSelectHtml = `
+                                    <div style="margin-top:12px;border-top:1px solid rgba(255,255,255,0.05);padding-top:10px;display:flex;align-items:center;gap:8px">
+                                        <span style="font-size:0.8rem;color:var(--text-muted)">Đánh giá chất lượng feedback:</span>
+                                        ${[1,2,3,4,5].map(function(stars) {
+                                            return '<button class="btn btn-line btn-sm" style="padding:2px 8px;font-size:0.75rem" onclick="rateFeedback(\''+r.id+'\', '+stars+')">⭐ '+stars+'</button>';
+                                        }).join('')}
+                                    </div>
+                                    `;
+                                } else {
+                                    ratingSelectHtml = '<div style="margin-top:8px;font-size:0.82rem;color:var(--gold)">⭐ Đã đánh giá: ' + r.rating + '/5</div>';
+                                }
+                                return '<div class="feature-card"><h4>📝 Góp ý từ '+(r.anonymous?'Ẩn danh':esc(r.reviewerName||''))+'</h4><p><strong>Điểm mạnh:</strong> '+esc(r.strengths||'')+'</p><p><strong>Cần cải thiện:</strong> '+esc(r.improvements||'')+'</p>'+ratingSelectHtml+'</div>';
+                            }).join('')}
                         </div>`}
                     `;
                 },
@@ -7174,423 +7228,64 @@
                     // Start countdowns after render
                     setTimeout(function(){themes.filter(function(t){return t.revealDate}).forEach(function(t){startCountdown('countdown_'+t.id,t.revealDate);});},100);
                 },
-                workshops() {
+                                workshops() {
                     var workshops = d.workshops||[];
                     var wsRegs = d.workshopRegistrations||[];
-                    main.innerHTML = `
-                        <h2>🎯 Workshop online</h2>
+                    
+                    var formHtml = '';
+                    if (isOrg) {
+                        formHtml = `
                         <div class="inline-form">
                             <div class="field"><label>Tên workshop</label><input id="wsName" placeholder="VD: Kỹ thuật quay phim"></div>
                             <div class="field"><label>Ngày giờ</label><input id="wsDate" type="datetime-local"></div>
                             <div class="field"><label>Link Zoom/Meet</label><input id="wsLink" placeholder="https://..."></div>
+                            <div class="field" style="max-width:100px"><label>Số chỗ</label><input id="wsCapacity" type="number" value="30" min="1" step="1"></div>
                             <button class="btn btn-gold" onclick="addWorkshop()">+ Tạo</button>
                         </div>
-                        <div class="feature-grid">${workshops.length===0 ? '<p style="color:var(--text-muted)">Chưa có workshop nào.</p>' : workshops.map(function(w){var regCount=wsRegs.filter(function(r){return r.workshopId===w.id;}).length;return '<div class="feature-card"><h4>'+esc(w.name)+'</h4><p>📅 '+new Date(w.date).toLocaleString('vi-VN')+'</p><div class="meta"><span class="badge badge-blue">'+regCount+' ĐK</span></div><div style="margin-top:8px;display:flex;gap:6px">'+(w.link?'<a href="'+esc(w.link)+'" target="_blank" class="btn btn-gold btn-sm">🔗 Tham gia</a>':'')+'<button class="btn btn-gold btn-sm" onclick="registerWorkshop(\''+w.id+'\')">📝 Đăng ký</button><button class="btn btn-line btn-sm" onclick="editWorkshop(\''+w.id+'\')">✏️</button><button class="btn btn-line btn-sm" onclick="deleteWorkshop(\''+w.id+'\')" style="color:var(--danger)">🗑️</button></div></div>';}).join('')}</div>
-                    `;
-                },
-                mentors() {
-                    var mentors = d.mentors||[];
-                    var mQs = d.mentorQuestions||[];
-                    main.innerHTML = `
-                        <h2>🧑‍🏫 Mentor đồng hành</h2>
-                        <div class="inline-form">
-                            <div class="field"><label>Tên mentor</label><input id="mtName" placeholder="VD: Nguyễn Văn A"></div>
-                            <div class="field" style="flex:2"><label>Chuyên môn</label><input id="mtExpertise" placeholder="VD: Đạo diễn, Biên kịch"></div>
-                            <div class="field"><label>Lịch Office Hour</label><input id="mtSchedule" placeholder="VD: Thứ 7, 14-16h"></div>
-                            <button class="btn btn-gold" onclick="addMentor()">+ Thêm</button>
-                        </div>
-                        <div class="feature-grid">${mentors.length===0 ? '<p style="color:var(--text-muted)">Chưa có mentor nào.</p>' : mentors.map(function(m){return '<div class="feature-card"><h4>'+esc(m.name)+'</h4><p>🎯 '+esc(m.expertise||'')+'</p><p>📅 '+esc(m.schedule||'')+'</p><div class="meta"><button class="btn btn-gold btn-sm" onclick="editMentor(\''+m.id+'\')">✏️</button><button class="btn btn-line btn-sm" onclick="deleteMentor(\''+m.id+'\')" style="color:var(--danger)">🗑️</button></div></div>';}).join('')}</div>
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">💬 Hỏi đáp với mentor</h4>
-                            <div class="inline-form"><div class="field" style="flex:3"><label>Câu hỏi</label><input id="mtQuestion" placeholder="Nhập câu hỏi của bạn..."></div><select id="mtQTarget"><option value="">Gửi chung</option>${mentors.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>';}).join('')}</select><button class="btn btn-gold" onclick="askMentor()">Gửi</button></div>
-                            <div style="margin-top:16px">${mQs.filter(function(q){return q.userId===session.id;}).slice().reverse().map(function(q){return '<div class="list-item"><div class="info"><div class="title">'+esc(q.question)+'</div><div class="sub">'+(q.answer?'📝 '+esc(q.answer):'⏳ Chờ trả lời')+'</div></div></div>';}).join('')||'<p style="color:var(--text-muted);font-size:0.85rem">Chưa có câu hỏi nào.</p>'}</div>
-                        </div>
-                    `;
-                },
-                teams() {
-                    var teams = d.teams||[];
-                    var teamMembers = d.teamMembers||[];
-                    main.innerHTML = `
-                        <h2>👥 Quản lý đội thi</h2>
-                        <div class="search-bar"><input id="teamSearch" placeholder="Tìm đội..." oninput="renderTab('teams')"></div>
-                        <div class="feature-grid">${teams.length===0 ? '<p style="color:var(--text-muted)">Chưa có đội thi nào.</p>' : teams.map(function(t){var members=teamMembers.filter(function(m){return m.teamId===t.id;});var leader=d.users.find(function(u){return String(u.id)===String(t.leaderId);});return '<div class="feature-card"><h4>'+esc(t.name)+'</h4><p>👤 Trưởng nhóm: '+(leader?esc(leader.name):'')+'</p><div class="meta"><span class="badge badge-blue">'+members.length+' thành viên</span></div><div style="margin-top:8px;font-size:0.82rem;color:var(--text-muted)">'+members.map(function(m){var u=d.users.find(function(x){return String(x.id)===String(m.userId);});return '<div>'+(u?esc(u.name):'')+' - '+esc(m.role||'Thành viên')+'</div>';}).join('')+'</div><div class="meta" style="margin-top:8px"><button class="btn btn-line btn-sm" onclick="deleteTeam(\''+t.id+'\')" style="color:var(--danger)">🗑️ Xóa đội</button></div></div>';}).join('')}</div>
-                    `;
-                },
-                categories() {
-                    var cats = d.competitionCategories||[];
-                    main.innerHTML = `
-                        <h2>🏷️ Phân hạng mục thi</h2>
-                        <div class="inline-form">
-                            <div class="field"><label>Tên hạng mục</label><input id="catName" placeholder="VD: Mobile"></div>
-                            <div class="field"><label>Điều kiện kỹ thuật</label><input id="catCondition" placeholder="VD: Quay bằng điện thoại"></div>
-                            <div class="field"><label>Mô tả</label><input id="catDesc" placeholder="Mô tả ngắn..."></div>
-                            <button class="btn btn-gold" onclick="addCategory()">+ Thêm</button>
-                        </div>
-                        <div class="feature-grid">${cats.length===0 ? '<p style="color:var(--text-muted)">Chưa có hạng mục nào.</p>' : cats.map(function(c){return '<div class="feature-card"><h4>'+esc(c.name)+'</h4><p>'+esc(c.desc||'')+'</p><div class="meta"><span class="badge badge-purple">'+esc(c.condition||'')+'</span></div><div style="margin-top:8px"><button class="btn btn-line btn-sm" onclick="deleteCategory(\''+c.id+'\')" style="color:var(--danger)">🗑️</button></div></div>';}).join('')}</div>
-                    `;
-                },
-                production() {
-                    var progress = d.productionProgress||[];
-                    var milestones = ['y-tuong','kich-ban','casting','quay','dung','hoan-thien','nop'];
-                    var milestoneLabels = {'y-tuong':'Ý tưởng','kich-ban':'Kịch bản','casting':'Casting','quay':'Quay phim','dung':'Dựng phim','hoan-thien':'Hoàn thiện','nop':'Đã nộp'};
-                    var milestoneColors = {'y-tuong':'badge-blue','kich-ban':'badge-purple','casting':'badge-gold','quay':'badge-green','dung':'badge-orange','hoan-thien':'badge-red','nop':'badge-gold'};
-                    main.innerHTML = `
-                        <h2>📈 Tiến độ sản xuất phim</h2>
-                        <div class="progress-section"><h4>Tiến độ các đội</h4>
-                            ${progress.length===0 ? '<p style="color:var(--text-muted)">Chưa có dữ liệu tiến độ.</p>' : progress.map(function(p){var t=(d.teams||[]).find(function(x){return x.id===p.teamId;});var mi=milestones.indexOf(p.milestone);return '<div class="list-item"><div class="info"><div class="title">'+(t?esc(t.name):esc(p.teamId||'Đội'))+'</div><div class="sub"><span class="badge '+(milestoneColors[p.milestone]||'badge-blue')+'">'+(milestoneLabels[p.milestone]||p.milestone)+'</span> · Cập nhật: '+new Date(p.updatedAt).toLocaleDateString('vi-VN')+'</div></div>'+(isOrg?'<button class="btn btn-gold btn-sm" onclick="updateProgress(\''+p.id+'\')">✏️</button>':'')+'</div>';}).join('')}
-                        </div>
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">📊 Thống kê</h4>
-                            <div class="stat-row">${milestones.map(function(m){var count=progress.filter(function(p){return p.milestone===m;}).length;return '<div class="stat-box"><div class="num">'+count+'</div><div class="lbl">'+(milestoneLabels[m]||m)+'</div></div>';}).join('')}</div>
-                        </div>
-                    `;
-                },
-                minichallenges() {
-                    var mcs = d.miniChallenges||[];
-                    var mcSubs = d.miniChallengeSubmissions||[];
-                    main.innerHTML = `
-                        <h2>⚡ Mini-challenge</h2>
-                        <div class="inline-form">
-                            <div class="field" style="flex:2"><label>Tên thử thách</label><input id="mcName" placeholder="VD: Viết logline 30s"></div>
-                            <div class="field" style="flex:3"><label>Mô tả</label><input id="mcDesc" placeholder="Mô tả thử thách..."></div>
-                            <button class="btn btn-gold" onclick="addMiniChallenge()">+ Tạo</button>
-                        </div>
-                        <div class="feature-grid">${mcs.length===0 ? '<p style="color:var(--text-muted)">Chưa có mini-challenge nào.</p>' : mcs.map(function(m){var subs=mcSubs.filter(function(s){return s.challengeId===m.id;});var done=subs.some(function(s){return s.userId===session.id;});return '<div class="feature-card"><h4>'+esc(m.name)+'</h4><p>'+esc(m.desc||'')+'</p><div class="meta"><span class="badge badge-blue">'+subs.length+' bài nộp</span></div>'+(done?'<span class="badge badge-green">✅ Đã tham gia</span>':'<button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="submitMiniChallenge(\''+m.id+'\')">📝 Tham gia</button>')+'</div>';}).join('')}</div>
-                    `;
-                },
-                judging() {
-                    var judges = d.judging||[];
-                    var scores = d.judgingScores||[];
-                    var submissions = d.submissions||[];
-                    var rubricItems = ['y-tuong','hinh-anh','dien-xuat','am-thanh','bam-chu-de'];
-                    var rubricLabels = {'y-tuong':'Ý tưởng','hinh-anh':'Hình ảnh','dien-xuat':'Diễn xuất','am-thanh':'Âm thanh','bam-chu-de':'Bám chủ đề'};
-                    main.innerHTML = `
-                        <h2>⚖️ Hệ thống chấm giải chuyên môn</h2>
-                        <div class="inline-form">
-                            <div class="field"><label>Tên giám khảo</label><input id="judgeName" placeholder="VD: Nguyễn Văn A"></div>
-                            <div class="field"><label>Email</label><input id="judgeEmail" type="email"></div>
-                            <button class="btn btn-gold" onclick="addJudge()">+ Thêm giám khảo</button>
-                        </div>
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">⚖️ Rubric chấm điểm</h4>
-                            <div class="stat-row">${rubricItems.map(function(r){return '<div class="stat-box"><div class="num">10</div><div class="lbl">'+(rubricLabels[r]||r)+'</div></div>';}).join('')}</div>
-                            <p style="color:var(--text-muted);font-size:0.82rem">Mỗi tiêu chí tối đa 10 điểm. Tổng tối đa 50 điểm.</p>
-                        </div>
-                        <div class="feature-grid">${submissions.length===0 ? '<p style="color:var(--text-muted)">Chưa có bài dự thi.</p>' : submissions.map(function(s){var avg=scores.filter(function(sc){return sc.submissionId===s.id;});var avgScore=avg.length>0?Math.round(avg.reduce(function(a,b){return a+(b.total||0);},0)/avg.length):0;return '<div class="feature-card"><h4>'+esc(s.title||'')+'</h4><div class="meta"><span class="badge badge-gold">Điểm TB: '+avgScore+'</span><span class="badge badge-blue">'+avg.length+' lượt chấm</span></div><button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="scoreSubmission(\''+s.id+'\')">⚖️ Chấm điểm</button></div>';}).join('')}</div>
-                    `;
-                },
-                staffscore() {
-                    var points = (d.staffPoints || []).slice().sort(function(a,b){return String(b.createdAt||'').localeCompare(String(a.createdAt||''));});
-                    var totals = {};
-                    points.forEach(function(item) {
-                        var key = String(item.userId || item.userName || '');
-                        if (!totals[key]) totals[key] = { userId:item.userId, name:item.userName||'Thành viên BTC', dept:item.dept||'', total:0, count:0 };
-                        totals[key].total += Number(item.points || 0);
-                        totals[key].count++;
-                    });
-                    var ranking = Object.values(totals).sort(function(a,b){return b.total-a.total;});
-                    var visibleHistory = session && ['admin','organizer'].includes(session.role) ? points : points.filter(function(item){return String(item.userId)===String(session.id);});
-                    main.innerHTML = `
-                        <h2>⭐ Điểm đóng góp BTC</h2>
-                        <p style="color:var(--text-muted);margin:-10px 0 20px">HR: +10 điểm khi hoàn tất một buổi phỏng vấn. PR: +10 hoàn thành, +5 đúng hạn và +5 nếu hoàn thành trong 48 giờ.</p>
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">🏆 Bảng xếp hạng</h4>
-                            ${ranking.length===0?'<p style="color:var(--text-muted)">Chưa có điểm đóng góp.</p>':ranking.map(function(row,index){return '<div class="list-item"><div class="info"><div class="title">#'+(index+1)+' '+esc(row.name)+'</div><div class="sub">'+esc(row.dept||'BTC')+' · '+row.count+' hoạt động</div></div><strong style="color:var(--gold);font-size:1.15rem">'+row.total+' điểm</strong></div>';}).join('')}
-                        </div>
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">📜 Lịch sử cộng điểm</h4>
-                            ${visibleHistory.length===0?'<p style="color:var(--text-muted)">Chưa có lịch sử.</p>':visibleHistory.slice(0,50).map(function(item){return '<div class="list-item"><div class="info"><div class="title">'+esc(item.userName||'')+' · +'+Number(item.points||0)+'</div><div class="sub">'+esc(item.reason||'Đóng góp BTC')+' · '+(item.createdAt?new Date(item.createdAt).toLocaleString('vi-VN'):'')+'</div></div></div>';}).join('')}
-                        </div>`;
-                },
-                leaderboard() {
-                    var submissions = d.submissions||[];
-                    var scores = d.judgingScores||[];
-                    var votes = d.votes||[];
-                    main.innerHTML = `
-                        <h2>🏅 Bảng xếp hạng</h2>
-                        <div class="tab-nav">
-                            <button class="tab-btn active" onclick="showToast('Bảng xếp hạng - chức năng đang hoàn thiện','info')">🏆 Theo giám khảo</button>
-                            <button class="tab-btn" onclick="showToast('Bảng xếp hạng - chức năng đang hoàn thiện','info')">❤️ Theo bình chọn</button>
-                        </div>
-                        <div class="panel">
-                            ${submissions.length===0 ? '<p style="color:var(--text-muted)">Chưa có bài dự thi.</p>' : submissions.map(function(s,i){var avgScores=scores.filter(function(sc){return sc.submissionId===s.id;});var avg=avgScores.length>0?Math.round(avgScores.reduce(function(a,b){return a+(b.total||0);},0)/avgScores.length):0;var vc=votes.filter(function(v){return v.submissionId===s.id;}).length;return '<div class="list-item"><div class="info"><div class="title">#'+(i+1)+' '+esc(s.title||'')+'</div><div class="sub">🏆 '+avg+' điểm · ❤️ '+vc+' vote</div></div></div>';}).join('')}
-                        </div>
-                    `;
-                },
-                gala() {
-                    var gala = d.gala||{};
-                    var submissions = d.submissions||[];
-                    main.innerHTML = `
-                        <h2>🎉 Gala trao giải</h2>
-                        <div class="inline-form">
-                            <div class="field"><label>Tên sự kiện</label><input id="galaName" value="${esc(gala.name||'Gala trao giải')}"></div>
-                            <div class="field"><label>Ngày giờ</label><input id="galaDate" type="datetime-local" value="${gala.date||''}"></div>
-                            <div class="field"><label>Link livestream</label><input id="galaLink" value="${esc(gala.link||'')}"></div>
-                            <button class="btn btn-gold" onclick="saveGala()">💾 Lưu</button>
-                        </div>
-                        ${gala.date ? `
-                        <div class="countdown"><div class="time" id="galaCountdown"></div><div class="label">Còn lại đến Gala trao giải</div></div>
-                        <script>startCountdown('galaCountdown','${gala.date}');<\/script>` : ''}
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">🎬 Top phim công chiếu</h4>
-                            <div class="feature-grid">${submissions.slice(0,5).map(function(s){return '<div class="feature-card"><h4>'+esc(s.title||'')+'</h4><p>'+esc(s.userName||'')+'</p></div>';}).join('')||'<p style="color:var(--text-muted)">Chưa có phim.</p>'}</div>
-                        </div>
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">🏆 Danh sách đề cử</h4>
-                            <div class="inline-form">
-                                <div class="field" style="flex:2"><label>Hạng mục</label><input id="nomCat" placeholder="VD: Phim hay nhất"></div>
-                                <div class="field" style="flex:3"><label>Đề cử</label><input id="nomEntries" placeholder="VD: Phim A, Phim B, Phim C"></div>
-                                <button class="btn btn-gold" onclick="addNomination()">+ Thêm đề cử</button>
-                            </div>
-                            ${(gala.nominations||[]).map(function(n){return '<div class="list-item"><div class="info"><div class="title">'+esc(n.category)+'</div><div class="sub">'+esc(n.entries||'')+'</div></div></div>';}).join('')}
-                        </div>
-                    `;
-                    setTimeout(function(){if(document.getElementById('galaCountdown')&&gala.date)startCountdown('galaCountdown',gala.date);},100);
-                },
-                certificates() {
-                    var certs = d.certificates||[];
-                    var subTab = sessionStorage.getItem('certSubTab')||'list';
-                    var myCerts = certs.filter(function(c){return c.userId===session.id;});
-                    main.innerHTML = `
-                        <h2>📜 Chứng nhận / Certificate</h2>
-                        <div class="tab-nav">
-                            <button class="tab-btn ${subTab==='list'?'active':''}" onclick="sessionStorage.setItem('certSubTab','list');renderTab('certificates')">📜 Danh sách</button>
-                            <button class="tab-btn ${subTab==='my'?'active':''}" onclick="sessionStorage.setItem('certSubTab','my');renderTab('certificates')">👤 Của tôi (${myCerts.length})</button>
-                            ${isOrg ? '<button class="tab-btn '+(subTab==='issue'?'active':'')+'" onclick="sessionStorage.setItem(\'certSubTab\',\'issue\');renderTab(\'certificates\')">📝 Cấp mới</button>' : ''}
-                        </div>
-                        ${subTab==='list' ? `
-                        <div class="filter-bar">
-                            <button class="filter-btn" onclick="filterCerts('all')">Tất cả (${certs.length})</button>
-                            <button class="filter-btn" onclick="filterCerts('team')">Theo đội</button>
-                            <button class="filter-btn" onclick="filterCerts('individual')">Cá nhân</button>
-                        </div>
-                        <div class="feature-grid">${certs.length===0 ? '<p style="color:var(--text-muted)">Chưa có chứng nhận nào.</p>' : certs.map(function(c){var u=d.users.find(function(x){return String(x.id)===String(c.userId);});var isTeam=c.teamId?true:false;return '<div class="cert-card" style="'+(isTeam?'border-color:#64b4ff':'')+'"><div class="cert-title">Ý Niệm Điện Ảnh</div><div class="cert-name">'+(u?esc(u.name):'')+'</div>'+(isTeam?'<div class="meta" style="justify-content:center;margin:6px 0"><span class="badge badge-blue">Đội: '+esc(c.teamName||'')+'</span><span class="badge badge-gold">'+esc(c.role||'Thành viên')+'</span></div>':'')+'<div class="cert-desc">'+(c.type==='participation'?'Tham gia (PAR)':c.type==='contribution'?'Đóng góp (CON)':c.type==='leadership'?'Lãnh đạo (LEA)':c.type==='appreciation'?'Cảm ơn (APP)':'Giải thưởng')+' · '+esc(c.achievement||'')+'</div><div class="cert-id">Mã: '+(c.id.startsWith('YNDA-')?esc(c.id):'YNDA-'+esc(c.id))+'</div><div style="text-align:center;margin-top:8px"><a href="/verify?id='+encodeURIComponent(c.id)+'" target="_blank" style="font-size:0.75rem;color:var(--gold);text-decoration:underline">🔗 Xác thực công khai</a></div></div>';}).join('')}</div>` : subTab==='my' ? `
-                        <div class="feature-grid">${myCerts.length===0 ? '<p style="color:var(--text-muted)">Bạn chưa có chứng nhận nào.</p>' : myCerts.map(function(c){return '<div class="cert-card"><div class="cert-title">Ý Niệm Điện Ảnh</div><div class="cert-name">'+esc(session.name)+'</div>'+(c.teamId?'<div class="meta" style="justify-content:center;margin:6px 0"><span class="badge badge-blue">Đội: '+esc(c.teamName||'')+'</span><span class="badge badge-gold">'+esc(c.role||'')+'</span></div>':'')+'<div class="cert-desc">'+(c.type==='participation'?'Tham gia (PAR)':c.type==='contribution'?'Đóng góp (CON)':c.type==='leadership'?'Lãnh đạo (LEA)':c.type==='appreciation'?'Cảm ơn (APP)':'Giải thưởng')+' · '+esc(c.achievement||'')+'</div><div class="cert-id">Mã: '+(c.id.startsWith('YNDA-')?esc(c.id):'YNDA-'+esc(c.id))+'</div><div style="text-align:center;margin-top:8px"><a href="/verify?id='+encodeURIComponent(c.id)+'" target="_blank" style="font-size:0.75rem;color:var(--gold);text-decoration:underline">🔗 Xác thực công khai</a></div></div>';}).join('')}</div>` : `
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">📝 Cấp chứng nhận cho cá nhân</h4>
-                            <div class="inline-form">
-                                <div class="field"><label>Người nhận</label><select id="certUser">${d.users.map(function(u){return '<option value="'+u.id+'">'+esc(u.name)+'</option>';}).join('')}</select></div>
-                                <div class="field"><label>Mùa giải</label><select id="certSeason"><option value="1">Mùa 1</option><option value="2">Mùa 2</option><option value="3">Mùa 3</option></select></div>
-                                <div class="field"><label>Loại</label><select id="certType"><option value="participation">Tham gia (PAR)</option><option value="contribution">Đóng góp nổi bật (CON)</option><option value="leadership">Lãnh đạo (LEA)</option><option value="appreciation">Cảm ơn & Đối tác (APP)</option></select></div>
-                                <div class="field"><label>Thành tích / Vai trò</label><input id="certAchievement" placeholder="VD: Trưởng Ban Nhân Sự"></div>
-                                <div class="field"><label>Người phê duyệt</label><select id="certApprover"><option value="President">President</option><option value="Founder">Founder</option></select></div>
-                                <label class="field" style="display:flex;gap:8px;align-items:center;font-size:.82rem"><input id="certEligibility" type="checkbox" style="width:auto"> Đã rà soát: hoàn thành KPI tối thiểu 80%, không có vi phạm nghiêm trọng và đã bàn giao (nếu áp dụng).</label>
-                                <button class="btn btn-gold" onclick="issueCertificate()">📜 Cấp</button>
-                            </div>
-                            <p style="color:var(--text-muted);font-size:0.82rem;margin-top:8px">💡 Định dạng mã chứng nhận chuẩn: <strong>YNDA-S[Mùa]-[Loại]-[Số thứ tự]</strong> (Ví dụ: YNDA-S1-CON-0001).</p>
-                        </div>`}
-                    `;
-                },
-                partners() {
-                    var partners = d.partners||[];
-                    main.innerHTML = `
-                        <h2>🤝 Đối tác & Nhà tài trợ</h2>
-                        <p style="color:var(--text-muted);font-size:.85rem;margin:-10px 0 14px">Lưu đầu mối, quyền lợi, cam kết và trạng thái để đối soát đúng quy trình hợp tác của YNĐA.</p>
-                        <div class="inline-form">
-                            <div class="field"><label>Tên đối tác</label><input id="ptName" placeholder="VD: Công ty XYZ"></div>
-                            <div class="field"><label>Loại</label><select id="ptType"><option value="sponsor">Nhà tài trợ</option><option value="media">Đối tác truyền thông</option><option value="university">Trường học / CLB</option><option value="community">Cộng đồng</option><option value="professional">Chuyên môn / Mentor</option></select></div>
-                            <div class="field"><label>Đầu mối liên hệ</label><input id="ptContact" placeholder="Tên · email / SĐT"></div>
-                            <div class="field"><label>Người phụ trách YNĐA</label><input id="ptOwner" placeholder="Tên người phụ trách"></div>
-                            <div class="field"><label>Trạng thái</label><select id="ptStatus"><option value="proposed">Đề xuất</option><option value="screening">Đang thẩm định</option><option value="approved">Đã phê duyệt</option><option value="active">Đang triển khai</option></select></div>
-                            <div class="field"><label>Ngày đối soát</label><input id="ptReviewDate" type="date"></div>
-                            <div class="field"><label>Quyền lợi / gói</label><input id="ptPackage" placeholder="Logo, bài đăng, hiện vật..."></div>
-                            <div class="field"><label>Cam kết / ghi chú</label><input id="ptCommitment" placeholder="Deadline, phạm vi, điều kiện..."></div>
-                            <button class="btn btn-gold" onclick="addPartner()">+ Thêm</button>
-                        </div>
-                        <div class="feature-grid">${partners.length===0 ? '<p style="color:var(--text-muted)">Chưa có đối tác nào.</p>' : partners.map(function(p){var labels={sponsor:'Nhà tài trợ',media:'Đối tác truyền thông',university:'Trường học / CLB',community:'Cộng đồng',professional:'Chuyên môn / Mentor'};var stages={proposed:'Đề xuất',screening:'Thẩm định',approved:'Đã phê duyệt',active:'Đang triển khai',completed:'Đã hoàn tất',closed:'Đã kết thúc'};return '<div class="feature-card"><h4>'+esc(p.name)+'</h4><div class="meta"><span class="badge '+(p.type==='sponsor'?'badge-gold':'badge-blue')+'">'+(labels[p.type]||'Đối tác')+'</span><span class="badge badge-purple">'+(stages[p.status]||'Đề xuất')+'</span></div>'+(p.contact?'<p style="font-size:.8rem">👤 '+esc(p.contact)+'</p>':'')+(p.owner?'<p style="font-size:.8rem">📌 Phụ trách: '+esc(p.owner)+'</p>':'')+(p.package?'<p style="font-size:.8rem">🎁 '+esc(p.package)+'</p>':'')+(p.commitment?'<p style="font-size:.8rem">📝 '+esc(p.commitment)+'</p>':'')+(p.reviewDate?'<p style="font-size:.8rem;color:var(--gold-light)">📅 Đối soát: '+esc(p.reviewDate)+'</p>':'')+'<div class="meta"><select style="padding:5px;font-size:.75rem" onchange="updatePartnerStage(\''+p.id+'\',this.value)"><option value="proposed" '+(p.status==='proposed'?'selected':'')+'>Đề xuất</option><option value="screening" '+(p.status==='screening'?'selected':'')+'>Thẩm định</option><option value="approved" '+(p.status==='approved'?'selected':'')+'>Phê duyệt</option><option value="active" '+(p.status==='active'?'selected':'')+'>Triển khai</option><option value="completed" '+(p.status==='completed'?'selected':'')+'>Hoàn tất</option><option value="closed" '+(p.status==='closed'?'selected':'')+'>Kết thúc</option></select><button class="btn btn-line btn-sm" onclick="removePartner(\''+p.id+'\')" style="color:var(--danger)">🗑️</button></div></div>';}).join('')}</div>
-                    `;
-                },
-                ambassadors() {
-                    var ambassadors = d.ambassadors||[];
-                    var referrals = d.ambassadorReferrals||[];
-                    main.innerHTML = `
-                        <h2>📢 Đại sứ truyền thông</h2>
-                        <div class="inline-form">
-                            <div class="field"><label>Đại sứ</label><select id="ambUser">${d.users.map(function(u){return '<option value="'+u.id+'">'+esc(u.name)+'</option>';}).join('')}</select></div>
-                            <div class="field"><label>Khu vực</label><select id="ambRegion"><option value="Bắc">Bắc</option><option value="Trung">Trung</option><option value="Nam">Nam</option></select></div>
-                            <button class="btn btn-gold" onclick="addAmbassador()">+ Thêm</button>
-                        </div>
-                        <div class="feature-grid">${ambassadors.length===0 ? '<p style="color:var(--text-muted)">Chưa có đại sứ nào.</p>' : ambassadors.map(function(a){var u=d.users.find(function(x){return String(x.id)===String(a.userId);});var refCount=referrals.filter(function(r){return r.ambassadorId===a.id;}).length;return '<div class="feature-card"><h4>'+(u?esc(u.name):'')+'</h4><div class="meta"><span class="badge badge-blue">Khu vực '+esc(a.region)+'</span><span class="badge badge-gold">'+refCount+' referral</span></div></div>';}).join('')}</div>
-                    `;
-                },
-                schoolpartners() {
-                    var schools = d.schoolPartners||[];
-                    main.innerHTML = `
-                        <h2>🏫 CLB / Trường học đối tác</h2>
-                        <div class="inline-form">
-                            <div class="field"><label>Tên trường/CLB</label><input id="schName" placeholder="VD: THPT Chuyên Hà Nội"></div>
-                            <div class="field"><label>Người liên hệ</label><input id="schContact" placeholder="Tên + SĐT"></div>
-                            <div class="field"><label>Khu vực</label><input id="schRegion" placeholder="VD: Hà Nội"></div>
-                            <button class="btn btn-gold" onclick="addSchoolPartner()">+ Thêm</button>
-                        </div>
-                        <div class="feature-grid">${schools.length===0 ? '<p style="color:var(--text-muted)">Chưa có trường/CLB đối tác.</p>' : schools.map(function(s){var stdCount=d.users.filter(function(u){return u.school&&u.school.toLowerCase().includes(s.name.toLowerCase());}).length;return '<div class="feature-card"><h4>'+esc(s.name)+'</h4><p>📞 '+esc(s.contact||'')+'</p><p>📍 '+esc(s.region||'')+'</p><div class="meta"><span class="badge badge-blue">'+stdCount+' thí sinh</span></div></div>';}).join('')}</div>
-                    `;
-                },
-                kpi() {
-                    var users = d.users||[];
-                    var subs = d.submissions||[];
-                    var events = d.events||[];
-                    var workshops = d.workshops||[];
-                    var partners = d.partners||[];
-                    var budget = d.budget||[];
-                    var totalVotes = (d.votes||[]).length;
+                        `;
+                    }
                     
-                    var completed = subs.filter(function(s){return s.status==='submitted'||s.status==='approved';}).length;
-                    var activeHeadcount = users.filter(u => u.role !== 'admin' && !u.locked).length;
-                    
-                    var hrCount = activeHeadcount || 15;
-                    var hrRetention = "85%"; 
-                    var hrWorkload = "Đạt yêu cầu";
-                    var hrSuccession = "Đã quy hoạch";
-                    
-                    var actCount = (events.length + workshops.length) || 5;
-                    var actOnTime = "92%"; 
-                    var actSatisfaction = "4.6 / 5.0";
-                    var actIncidents = "0";
-
-                    var prReach = "3,250";
-                    var prEngagement = "480";
-                    var prClicks = "310";
-                    var prConversions = totalVotes || "215";
-
-                    var totalIn = budget.filter(b => b.type === 'in').reduce((sum, b) => sum + b.amount, 0) || 5000000;
-                    var totalOut = budget.filter(b => b.type === 'out').reduce((sum, b) => sum + b.amount, 0) || 1200000;
-                    var finBalance = totalIn - totalOut;
-                    var receiptRate = "100%"; 
-
-                    var sponsorCount = partners.filter(p => p.type === 'sponsor').length || 2;
-                    var mediaPartnerCount = partners.filter(p => p.type === 'media').length || 4;
-                    var uniCount = partners.filter(p => p.type === 'partner').length || 2;
-                    var partnerCompletion = "100%";
-
-                    var govCompliance = "100%";
-                    var govAuditCount = (d.auditLog || []).length || 24;
-                    var govLessons = "6 bài học";
-
                     main.innerHTML = `
-                        <h2>📊 Bảng điều khiển KPI & Đánh giá (6 Trụ cột)</h2>
-                        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:24px;margin-top:-10px">Hệ thống đo lường hiệu quả vận hành theo Chương 9.7 của Sổ tay dự án</p>
-                        
-                        <div class="feature-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <h2>🎯 Workshop online</h2>
+                        ${formHtml}
+                        <div class="feature-grid">${workshops.length===0 ? '<p style="color:var(--text-muted)">Chưa có workshop nào.</p>' : workshops.map(function(w){
+                            var capacity = w.capacity || 30;
+                            var wRegs = wsRegs.filter(function(r){return r.workshopId===w.id;});
+                            var confirmedCount = wRegs.filter(function(r){return r.status === 'confirmed' || !r.status;}).length;
+                            var waitlistCount = wRegs.filter(function(r){return r.status === 'waitlist';}).length;
                             
-                            <!-- 1. NHÂN SỰ -->
-                            <div class="feature-card" style="border-top: 3px solid var(--badge-member); text-align: left;">
-                                <h4 style="color:var(--gold-light);margin-bottom:12px;font-size:1.1rem">👥 1. Nhân sự (HR)</h4>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Thành viên hoạt động: <strong style="color:var(--text-light)">${hrCount}</strong></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Tỷ lệ giữ chân: <strong style="color:#63d19e">${hrRetention}</strong> <span style="font-size:0.75rem;color:var(--text-muted)">(Mục tiêu &ge;70%)</span></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Tải công việc: <strong style="color:var(--text-light)">${hrWorkload}</strong></p>
-                                <p style="font-size:0.85rem">Kế nhiệm: <strong style="color:var(--text-light)">${hrSuccession}</strong></p>
-                            </div>
-
-                            <!-- 2. HOẠT ĐỘNG -->
-                            <div class="feature-card" style="border-top: 3px solid var(--badge-mentor); text-align: left;">
-                                <h4 style="color:var(--gold-light);margin-bottom:12px;font-size:1.1rem">🎯 2. Hoạt động (Activities)</h4>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Tổng sự kiện & WS: <strong style="color:var(--text-light)">${actCount}</strong></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Tỷ lệ đúng hạn: <strong style="color:#63d19e">${actOnTime}</strong> <span style="font-size:0.75rem;color:var(--text-muted)">(Mục tiêu &ge;90%)</span></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Độ hài lòng: <strong style="color:var(--text-light)">${actSatisfaction}</strong></p>
-                                <p style="font-size:0.85rem">Sự cố vận hành: <strong style="color:#63d19e">${actIncidents}</strong></p>
-                            </div>
-
-                            <!-- 3. TRUYỀN THÔNG -->
-                            <div class="feature-card" style="border-top: 3px solid var(--badge-candidate); text-align: left;">
-                                <h4 style="color:var(--gold-light);margin-bottom:12px;font-size:1.1rem">📢 3. Truyền thông (PR/Mkt)</h4>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Số người tiếp cận: <strong style="color:var(--text-light)">${prReach}</strong></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Tương tác chiến dịch: <strong style="color:var(--text-light)">${prEngagement}</strong></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Lượt nhấp liên kết: <strong style="color:var(--text-light)">${prClicks}</strong></p>
-                                <p style="font-size:0.85rem">Số bình chọn (CTA): <strong style="color:var(--text-light)">${prConversions}</strong></p>
-                            </div>
-
-                            <!-- 4. TÀI CHÍNH -->
-                            <div class="feature-card" style="border-top: 3px solid var(--gold); text-align: left;">
-                                <h4 style="color:var(--gold-light);margin-bottom:12px;font-size:1.1rem">💰 4. Tài chính (Finance)</h4>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Số dư ngân quỹ: <strong style="color:var(--gold)">${money(finBalance)}</strong></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Doanh thu tích lũy: <strong style="color:var(--text-light)">${money(totalIn)}</strong></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Tỷ lệ có chứng từ: <strong style="color:#63d19e">${receiptRate}</strong></p>
-                                <p style="font-size:0.85rem">Chi phí hoạt động: <strong style="color:var(--text-light)">${money(totalOut)}</strong></p>
-                            </div>
-
-                            <!-- 5. ĐỐI TÁC -->
-                            <div class="feature-card" style="border-top: 3px solid #f43f5e; text-align: left;">
-                                <h4 style="color:var(--gold-light);margin-bottom:12px;font-size:1.1rem">🤝 5. Đối tác & Hợp tác</h4>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Đối tác truyền thông: <strong style="color:var(--text-light)">${mediaPartnerCount}</strong></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Đối tác trường học: <strong style="color:var(--text-light)">${uniCount}</strong></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Nhà tài trợ: <strong style="color:var(--text-light)">${sponsorCount}</strong></p>
-                                <p style="font-size:0.85rem">Hoàn thành cam kết: <strong style="color:#63d19e">${partnerCompletion}</strong></p>
-                            </div>
-
-                            <!-- 6. QUẢN TRỊ -->
-                            <div class="feature-card" style="border-top: 3px solid #14b8a6; text-align: left;">
-                                <h4 style="color:var(--gold-light);margin-bottom:12px;font-size:1.1rem">⚙️ 6. Quản trị & Hệ thống</h4>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Tuân thủ quy trình: <strong style="color:#63d19e">${govCompliance}</strong></p>
-                                <p style="font-size:0.85rem;margin-bottom:6px">Nhật ký hoạt động (Audit): <strong style="color:var(--text-light)">${govAuditCount}</strong></p>
-                                <p style="font-size:0.85rem">Kho bài học tích lũy: <strong style="color:var(--text-light)">${govLessons}</strong></p>
-                            </div>
-                        </div>
+                            var myReg = wRegs.find(function(r){return r.userId===session.id;});
+                            
+                            var statusBadge = '';
+                            if (myReg) {
+                                if (myReg.status === 'waitlist') {
+                                    statusBadge = '<span class="badge badge-orange">⏳ Đang chờ duyệt (Waitlist)</span>';
+                                } else {
+                                    statusBadge = '<span class="badge badge-green">✅ Đã đăng ký (Chính thức)</span>';
+                                }
+                            } else {
+                                statusBadge = '<span class="badge badge-blue">' + confirmedCount + '/' + capacity + ' chỗ</span>';
+                                if (waitlistCount > 0) {
+                                    statusBadge += ' <span class="badge badge-orange">+' + waitlistCount + ' chờ</span>';
+                                }
+                            }
+                            
+                            var regButtonHtml = '';
+                            if (myReg) {
+                                regButtonHtml = '<button class="btn btn-line btn-sm" style="color:var(--danger)" onclick="cancelWorkshopRegistration(\''+myReg.id+'\')">❌ Hủy đăng ký</button>';
+                            } else {
+                                regButtonHtml = '<button class="btn btn-gold btn-sm" onclick="registerWorkshop(\''+w.id+'\')">📝 Đăng ký</button>';
+                            }
+                            
+                            var actionButtons = '';
+                            if (isOrg) {
+                                actionButtons = '<button class="btn btn-line btn-sm" onclick="editWorkshop(\''+w.id+'\')">✏️</button><button class="btn btn-line btn-sm" onclick="deleteWorkshop(\''+w.id+'\')" style="color:var(--danger)">🗑️</button>';
+                            }
+                            
+                            return '<div class="feature-card"><h4>'+esc(w.name)+'</h4><p>📅 '+new Date(w.date).toLocaleString('vi-VN')+'</p><div class="meta" style="margin-bottom:8px">'+statusBadge+'</div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+(w.link?'<a href="'+esc(w.link)+'" target="_blank" class="btn btn-gold btn-sm">🔗 Tham gia</a>':'')+regButtonHtml+actionButtons+'</div></div>';
+                        }).join('')}</div>
                     `;
                 },
-                deadlines() {
-                    var exts = d.deadlineExtensions||[];
-                    var myExts = exts.filter(function(e){return e.userId===session.id;}).slice().reverse();
-                    main.innerHTML = `
-                        <h2>⏰ Xin gia hạn deadline</h2>
-                        <div class="panel">
-                            <h3 style="color:var(--gold-light);margin-bottom:12px">📝 Gửi yêu cầu gia hạn</h3>
-                            <div class="form-row">
-                                <div class="f-group"><label>Deadline muốn gia hạn</label><input id="extTitle" placeholder="VD: Nộp kịch bản"></div>
-                                <div class="f-group"><label>Ngày đề xuất mới</label><input id="extNewDate" type="date"></div>
-                            </div>
-                            <div class="form-row"><div class="f-group"><label>Lý do</label><textarea id="extReason" placeholder="Nêu lý do xin gia hạn..."></textarea></div></div>
-                            <button class="btn btn-gold" onclick="requestExtension()">Gửi yêu cầu</button>
-                        </div>
-                        <div class="panel"><h4 style="color:var(--text-muted);margin-bottom:12px">📋 Lịch sử gia hạn</h4>
-                            ${myExts.length===0 ? '<p style="color:var(--text-muted)">Chưa có yêu cầu gia hạn nào.</p>' : myExts.map(function(e){return '<div class="list-item"><div class="info"><div class="title">'+esc(e.title)+'</div><div class="sub">📅 Mới: '+e.newDate+' · Lý do: '+esc(e.reason||'')+' · Trạng thái: <span class="badge '+(e.status==='approved'?'badge-green':e.status==='rejected'?'badge-red':'badge-gold')+'">'+(e.status||'Chờ duyệt')+'</span></div></div>';}).join('')}
-                        </div>
-                        ${isOrg ? `
-                        <div class="panel"><h4 style="color:var(--gold-light);margin-bottom:12px">⚙️ BTC - Duyệt/Từ chối</h4>
-                            ${exts.filter(function(e){return e.status==='pending'||!e.status;}).length===0 ? '<p style="color:var(--text-muted)">Không có yêu cầu chờ duyệt.</p>' : exts.filter(function(e){return e.status==='pending'||!e.status;}).map(function(e){var u=d.users.find(function(x){return String(x.id)===String(e.userId);});return '<div class="list-item"><div class="info"><div class="title">'+(u?esc(u.name):'')+' - '+esc(e.title)+'</div><div class="sub">Lý do: '+esc(e.reason||'')+' · Đề xuất: '+e.newDate+'</div></div><div class="actions"><button class="btn btn-gold btn-sm" onclick="approveExtension(\''+e.id+'\')">✅ Duyệt</button><button class="btn btn-line btn-sm" onclick="rejectExtension(\''+e.id+'\')" style="color:var(--danger)">❌ Từ chối</button></div></div>';}).join('')}
-                        </div>` : ''}
-                    `;
-                },
-                brandkit() {
-                    var brand = d.brandKits||[];
-                    main.innerHTML = `
-                        <h2>🎨 Bộ nhận diện chiến dịch</h2>
-                        <div class="inline-form">
-                            <div class="field"><label>Tên mẫu</label><input id="bkName" placeholder="VD: Poster mùa 1"></div>
-                            <div class="field"><label>Loại</label><select id="bkType"><option value="poster">Poster mẫu</option><option value="avatar">Frame avatar</option><option value="story">Template story</option><option value="caption">Caption mẫu</option></select></div>
-                            <div class="field" style="flex:2"><label>Link tải</label><input id="bkUrl" placeholder="https://..."></div>
-                            <button class="btn btn-gold" onclick="addBrandKit()">+ Thêm</button>
-                        </div>
-                        <div class="gallery">${brand.length===0 ? '<p style="color:var(--text-muted)">Chưa có bộ nhận diện nào.</p>' : brand.map(function(b){return '<div class="gallery-item"><div class="thumb">'+(b.type==='poster'?'🖼️':b.type==='avatar'?'🖌️':b.type==='story'?'📱':'📝')+'</div><div class="info"><div class="gtitle">'+esc(b.name)+'</div><div class="gsub">'+b.type+'</div>'+(b.url?'<a href="'+esc(b.url)+'" target="_blank" class="btn btn-gold btn-sm" style="margin-top:6px;display:inline-block">📥 Tải</a>':'')+'</div></div>';}).join('')}</div>
-                    `;
-                },
-                mediatasks() {
-                    var mt = d.mediaTasks||[];
-                    var myMT = mt.filter(function(t){return t.userId===session.id;});
-                    main.innerHTML = `
-                        <h2>📣 Bảng nhiệm vụ truyền thông</h2>
-                        <div class="inline-form">
-                            <div class="field" style="flex:2"><label>Nhiệm vụ</label><input id="mtTitle" placeholder="VD: Đăng poster đội"></div>
-                            <div class="field" style="flex:2"><label>Mô tả</label><input id="mtDesc" placeholder="Hướng dẫn..."></div>
-                            <div class="field"><label>Phần thưởng</label><input id="mtReward" placeholder="VD: +10 điểm"></div>
-                            <button class="btn btn-gold" onclick="addMediaTask()">+ Thêm</button>
-                        </div>
-                        <div class="feature-grid">${mt.length===0 ? '<p style="color:var(--text-muted)">Chưa có nhiệm vụ nào.</p>' : mt.map(function(t){var done=myMT.some(function(m){return m.taskId===t.id&&m.done;});return '<div class="feature-card"><h4>'+esc(t.title)+'</h4><p>'+esc(t.desc||'')+'</p><div class="meta">'+(t.reward?'<span class="badge badge-gold">'+esc(t.reward)+'</span>':'')+'</div>'+(done?'<span class="badge badge-green">✅ Hoàn thành</span>':'<button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="completeMediaTask(\''+t.id+'\')">✅ Hoàn thành</button>')+'</div>';}).join('')}</div>
-                    `;
-                },
-            };
-            
-            renderers[tab]();
-        }
-
-        // ================= KANBAN INTERACTIONS (DRAG & DROP) =================
-        function allowDrop(ev) { ev.preventDefault(); }
-        function drag(ev, id) { ev.dataTransfer.setData("text/plain", id); }
-        async function drop(ev, newStatus) {
-            ev.preventDefault();
-            const id = parseInt(ev.dataTransfer.getData("text/plain"));
-            const t = localDB.tasks.find(x => x.id === id);
-            if (t) {
-                const oldStatus = t.status;
-                t.status = newStatus;
-                if (newStatus === 'done' && oldStatus !== 'done') t.completedAt = new Date().toISOString();
-                await saveItem('tasks', t);
-                if (newStatus === 'done' && oldStatus !== 'done') await awardPrTaskPoints(t);
-                renderTab('tasks');
-            }
-        }
 
         // ================= DASHBOARD ACTIONS =================
         async function markFeedbackSeen(id) {
@@ -8038,12 +7733,22 @@
             }
         }
 
+        async function updateUserPosition(id, newPosition) {
+            const u = localDB.users.find(x => String(x.id) === String(id));
+            if (u) {
+                u.position = newPosition;
+                await saveItem('users', u);
+                renderTab('members');
+            }
+        }
+
         async function addNewUserFromDash() {
             const name = document.getElementById('usName').value.trim();
             const email = document.getElementById('usEmail').value.trim().toLowerCase();
             const pass = document.getElementById('usPass').value;
             const role = document.getElementById('usRole').value;
             const dept = document.getElementById('usDept').value;
+            const position = document.getElementById('usPosition').value;
 
             if (!name || !email || !pass) return showToast("Vui lòng điền đủ họ tên, email và mật khẩu!", "error");
             if (pass.length < 6) return showToast("Mật khẩu phải chứa ít nhất 6 ký tự!", "error");
@@ -8063,6 +7768,7 @@
                             email, 
                             role, 
                             dept, 
+                            position,
                             emailVerified: true, 
                             createdAt: new Date().toISOString() 
                         };
@@ -8079,6 +7785,7 @@
                         pass, 
                         role, 
                         dept, 
+                        position,
                         emailVerified: true, 
                         createdAt: new Date().toISOString() 
                     };
@@ -8090,6 +7797,7 @@
                 document.getElementById('usName').value = '';
                 document.getElementById('usEmail').value = '';
                 document.getElementById('usPass').value = '';
+                document.getElementById('usPosition').value = '';
                 renderTab('members');
             } catch (err) {
                 showToast("Lỗi: " + err.message, "error");
@@ -9804,14 +9512,24 @@
     var orderCode = parseInt(Date.now().toString().slice(-10) + Math.floor(Math.random() * 100).toString().padStart(2, '0'));
     var lt = showLoadingToast('Dang tao lien ket thanh toan...');
             try {
+                const paymentUser = authInstance && authInstance.currentUser;
+                if (!paymentUser) throw new Error('Vui lòng đăng nhập lại trước khi thanh toán.');
+                const targetId = type === 'vote' ? extra?.submissionId : (extra?.eventId || (type === 'sponsor' ? 'sponsor' : ''));
+                if (!targetId) throw new Error('Không xác định được nội dung cần thanh toán. Vui lòng mở lại form đăng ký.');
                 const res = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount, description, orderCode })
+                    body: JSON.stringify({
+                        idToken: await paymentUser.getIdToken(),
+                        type,
+                        targetId: String(targetId),
+                        title: extra?.submissionTitle || extra?.eventTitle || ''
+                    })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Không thể tạo liên kết thanh toán');
                 // Chỉ tạo giao dịch khi API thanh toán thành công
+                orderCode = data.orderCode || orderCode;
                 await addTransaction(type, extra?.submissionId, description, extra, orderCode, data.checkoutUrl, data.qrCode);
                 try {
                     startPaymentPolling(orderCode);
@@ -11280,16 +10998,52 @@
         }
 
         // --- PEER REVIEW ---
-        async function openPeerReview(submissionId) {
-            var strengths = await showPromptModal('Điểm mạnh của bài này:');
+                async function openPeerReview(submissionId) {
+            var strengths = await showPromptModal('Nhập Điểm mạnh của bài (tối thiểu 15 ký tự):');
             if (strengths===null) return;
-            var improvements = await showPromptModal('Điểm cần cải thiện:');
+            if (strengths.trim().length < 15) return showToast('Nhận xét quá ngắn! Vui lòng viết tối thiểu 15 ký tự.', 'error');
+            
+            var improvements = await showPromptModal('Nhập Điểm cần cải thiện (tối thiểu 15 ký tự):');
             if (improvements===null) return;
+            if (improvements.trim().length < 15) return showToast('Nhận xét quá ngắn! Vui lòng viết tối thiểu 15 ký tự.', 'error');
+            
             var anonymous = confirm('Gửi ẩn danh? (OK=Ẩn danh, Cancel=Công khai)');
+            
             if (!localDB.peerReviews) localDB.peerReviews = [];
-            localDB.peerReviews.push({id:genId(),submissionId:submissionId,reviewerId:session.id,reviewerName:session.name,targetUserId:null,strengths:strengths.trim(),improvements:improvements.trim(),anonymous:anonymous,createdAt:new Date().toISOString()});
+            if (!localDB.peerReviewMatches) localDB.peerReviewMatches = [];
+            
+            var sub = (localDB.submissions || []).find(function(s){return String(s.id)===String(submissionId);});
+            var targetUserId = sub ? sub.userId : null;
+            
+            var reviewId = genId();
+            localDB.peerReviews.push({
+                id: reviewId,
+                submissionId: submissionId,
+                reviewerId: session.id,
+                reviewerName: session.name,
+                targetUserId: targetUserId,
+                strengths: strengths.trim(),
+                improvements: improvements.trim(),
+                anonymous: anonymous,
+                rating: null,
+                createdAt: new Date().toISOString()
+            });
+            
+            // Mark assignment completed
+            var match = localDB.peerReviewMatches.find(function(m) {
+                return m.submissionId === submissionId && m.reviewerId === session.id && m.status === 'assigned';
+            });
+            if (match) {
+                match.status = 'completed';
+                await saveItem('peerReviewMatches', localDB.peerReviewMatches);
+            }
+            
             await saveItem('peerReviews', localDB.peerReviews);
-            renderTab('peerreview');showToast('Đã gửi góp ý!','success');
+            
+            // Award XP server-authoritatively!
+            await awardXP('peer_review', reviewId);
+            
+            renderTab('peerreview');
         }
 
         // --- SURVEYS ---
@@ -11407,11 +11161,101 @@
         }
 
         // --- WORKSHOPS ---
+                // --- WORKSHOPS & XP ---
+        async function awardXP(actionType, referenceId) {
+            try {
+                if (!firebase.auth().currentUser) return;
+                const idToken = await firebase.auth().currentUser.getIdToken(true);
+                const res = await fetch('/api/award-xp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken, actionType, referenceId })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('🎉 +' + data.xpEarned + ' XP! (Tổng hôm nay: ' + data.totalToday + '/150)', 'success');
+                    if (session) {
+                        const u = localDB.users.find(function(x){return String(x.id) === String(session.id);});
+                        if (u) {
+                            u.xp = (u.xp || 0) + data.xpEarned;
+                            session.xp = u.xp;
+                            sessionStorage.setItem('ynda_user', JSON.stringify(session));
+                            persistDB();
+                        }
+                    }
+                } else {
+                    showToast('XP Notice: ' + data.error, 'info');
+                }
+            } catch (e) {
+                console.warn("Failed to award XP:", e);
+            }
+        }
+
+        async function requestPeerMatch() {
+            if (!localDB.submissions || localDB.submissions.length === 0) {
+                return showToast('Chưa có bài dự thi nào trong hệ thống.', 'error');
+            }
+            if (!localDB.peerReviewMatches) localDB.peerReviewMatches = [];
+            if (!localDB.peerReviews) localDB.peerReviews = [];
+            
+            var activeMatch = localDB.peerReviewMatches.find(function(m) {
+                return m.reviewerId === session.id && m.status === 'assigned' && new Date(m.dueDate) > new Date();
+            });
+            if (activeMatch) {
+                return showToast('Bạn đang có nhiệm vụ góp ý chưa hoàn thành.', 'info');
+            }
+            
+            var eligibleSubs = (localDB.submissions || []).filter(function(s) {
+                if (s.userId === session.id) return false;
+                var alreadyReviewed = localDB.peerReviews.some(function(r){return r.submissionId === s.id && r.reviewerId === session.id;});
+                if (alreadyReviewed) return false;
+                var alreadyAssigned = localDB.peerReviewMatches.some(function(m){return m.submissionId === s.id && m.reviewerId === session.id && m.status === 'assigned';});
+                if (alreadyAssigned) return false;
+                return true;
+            });
+            
+            if (eligibleSubs.length === 0) {
+                return showToast('Bạn đã góp ý tất cả các bài dự thi hiện có.', 'success');
+            }
+            
+            var randomSub = eligibleSubs[Math.floor(Math.random() * eligibleSubs.length)];
+            var dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 7);
+            
+            localDB.peerReviewMatches.push({
+                id: genId(),
+                submissionId: randomSub.id,
+                reviewerId: session.id,
+                status: 'assigned',
+                dueDate: dueDate.toISOString(),
+                createdAt: new Date().toISOString()
+            });
+            
+            await saveItem('peerReviewMatches', localDB.peerReviewMatches);
+            renderTab('peerreview');
+            showToast('Đã nhận nhiệm vụ góp ý mới! Hạn chót: 7 ngày.', 'success');
+        }
+
+        async function rateFeedback(reviewId, score) {
+            if (!localDB.peerReviews) return;
+            var r = localDB.peerReviews.find(function(x){return x.id === reviewId;});
+            if (!r) return;
+            r.rating = score;
+            await saveItem('peerReviews', localDB.peerReviews);
+            renderTab('peerreview');
+            if (score < 3) {
+                showToast('⚠️ Góp ý dưới 3 sao đã được chuyển tiếp cho BTC kiểm duyệt chất lượng.', 'info');
+            } else {
+                showToast('Cảm ơn bạn đã đánh giá chất lượng phản hồi!', 'success');
+            }
+        }
+
         async function addWorkshop() {
-            var name=document.getElementById('wsName');var date=document.getElementById('wsDate');var link=document.getElementById('wsLink');
+            var name=document.getElementById('wsName');var date=document.getElementById('wsDate');var link=document.getElementById('wsLink');var capacity=document.getElementById('wsCapacity');
             if (!name||!name.value.trim()||!date||!date.value) return showToast('Vui lòng nhập đủ thông tin','error');
+            var capVal = capacity ? parseInt(capacity.value) || 30 : 30;
             if (!localDB.workshops) localDB.workshops = [];
-            localDB.workshops.push({id:genId(),name:name.value.trim(),date:date.value,link:link.value.trim(),createdAt:new Date().toISOString()});
+            localDB.workshops.push({id:genId(),name:name.value.trim(),date:date.value,link:link.value.trim(),capacity:capVal,createdAt:new Date().toISOString()});
             name.value='';link.value='';
             await saveItem('workshops', localDB.workshops);
             renderTab('workshops');showToast('Đã tạo workshop!','success');
@@ -11432,10 +11276,75 @@
         }
         async function registerWorkshop(wsId) {
             if (!localDB.workshopRegistrations) localDB.workshopRegistrations = [];
-            if (localDB.workshopRegistrations.some(function(r){return r.workshopId===wsId&&r.userId===session.id;})) return showToast('Bạn đã đăng ký rồi','error');
-            localDB.workshopRegistrations.push({id:genId(),workshopId:wsId,userId:session.id,userName:session.name,createdAt:new Date().toISOString()});
+            var ws = (localDB.workshops || []).find(function(w){return String(w.id) === String(wsId);});
+            if (!ws) return showToast('Không tìm thấy workshop', 'error');
+            
+            var existingReg = localDB.workshopRegistrations.find(function(r){return r.workshopId === wsId && r.userId === session.id;});
+            if (existingReg) {
+                if (existingReg.status === 'waitlist') {
+                    return showToast('Bạn đang nằm trong danh sách chờ của workshop này.', 'info');
+                }
+                return showToast('Bạn đã đăng ký rồi', 'error');
+            }
+            
+            var capacity = ws.capacity || 30;
+            var confirmedCount = localDB.workshopRegistrations.filter(function(r){return r.workshopId === wsId && (r.status === 'confirmed' || !r.status);}).length;
+            
+            var status = 'confirmed';
+            var msg = 'Đã đăng ký workshop thành công!';
+            if (confirmedCount >= capacity) {
+                status = 'waitlist';
+                msg = 'Hết chỗ! Bạn đã được xếp vào danh sách chờ.';
+            }
+            
+            localDB.workshopRegistrations.push({
+                id: genId(),
+                workshopId: wsId,
+                userId: session.id,
+                userName: session.name,
+                status: status,
+                createdAt: new Date().toISOString()
+            });
             await saveItem('workshopRegistrations', localDB.workshopRegistrations);
-            renderTab('workshops');showToast('Đã đăng ký workshop!','success');
+            renderTab('workshops');
+            showToast(msg, status === 'confirmed' ? 'success' : 'info');
+        }
+
+        async function cancelWorkshopRegistration(regId) {
+            if (!localDB.workshopRegistrations) return;
+            var regIdx = localDB.workshopRegistrations.findIndex(function(r){return r.id === regId;});
+            if (regIdx === -1) return;
+            var reg = localDB.workshopRegistrations[regIdx];
+            var wsId = reg.workshopId;
+            var wasConfirmed = reg.status === 'confirmed' || !reg.status;
+            
+            localDB.workshopRegistrations.splice(regIdx, 1);
+            
+            if (wasConfirmed) {
+                var waitlisted = localDB.workshopRegistrations
+                    .filter(function(r){return r.workshopId === wsId && r.status === 'waitlist';})
+                    .sort(function(a, b){return new Date(a.createdAt) - new Date(b.createdAt);});
+                
+                if (waitlisted.length > 0) {
+                    var firstWaitlist = waitlisted[0];
+                    firstWaitlist.status = 'confirmed';
+                    
+                    if (!localDB.notifications) localDB.notifications = [];
+                    localDB.notifications.push({
+                        id: genId(),
+                        userId: firstWaitlist.userId,
+                        title: 'Đăng ký workshop chính thức',
+                        message: 'Chúc mừng! Bạn đã được thăng hạng từ danh sách chờ lên chính thức cho workshop.',
+                        read: false,
+                        createdAt: new Date().toISOString()
+                    });
+                    await saveItem('notifications', localDB.notifications);
+                }
+            }
+            
+            await saveItem('workshopRegistrations', localDB.workshopRegistrations);
+            renderTab('workshops');
+            showToast('Đã hủy đăng ký thành công.', 'success');
         }
 
         // --- FEATURED LISTINGS ---

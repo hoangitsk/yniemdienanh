@@ -390,6 +390,16 @@ service cloud.firestore {
       allow delete: if isOrganizer();
     }
 
+    match /peer_review_matches/{docId} {
+      allow read: if signedIn() && (resource.data.reviewerId == request.auth.uid || isOrganizer());
+      allow write: if signedIn();
+    }
+
+    match /xp_ledger/{docId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isOrganizer());
+      allow write: if false;
+    }
+
     match /production_diaries/{docId} {
       allow read: if true;
       allow create: if signedIn();

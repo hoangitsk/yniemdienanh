@@ -14,6 +14,11 @@ function getDb() {
     return admin.firestore();
 }
 
+function isCompletedCore(profile) {
+    const position = String(profile && (profile.position || profile.title) || '').trim().toLowerCase();
+    return profile && profile.interviewStatus === 'completed' && (position === 'core' || position.includes('core member'));
+}
+
 module.exports = async function saveAvailabilityPoll(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     try {
@@ -53,10 +58,10 @@ module.exports = async function saveAvailabilityPoll(req, res) {
         const requestedCode = String(input.code || '').trim().toUpperCase().replace(/\s+/g, '');
         const startDate = String(input.startDate || '');
         const dayCount = Math.max(1, Math.min(14, Number(input.dayCount || 7)));
-        const participantIds = Array.isArray(input.participantIds)
+        let participantIds = Array.isArray(input.participantIds)
             ? [...new Set(input.participantIds.map(id => String(id)).filter(Boolean))].slice(0, 1000)
             : [];
-        const participantNames = Array.isArray(input.participantNames)
+        let participantNames = Array.isArray(input.participantNames)
             ? input.participantNames.map(name => String(name).slice(0, 200)).slice(0, participantIds.length)
             : [];
         const participantEmails = Array.isArray(input.participantEmails)
@@ -64,6 +69,14 @@ module.exports = async function saveAvailabilityPoll(req, res) {
                 .filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))].slice(0, 1000)
             : [];
         const isPublic = input.isPublic === true;
+        const excludeCompletedCore = input.excludeCompletedCore === true;
+        if (excludeCompletedCore && participantIds.length) {
+            const originalIds = participantIds.slice();
+            const namesById = new Map(originalIds.map((id, index) => [id, participantNames[index] || '']));
+            const profiles = await Promise.all(participantIds.map(id => db.collection('users').doc(id).get()));
+            participantIds = participantIds.filter((id, index) => !isCompletedCore(profiles[index].exists ? profiles[index].data() : null));
+            participantNames = participantIds.map(id => namesById.get(id) || '').filter(Boolean);
+        }
         if (requestedCode && !/^[A-Z][A-Z0-9_-]{3,29}$/.test(requestedCode)) {
             return res.status(400).json({ error: 'Mã lịch chỉ được gồm chữ in hoa, số, dấu gạch ngang hoặc gạch dưới (4–30 ký tự).' });
         }
@@ -108,6 +121,8 @@ module.exports = async function saveAvailabilityPoll(req, res) {
             const requestedStatus = allowedStatuses.includes(input.status) ? input.status : (existing ? existing.status : 'draft');
             poll = {
                 code, title, type, startDate, dayCount, participantIds, participantNames, participantEmails, isPublic,
+                requireMinSlots: existing ? existing.requireMinSlots === true : input.requireMinSlots === true,
+                excludeCompletedCore: existing ? existing.excludeCompletedCore === true : excludeCompletedCore,
                 status: requestedStatus,
                 createdBy: existing ? existing.createdBy : decoded.uid,
                 createdAt: existing ? existing.createdAt : now,

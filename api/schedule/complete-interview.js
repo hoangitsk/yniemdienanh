@@ -21,6 +21,10 @@ function pollEndAt(poll) {
     return end.getTime();
 }
 
+function clean(value, max) {
+    return String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
 module.exports = async function completeInterview(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     try {
@@ -58,6 +62,9 @@ module.exports = async function completeInterview(req, res) {
         if (!bookings.length) return res.status(400).json({ error: 'Chưa có ứng viên được xác nhận trong lịch này.' });
 
         const now = new Date();
+        const assignment = body.assignment && typeof body.assignment === 'object' ? body.assignment : {};
+        const assignedDept = clean(assignment.dept, 160);
+        const assignedPosition = clean(assignment.position, 80);
         const meetingPolls = pollsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
             .filter(poll => poll.type === 'meeting' && poll.status === 'open' && (!pollEndAt(poll) || now.getTime() < pollEndAt(poll)))
             .sort((a, b) => {
@@ -100,6 +107,9 @@ module.exports = async function completeInterview(req, res) {
                 updatedAt: now.toISOString(),
                 updatedBy: decoded.uid
             };
+            // Quyết định sau phỏng vấn được lưu ngay vào hồ sơ để hiển thị Ban/Vị trí mọi nơi.
+            if (assignedDept) update.dept = assignedDept;
+            if (assignedPosition) update.position = assignedPosition;
             if (item.nextScheduleCode) {
                 update.nextScheduleCode = item.nextScheduleCode;
                 update.activeScheduleCode = item.nextScheduleCode;

@@ -777,7 +777,7 @@
                     <div id="pollParticipantCount" style="font-size:.75rem;color:var(--text-muted);margin:-5px 0 12px">Đã chọn 0 tài khoản</div>
                     <label>Gmail được phép tham gia (không cần có account trước)</label>
                     <textarea id="pollParticipantEmails" rows="3" placeholder="ungvien1@gmail.com, ungvien2@gmail.com&#10;Có thể nhập cách nhau bằng dấu phẩy hoặc xuống dòng" oninput="updatePollParticipantCount()"></textarea>
-                    <p style="font-size:.75rem;color:var(--text-muted);margin:-8px 0 14px">Người được thêm chỉ cần đăng nhập Google bằng đúng Gmail này để thấy và vote lịch.</p>
+                    <p style="font-size:.75rem;color:var(--text-muted);margin:-8px 0 14px">Người được thêm chỉ cần đăng nhập Google bằng đúng Gmail này để thấy và vote lịch. Đợt tạo mới yêu cầu mỗi người chọn tối thiểu 3 khung giờ.</p>
                     <label style="display:flex;align-items:center;gap:8px;color:var(--text-muted);cursor:pointer">
                         <input id="pollPublic" type="checkbox" style="width:auto;margin:0"> Cho phép tất cả tài khoản đã đăng nhập tham gia
                     </label>
@@ -1419,7 +1419,7 @@
             const select = document.getElementById('eventHr');
             if (!select) return;
             select.innerHTML = '<option value="">-- Chọn người phỏng vấn --</option>' + hrMembers.map(user =>
-                '<option value="' + escapeHtml(user.id) + '">' + escapeHtml(user.name || user.email) + '</option>'
+                '<option value="' + escapeHtml(user.id) + '">' + escapeHtml(scheduleUserLabel(user)) + '</option>'
             ).join('');
         }
 
@@ -1495,6 +1495,7 @@
         function renderPollParticipantOptions() {
             const picker = document.getElementById('pollParticipants');
             if (!picker || !canManageSchedules) return;
+            const isNewPoll = !document.getElementById('editingPollId').value;
             const deptFilter = document.getElementById('pollParticipantDeptFilter');
             const selectedDept = deptFilter ? deptFilter.value : '';
             if (deptFilter) {
@@ -1506,9 +1507,10 @@
                 else if (selectedDept === 'Chưa phân ban') deptFilter.value = selectedDept;
             }
             const selected = new Set(Array.from(picker.querySelectorAll('.poll-participant-checkbox:checked')).map(input => input.value));
-            picker.innerHTML = directoryUsers.slice().sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'vi')).map(user => {
+            picker.innerHTML = directoryUsers.filter(user => !isNewPoll || !isCompletedCoreMember(user)).sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'vi')).map(user => {
                 const deptGroup = departmentGroupLabel(user);
-                const label = (user.name || user.email || user.id) + ' · ' + deptGroup + (user.email ? ' · ' + user.email : '');
+                const position = schedulePositionLabel(user.position || user.title);
+                const label = scheduleUserLabel(user);
                 return '<label class="participant-option" data-dept="' + escapeHtml(deptGroup) + '"><input class="poll-participant-checkbox" type="checkbox" value="' + escapeHtml(user.id) + '"' + (selected.has(user.id) ? ' checked' : '') + ' onchange="updatePollParticipantCount()"><span>' + escapeHtml(label) + '</span></label>';
             }).join('') || '<div style="padding:12px;color:var(--text-muted);font-size:.76rem">Không tải được tài khoản đăng ký</div>';
             filterPollParticipants();
@@ -1524,6 +1526,28 @@
             if (normalized.includes('media') || normalized.includes('thiet ke') || normalized.includes('edit')) return 'Ban Media (Thiết kế&Edit)';
             if (normalized.includes('duyet bai')) return 'Ban duyệt bài';
             return raw || 'Chưa phân ban';
+        }
+
+        function schedulePositionLabel(value) {
+            const raw = String(value || '').trim();
+            const normalized = normalizeScheduleText(raw);
+            if (!raw) return '';
+            if (normalized === 'core') return 'Core Member';
+            if (normalized === 'vice lead' || normalized === 'vice_lead') return 'Phó ban';
+            if (normalized === 'member') return 'Thành viên';
+            return raw;
+        }
+
+        function scheduleUserLabel(user) {
+            const name = user && (user.name || user.email || user.id) || 'Thành viên';
+            const dept = departmentGroupLabel(user);
+            const position = schedulePositionLabel(user && (user.position || user.title));
+            return name + ' · Ban: ' + dept + (position ? ' · Vị trí: ' + position : '') + (user && user.email ? ' · ' + user.email : '');
+        }
+
+        function isCompletedCoreMember(user) {
+            const position = normalizeScheduleText(user && (user.position || user.title));
+            return user && user.interviewStatus === 'completed' && (position === 'core' || position.includes('core member'));
         }
 
         function filterPollParticipants() {
@@ -1733,6 +1757,9 @@
             if (!editingId) window._pendingPollSaveId = targetId;
             const data = {
                 title, code, type, startDate, dayCount, participantIds, participantNames, participantEmails, isPublic,
+                requireMinSlots: existing ? existing.requireMinSlots === true : true,
+                // Core đã hoàn tất vòng phỏng vấn được tự bỏ khỏi các vote tạo sau này.
+                excludeCompletedCore: existing ? existing.excludeCompletedCore === true : true,
                 status: document.getElementById('pollInitialStatus').value,
                 createdBy: existing ? existing.createdBy : currentUser.uid,
                 createdAt: existing ? existing.createdAt : (window._pendingPollCreatedAt || (window._pendingPollCreatedAt = new Date().toISOString())),
@@ -1983,7 +2010,7 @@
                 return;
             }
             const interviewOnly = activePoll.type === 'interview';
-            const rows = getAvailabilityVotes(interviewOnly).slice(0, 10);
+            const rows = getAvailabilityVotes(interviewOnly).slice(0, 3);
             if (!rows.length) {
                 target.innerHTML = '<p style="font-size:.78rem;color:var(--text-muted)">Chưa có lượt chọn giờ rảnh phù hợp.</p>';
                 return;
@@ -1992,6 +2019,28 @@
                 rows.map(function(row, index) {
                     return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>#' + (index + 1) + ' ' + escapeHtml(row.date.label) + ' · ' + row.shift.name + ' (' + row.shift.time + ')</strong><div class="event-meta">Điểm phù hợp: ' + row.weight + ' · ' + row.preferred + ' lượt ưu tiên<br>Tổng: ' + row.total + ' người · HR: ' + row.btc + ' · Ứng viên: ' + row.candidate + '</div></div>';
                 }).join('') + (interviewOnly ? '<button type="button" class="btn small" onclick="buildAutomaticInterviewPlan()" style="margin-top:4px">✉️ Chọn lịch & gửi email mời</button><p style="font-size:.75rem;color:var(--text-muted);margin:7px 0 0">Bước tiếp theo: chọn lịch đề xuất cho từng ứng viên, hệ thống sẽ tạo Meet và gửi thư ngay.</p>' : '');
+        }
+
+        function interviewSlotBusy(slotInfo, hrId, candidateId) {
+            const startsAt = new Date(autoPlanStartAt(slotInfo)).getTime();
+            const endsAt = startsAt + 30 * 60 * 1000;
+            return officialEvents.some(function(event) {
+                if (event.status === 'cancelled') return false;
+                const isSameHr = String(event.assignedHrId || '') === String(hrId || '');
+                const isSameCandidate = String(event.candidateId || '') === String(candidateId || '');
+                if (!isSameHr && !isSameCandidate) return false;
+                const eventStart = new Date(event.startAt).getTime();
+                const eventEnd = eventStart + Math.max(15, Number(event.duration || 30)) * 60 * 1000;
+                return Number.isFinite(eventStart) && eventStart < endsAt && eventEnd > startsAt;
+            });
+        }
+
+        function hrCanAttendSlot(hr, slotId) {
+            const response = schedulesForActivePoll().find(function(schedule) {
+                return effectiveScheduleRole(schedule) === 'btc' && String(schedule.ownerId || '') === String(hr.id);
+            });
+            // Không loại HR khi chưa gửi phiếu; chỉ tin phiếu đã trả lời để tránh đoán họ bận.
+            return !response || (response.slots || []).indexOf(slotId) !== -1;
         }
 
         function buildAutomaticInterviewPlan() {
@@ -2026,11 +2075,17 @@
                     if (!info) return null;
                     const vote = voteBySlot[slotId] || {};
                     const candidatePreferred = preferredSlots.has(slotId);
-                    return { info:info, candidatePreferred:candidatePreferred, score:(candidatePreferred ? 100 : 0) + (vote.weight || 0), btcVotes:vote.btc || 0 };
+                    const availableHrs = hrMembers.filter(function(hr) {
+                        return hrCanAttendSlot(hr, slotId) && !interviewSlotBusy(info, hr.id, candidateAccount.id);
+                    });
+                    if (!availableHrs.length) return null;
+                    return { info:info, candidatePreferred:candidatePreferred, score:(candidatePreferred ? 100 : 0) + (vote.weight || 0) + availableHrs.length, btcVotes:vote.btc || 0, availableHrs:availableHrs };
                 }).filter(Boolean).sort(function(a,b) {
                     return (b.score - a.score) || a.info.id.localeCompare(b.info.id);
                 });
-                return { candidate:candidate, candidateAccount:candidateAccount, options:options, choice:options[0] || null, defaultHrId:currentHrId };
+                const defaultOption = options[0] || null;
+                const defaultHr = defaultOption && (defaultOption.availableHrs.find(function(hr) { return hr.id === currentHrId; }) || defaultOption.availableHrs[0]);
+                return { candidate:candidate, candidateAccount:candidateAccount, options:options, choice:defaultOption, defaultHrId:defaultHr && defaultHr.id };
             });
             window._autoInterviewPlan = plan;
             if (target) target.innerHTML = '<div style="font-size:.78rem;color:var(--gold-light);font-weight:600;margin-bottom:8px">Chọn lịch để tạo Meet và gửi thư mời ngay</div>' +
@@ -2041,11 +2096,22 @@
                         const btcHint = option.btcVotes ? ' · ' + option.btcVotes + ' BTC cũng chọn' : '';
                         return '<option value="' + optionIndex + '">' + escapeHtml(option.info.date.label + ' · ' + option.info.shift.name + ' (' + option.info.shift.time + ') — ' + priority + btcHint) + '</option>';
                     }).join('');
-                    const hrOptions = hrMembers.map(function(hr) {
-                        return '<option value="' + escapeHtml(hr.id) + '"' + (hr.id === item.defaultHrId ? ' selected' : '') + '>' + escapeHtml(hr.name || hr.email) + '</option>';
+                    const hrOptions = item.choice.availableHrs.map(function(hr) {
+                        return '<option value="' + escapeHtml(hr.id) + '"' + (hr.id === item.defaultHrId ? ' selected' : '') + '>' + escapeHtml(scheduleUserLabel(hr)) + '</option>';
                     }).join('');
-                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta" style="margin-bottom:7px">Các giờ dưới đây được xếp theo ưu tiên của ứng viên; phiếu BTC chỉ để tham khảo.</div><label style="font-size:.74rem">Khung giờ duyệt</label><select id="automaticSlot-' + index + '" style="margin:3px 0 7px">' + slotOptions + '</select><label style="font-size:.74rem">Người phỏng vấn</label><select id="automaticHr-' + index + '" style="margin:3px 0 0">' + hrOptions + '</select><div class="approval-actions"><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ', this)">✉️ Duyệt lịch & gửi mail</button><label class="ai-personalize-toggle" title="Dùng AI để tối ưu và cá nhân hoá nội dung email cho ứng viên và người phỏng vấn"><input id="automaticAi-' + index + '" type="checkbox" checked><span class="ai-toggle-track" aria-hidden="true"></span><span>AI cá nhân hoá</span></label></div></div>';
+                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta" style="margin-bottom:7px">Ưu tiên ứng viên trước; các giờ HR đã báo bận hoặc đã có lịch phỏng vấn được tự loại.</div><label style="font-size:.74rem">Khung giờ duyệt</label><select id="automaticSlot-' + index + '" onchange="updateAutomaticInterviewHrOptions(' + index + ')" style="margin:3px 0 7px">' + slotOptions + '</select><label style="font-size:.74rem">Người phỏng vấn rảnh</label><select id="automaticHr-' + index + '" style="margin:3px 0 0">' + hrOptions + '</select><div class="approval-actions"><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ', this)">✉️ Duyệt lịch & gửi mail</button><label class="ai-personalize-toggle" title="Dùng AI để tối ưu và cá nhân hoá nội dung email"><input id="automaticAi-' + index + '" type="checkbox" checked><span class="ai-toggle-track" aria-hidden="true"></span><span>AI cá nhân hoá</span></label></div></div>';
                 }).join('') + '<p style="font-size:.76rem;color:var(--text-muted);margin-top:8px">Sau khi xác nhận, hệ thống sẽ tạo lịch Google Meet và gửi thư mời cho ứng viên cùng HR đã phân công.</p>';
+        }
+
+        function updateAutomaticInterviewHrOptions(index) {
+            const item = (window._autoInterviewPlan || [])[index];
+            const slotSelect = document.getElementById('automaticSlot-' + index);
+            const hrSelect = document.getElementById('automaticHr-' + index);
+            const option = item && slotSelect && item.options[Number(slotSelect.value)];
+            if (!option || !hrSelect) return;
+            hrSelect.innerHTML = option.availableHrs.map(function(hr) {
+                return '<option value="' + escapeHtml(hr.id) + '">' + escapeHtml(scheduleUserLabel(hr)) + '</option>';
+            }).join('');
         }
 
         function findHrAccountForSchedule(schedule) {
@@ -2079,6 +2145,13 @@
             const hrId = document.getElementById('automaticHr-' + index).value;
             const selectedHr = hrMembers.find(user => user.id === hrId);
             if (!selectedChoice || !selectedHr) return showAdminStatus('Hãy chọn khung giờ và người phỏng vấn trước khi gửi thư.', 'var(--danger)');
+            if ((selectedChoice.availableHrs || []).every(function(hr) { return hr.id !== selectedHr.id; })) return showAdminStatus('Khung giờ này không còn phù hợp với HR đã chọn. Hãy chọn phương án thay thế được gợi ý.', 'var(--danger)');
+            // Một lịch vừa được duyệt ở thẻ khác có thể làm phương án cũ bị trùng.
+            // Làm mới ngay từ dữ liệu hiện tại để Admin không phải tính phiếu lại.
+            if (interviewSlotBusy(selectedChoice.info, selectedHr.id, item.candidateAccount.id)) {
+                buildAutomaticInterviewPlan();
+                return showAdminStatus('Khung giờ này vừa phát sinh trùng lịch. Hệ thống đã tự đưa ra các phương án thay thế.', 'var(--gold)');
+            }
             item.choice = Object.assign({}, selectedChoice, { hrAccount:selectedHr });
             const candidateName = item.candidate && item.candidate.name || 'ứng viên này';
             const hrName = selectedHr.name || selectedHr.email;
@@ -2105,7 +2178,6 @@
             if (index === -1) officialEvents.push(eventData);
             else officialEvents[index] = Object.assign({}, officialEvents[index], eventData);
             officialEvents.sort((a, b) => String(a.startAt || '').localeCompare(String(b.startAt || '')));
-            renderAvailabilityPolls();
             renderOfficialEvents();
         }
 
@@ -2270,7 +2342,6 @@
                 myBookings = [];
                 showAdminStatus('Không thể tải lịch từ hệ thống. Vui lòng thử lại sau.', 'var(--danger)');
             }
-            renderAvailabilityPolls();
             renderOfficialEvents();
         }
 
@@ -2603,7 +2674,8 @@
             const poll = activePoll;
             if (!poll || !currentUser || !useFirebase) return showStatus('Vui lòng đăng nhập và chọn lịch được cấp quyền.', 'var(--danger)');
             if (!canEditActiveAvailability()) return showStatus('Phiếu này đã hoàn tất hoặc không còn nhận vote.', 'var(--danger)');
-            if (!selectedSlots.size) return showStatus('Hãy chọn ít nhất một khung giờ trước khi hoàn tất.', 'var(--danger)');
+            const minSlots = poll.requireMinSlots === true ? 3 : 1;
+            if (selectedSlots.size < minSlots) return showStatus('Hãy chọn ít nhất ' + minSlots + ' khung giờ trước khi hoàn tất.', 'var(--danger)');
             if (!confirm('Hoàn tất vote cho “' + poll.title + '”? Sau bước này phiếu sẽ được ẩn và chỉ Admin/HR/PR có thể xem lại.')) return;
             const button = document.getElementById('finalizeAvailabilityButton');
             if (button) { button.disabled = true; button.textContent = '⏳ Đang hoàn tất...'; }
@@ -2915,17 +2987,22 @@
             const hr = hrMembers.find(user => user.id === event.assignedHrId);
             if (!hr) return alert('Lịch chưa có người phỏng vấn hợp lệ.');
             if (!confirm('Xác nhận HR ' + (hr.name || hr.email) + ' đã hoàn thành buổi phỏng vấn và cộng 10 điểm?')) return;
+            const candidate = directoryUsers.find(user => user.id === event.candidateId) || {};
+            const assignedDept = prompt('Gán Ban cho ứng viên sau phỏng vấn (để trống nếu chưa quyết định):', candidate.dept || '');
+            if (assignedDept === null) return;
+            const assignedPosition = prompt('Gán Vị trí sau phỏng vấn (VD: Core, Phó ban, Thành viên; để trống nếu chưa quyết định):', candidate.position || 'Core');
+            if (assignedPosition === null) return;
             try {
                 const idToken = await scheduleTimeout(currentUser.getIdToken(), 5000, 'Không lấy được phiên đăng nhập.');
                 const response = await scheduleFetch('/api/schedule/complete-interview', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken, eventId: id })
+                    body: JSON.stringify({ idToken, eventId: id, assignment: { dept: assignedDept, position: assignedPosition } })
                 }, 20000, 'Hoàn tất phỏng vấn quá thời gian.');
                 const result = await response.json().catch(() => ({}));
                 if (!response.ok || !result.success) throw new Error(result.error || 'Không thể hoàn tất phỏng vấn.');
                 const nextCodes = Array.from(new Set((result.transitions || []).map(item => item.nextScheduleCode).filter(Boolean)));
-                showAdminStatus('✓ Đã hoàn tất phỏng vấn, cộng 10 điểm và chuyển tài khoản' + (nextCodes.length ? ' sang ' + nextCodes.join(', ') : ' sang bước tiếp theo') + '.', 'var(--ok)');
+                showAdminStatus('✓ Đã hoàn tất phỏng vấn, cộng 10 điểm' + (assignedDept || assignedPosition ? ' và gán ' + [assignedDept && ('Ban ' + assignedDept), assignedPosition && ('vị trí ' + assignedPosition)].filter(Boolean).join(' · ') : '') + '; Core đã hoàn tất sẽ tự được bỏ khỏi các vote mới.' + (nextCodes.length ? ' Chuyển sang ' + nextCodes.join(', ') + '.' : ''), 'var(--ok)');
                 await Promise.all([fetchAvailabilityPolls(), fetchOfficialSchedule()]);
             } catch (error) {
                 showAdminStatus('Không thể hoàn tất phỏng vấn: ' + (error.message || 'Lỗi không xác định'), 'var(--danger)');

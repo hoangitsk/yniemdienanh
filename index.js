@@ -76,8 +76,12 @@ function rateLimit(limit, windowMs) {
     };
 }
 
-// Apply rate limiting to sensitive endpoints
-app.use('/api/email/', rateLimit(5, 60000));       // 5 requests per minute for email
+// Apply rate limiting to sensitive endpoints. Bulk sending calls send-custom once
+// per recipient, so keep its authenticated allowance separate from public auth mail.
+app.use('/api/email/send-custom', rateLimit(120, 60000));
+app.use('/api/email/generate-', rateLimit(20, 60000));
+app.use('/api/email/send-verification', rateLimit(5, 60000));
+app.use('/api/email/send-password-reset', rateLimit(5, 60000));
 app.use('/api/send-notification-email', rateLimit(5, 60000));
 app.use('/api/create-payment', rateLimit(10, 60000)); // 10 per minute for payments
 app.use('/api/verify-turnstile', rateLimit(20, 60000)); // 20 per minute for turnstile

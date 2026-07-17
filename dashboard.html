@@ -3069,6 +3069,40 @@
         </div>
     </div>
 
+    <!-- BULK EMAIL PREVIEW (mỗi người nhận vẫn có tiêu đề/nội dung riêng để kiểm tra và sửa) -->
+    <div class="modal" id="bulkEmailPreviewModal">
+        <div class="modal-box" style="width:min(900px,100%);background:var(--navy-dark);border:1px solid rgba(228,184,102,.25)">
+            <span class="close-x" onclick="closeModal('bulkEmailPreviewModal')">✕</span>
+            <h3 style="color:var(--gold-light);font-size:1.3rem;margin-bottom:8px">📨 Xem trước email hàng loạt</h3>
+            <div id="bulkPreviewSummary" style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px"></div>
+            <div style="display:grid;gap:12px;text-align:left">
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text-muted)">Đang xem thư của</label>
+                    <select id="bulkPreviewRecipient" onchange="switchBulkEmailPreview(this.value)" style="width:100%;padding:10px;background:rgba(0,0,0,.3);color:#e2e8f0;border-radius:8px;border:1px solid rgba(228,184,102,.2)"></select>
+                </div>
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text-muted)">Tiêu đề email</label>
+                    <input id="bulkPreviewSubject" type="text" oninput="saveCurrentBulkEmailDraft()" style="width:100%;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.2);padding:10px;border-radius:8px">
+                </div>
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text-muted)">Nội dung riêng (hỗ trợ HTML)</label>
+                    <textarea id="bulkPreviewBody" rows="15" oninput="saveCurrentBulkEmailDraft()" style="width:100%;resize:vertical;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.2);font-family:monospace;font-size:.86rem;padding:12px;border-radius:8px"></textarea>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:16px">
+                <div style="display:flex;gap:8px">
+                    <button class="btn btn-line btn-sm" onclick="moveBulkEmailPreview(-1)">← Thư trước</button>
+                    <button class="btn btn-line btn-sm" onclick="moveBulkEmailPreview(1)">Thư sau →</button>
+                </div>
+                <div style="display:flex;gap:8px">
+                    <button class="btn btn-line btn-sm" onclick="closeModal('bulkEmailPreviewModal')">Quay lại chỉnh tùy chọn</button>
+                    <button id="bulkPreviewSendBtn" class="btn btn-gold btn-sm" onclick="sendPreparedBulkEmails()">📤 Gửi tất cả email đã duyệt</button>
+                </div>
+            </div>
+            <div id="bulkPreviewProgress" style="font-size:.76rem;color:var(--text-muted);margin-top:10px"></div>
+        </div>
+    </div>
+
     <script>
 
 
@@ -5131,7 +5165,7 @@
                             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                                 <strong style="color:var(--gold-light)">📨 Gửi email hàng loạt</strong>
                                 <span style="font-size:.78rem;color:var(--text-muted)">Người phụ trách: ${esc(session.name)} · ${esc(session.email || '')} · ${esc(session.dept || (session.role === 'admin' ? 'Quản trị viên' : session.role === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên'))}</span>
-                                <select id="bulkEmailType" style="min-width:240px;padding:9px;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);border-radius:8px">
+                                <select id="bulkEmailType" onchange="handleBulkEmailTypeChange()" style="min-width:240px;padding:9px;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);border-radius:8px">
                                     <option value="">-- Chọn loại email --</option>
                                     <option value="round1_pass">Chúc mừng vượt qua vòng 1</option>
                                     <option value="interview">Mời chọn lịch phỏng vấn</option>
@@ -5140,12 +5174,15 @@
                                     <option value="attachment_followup">Bổ sung tài liệu còn thiếu</option>
                                     <option value="custom">Thư tùy chỉnh theo mô tả AI</option>
                                 </select>
+                                <select id="bulkEmailScheduleCode" class="hidden" title="Đợt vote lịch phỏng vấn dùng chung cho các ứng viên đã chọn" style="min-width:260px;padding:9px;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);border-radius:8px">
+                                    <option value="">-- Chọn lịch vote phỏng vấn --</option>
+                                </select>
                                 <input id="bulkEmailAttachment" type="file" accept="application/pdf,.pdf" title="PDF dùng chung cho tất cả ứng viên đã chọn" style="max-width:260px;color:#cbd5e1;border:1px dashed rgba(228,184,102,.25);padding:7px;border-radius:8px;background:rgba(0,0,0,.2)">
                                 <textarea id="bulkEmailDescription" rows="2" maxlength="1000" placeholder="Mô tả cho AI (không bắt buộc), ví dụ: Nhắc ứng viên đọc handbook trước buổi phỏng vấn, giọng thân thiện..." style="flex:1 1 360px;min-width:280px;resize:vertical;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);padding:9px;border-radius:8px"></textarea>
-                                <button id="bulkEmailSendBtn" class="btn btn-gold btn-sm" onclick="sendBulkPersonalizedEmails()">📤 Gửi cá nhân hóa hàng loạt</button>
+                                <button id="bulkEmailSendBtn" class="btn btn-gold btn-sm" onclick="sendBulkPersonalizedEmails()">🤖 Soạn & xem trước tất cả</button>
                                 <span id="bulkEmailCount" style="font-size:.8rem;color:var(--text-muted)">0 ứng viên đã chọn</span>
                             </div>
-                            <div id="bulkEmailProgress" style="font-size:.75rem;color:var(--text-muted);margin-top:8px">PDF tối đa 2 MB sẽ được gửi cho từng ứng viên. Nếu nhập mô tả, Gemini sẽ áp dụng yêu cầu đó và cá nhân hóa riêng từng thư.</div>
+                            <div id="bulkEmailProgress" style="font-size:.75rem;color:var(--text-muted);margin-top:8px">Chọn ứng viên, soạn bằng AI rồi xem và sửa riêng từng thư trước khi gửi. PDF tối đa 2 MB được gửi cho từng người.</div>
                         </div>
                         
                         <!-- DANH SÁCH ĐƠN APPLY CHỜ DUYỆT -->
@@ -10098,7 +10135,21 @@
             const app = window.currentEmailApp;
             if (!app) return;
             app.activeScheduleCode = String(code || '').trim().toUpperCase();
-            applyEmailTemplate();
+            updateEmailScheduleLink(app.activeScheduleCode);
+        }
+
+        function updateEmailScheduleLink(code) {
+            const bodyEl = document.getElementById('emBody');
+            const typeEl = document.getElementById('emTemplateSelect');
+            if (!bodyEl || !typeEl || typeEl.value !== 'interview' || !bodyEl.value.trim()) return;
+            const scheduleCode = String(code || '').trim().toUpperCase();
+            const scheduleUrl = window.location.origin + (scheduleCode ? '/schedule/' + encodeURIComponent(scheduleCode) : '/schedule');
+            const schedulePattern = /https?:\/\/[^\s"'<>]+\/schedule(?:\/[A-Za-z0-9_-]+)?/gi;
+            if (schedulePattern.test(bodyEl.value)) {
+                bodyEl.value = bodyEl.value.replace(schedulePattern, scheduleUrl);
+            } else {
+                bodyEl.value += `<p>Vui lòng chọn các khung giờ bạn có thể tham gia tại <a href="${scheduleUrl}" style="color:#e4b866;font-weight:700">trang chọn thời gian phỏng vấn</a>.</p>`;
+            }
         }
 
         async function loadEmailScheduleOptions(app) {
@@ -10130,7 +10181,7 @@
                 select.value = preferred;
                 if (select.value) app.activeScheduleCode = select.value;
                 hint.textContent = polls.length ? 'Đã tải ' + polls.length + ' đợt vote đang mở. Chọn đúng mã để chèn vào email.' : 'Chưa có đợt vote đang mở; email sẽ dùng trang lịch chung.';
-                applyEmailTemplate();
+                updateEmailScheduleLink(select.value);
             } catch (error) {
                 hint.textContent = 'Không tải được lịch vote. Thư phỏng vấn sẽ chưa thể gửi cho đến khi tải lại được danh sách.';
             }

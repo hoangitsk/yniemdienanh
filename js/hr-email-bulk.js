@@ -72,10 +72,10 @@
         return (localDB.applications || []).filter(function (app) { return ids.indexOf(String(app.id)) !== -1; });
     }
 
-    function fallbackEmail(app, type) {
+    function fallbackEmail(app, type, selectedScheduleCode) {
         var name = esc(app.name || 'bạn');
         var dept = esc(app.dept || 'Ban Tổ Chức');
-        var scheduleCode = app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '';
+        var scheduleCode = selectedScheduleCode || app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '';
         var scheduleUrl = window.location.origin + (scheduleCode ? '/schedule/' + encodeURIComponent(scheduleCode) : '/schedule');
         var sender = typeof window.currentEmailSenderIdentity === 'function' ? window.currentEmailSenderIdentity() : {};
         var roleLabels = { admin: 'Quản trị viên', organizer: 'Ban Tổ Chức', member: 'Thành viên' };
@@ -163,7 +163,9 @@
         try {
             if (app && typeof window.assignApplicationToSelectedSchedule === 'function') {
                 await window.assignApplicationToSelectedSchedule(app, type);
-                applyEmailTemplate();
+                if (typeof window.updateEmailScheduleLink === 'function') {
+                    window.updateEmailScheduleLink(app.activeScheduleCode || '');
+                }
                 subject = document.getElementById('emSubject').value;
                 html = document.getElementById('emBody').value;
             }
@@ -209,7 +211,13 @@
         window.currentEmailWasAi = document.getElementById('emBody').value !== before;
     };
 
-    async function generateBulkContent(apps, type, customDescription) {
+    async function currentIdToken() {
+        return window.firebase && firebase.auth && firebase.auth().currentUser
+            ? firebase.auth().currentUser.getIdToken()
+            : '';
+    }
+
+    async function generateBulkContent(apps, type, customDescription, scheduleCode) {
         var idToken = window.firebase && firebase.auth && firebase.auth().currentUser
             ? await firebase.auth().currentUser.getIdToken()
             : '';
@@ -217,12 +225,121 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken: idToken, emailType: type, customDescription: customDescription, sender: typeof window.currentEmailSenderIdentity === 'function' ? window.currentEmailSenderIdentity() : {}, applications: apps.map(function (app) {
-                return { id: app.id, type: app.type, name: app.name, dept: app.dept, intro: app.intro, vision: app.vision, scheduleCode: app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '' };
+                return { id: app.id, type: app.type, name: app.name, dept: app.dept, intro: app.intro, vision: app.vision, scheduleCode: scheduleCode || app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '' };
             }) })
         });
         var data = await response.json().catch(function () { return {}; });
         if (!response.ok || !Array.isArray(data.emails)) throw new Error(data.error || 'Gemini không tạo được lô email');
         return data.emails;
+    }
+
+    async function loadBulkScheduleOptions() {
+        var select = document.getElementById('bulkEmailScheduleCode');
+        var progress = document.getElementById('bulkEmailProgress');
+        if (!select || select.dataset.loaded === 'true') return;
+        select.disabled = true;
+        if (progress) progress.textContent = 'Đang tải các đợt vote lịch phỏng vấn được cấp quyền...';
+        try {
+            var response = await fetch('/api/schedule/list-availability', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken: await currentIdToken() })
+            });
+            var result = await response.json().catch(function () { return {}; });
+            if (!response.ok || !Array.isArray(result.polls)) throw new Error(result.error || 'Không tải được đợt vote');
+            var polls = result.polls.filter(function (poll) {
+                return poll && poll.status === 'open' && poll.type === 'interview' && poll.code;
+            });
+            select.innerHTML = '<option value="">-- Chọn lịch vote phỏng vấn --</option>' + polls.map(function (poll) {
+                return '<option value="' + esc(poll.code) + '">' + esc(poll.title || poll.code) + ' · ' + esc(poll.code) + '</option>';
+            }).join('');
+            select.dataset.loaded = 'true';
+            if (progress) progress.textContent = polls.length
+                ? 'Đã tải ' + polls.length + ' đợt vote. Lịch đã chọn sẽ được cấp riêng cho từng ứng viên trước khi gửi.'
+                : 'Chưa có đợt vote phỏng vấn nào đang mở.';
+        } catch (error) {
+            if (progress) progress.textContent = 'Không tải được lịch phỏng vấn: ' + error.message;
+            showToast('Không tải được lịch phỏng vấn: ' + error.message, 'error');
+        } finally {
+            select.disabled = false;
+        }
+    }
+
+    window.handleBulkEmailTypeChange = function () {
+        var type = document.getElementById('bulkEmailType');
+        var schedule = document.getElementById('bulkEmailScheduleCode');
+        if (!type || !schedule) return;
+        var isInterview = type.value === 'interview';
+        schedule.classList.toggle('hidden', !isInterview);
+        if (isInterview) loadBulkScheduleOptions();
+    };
+
+    function renderBulkPreview() {
+        var draft = window.bulkEmailDraft;
+        if (!draft || !draft.apps.length) return;
+        var select = document.getElementById('bulkPreviewRecipient');
+        var summary = document.getElementById('bulkPreviewSummary');
+        select.innerHTML = draft.apps.map(function (app, index) {
+            return '<option value="' + esc(String(app.id)) + '">' + (index + 1) + '/' + draft.apps.length + ' · ' + esc(app.name) + ' · ' + esc(app.email) + '</option>';
+        }).join('');
+        select.value = draft.currentId || String(draft.apps[0].id);
+        if (!select.value) select.selectedIndex = 0;
+        draft.currentId = select.value;
+        var aiCount = Object.keys(draft.aiIds).length;
+        summary.textContent = emailLabel(draft.type) + ' · ' + draft.apps.length + ' người nhận · ' + aiCount + ' thư do Gemini cá nhân hóa' +
+            (draft.attachmentFile ? ' · PDF: ' + draft.attachmentFile.name : '') +
+            (draft.scheduleCode ? ' · Lịch: ' + draft.scheduleCode : '');
+        window.switchBulkEmailPreview(draft.currentId);
+    }
+
+    window.saveCurrentBulkEmailDraft = function () {
+        var draft = window.bulkEmailDraft;
+        if (!draft || !draft.currentId) return;
+        var content = draft.contents[String(draft.currentId)];
+        if (!content) return;
+        content.subject = document.getElementById('bulkPreviewSubject').value;
+        content.body = document.getElementById('bulkPreviewBody').value;
+    };
+
+    window.switchBulkEmailPreview = function (id) {
+        var draft = window.bulkEmailDraft;
+        if (!draft) return;
+        draft.currentId = String(id || '');
+        var content = draft.contents[draft.currentId] || { subject: '', body: '' };
+        document.getElementById('bulkPreviewRecipient').value = draft.currentId;
+        document.getElementById('bulkPreviewSubject').value = content.subject || '';
+        document.getElementById('bulkPreviewBody').value = content.body || '';
+    };
+
+    window.moveBulkEmailPreview = function (direction) {
+        var draft = window.bulkEmailDraft;
+        if (!draft || !draft.apps.length) return;
+        window.saveCurrentBulkEmailDraft();
+        var currentIndex = draft.apps.findIndex(function (app) { return String(app.id) === String(draft.currentId); });
+        var nextIndex = Math.max(0, Math.min(draft.apps.length - 1, currentIndex + direction));
+        window.switchBulkEmailPreview(String(draft.apps[nextIndex].id));
+    };
+
+    async function assignBulkApplicationToSchedule(app, pollCode, idToken) {
+        var response = await fetch('/api/schedule/assign-participant', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                idToken: idToken,
+                pollCode: pollCode,
+                expectedType: 'interview',
+                applicationId: app.id,
+                candidateEmail: app.email,
+                candidateName: app.name
+            })
+        });
+        var result = await response.json().catch(function () { return {}; });
+        if (!response.ok || !result.success) throw new Error(result.error || 'Không thể cấp lịch cho ứng viên.');
+        app.activeScheduleCode = pollCode;
+        app.interviewPollCode = pollCode;
+        app.recruitmentStage = 'interview_vote';
+        if (result.user && result.user.id) app.approvedUserId = result.user.id;
+        await saveItem('applications', app);
     }
 
     window.sendBulkPersonalizedEmails = async function () {
@@ -233,87 +350,157 @@
         var descriptionInput = document.getElementById('bulkEmailDescription');
         var customDescription = descriptionInput ? descriptionInput.value.trim() : '';
         var type = typeInput ? typeInput.value : '';
+        var scheduleInput = document.getElementById('bulkEmailScheduleCode');
+        var scheduleCode = type === 'interview' ? String(scheduleInput && scheduleInput.value || '').trim().toUpperCase() : '';
         var button = document.getElementById('bulkEmailSendBtn');
         var progress = document.getElementById('bulkEmailProgress');
         if (!apps.length) return showToast('Hãy chọn ít nhất một ứng viên.', 'warning');
         if (!type) return showToast('Hãy chọn loại email muốn gửi.', 'warning');
+        if (type === 'interview' && !scheduleCode) return showToast('Hãy chọn một đợt vote lịch phỏng vấn.', 'warning');
         if (type === 'custom' && !customDescription) return showToast('Hãy nhập mô tả nội dung để Gemini soạn thư tùy chỉnh.', 'warning');
         if (type === 'attachment_followup' && !attachmentFile) return showToast('Thư bổ sung tài liệu cần chọn một file PDF.', 'warning');
         if (attachmentFile && (!attachmentFile.name.toLowerCase().endsWith('.pdf') || attachmentFile.size > 2 * 1024 * 1024)) {
             return showToast('Tệp gửi hàng loạt phải là PDF và không vượt quá 2 MB.', 'warning');
         }
-        var duplicateCount = apps.filter(function (app) { return app.lastEmailType === type; }).length;
-        var message = 'Gửi ' + emailLabel(type) + ' cho ' + apps.length + ' ứng viên? Nội dung sẽ được cá nhân hóa riêng.';
-        if (duplicateCount) message += '\n\nCó ' + duplicateCount + ' ứng viên đã từng nhận loại thư này.';
-        if (!window.confirm(message)) return;
-
         button.disabled = true;
+        button.textContent = '⏳ Đang soạn...';
         var contents = {};
         var aiIds = {};
-        var failures = [];
         try {
-            var attachment;
-            if (attachmentFile) {
-                if (progress) progress.textContent = 'Đang đọc file đính kèm...';
-                var dataUrl = await new Promise(function (resolve, reject) {
-                    var reader = new FileReader();
-                    reader.onload = function () { resolve(reader.result); };
-                    reader.onerror = function () { reject(new Error('Không thể đọc file PDF.')); };
-                    reader.readAsDataURL(attachmentFile);
-                });
-                attachment = { filename: attachmentFile.name, base64: String(dataUrl).split(',')[1] };
-            }
-
             if (type === 'attachment_followup' && !customDescription) {
-                apps.forEach(function (app) { contents[String(app.id)] = fallbackEmail(app, type); });
+                apps.forEach(function (app) { contents[String(app.id)] = fallbackEmail(app, type, scheduleCode); });
             } else {
                 for (var offset = 0; offset < apps.length; offset += 8) {
                     var chunk = apps.slice(offset, offset + 8);
                     if (progress) progress.textContent = 'Gemini đang viết riêng thư ' + (offset + 1) + '–' + Math.min(offset + chunk.length, apps.length) + '/' + apps.length + '...';
                     try {
-                        var generated = await generateBulkContent(chunk, type, customDescription);
+                        var generated = await generateBulkContent(chunk, type, customDescription, scheduleCode);
                         generated.forEach(function (email) { contents[String(email.id)] = email; aiIds[String(email.id)] = true; });
                     } catch (error) {
                         console.warn('Bulk Gemini fallback:', error);
                         if (type === 'custom') throw new Error('Gemini chưa tạo được thư tùy chỉnh nên hệ thống đã dừng trước khi gửi. ' + error.message);
-                        chunk.forEach(function (app) { contents[String(app.id)] = fallbackEmail(app, type); });
+                        chunk.forEach(function (app) { contents[String(app.id)] = fallbackEmail(app, type, scheduleCode); });
                     }
                 }
             }
-
-            for (var i = 0; i < apps.length; i += 1) {
-                var app = apps[i];
-                var content = contents[String(app.id)] || fallbackEmail(app, type);
-                if (progress) progress.textContent = 'Đang gửi ' + (i + 1) + '/' + apps.length + ': ' + app.name;
-                button.textContent = '⏳ ' + (i + 1) + '/' + apps.length;
-                try {
-                    await sendEmail({ to: app.email, subject: content.subject, html: content.body, attachment: attachment });
-                    try {
-                        await recordSentEmail(app, { type: type, subject: content.subject, source: 'bulk', aiPersonalized: Boolean(aiIds[String(app.id)]), attachmentName: attachmentFile ? attachmentFile.name : '' });
-                    } catch (historyError) {
-                        failures.push(app.name + ' (đã gửi, lỗi lưu lịch sử)');
-                    }
-                } catch (sendError) {
-                    failures.push(app.name + ' (' + sendError.message + ')');
-                }
-            }
-            var sent = apps.length - failures.length;
-            if (failures.length) {
-                showToast('Hoàn tất: ' + sent + '/' + apps.length + ' email. Kiểm tra danh sách lỗi bên dưới.', 'warning');
-                if (progress) progress.textContent = 'Lỗi: ' + failures.join('; ');
-            } else {
-                showToast('Đã gửi và lưu lịch sử cho ' + sent + ' ứng viên!', 'success');
-                if (progress) progress.textContent = 'Hoàn tất ' + sent + '/' + apps.length + ' email.';
-                if (attachmentInput) attachmentInput.value = '';
-            }
-            renderTab('members');
+            apps.forEach(function (app) {
+                if (!contents[String(app.id)]) contents[String(app.id)] = fallbackEmail(app, type, scheduleCode);
+            });
+            window.bulkEmailDraft = {
+                apps: apps,
+                type: type,
+                customDescription: customDescription,
+                scheduleCode: scheduleCode,
+                attachmentFile: attachmentFile,
+                contents: contents,
+                aiIds: aiIds,
+                currentId: String(apps[0].id)
+            };
+            renderBulkPreview();
+            document.getElementById('bulkPreviewProgress').textContent = 'Hãy kiểm tra tiêu đề và nội dung của từng người nhận trước khi gửi.';
+            openModal('bulkEmailPreviewModal');
+            if (progress) progress.textContent = 'Đã soạn xong ' + apps.length + ' thư. Bạn có thể xem và chỉnh riêng từng thư.';
         } catch (error) {
             console.error(error);
             showToast(error.message || 'Không thể chuẩn bị email hàng loạt.', 'error');
             if (progress) progress.textContent = 'Đã dừng trước khi gửi: ' + (error.message || 'Lỗi không xác định');
         } finally {
             button.disabled = false;
-            button.textContent = '📤 Gửi cá nhân hóa hàng loạt';
+            button.textContent = '🤖 Soạn & xem trước tất cả';
+        }
+    };
+
+    window.sendPreparedBulkEmails = async function () {
+        var draft = window.bulkEmailDraft;
+        if (!draft || !draft.apps || !draft.apps.length) return showToast('Bản nháp hàng loạt không còn tồn tại. Hãy soạn lại.', 'warning');
+        window.saveCurrentBulkEmailDraft();
+        var incomplete = draft.apps.filter(function (app) {
+            var content = draft.contents[String(app.id)] || {};
+            return !String(content.subject || '').trim() || !String(content.body || '').trim();
+        });
+        if (incomplete.length) return showToast('Còn ' + incomplete.length + ' thư thiếu tiêu đề hoặc nội dung.', 'warning');
+
+        var duplicateCount = draft.apps.filter(function (app) { return app.lastEmailType === draft.type; }).length;
+        var message = 'Gửi ' + emailLabel(draft.type) + ' cho ' + draft.apps.length + ' ứng viên?';
+        if (draft.scheduleCode) message += '\nLịch phỏng vấn: ' + draft.scheduleCode + '.';
+        if (duplicateCount) message += '\n\nCó ' + duplicateCount + ' ứng viên đã từng nhận loại thư này.';
+        if (!window.confirm(message)) return;
+
+        var button = document.getElementById('bulkPreviewSendBtn');
+        var progress = document.getElementById('bulkPreviewProgress');
+        button.disabled = true;
+        var attachment;
+        var sent = 0;
+        var sendFailures = [];
+        var failedApps = [];
+        var historyWarnings = [];
+        try {
+            if (draft.attachmentFile) {
+                progress.textContent = 'Đang đọc file PDF đính kèm...';
+                var dataUrl = await new Promise(function (resolve, reject) {
+                    var reader = new FileReader();
+                    reader.onload = function () { resolve(reader.result); };
+                    reader.onerror = function () { reject(new Error('Không thể đọc file PDF.')); };
+                    reader.readAsDataURL(draft.attachmentFile);
+                });
+                attachment = { filename: draft.attachmentFile.name, base64: String(dataUrl).split(',')[1] };
+            }
+            var idToken = await currentIdToken();
+            for (var i = 0; i < draft.apps.length; i += 1) {
+                var app = draft.apps[i];
+                var content = draft.contents[String(app.id)];
+                progress.textContent = 'Đang xử lý ' + (i + 1) + '/' + draft.apps.length + ': ' + app.name;
+                button.textContent = '⏳ ' + (i + 1) + '/' + draft.apps.length;
+                try {
+                    if (draft.type === 'interview') {
+                        await assignBulkApplicationToSchedule(app, draft.scheduleCode, idToken);
+                    }
+                    await sendEmail({ to: app.email, subject: content.subject, html: content.body, attachment: attachment });
+                    sent += 1;
+                    try {
+                        await recordSentEmail(app, {
+                            type: draft.type,
+                            subject: content.subject,
+                            source: 'bulk',
+                            aiPersonalized: Boolean(draft.aiIds[String(app.id)]),
+                            attachmentName: draft.attachmentFile ? draft.attachmentFile.name : ''
+                        });
+                    } catch (historyError) {
+                        historyWarnings.push(app.name);
+                    }
+                } catch (error) {
+                    sendFailures.push(app.name + ' (' + error.message + ')');
+                    failedApps.push(app);
+                }
+            }
+
+            if (sendFailures.length || historyWarnings.length) {
+                var details = [];
+                if (sendFailures.length) details.push('Chưa gửi: ' + sendFailures.join('; '));
+                if (historyWarnings.length) details.push('Đã gửi nhưng lỗi lưu lịch sử: ' + historyWarnings.join(', '));
+                progress.textContent = details.join(' | ');
+                showToast('Hoàn tất ' + sent + '/' + draft.apps.length + ' email. ' + (sendFailures.length ? 'Có thư gửi lỗi.' : 'Có lỗi lưu lịch sử.'), 'warning');
+            } else {
+                progress.textContent = 'Hoàn tất ' + sent + '/' + draft.apps.length + ' email.';
+                showToast('Đã gửi và lưu lịch sử cho ' + sent + ' ứng viên!', 'success');
+            }
+            if (failedApps.length) {
+                draft.apps = failedApps;
+                draft.currentId = String(failedApps[0].id);
+                renderBulkPreview();
+                progress.textContent = 'Còn ' + failedApps.length + ' thư chưa gửi. Bạn có thể kiểm tra rồi bấm gửi lại; các thư thành công đã được loại khỏi lượt này. ' + progress.textContent;
+            } else {
+                window.bulkEmailDraft = null;
+                setTimeout(function () { closeModal('bulkEmailPreviewModal'); }, 800);
+                if (typeof renderTab === 'function') renderTab('members');
+            }
+        } catch (error) {
+            console.error(error);
+            progress.textContent = 'Đã dừng: ' + (error.message || 'Lỗi không xác định');
+            showToast(error.message || 'Không thể gửi email hàng loạt.', 'error');
+        } finally {
+            button.disabled = false;
+            button.textContent = '📤 Gửi tất cả email đã duyệt';
         }
     };
 })();

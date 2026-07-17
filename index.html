@@ -1598,9 +1598,17 @@
         .honoree-card__meta dt { color:var(--text-muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; }
         .honoree-card__meta dd { margin:4px 0 0; color:var(--gold-light); font-weight:700; }
         .honor-roll__quote { margin:26px 0 0; color:var(--text-muted); font-family:'Playfair Display',serif; font-size:1.05rem; font-style:italic; text-align:center; }
+        .homepage-honor { max-width:1120px; margin:0 auto 30px; }
+        .homepage-honor__period { display:inline-flex; margin:0 0 18px; padding:6px 11px; border-radius:999px; background:rgba(99,209,158,.1); border:1px solid rgba(99,209,158,.3); color:var(--ok); font-size:.78rem; font-weight:700; }
+        .homepage-honor__compact { display:none; min-height:200px; align-items:center; gap:24px; padding:24px 28px; border:1px solid rgba(243,219,163,.18); border-radius:18px; background:rgba(5,12,20,.4); }
+        .homepage-honor__compact h3 { margin:8px 0; color:var(--text-light); font-size:clamp(1.5rem,3vw,2.1rem); }
+        .homepage-honor__compact p { margin:0; color:var(--text-muted); }
+        .homepage-honor.is-compact .homepage-honor__full-content { display:none; }
+        .homepage-honor.is-compact .homepage-honor__compact { display:flex; }
         @media (max-width: 720px) {
-            .honor-roll { margin-left:16px; margin-right:16px; padding:25px 18px; }
+            .honor-roll, .homepage-honor { margin-left:16px; margin-right:16px; padding:25px 18px; }
             .honoree-card { grid-template-columns:1fr; gap:22px; padding:22px 18px; }
+            .homepage-honor__compact { min-height:180px; padding:20px; align-items:flex-start; flex-direction:column; gap:8px; }
         }
 
         /* PAYMENT MODAL */
@@ -2787,33 +2795,64 @@
             <!-- PRIZE POOL WIDGET -->
             <div id="prizePoolHome" class="scroll-reveal" style="margin-top: 40px; margin-bottom: 40px"></div>
 
-            <!-- WALL OF LIGHT / PUBLIC RECOGNITION -->
-            <section id="vinh-danh" class="honor-roll scroll-reveal" aria-labelledby="honorRollTitle">
+            <!-- FULL HOMEPAGE RECOGNITION: visible for 30 days only -->
+            <section id="homepage-honor-tran-dai-luc-chau" class="honor-roll homepage-honor scroll-reveal" data-display-start="2026-07-18T00:00:00+07:00" data-compact-start="2026-07-25T00:00:00+07:00" data-display-end="2026-08-17T00:00:00+07:00" aria-labelledby="homepageHonorTitle">
                 <p class="honor-roll__eyebrow">Nội dung vinh danh trên website</p>
-                <h2 id="honorRollTitle" class="honor-roll__heading">Những Người Giữ Ánh Sáng</h2>
-                <p class="honor-roll__intro">Ghi nhận những cá nhân đã tin tưởng và góp phần gìn giữ không gian trực tuyến của Ý Niệm Điện Ảnh.</p>
+                <h2 id="homepageHonorTitle" class="honor-roll__heading">Người Đồng Hành Cùng Ý Niệm Điện Ảnh</h2>
+                <p class="homepage-honor__period">Hiển thị trên Trang chủ: 18/07/2026 – 16/08/2026</p>
+                <div class="homepage-honor__full-content">
+                    <article class="honoree-card">
+                        <div class="honoree-card__story">
+                            <span class="honoree-card__role">Người đồng hành duy trì website — Season 1</span>
+                            <h3>Trần Đại Lục Châu</h3>
+                            <p>Ý Niệm Điện Ảnh xin chân thành cảm ơn <strong>Trần Đại Lục Châu</strong> đã dành tặng dự án khoản đóng góp trị giá <strong>100.000 VNĐ</strong> để hỗ trợ duy trì website và nền tảng trực tuyến.</p>
+                            <p>Khoản đóng góp này được sử dụng riêng cho chi phí vận hành website, <strong>không thuộc quỹ giải thưởng hoặc kinh phí tổ chức cuộc thi</strong>.</p>
+                            <p>Sự ủng hộ của bạn không chỉ góp phần giúp website tiếp tục hoạt động, mà còn tiếp thêm động lực để đội ngũ Ý Niệm Điện Ảnh tiếp tục xây dựng một không gian dành cho những người yêu điện ảnh, nhiếp ảnh và nghệ thuật kể chuyện bằng hình ảnh.</p>
+                            <p>Chúng mình trân trọng từng sự tin tưởng được gửi đến dự án, dù lớn hay nhỏ.</p>
+                            <p class="honoree-card__thanks">Cảm ơn Trần Đại Lục Châu vì đã đồng hành và giúp Ý Niệm Điện Ảnh tiếp tục sáng đèn.</p>
+                        </div>
+                        <aside class="honoree-card__meta" aria-label="Thông tin ghi nhận">
+                            <dl>
+                                <div><dt>Hạng mục đóng góp</dt><dd>Duy trì website</dd></div>
+                                <div><dt>Giá trị đóng góp</dt><dd>100.000 VNĐ</dd></div>
+                                <div><dt>Thời gian ghi nhận</dt><dd>Season 1</dd></div>
+                                <div><dt>Danh hiệu</dt><dd>Người Donate Đầu Tiên</dd></div>
+                            </dl>
+                        </aside>
+                    </article>
+                    <p class="honor-roll__quote">“Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức.”</p>
+                </div>
+                <article class="homepage-honor__compact" aria-label="Vinh danh rút gọn">
+                    <span class="honoree-card__role">Người Donate Đầu Tiên</span>
+                    <div>
+                        <h3>Trần Đại Lục Châu</h3>
+                        <p>Đồng hành duy trì website — Season 1 · <strong>100.000 VNĐ</strong></p>
+                        <p>Khoản đóng góp dành riêng cho nền tảng trực tuyến, không thuộc quỹ giải thưởng.</p>
+                    </div>
+                </article>
+            </section>
 
+            <!-- PERMANENT SHORT RECOGNITION CARD -->
+            <section id="vinh-danh" class="honor-roll scroll-reveal" aria-labelledby="honorRollTitle">
+                <p class="honor-roll__eyebrow">Khu vinh danh</p>
+                <h2 id="honorRollTitle" class="honor-roll__heading">Những Người Đồng Hành</h2>
+                <p class="honor-roll__intro">Những sự tin tưởng đã giúp ngôi nhà trực tuyến của Ý Niệm Điện Ảnh tiếp tục sáng đèn.</p>
                 <article class="honoree-card">
                     <div class="honoree-card__story">
-                        <span class="honoree-card__role">Người đồng hành duy trì nền tảng — Season 1</span>
                         <h3>Trần Đại Lục Châu</h3>
-                        <p class="honoree-card__affiliation">at Mollis Observation</p>
-                        <p>Có những sự đồng hành bắt đầu từ một buổi quay phim rất bình thường.</p>
-                        <p>Trần Đại Lục Châu là người bạn mà Ý Niệm Điện Ảnh tình cờ gặp trên hành trình ghi lại những khoảnh khắc đời thường. Từ tình yêu với quay phim và nhiếp ảnh mang màu sắc film, bạn đã dành tặng dự án <strong>100.000 VNĐ</strong> để hỗ trợ chi phí duy trì website.</p>
-                        <p>Khoản đóng góp này được sử dụng riêng cho hoạt động của nền tảng trực tuyến, <strong>không thuộc quỹ giải thưởng của dự án</strong>.</p>
-                        <p>Dù không phải một con số quá lớn, đây vẫn là sự tin tưởng đầu tiên mà Ý Niệm Điện Ảnh nhận được từ một người ngoài đội ngũ. Với chúng mình, điều ấy có ý nghĩa hơn rất nhiều so với giá trị được thể hiện bằng con số.</p>
-                        <p class="honoree-card__thanks">Cảm ơn Trần Đại Lục Châu vì đã giúp ngôi nhà trực tuyến của Ý Niệm Điện Ảnh tiếp tục sáng đèn.</p>
+                        <p class="honoree-card__affiliation">Người đồng hành duy trì website — Season 1</p>
+                        <p>Cảm ơn bạn đã đóng góp <strong>100.000 VNĐ</strong> để hỗ trợ duy trì website Ý Niệm Điện Ảnh.</p>
+                        <p>Khoản đóng góp được dành riêng cho nền tảng trực tuyến và <strong>không thuộc quỹ giải thưởng</strong>.</p>
+                        <p class="honoree-card__thanks">Cảm ơn bạn vì đã giúp ngôi nhà trực tuyến của chúng mình tiếp tục sáng đèn.</p>
                     </div>
-                    <aside class="honoree-card__meta" aria-label="Thông tin ghi nhận">
+                    <aside class="honoree-card__meta" aria-label="Thông tin vinh danh">
                         <dl>
                             <div><dt>Hạng mục</dt><dd>Duy trì website</dd></div>
-                            <div><dt>Giá trị đóng góp</dt><dd>100.000 VNĐ</dd></div>
-                            <div><dt>Thời gian ghi nhận</dt><dd>Season 1</dd></div>
-                            <div><dt>Danh hiệu</dt><dd>Người đồng hành cá nhân</dd></div>
+                            <div><dt>Ghi nhận</dt><dd>Season 1</dd></div>
+                            <div><dt>Danh hiệu</dt><dd>Người Donate Đầu Tiên</dd></div>
                         </dl>
                     </aside>
                 </article>
-                <p class="honor-roll__quote">“Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức.”</p>
             </section>
 
             
@@ -10242,6 +10281,18 @@
 
         // ================= SCROLL AND REVEAL EFFECTS =================
         document.addEventListener('DOMContentLoaded', () => {
+            // Nội dung vinh danh nổi bật ở Trang chủ chỉ hiển thị trong thời hạn đã công bố.
+            document.querySelectorAll('[data-display-start][data-display-end]').forEach(el => {
+                const start = new Date(el.dataset.displayStart).getTime();
+                const compactStart = new Date(el.dataset.compactStart || el.dataset.displayEnd).getTime();
+                const end = new Date(el.dataset.displayEnd).getTime();
+                const now = Date.now();
+                if (!Number.isFinite(start) || !Number.isFinite(end) || now < start || now >= end) {
+                    el.hidden = true;
+                    return;
+                }
+                if (Number.isFinite(compactStart) && now >= compactStart) el.classList.add('is-compact');
+            });
             // Viewport scroll reveal observer
             const revealObserver = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {

@@ -2802,6 +2802,9 @@
                 }
                 const actions = document.createElement('div'); actions.className = 'event-actions';
                 if (canManageSchedules) {
+                    if (event.type === 'interview') {
+                        const markCandidate = document.createElement('button'); markCandidate.className = 'btn small'; markCandidate.textContent = '＋ Ghi nhận thí sinh'; markCandidate.onclick = () => manuallyConfirmCandidate(event.id); actions.appendChild(markCandidate);
+                    }
                     const manage = document.createElement('button'); manage.className = 'btn small'; manage.textContent = 'Quản lý (' + allEventBookings.length + ')'; manage.onclick = () => manageEventBookings(event.id); actions.appendChild(manage);
                     if (event.type === 'interview') { const assign = document.createElement('button'); assign.className = 'btn small'; assign.textContent = event.assignedHrId ? 'Đổi HR' : 'Phân công HR'; assign.onclick = () => assignEventHr(event.id); actions.appendChild(assign); }
                     const meet = document.createElement('button'); meet.className = 'btn small'; meet.textContent = isGoogleMeetRoom(event.location) ? 'Sửa link Meet' : '+ Thêm link Meet'; meet.onclick = () => updateEventMeetLink(event.id); actions.appendChild(meet);
@@ -3006,6 +3009,75 @@
                 await Promise.all([fetchAvailabilityPolls(), fetchOfficialSchedule()]);
             } catch (error) {
                 showAdminStatus('Không thể hoàn tất phỏng vấn: ' + (error.message || 'Lỗi không xác định'), 'var(--danger)');
+            }
+        }
+        async function manuallyConfirmCandidate(eventId) {
+            const event = officialEvents.find(item => item.id === eventId);
+            if (!canManageSchedules || !currentUser || !dbInstance || !event || event.type !== 'interview') return;
+            if (!isGoogleMeetRoom(event.location)) {
+                showAdminStatus('Hãy thêm link Google Meet hợp lệ trước khi ghi nhận thí sinh và gửi thư.', 'var(--danger)');
+                return alert('Lịch phỏng vấn chưa có link Google Meet hợp lệ.');
+            }
+            const emailInput = prompt('Nhập email tài khoản của thí sinh cần ghi nhận vào lịch này:');
+            if (emailInput === null) return;
+            const email = String(emailInput).trim().toLowerCase();
+            const candidate = directoryUsers.find(user => String(user.email || '').trim().toLowerCase() === email);
+            if (!candidate || !candidate.id || !candidate.email) {
+                return alert('Không tìm thấy tài khoản thí sinh theo email này. Hãy dùng đúng email mà thí sinh đã đăng ký/đăng nhập để hệ thống đánh dấu lịch và gửi thư.');
+            }
+            const bookingId = event.id + '_' + candidate.id;
+            const existingBooking = myBookings.find(item => item.id === bookingId);
+            if (existingBooking && existingBooking.status === 'confirmed') {
+                if (confirm(candidate.name + ' đã được xác nhận trong lịch này. Gửi lại thư mời?')) {
+                    await sendScheduleInvitation(event, existingBooking);
+                    await fetchOfficialSchedule();
+                }
+                return;
+            }
+            const confirmedCount = myBookings.filter(item => item.eventId === event.id && item.status === 'confirmed').length;
+            if (confirmedCount >= Number(event.capacity || 1)) return alert('Lịch đã đủ số chỗ. Hãy tăng sức chứa hoặc chọn lịch khác.');
+            if (!confirm('Ghi nhận ' + (candidate.name || candidate.email) + ' vào lịch này, thêm vào Google Calendar và gửi email mời ngay?')) return;
+
+            const now = new Date().toISOString();
+            const booking = {
+                id: bookingId,
+                eventId: event.id,
+                candidateId: candidate.id,
+                candidateName: candidate.name || candidate.email,
+                candidateEmail: candidate.email,
+                status: 'confirmed',
+                source: 'admin_manual',
+                manuallyAssigned: true,
+                createdAt: existingBooking && existingBooking.createdAt || now,
+                confirmedAt: now,
+                confirmedBy: currentUser.uid,
+                updatedAt: now,
+                updatedBy: currentUser.uid
+            };
+            try {
+                showAdminStatus('Đang ghi nhận thí sinh, thêm vào lịch Google và gửi thư mời...', 'var(--gold)');
+                try {
+                    await scheduleTimeout(dbInstance.collection('scheduledBookings').doc(booking.id).set(booking, { merge:true }), 15000, 'Lưu xác nhận quá thời gian.');
+                } catch (firestoreError) {
+                    await saveScheduleBookingViaApi(booking);
+                }
+                upsertBooking(booking);
+                try {
+                    await addCandidateToGoogleEvent(event, booking);
+                } catch (calendarError) {
+                    console.warn('Không thể thêm thí sinh vào Google Calendar:', calendarError);
+                    showAdminStatus('Đã ghi nhận thí sinh nhưng chưa thêm được vào Google Calendar: ' + calendarError.message + '. Hệ thống vẫn sẽ gửi email mời.', 'var(--danger)');
+                }
+                const invitation = await sendScheduleInvitation(event, booking);
+                if (invitation.success) {
+                    booking.invitationSentAt = new Date().toISOString();
+                    booking.invitationProviders = invitation.providers || [];
+                    upsertBooking(booking);
+                }
+                await fetchOfficialSchedule();
+            } catch (error) {
+                console.error('Không thể ghi nhận thí sinh thủ công:', error);
+                showAdminStatus('Không thể ghi nhận thí sinh: ' + (error.message || 'Lỗi không xác định'), 'var(--danger)');
             }
         }
         async function manageEventBookings(eventId) {

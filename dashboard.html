@@ -6742,6 +6742,11 @@
                     `;
                 },
 
+            };
+            if (renderers[tab]) renderers[tab]();
+        }
+
+        // ================= DASHBOARD ACTIONS =================
         async function awardPrTaskPoints(task) {
             if (!session || !['admin','organizer'].includes(session.role)) return;
             var dept = String(task.dept || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

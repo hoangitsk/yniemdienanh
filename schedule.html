@@ -1763,10 +1763,32 @@
             return (poll.title || 'Lịch chưa đặt tên') + ' · ' + pollTypeLabel(poll) + ' · ' + status;
         }
 
+        function expandLegacySlots(slotIds) {
+            const expanded = new Set();
+            (slotIds || []).forEach(function(slotId) {
+                var parts = String(slotId).split('_');
+                var shiftIdx = parseInt(parts[1], 10);
+                if (!isNaN(shiftIdx) && shiftIdx >= 0 && shiftIdx < 6) {
+                    var baseIdx = shiftIdx * 3;
+                    for (var i = 0; i < 3; i++) expanded.add(parts[0] + '_' + (baseIdx + i));
+                } else {
+                    expanded.add(slotId);
+                }
+            });
+            return Array.from(expanded);
+        }
+
         function schedulesForActivePoll() {
             if (!activePoll) return [];
-            if (activePoll.isLegacy) return (localDB.meetingSchedules || []).filter(schedule => !schedule.pollId);
-            return (localDB.meetingSchedules || []).filter(schedule => schedule.pollId === activePoll.id);
+            var raw = activePoll.isLegacy
+                ? (localDB.meetingSchedules || []).filter(function(s) { return !s.pollId; })
+                : (localDB.meetingSchedules || []).filter(function(s) { return s.pollId === activePoll.id; });
+            return raw.map(function(s) {
+                return Object.assign({}, s, {
+                    slots: expandLegacySlots(s.slots),
+                    preferredSlots: expandLegacySlots(s.preferredSlots)
+                });
+            });
         }
 
         function legacyAvailabilityPoll() {
@@ -2531,10 +2553,12 @@
             officialEvents.forEach(function(event) {
                 if (event.type !== 'interview' || event.status === 'cancelled' || !event.invitationSentAt) return;
                 if (event.availabilityPollId !== activePoll.id) return;
-                const slotId = event.slotId || '';
-                if (!slotId || !event.assignedHrId) return;
-                if (!occupancy[slotId]) occupancy[slotId] = {};
-                occupancy[slotId][event.assignedHrId] = true;
+                var slotIds = expandLegacySlots([event.slotId || '']);
+                slotIds.forEach(function(slotId) {
+                    if (!slotId || !event.assignedHrId) return;
+                    if (!occupancy[slotId]) occupancy[slotId] = {};
+                    occupancy[slotId][event.assignedHrId] = true;
+                });
             });
             return occupancy;
         }

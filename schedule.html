@@ -644,6 +644,14 @@
             <p class="subtitle">Tìm khung giờ rảnh tối ưu của đội ngũ & ứng viên mùa giải</p>
         </header>
 
+        <div class="panel hidden" id="scheduleLoginPrompt" style="margin:0 auto 24px;max-width:720px;text-align:center;border-color:rgba(228,184,102,.42)">
+            <h3 style="margin-top:0">🔐 Đăng nhập để chọn lịch rảnh</h3>
+            <p style="font-size:.84rem;color:var(--text-muted);margin:0 0 14px">Dùng đúng Gmail đã nhận thư mời để hệ thống mở lịch phỏng vấn dành cho bạn.</p>
+            <button type="button" class="btn" id="scheduleGoogleLoginButton" onclick="signInToSchedule()" style="width:auto;min-width:220px">Đăng nhập bằng Google</button>
+            <div style="margin-top:10px"><a href="/register?tab=login" target="_blank" rel="noopener" style="font-size:.78rem;color:var(--gold-light)">Đăng nhập bằng email và mật khẩu</a></div>
+            <div id="scheduleLoginStatus" style="font-size:.78rem;color:var(--text-muted);margin-top:10px"></div>
+        </div>
+
         <div class="layout">
             <!-- Left Column: Controls & Recommendations -->
             <div id="scheduleSidebar" style="display: flex; flex-direction: column; gap: 24px;">
@@ -924,6 +932,35 @@
             return email === PROJECT_ADMIN_EMAIL || ['admin', 'organizer'].includes(role) || isHrOrPrProfile(user);
         }
 
+        function updateScheduleLoginPrompt() {
+            const prompt = document.getElementById('scheduleLoginPrompt');
+            if (prompt) prompt.classList.toggle('hidden', !!currentUser);
+        }
+
+        async function signInToSchedule() {
+            const button = document.getElementById('scheduleGoogleLoginButton');
+            const status = document.getElementById('scheduleLoginStatus');
+            if (!useFirebase || !window.firebase || !firebase.auth) {
+                window.open('/register?tab=login', '_blank', 'noopener');
+                return;
+            }
+            if (button) { button.disabled = true; button.textContent = '⏳ Đang đăng nhập...'; }
+            if (status) status.textContent = 'Đang mở cửa sổ đăng nhập Google...';
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                await firebase.auth().signInWithPopup(provider);
+                if (status) status.textContent = '✓ Đăng nhập thành công. Đang tải lịch dành cho bạn...';
+            } catch (error) {
+                if (error && error.code !== 'auth/popup-closed-by-user') {
+                    console.error('Schedule login error:', error);
+                    if (status) status.textContent = 'Không thể đăng nhập: ' + (error.message || 'Vui lòng thử lại.');
+                } else if (status) status.textContent = '';
+            } finally {
+                if (button) { button.disabled = false; button.textContent = 'Đăng nhập bằng Google'; }
+            }
+        }
+
         function pollEndAt(poll) {
             if (!poll || !/^\d{4}-\d{2}-\d{2}$/.test(String(poll.startDate || ''))) return 0;
             const end = new Date(String(poll.startDate) + 'T00:00:00+07:00');
@@ -1138,6 +1175,7 @@
                     console.log("Firebase initialized successfully on schedules page.");
                     firebase.auth().onAuthStateChanged(async function(user) {
                         currentUser = user;
+                        updateScheduleLoginPrompt();
                         await refreshSchedulePermissions();
                         if (user) {
                             await Promise.all([fetchSchedulesFromFirestore(), fetchAvailabilityPolls()]);
@@ -1150,6 +1188,7 @@
                     });
                 } catch (err) {
                     console.warn("Firebase Init failed, using local storage:", err);
+                    updateScheduleLoginPrompt();
                 }
             }
 

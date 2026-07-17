@@ -1355,7 +1355,7 @@
             const email = document.getElementById(prefix + 'Email').value.trim().toLowerCase();
             const phone = document.getElementById(prefix + 'Phone').value.trim();
             const intro = document.getElementById(prefix + 'Intro').value.trim();
-            const vision = isCoFounder ? document.getElementById('cfVision').value.trim() : '';
+            const vision = isCoFounder ? document.getElementById(prefix + 'Vision').value.trim() : '';
             const dept = isCoFounder ? '' : document.getElementById('orgDept').value;
             const position = isCoFounder ? '' : document.getElementById('orgPosition').value;
             
@@ -1410,7 +1410,7 @@
                 document.getElementById(prefix + 'Email').value = '';
                 document.getElementById(prefix + 'Phone').value = '';
                 document.getElementById(prefix + 'Intro').value = '';
-                if(isCoFounder) document.getElementById('cfVision').value = '';
+                if(isCoFounder) document.getElementById(prefix + 'Vision').value = '';
 
                 showToast("Gửi đơn ứng tuyển thành công!", "success");
 

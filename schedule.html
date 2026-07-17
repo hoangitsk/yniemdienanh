@@ -499,6 +499,27 @@
         .availability-toolbar .mode-switch { margin: 0; }
         .availability-toolbar .btn { padding: 8px 10px; font-size: 0.76rem; }
 
+        .availability-readonly-note {
+            margin: 0 0 12px;
+            padding: 10px 12px;
+            border: 1px solid rgba(248, 113, 113, .42);
+            border-radius: 8px;
+            background: rgba(127, 29, 29, .18);
+            color: #fca5a5;
+            font-size: .8rem;
+            line-height: 1.45;
+        }
+
+        .availability-locked .availability-toolbar,
+        .availability-locked #deleteMyScheduleButton {
+            opacity: .52;
+        }
+
+        .slot-cell.availability-readonly {
+            cursor: not-allowed;
+            opacity: .72;
+        }
+
         .selection-summary {
             font-size: 0.78rem;
             color: var(--text-muted);
@@ -902,17 +923,18 @@
                 </div>
 
                 <!-- Setup Panel -->
-                <div class="panel">
+                <div class="panel" id="availabilitySetupPanel">
                     <h3>📝 Thiết lập lịch rảnh</h3>
 
                     <div id="activePollInfo" style="font-size:.78rem;color:var(--text-muted);line-height:1.5;margin:-8px 0 16px"></div>
+                    <div id="availabilityReadOnlyNotice" class="availability-readonly-note hidden" role="status"></div>
 
                     <label>Họ và tên của bạn</label>
-                    <input type="text" id="schedName" placeholder="VD: Nguyễn Văn A" autocomplete="off" aria-label="Họ tên" onchange="queueScheduleMetadataAutoSave()">
+                    <input type="text" id="schedName" data-availability-edit-control placeholder="VD: Nguyễn Văn A" autocomplete="off" aria-label="Họ tên" onchange="queueScheduleMetadataAutoSave()">
 
                     <div id="schedRoleField">
                         <label>Vai trò trong lịch</label>
-                        <select id="schedRole" onchange="queueScheduleMetadataAutoSave()">
+                        <select id="schedRole" data-availability-edit-control onchange="queueScheduleMetadataAutoSave()">
                             <option value="member">Thành viên</option>
                             <option value="btc">BTC / Người phỏng vấn</option>
                             <option value="candidate">Ứng viên phỏng vấn</option>
@@ -922,32 +944,26 @@
                     <div id="automaticScheduleRole" class="automatic-role hidden"></div>
 
                     <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 18px;">
-                        <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-muted)">
+                        <p id="availabilityInstructions" style="font-size: 0.8rem; line-height: 1.5; color: var(--text-muted)">
                             💡 <strong>Cách chọn:</strong> Chạm vào khung giờ bạn có thể tham gia. Mỗi thay đổi được <strong>tự động lưu</strong>; không cần bấm nút lưu. Chế độ <strong>Ưu tiên</strong> dùng cho những giờ bạn mong muốn nhất.
                         </p>
                     </div>
 
                     <div class="availability-toolbar">
                         <div class="mode-switch">
-                            <button type="button" class="mode-btn active" id="selectAvailableMode" onclick="setAvailabilitySelectionMode('available')">✓ Có thể tham gia</button>
-                            <button type="button" class="mode-btn" id="selectPreferredMode" onclick="setAvailabilitySelectionMode('preferred')">★ Giờ ưu tiên</button>
+                            <button type="button" class="mode-btn active" id="selectAvailableMode" data-availability-edit-control onclick="setAvailabilitySelectionMode('available')">✓ Có thể tham gia</button>
+                            <button type="button" class="mode-btn" id="selectPreferredMode" data-availability-edit-control onclick="setAvailabilitySelectionMode('preferred')">★ Giờ ưu tiên</button>
                         </div>
                         <div class="selection-summary" id="selectionSummary">Đã chọn 0 khung giờ · tự động lưu.</div>
                         <label for="availabilityStartDate" style="margin:0">Khoảng ngày do admin thiết lập (GMT+7)</label>
                         <input type="date" id="availabilityStartDate" disabled style="margin:0">
-                        <label style="margin:0">Chọn nhanh theo ngày</label>
-                        <select id="quickDaySelect" style="margin:0"></select>
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
-                            <button type="button" class="btn" onclick="applyQuickDay('available')">✓ Cả ngày</button>
-                            <button type="button" class="btn" onclick="applyQuickDay('preferred')">★ Ưu tiên</button>
-                            <button type="button" class="btn" onclick="applyQuickDay('clear')" style="background:rgba(255,255,255,.08);color:var(--text)">Bỏ ngày</button>
-                        </div>
-                        <button type="button" class="btn" onclick="clearAvailabilitySelection()" style="background:rgba(255,255,255,.08);color:var(--text)">Xóa toàn bộ lựa chọn</button>
-                        <button type="button" class="btn" id="finalizeAvailabilityButton" onclick="finalizeAvailabilityVote()">✓ Hoàn tất vote lịch</button>
+                        <p style="margin:0;font-size:.76rem;color:var(--text-muted)">Chọn trực tiếp từng ca trong bảng bên dưới. Mỗi lần chạm chỉ thay đổi đúng một ca.</p>
+                        <button type="button" class="btn" data-availability-edit-control onclick="clearAvailabilitySelection()" style="background:rgba(255,255,255,.08);color:var(--text)">Xóa toàn bộ lựa chọn</button>
+                        <button type="button" class="btn" id="finalizeAvailabilityButton" data-availability-edit-control onclick="finalizeAvailabilityVote()">✓ Hoàn tất vote lịch</button>
                     </div>
 
                     <div style="display:flex; gap:10px; margin-bottom:12px">
-                        <button class="btn" onclick="deleteMySchedule()" style="width:100%; background:linear-gradient(135deg, #ff8a8a, #f43f5e); color:white; box-shadow:none">🗑️ Xóa toàn bộ lịch rảnh</button>
+                        <button class="btn" id="deleteMyScheduleButton" data-availability-edit-control onclick="deleteMySchedule()" style="width:100%; background:linear-gradient(135deg, #ff8a8a, #f43f5e); color:white; box-shadow:none">🗑️ Xóa toàn bộ lịch rảnh</button>
                     </div>
                     <div class="status-msg" id="statusMsg"></div>
 
@@ -1226,7 +1242,7 @@
                 '</div>' +
                 '<div class="confirmed-popup-actions">' +
                 (meetLink ? '<a href="' + escapeHtml(meetLink) + '" target="_blank" rel="noopener" class="btn" style="flex:1;text-align:center;text-decoration:none">✅ Vào Meet</a>' : '') +
-                '<button class="btn secondary" onclick="cancelConfirmedEvent(\'' + event.id + '\', this)" style="flex:1">❌ Hủy lịch</button>' +
+                '<button class="btn secondary" onclick="requestInterviewReschedule(\'' + event.id + '\', this)" style="flex:1">↺ Yêu cầu đổi lịch</button>' +
                 '</div>' +
                 '<div style="text-align:center;margin-top:10px">' +
                 '<button class="btn" style="background:none;border:none;color:var(--text-muted);font-size:.78rem" onclick="this.closest(\'.confirmed-popup-overlay\').remove()">Đóng</button>' +
@@ -1259,6 +1275,37 @@
                 showStatus('❌ Không thể hủy lịch: ' + (error.message || 'Lỗi không xác định'), 'var(--danger)');
             } finally {
                 if (button && document.body.contains(button)) { button.disabled = false; button.textContent = '❌ Hủy lịch'; }
+            }
+        }
+
+        async function requestInterviewReschedule(eventId, button) {
+            const event = officialEvents.find(function(item) { return item.id === eventId; });
+            const booking = myBookings.find(function(item) { return item.eventId === eventId && currentUser && item.candidateId === currentUser.uid; });
+            if (!event || !booking || booking.status !== 'confirmed') return showStatus('Không tìm thấy lịch đã xác nhận để đổi.', 'var(--danger)');
+            const reason = prompt('Lý do bạn cần đổi lịch:');
+            if (!reason || !reason.trim()) return;
+            const vote = (localDB.meetingSchedules || []).find(function(item) {
+                return item.pollId === event.availabilityPollId && currentUser && item.ownerId === currentUser.uid;
+            });
+            const alternatives = (vote && vote.slots || []).filter(function(slotId) { return slotId !== event.slotId; });
+            if (!alternatives.length) return showStatus('Bạn chưa có khung giờ vote thay thế. Hãy liên hệ HR để được hỗ trợ.', 'var(--danger)');
+            if (!confirm('Gửi yêu cầu đổi lịch? Ban tổ chức sẽ xem xét và thông báo lịch mới qua email.')) return;
+            if (button) { button.disabled = true; button.textContent = 'Đang gửi...'; }
+            try {
+                const idToken = await scheduleTimeout(currentUser.getIdToken(), 5000, 'Không lấy được phiên đăng nhập.');
+                const response = await scheduleFetch('/api/schedule/request-reschedule', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken, bookingId: booking.id, reason: reason.trim(), alternativeSlotIds: alternatives })
+                }, 15000, 'Máy chủ xử lý yêu cầu đổi lịch quá thời gian.');
+                const result = await response.json().catch(function() { return {}; });
+                if (!response.ok || !result.success) throw new Error(result.error || 'Không thể gửi yêu cầu đổi lịch.');
+                booking.rescheduleRequestedAt = new Date().toISOString();
+                showStatus('✓ Đã gửi yêu cầu đổi lịch. Ban tổ chức sẽ phản hồi qua email.', 'var(--ok)');
+                renderOfficialEvents();
+            } catch (error) {
+                showStatus('Không thể gửi yêu cầu đổi lịch: ' + (error.message || 'Lỗi không xác định'), 'var(--danger)');
+            } finally {
+                if (button && document.body.contains(button)) { button.disabled = false; button.textContent = '↺ Yêu cầu đổi lịch'; }
             }
         }
 
@@ -1814,6 +1861,37 @@
             return !!(currentUser && activePoll && activePoll.status === 'open' && !pollIsExpired(activePoll) && (canManageSchedules || (isPollAssignedToCurrentUser(activePoll) && !currentUserHasPollResponse(activePoll))));
         }
 
+        function availabilityReadOnlyReason() {
+            if (!currentUser) return 'Vui lòng đăng nhập để tham gia vote lịch.';
+            if (!activePoll) return 'Hiện không có đợt vote phù hợp với tài khoản này.';
+            if (pollIsExpired(activePoll)) return 'Đợt vote này đã hết hạn.';
+            if (activePoll.status !== 'open') return 'Đợt vote này đã khóa và không còn nhận lựa chọn.';
+            if (!canManageSchedules && !isPollAssignedToCurrentUser(activePoll)) return 'Tài khoản này không nằm trong danh sách được chọn.';
+            if (!canManageSchedules && currentUserHasPollResponse(activePoll)) return 'Bạn đã hoàn tất vote lịch; phiếu chỉ còn ở chế độ xem.';
+            return 'Phiếu này hiện ở chế độ chỉ xem.';
+        }
+
+        function syncAvailabilityEditControls() {
+            const editable = canEditActiveAvailability();
+            const panel = document.getElementById('availabilitySetupPanel');
+            const notice = document.getElementById('availabilityReadOnlyNotice');
+            const instructions = document.getElementById('availabilityInstructions');
+            if (panel) panel.classList.toggle('availability-locked', !editable);
+            document.querySelectorAll('[data-availability-edit-control]').forEach(function(control) {
+                control.disabled = !editable;
+                control.setAttribute('aria-disabled', String(!editable));
+            });
+            if (notice) {
+                notice.textContent = editable ? '' : '🔒 ' + availabilityReadOnlyReason();
+                notice.classList.toggle('hidden', editable);
+            }
+            if (instructions) {
+                instructions.innerHTML = editable
+                    ? '💡 <strong>Cách chọn:</strong> Chạm vào khung giờ bạn có thể tham gia. Mỗi thay đổi được <strong>tự động lưu</strong>; không cần bấm nút lưu. Chế độ <strong>Ưu tiên</strong> dùng cho những giờ bạn mong muốn nhất.'
+                    : '🔒 <strong>Phiếu đang ở chế độ chỉ xem.</strong> Các lựa chọn và nút lưu đã được khóa.';
+            }
+        }
+
         function visibleAvailabilityPolls() {
             if (canViewAllSchedules) {
                 const result = availabilityPolls.slice();
@@ -1977,6 +2055,7 @@
             renderDateControls();
             loadCurrentUserAvailability();
             renderActivePollInfo();
+            syncAvailabilityEditControls();
             renderTimetable();
         }
 
@@ -1988,6 +2067,7 @@
             if (!activePoll) {
                 info.innerHTML = '<span style="color:var(--danger)">Hiện chưa có đợt vote lịch phù hợp với tài khoản này.</span>';
                 title.textContent = '📅 Bảng thời gian rảnh — chưa chọn đợt';
+                syncAvailabilityEditControls();
                 return;
             }
             const end = new Date(activePoll.startDate + 'T00:00:00');
@@ -2005,6 +2085,7 @@
                 document.querySelector('header .subtitle').textContent = activePoll.title + ' · ' + (activePoll.code || SHARED_POLL_CODE);
                 document.title = activePoll.title + ' — Ý Niệm Điện Ảnh';
             }
+            syncAvailabilityEditControls();
         }
 
         async function fetchAllAvailabilityForStaff() {
@@ -2584,7 +2665,6 @@
             const startAt = autoPlanStartAt(item.choice.info);
             const generatedTitle = (activePoll ? activePoll.title + ' — ' : 'Phỏng vấn — ') + item.candidate.name;
             const existingEvent = officialEvents.find(event => event.generatedFromAvailability && event.title === generatedTitle && event.startAt === startAt);
-            let savedThroughApi = false;
             let eventData;
             let eventId;
             if (existingEvent) {
@@ -2624,30 +2704,28 @@
                     createdBy: currentUser.uid,
                     createdAt: new Date().toISOString()
                 };
-                const eventRef = dbInstance.collection('scheduledEvents').doc();
-                eventId = eventRef.id;
-                eventData.id = eventId;
-                eventData.syncState = 'saving-event';
+                // Chốt lịch phải diễn ra trên máy chủ trong một transaction: kiểm tra
+                // vote, ứng viên, người phỏng vấn và slot trước khi tạo lịch chính thức.
+                showAdminStatus('Đang kiểm tra xung đột và xác nhận lịch...', 'var(--gold-light)');
+                const idToken = await currentUser.getIdToken();
+                const confirmationResponse = await scheduleFetch('/api/schedule/confirm-interview', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        idToken, pollId: activePoll.id, candidateId: candidateUser.id,
+                        hrId: hr.id, slotId: item.choice.info.id, event: eventData
+                    })
+                }, 20000, 'Máy chủ xác nhận lịch quá thời gian.');
+                const confirmation = await confirmationResponse.json().catch(function() { return {}; });
+                if (!confirmationResponse.ok || !confirmation.success) throw new Error(confirmation.error || 'Không thể xác nhận lịch.');
+                eventData = confirmation.event;
+                eventId = eventData.id;
+                upsertBooking(Object.assign({}, confirmation.booking, {
+                    candidateName: eventData.candidateName, candidateEmail: eventData.candidateEmail,
+                    confirmedAt: eventData.confirmedAt, confirmedBy: eventData.confirmedBy
+                }));
+                eventData.syncState = 'creating-calendar-server';
                 upsertOfficialEvent(eventData);
-                revealOfficialEvent(eventData.id);
-                showAdminStatus('✓ Lịch đã xuất hiện ngay trong “Lịch đã mở”. Đang lưu và tạo Google Meet...', 'var(--gold-light)');
-                const persistedEventData = Object.assign({}, eventData);
-                delete persistedEventData.syncState;
-                try {
-                    await scheduleTimeout(eventRef.set(persistedEventData), 15000, 'Tạo lịch trên hệ thống quá thời gian.');
-                } catch (firestoreError) {
-                    try {
-                        showAdminStatus('Cloud Firestore trên trình duyệt đang offline. Đang chuyển sang máy chủ để lưu lịch...', 'var(--gold)');
-                        await saveScheduleEventViaApi(eventId, eventData, 'create');
-                        savedThroughApi = true;
-                    } catch (fallbackError) {
-                        eventData.syncState = 'save-failed';
-                        upsertOfficialEvent(eventData);
-                        throw fallbackError;
-                    }
-                }
-                eventData.syncState = savedThroughApi ? 'creating-calendar-server' : 'creating-calendar';
-                upsertOfficialEvent(eventData);
+                revealOfficialEvent(eventId);
             }
             let calendarCreated = false;
             let calendarError = '';
@@ -2660,11 +2738,8 @@
             } catch (error) { calendarError = error.message || String(error); console.warn('Không tạo được Meet tự động:', error); }
             if (calendarCreated && candidateUser && candidateUser.email) {
                 const booking = { id: eventId + '_' + candidateUser.id, eventId:eventId, candidateId: candidateUser.id, candidateName: candidateUser.name || candidateUser.email, candidateEmail: candidateUser.email, status: 'confirmed', createdAt: new Date().toISOString(), confirmedAt: new Date().toISOString(), confirmedBy: currentUser.uid };
-                try {
-                    await scheduleTimeout(dbInstance.collection('scheduledBookings').doc(booking.id).set(booking), 15000, 'Xác nhận người tham gia quá thời gian.');
-                } catch (firestoreError) {
-                    await saveScheduleBookingViaApi(booking);
-                }
+                // Lượt booking đã được tạo cùng transaction xác nhận. Chỉ cập nhật
+                // thông tin gửi thư ở bước kế tiếp, không chốt lại từ giao diện.
                 upsertBooking(booking);
                 invitationResult = await sendScheduleInvitation(eventData, booking, { aiPersonalized:item.aiPersonalized !== false });
                 if (invitationResult.success) {
@@ -2771,6 +2846,10 @@
         function updateSelectionSummary() {
             const summary = document.getElementById('selectionSummary');
             if (!summary) return;
+            if (!canEditActiveAvailability()) {
+                summary.innerHTML = '🔒 <strong>Chỉ xem</strong> · không thể tự động lưu thay đổi';
+                return;
+            }
             summary.innerHTML = '<strong>' + selectedSlots.size + '</strong> giờ có thể · <strong>' + preferredSlots.size + '</strong> giờ ưu tiên' +
                 ' · <span style="color:var(--ok)">tự động lưu</span>';
         }
@@ -2949,6 +3028,13 @@
                     td.tabIndex = 0;
                     td.setAttribute('role', 'button');
                     td.setAttribute('aria-label', date.label + ', ' + shift.name + ', ' + shift.time + '. Bấm để chọn giờ rảnh.');
+                    if (!canEditActiveAvailability()) {
+                        td.classList.add('availability-readonly');
+                        td.setAttribute('aria-disabled', 'true');
+                        td.title = availabilityReadOnlyReason();
+                    } else {
+                        td.setAttribute('aria-disabled', 'false');
+                    }
                     if (selectedSlots.has(slotId)) {
                         td.classList.add('selected');
                     }
@@ -3056,7 +3142,11 @@
                     signal: controller.signal
                 });
                 const result = await response.json().catch(function() { return {}; });
-                if (!response.ok) throw new Error(result.error || 'Máy chủ không thể lưu lịch rảnh.');
+                if (!response.ok) {
+                    const error = new Error(result.error || 'Máy chủ không thể lưu lịch rảnh.');
+                    error.status = response.status;
+                    throw error;
+                }
                 return result;
             } catch (error) {
                 if (error && error.name === 'AbortError') throw new Error('Lưu lịch quá thời gian. Vui lòng kiểm tra mạng rồi chọn lại.');
@@ -3118,6 +3208,9 @@
                     if (result.schedule) scheduleDoc = result.schedule;
                 } catch (error) {
                     console.error('Schedule autosave error:', error);
+                    if (error && (error.status === 401 || error.status === 403)) {
+                        await refreshAvailabilityAccess();
+                    }
                     showStatus('❌ Chưa lưu được: ' + (error.message || 'Kết nối bị gián đoạn.'), 'var(--danger)');
                     return;
                 }
@@ -3130,6 +3223,16 @@
             showStatus((isAutoSave ? '✅ Đã tự động lưu ' : '✅ Đã lưu ') + selectedSlots.size + ' khung giờ cho đợt “' + activePoll.title + '”.', 'var(--ok)');
             renderTimetable();
             renderAdminPollList();
+        }
+
+        async function refreshAvailabilityAccess() {
+            try {
+                await fetchAvailabilityPolls();
+                renderAvailabilityPolls();
+            } catch (error) {
+                console.warn('Không thể đồng bộ lại quyền vote lịch:', error);
+                syncAvailabilityEditControls();
+            }
         }
 
         async function finalizeAvailabilityVote() {
@@ -3157,9 +3260,11 @@
                 renderAvailabilityPolls();
                 showStatus('✓ Đã hoàn tất vote “' + poll.title + '”.', 'var(--ok)');
             } catch (error) {
+                if (error && (error.status === 401 || error.status === 403)) await refreshAvailabilityAccess();
                 showStatus('Không thể hoàn tất vote: ' + (error.message || 'Lỗi không xác định'), 'var(--danger)');
             } finally {
-                if (button) { button.disabled = false; button.textContent = '✓ Hoàn tất vote lịch'; }
+                if (button) button.textContent = '✓ Hoàn tất vote lịch';
+                syncAvailabilityEditControls();
             }
         }
 
@@ -3196,6 +3301,7 @@
                     await requestAvailabilitySave({ action: 'delete', pollId: activePoll.id });
                 } catch (error) {
                     console.error('Schedule delete error:', error);
+                    if (error && (error.status === 401 || error.status === 403)) await refreshAvailabilityAccess();
                     showStatus('Không thể xóa phiếu: ' + (error.message || 'Đợt có thể đã bị khóa.'), 'var(--danger)');
                     return;
                 }
@@ -3299,7 +3405,7 @@
                     const login = document.createElement('a'); login.className = 'btn small'; login.href = '/'; login.textContent = 'Đăng nhập để đặt'; actions.appendChild(login);
                 } else if (ownBooking) {
                     const status = document.createElement('span'); status.style.cssText = 'font-size:.78rem;color:var(--gold-light);padding:8px 0'; status.textContent = ownBooking.status === 'confirmed' ? '✓ Đã được xác nhận' : ownBooking.status === 'cancelled' ? 'Đã hủy' : '⏳ Đang chờ xác nhận'; actions.appendChild(status);
-                    if (ownBooking.status === 'confirmed' && event.invitationSentAt) { const cancel = document.createElement('button'); cancel.className = 'btn small'; cancel.textContent = 'Hủy lịch'; cancel.style.cssText = 'background:linear-gradient(135deg,#ff8a8a,#f43f5e);color:#fff'; cancel.onclick = () => cancelConfirmedEvent(event.id); actions.appendChild(cancel); }
+                    if (ownBooking.status === 'confirmed' && event.invitationSentAt) { const reschedule = document.createElement('button'); reschedule.className = 'btn small'; reschedule.textContent = ownBooking.rescheduleRequestedAt ? 'Đã yêu cầu đổi lịch' : 'Yêu cầu đổi lịch'; reschedule.disabled = !!ownBooking.rescheduleRequestedAt; reschedule.onclick = () => requestInterviewReschedule(event.id, reschedule); actions.appendChild(reschedule); }
                     if (ownBooking.status === 'requested') { const cancel = document.createElement('button'); cancel.className = 'btn small'; cancel.textContent = 'Hủy đặt chỗ'; cancel.onclick = () => cancelMyBooking(ownBooking.id); actions.appendChild(cancel); }
                 } else {
                     const book = document.createElement('button'); book.className = 'btn small'; book.textContent = event.type === 'interview' ? 'Đặt lịch phỏng vấn' : 'Đăng ký tham dự'; book.onclick = () => bookEvent(event.id); actions.appendChild(book);

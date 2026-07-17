@@ -39,7 +39,7 @@ function allowedSlotIds(poll) {
         const dateId = new Intl.DateTimeFormat('en-CA', {
             timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit'
         }).format(date);
-        for (let shift = 0; shift < 6; shift += 1) result.add(dateId + '_' + shift);
+        for (let shift = 0; shift < 18; shift += 1) result.add(dateId + '_' + shift);
     }
     return result;
 }
@@ -90,8 +90,8 @@ module.exports = async function saveAvailability(req, res) {
             if (!existingSchedule || !Array.isArray(existingSchedule.slots) || !existingSchedule.slots.length) {
                 return res.status(400).json({ error: 'Hãy chọn và lưu ít nhất một khung giờ trước khi hoàn tất.' });
             }
-            if (poll.requireMinSlots === true && existingSchedule.slots.length < 3) {
-                return res.status(400).json({ error: 'Đợt vote này yêu cầu chọn tối thiểu 3 khung giờ rảnh trước khi hoàn tất.' });
+            if (existingSchedule.slots.length < 3) {
+                return res.status(400).json({ error: 'Yêu cầu chọn tối thiểu 3 khung giờ rảnh trước khi hoàn tất.' });
             }
             if (existingSchedule.completedAt || existingSchedule.finalizedAt) {
                 return res.status(200).json({ success: true, schedule: { id: docId, ...existingSchedule } });

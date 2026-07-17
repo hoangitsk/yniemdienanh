@@ -121,7 +121,7 @@ module.exports = async function saveAvailabilityPoll(req, res) {
             const requestedStatus = allowedStatuses.includes(input.status) ? input.status : (existing ? existing.status : 'draft');
             poll = {
                 code, title, type, startDate, dayCount, participantIds, participantNames, participantEmails, isPublic,
-                requireMinSlots: existing ? existing.requireMinSlots === true : input.requireMinSlots === true,
+                requireMinSlots: true,
                 excludeCompletedCore: existing ? existing.excludeCompletedCore === true : excludeCompletedCore,
                 status: requestedStatus,
                 createdBy: existing ? existing.createdBy : decoded.uid,

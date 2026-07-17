@@ -452,6 +452,14 @@
             border-radius: 4px;
             background: rgba(5, 12, 20, 0.2);
         }
+        .slot-cell.slot-full {
+            cursor: not-allowed;
+            opacity: .55;
+            background: rgba(255, 127, 127, 0.06);
+        }
+        .slot-cell.slot-full:hover {
+            background: rgba(255, 127, 127, 0.1);
+        }
 
         .slot-cell:hover {
             background: rgba(228, 184, 102, 0.05);
@@ -586,6 +594,64 @@
         .schedule-choice-results { max-height: 270px; overflow: auto; margin-top: 8px; }
         .schedule-choice-result { width: 100%; margin: 0 0 5px; text-align: left; }
         .schedule-choice-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+        .confirmed-popup-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 12000;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            background: rgba(3, 9, 16, .82);
+            backdrop-filter: blur(8px);
+        }
+        .confirmed-popup-card {
+            width: min(500px, 100%);
+            padding: 28px 24px 20px;
+            border: 1px solid var(--gold);
+            border-radius: 16px;
+            background: linear-gradient(135deg, #0a1929, #102b44);
+            box-shadow: 0 0 40px rgba(228, 184, 102, .15);
+            animation: popupIn .35s ease-out;
+        }
+        @keyframes popupIn {
+            from { opacity: 0; transform: scale(.92) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .confirmed-popup-close {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .confirmed-popup-close:hover { color: var(--text-light); }
+        .confirmed-popup-details {
+            margin: 16px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .confirmed-popup-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(255,255,255,.04);
+            border-radius: 8px;
+            font-size: .85rem;
+        }
+        .confirmed-popup-row span { color: var(--text-muted); }
+        .confirmed-popup-row strong { color: var(--text-light); }
+        .confirmed-popup-row a { color: var(--gold-light); word-break: break-all; }
+        .confirmed-popup-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
 
         .slot-people {
             display: flex;
@@ -960,12 +1026,24 @@
         };
 
         const SHIFTS = [
-            { name: "Ca 1", time: "08:00 - 09:30" },
-            { name: "Ca 2", time: "09:30 - 11:00" },
-            { name: "Ca 3", time: "14:00 - 15:30" },
-            { name: "Ca 4", time: "15:30 - 17:00" },
-            { name: "Ca 5", time: "19:30 - 21:00" },
-            { name: "Ca 6", time: "21:00 - 22:30" }
+            { name: "Ca 1", time: "08:00 - 08:30" },
+            { name: "Ca 2", time: "08:30 - 09:00" },
+            { name: "Ca 3", time: "09:00 - 09:30" },
+            { name: "Ca 4", time: "09:30 - 10:00" },
+            { name: "Ca 5", time: "10:00 - 10:30" },
+            { name: "Ca 6", time: "10:30 - 11:00" },
+            { name: "Ca 7", time: "14:00 - 14:30" },
+            { name: "Ca 8", time: "14:30 - 15:00" },
+            { name: "Ca 9", time: "15:00 - 15:30" },
+            { name: "Ca 10", time: "15:30 - 16:00" },
+            { name: "Ca 11", time: "16:00 - 16:30" },
+            { name: "Ca 12", time: "16:30 - 17:00" },
+            { name: "Ca 13", time: "19:30 - 20:00" },
+            { name: "Ca 14", time: "20:00 - 20:30" },
+            { name: "Ca 15", time: "20:30 - 21:00" },
+            { name: "Ca 16", time: "21:00 - 21:30" },
+            { name: "Ca 17", time: "21:30 - 22:00" },
+            { name: "Ca 18", time: "22:00 - 22:30" }
         ];
 
         let dbInstance = null;
@@ -1004,6 +1082,7 @@
         let currentMode = 'meeting'; // 'meeting' or 'interview'
         let scheduleSavePromise = null;
         let scheduleSaveQueued = false;
+        let confirmedPopupShown = false;
 
         function normalizeScheduleText(value) {
             return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -1125,6 +1204,82 @@
                     };
                 }
             });
+        }
+
+        function showConfirmedEventPopup(event, booking) {
+            const overlay = document.createElement('div');
+            overlay.className = 'confirmed-popup-overlay';
+            const timeLabel = eventStartLabel(event.startAt);
+            const duration = event.duration || 30;
+            const hrName = event.assignedHrName || '';
+            const meetLink = event.location || '';
+            overlay.innerHTML = '<div class="confirmed-popup-card">' +
+                '<button class="confirmed-popup-close" onclick="this.closest(\'.confirmed-popup-overlay\').remove()">✕</button>' +
+                '<div style="text-align:center;margin-bottom:12px">' +
+                '<div style="font-size:2.2rem;margin-bottom:6px">📅</div>' +
+                '<h2 style="color:var(--gold-light);font-size:1.15rem;margin:0">Lịch ' + (event.type === 'interview' ? 'Phỏng Vấn' : 'Họp') + ' Đã Xác Nhận</h2>' +
+                '</div>' +
+                '<div class="confirmed-popup-details">' +
+                '<div class="confirmed-popup-row"><span>⏰ Thời gian</span><strong>' + escapeHtml(timeLabel) + ' · ' + duration + ' phút</strong></div>' +
+                (hrName ? '<div class="confirmed-popup-row"><span>🧑‍💼 Người ' + (event.type === 'interview' ? 'phỏng vấn' : 'chủ trì') + '</span><strong>' + escapeHtml(hrName) + '</strong></div>' : '') +
+                (meetLink ? '<div class="confirmed-popup-row"><span>📍 Google Meet</span><strong><a href="' + escapeHtml(meetLink) + '" target="_blank" rel="noopener">' + escapeHtml(meetLink) + '</a></strong></div>' : '') +
+                '</div>' +
+                '<div class="confirmed-popup-actions">' +
+                (meetLink ? '<a href="' + escapeHtml(meetLink) + '" target="_blank" rel="noopener" class="btn" style="flex:1;text-align:center;text-decoration:none">✅ Vào Meet</a>' : '') +
+                '<button class="btn secondary" onclick="cancelConfirmedEvent(\'' + event.id + '\', this)" style="flex:1">❌ Hủy lịch</button>' +
+                '</div>' +
+                '<div style="text-align:center;margin-top:10px">' +
+                '<button class="btn" style="background:none;border:none;color:var(--text-muted);font-size:.78rem" onclick="this.closest(\'.confirmed-popup-overlay\').remove()">Đóng</button>' +
+                '</div></div>';
+            document.body.appendChild(overlay);
+        }
+
+        async function cancelConfirmedEvent(eventId, button) {
+            const event = officialEvents.find(e => e.id === eventId);
+            if (!event) return;
+            const booking = myBookings.find(b => b.eventId === eventId && b.candidateId === currentUser.uid && b.status === 'confirmed');
+            if (!confirm('Bạn có chắc muốn hủy lịch ' + (event.type === 'interview' ? 'phỏng vấn' : 'họp') + ' này?\n\nHệ thống sẽ gửi thông báo cho Admin và người ' + (event.type === 'interview' ? 'phỏng vấn' : 'chủ trì') + '.\nSau khi hủy, bạn có thể chọn lại lịch rảnh khác.')) return;
+            if (button) { button.disabled = true; button.textContent = '⏳ Đang hủy...'; }
+            try {
+                const idToken = await scheduleTimeout(currentUser.getIdToken(), 5000, 'Không lấy được phiên đăng nhập.');
+                const response = await scheduleFetch('/api/schedule/cancel-booking', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken, eventId, pollId: event.availabilityPollId || '', bookingId: booking ? booking.id : '' })
+                }, 20000, 'Máy chủ không phản hồi khi hủy lịch.');
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.error || 'Không thể hủy lịch.');
+                document.querySelectorAll('.confirmed-popup-overlay').forEach(el => el.remove());
+                showStatus('✅ Đã hủy lịch. Bạn có thể chọn lại khung giờ rảnh khác.', 'var(--ok)');
+                await Promise.all([fetchSchedulesFromFirestore(), fetchAvailabilityPolls(), fetchOfficialSchedule()]);
+                await refreshSchedulePermissions();
+                renderAvailabilityPolls();
+                renderTimetable();
+            } catch (error) {
+                showStatus('❌ Không thể hủy lịch: ' + (error.message || 'Lỗi không xác định'), 'var(--danger)');
+            } finally {
+                if (button && document.body.contains(button)) { button.disabled = false; button.textContent = '❌ Hủy lịch'; }
+            }
+        }
+
+        function checkConfirmedEventPopup() {
+            if (!currentUser || confirmedPopupShown) return;
+            const confirmed = myBookings.filter(b =>
+                b.candidateId === currentUser.uid && b.status === 'confirmed' && b.invitationSentAt
+            );
+            for (const booking of confirmed) {
+                const event = officialEvents.find(e =>
+                    e.id === booking.eventId && e.status !== 'cancelled' && e.invitationSentAt
+                );
+                if (event && event.availabilityPollId && !currentUserHasPollResponse({ id: event.availabilityPollId })) {
+                    const poll = availabilityPolls.find(p => p.id === event.availabilityPollId);
+                    if (poll) {
+                        confirmedPopupShown = true;
+                        showConfirmedEventPopup(event, booking);
+                        return;
+                    }
+                }
+            }
         }
 
         function isHrOrPrProfile(user) {
@@ -1394,6 +1549,7 @@
                         renderPollParticipantOptions();
                         renderAvailabilityPolls();
                         await fetchOfficialSchedule();
+                        checkConfirmedEventPopup();
                     });
                 } catch (err) {
                     console.warn("Firebase Init failed, using local storage:", err);
@@ -1914,7 +2070,7 @@
             if (!editingId) window._pendingPollSaveId = targetId;
             const data = {
                 title, code, type, startDate, dayCount, participantIds, participantNames, participantEmails, isPublic,
-                requireMinSlots: existing ? existing.requireMinSlots === true : true,
+                requireMinSlots: true,
                 // Core đã hoàn tất vòng phỏng vấn được tự bỏ khỏi các vote tạo sau này.
                 excludeCompletedCore: existing ? existing.excludeCompletedCore === true : true,
                 status: document.getElementById('pollInitialStatus').value,
@@ -2241,7 +2397,10 @@
                     return { candidate:candidate, candidateAccount:null, options:[], choice:null, reason:'Ứng viên chưa có tài khoản/email hợp lệ nên chưa thể tạo Meet và gửi thư tự động.' };
                 }
                 const preferredSlots = new Set(candidate.preferredSlots || []);
-                const options = (candidate.slots || []).map(function(slotId) {
+                const options = (candidate.slots || []).filter(function(slotId) {
+                    const remaining = getSlotRemainingCapacity(slotId);
+                    return !Number.isFinite(remaining) || remaining > 0;
+                }).map(function(slotId) {
                     const info = availabilitySlotInfo(slotId);
                     if (!info) return null;
                     const vote = voteBySlot[slotId] || {};
@@ -2364,6 +2523,31 @@
             if (index === -1) myBookings.push(bookingData);
             else myBookings[index] = Object.assign({}, myBookings[index], bookingData);
             renderOfficialEvents();
+        }
+
+        function getSlotOccupancy() {
+            if (!activePoll) return {};
+            const occupancy = {};
+            officialEvents.forEach(function(event) {
+                if (event.type !== 'interview' || event.status === 'cancelled' || !event.invitationSentAt) return;
+                if (event.availabilityPollId !== activePoll.id) return;
+                const slotId = event.slotId || '';
+                if (!slotId || !event.assignedHrId) return;
+                if (!occupancy[slotId]) occupancy[slotId] = {};
+                occupancy[slotId][event.assignedHrId] = true;
+            });
+            return occupancy;
+        }
+
+        function getSlotRemainingCapacity(slotId) {
+            if (!activePoll || activePoll.type !== 'interview') return Infinity;
+            const btcAtSlot = schedulesForActivePoll()
+                .filter(function(s) { return effectiveScheduleRole(s) === 'btc' && (s.slots || []).includes(slotId); })
+                .length;
+            if (btcAtSlot === 0) return Infinity;
+            const used = (getSlotOccupancy()[slotId] || {});
+            const usedCount = Object.keys(used).length;
+            return Math.max(0, btcAtSlot - usedCount);
         }
 
         async function createAutomaticInterview(index) {
@@ -2619,6 +2803,13 @@
                 showStatus('Đợt vote này đang khóa hoặc tài khoản của bạn không nằm trong danh sách được chọn.', 'var(--danger)');
                 return;
             }
+            if (activePoll && activePoll.type === 'interview' && !selectedSlots.has(slotId)) {
+                const remaining = getSlotRemainingCapacity(slotId);
+                if (remaining <= 0) {
+                    showStatus('Khung giờ này đã hết chỗ. Tất cả BTC tại khung này đã có lịch phỏng vấn.', 'var(--danger)');
+                    return;
+                }
+            }
             if (availabilitySelectionMode === 'preferred') {
                 selectedSlots.add(slotId);
                 if (preferredSlots.has(slotId)) preferredSlots.delete(slotId);
@@ -2793,15 +2984,33 @@
                                 td.classList.add('interview-match');
                             }
                         }
-                    } else {
-                        const emptyText = document.createElement('div');
-                        emptyText.className = "empty-slot-text";
-                        emptyText.textContent = "Chưa có ai";
-                        td.appendChild(emptyText);
-                    }
+                        } else {
+                            const emptyText = document.createElement('div');
+                            emptyText.className = "empty-slot-text";
+                            emptyText.textContent = "Chưa có ai";
+                            td.appendChild(emptyText);
+                        }
 
-                    tr.appendChild(td);
-                });
+                        if (activePoll && activePoll.type === 'interview') {
+                            const remaining = getSlotRemainingCapacity(slotId);
+                            if (Number.isFinite(remaining)) {
+                                const capEl = document.createElement('div');
+                                capEl.style.cssText = 'font-size:.68rem;margin-top:5px;padding:2px 6px;border-radius:4px;font-weight:600';
+                                const btcCount = schedulesForActivePoll().filter(function(s) { return effectiveScheduleRole(s) === 'btc' && (s.slots || []).includes(slotId); }).length;
+                                if (remaining <= 0) {
+                                    capEl.textContent = '🔴 Hết chỗ';
+                                    capEl.style.color = 'var(--danger)';
+                                    td.classList.add('slot-full');
+                                } else {
+                                    capEl.textContent = '🟢 Còn ' + remaining + '/' + btcCount + ' BTC';
+                                    capEl.style.color = 'var(--ok)';
+                                }
+                                td.appendChild(capEl);
+                            }
+                        }
+
+                        tr.appendChild(td);
+                    });
 
                 tbody.appendChild(tr);
             });
@@ -2903,8 +3112,7 @@
             const poll = activePoll;
             if (!poll || !currentUser || !useFirebase) return showStatus('Vui lòng đăng nhập và chọn lịch được cấp quyền.', 'var(--danger)');
             if (!canEditActiveAvailability()) return showStatus('Phiếu này đã hoàn tất hoặc không còn nhận vote.', 'var(--danger)');
-            const minSlots = poll.requireMinSlots === true ? 3 : 1;
-            if (selectedSlots.size < minSlots) return showStatus('Hãy chọn ít nhất ' + minSlots + ' khung giờ trước khi hoàn tất.', 'var(--danger)');
+            if (selectedSlots.size < 3) return showStatus('Hãy chọn ít nhất 3 khung giờ trước khi hoàn tất.', 'var(--danger)');
             if (!confirm('Hoàn tất vote cho “' + poll.title + '”? Sau bước này phiếu sẽ được ẩn và chỉ Admin/HR/PR có thể xem lại.')) return;
             const button = document.getElementById('finalizeAvailabilityButton');
             if (button) { button.disabled = true; button.textContent = '⏳ Đang hoàn tất...'; }
@@ -3067,6 +3275,7 @@
                     const login = document.createElement('a'); login.className = 'btn small'; login.href = '/'; login.textContent = 'Đăng nhập để đặt'; actions.appendChild(login);
                 } else if (ownBooking) {
                     const status = document.createElement('span'); status.style.cssText = 'font-size:.78rem;color:var(--gold-light);padding:8px 0'; status.textContent = ownBooking.status === 'confirmed' ? '✓ Đã được xác nhận' : ownBooking.status === 'cancelled' ? 'Đã hủy' : '⏳ Đang chờ xác nhận'; actions.appendChild(status);
+                    if (ownBooking.status === 'confirmed' && event.invitationSentAt) { const cancel = document.createElement('button'); cancel.className = 'btn small'; cancel.textContent = 'Hủy lịch'; cancel.style.cssText = 'background:linear-gradient(135deg,#ff8a8a,#f43f5e);color:#fff'; cancel.onclick = () => cancelConfirmedEvent(event.id); actions.appendChild(cancel); }
                     if (ownBooking.status === 'requested') { const cancel = document.createElement('button'); cancel.className = 'btn small'; cancel.textContent = 'Hủy đặt chỗ'; cancel.onclick = () => cancelMyBooking(ownBooking.id); actions.appendChild(cancel); }
                 } else {
                     const book = document.createElement('button'); book.className = 'btn small'; book.textContent = event.type === 'interview' ? 'Đặt lịch phỏng vấn' : 'Đăng ký tham dự'; book.onclick = () => bookEvent(event.id); actions.appendChild(book);

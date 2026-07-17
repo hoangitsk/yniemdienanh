@@ -484,6 +484,8 @@ const assignScheduleParticipant = require('./api/schedule/assign-participant');
 app.post('/api/schedule/assign-participant', assignScheduleParticipant);
 const saveAvailability = require('./api/schedule/save-availability');
 app.post('/api/schedule/save-availability', saveAvailability);
+const cancelScheduleBooking = require('./api/schedule/cancel-booking');
+app.post('/api/schedule/cancel-booking', cancelScheduleBooking);
 const upsertManagedUser = require('./api/admin/upsert-user');
 app.post('/api/admin/upsert-user', upsertManagedUser);
 const finalizeInterviewCron = require('./api/cron/finalize-interviews');

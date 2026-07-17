@@ -10150,7 +10150,7 @@
             if (!response.ok || !result.success) throw new Error(result.error || 'Không thể cấp lịch cho ứng viên.');
             app.activeScheduleCode = pollCode;
             app.interviewPollCode = pollCode;
-            app.approvedUserId = result.user && result.user.id || app.approvedUserId;
+            if (result.user && result.user.id) app.approvedUserId = result.user.id;
             app.recruitmentStage = 'interview_vote';
             await saveItem('applications', app);
             return result;

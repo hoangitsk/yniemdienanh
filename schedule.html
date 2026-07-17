@@ -560,6 +560,33 @@
         .participant-option:has(input:checked) { background: rgba(228, 184, 102, .14); color: var(--gold-light); }
         .participant-option input { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
 
+        .schedule-choice-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 11000;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            background: rgba(3, 9, 16, .78);
+            backdrop-filter: blur(8px);
+        }
+        .schedule-choice-modal.hidden { display: none; }
+        .schedule-choice-card {
+            width: min(560px, 100%);
+            max-height: min(680px, calc(100vh - 36px));
+            overflow: auto;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #08131f;
+            box-shadow: 0 22px 60px rgba(0, 0, 0, .48);
+        }
+        .schedule-choice-card h3 { margin: 0 0 7px; color: var(--gold-light); }
+        .schedule-choice-card p { margin: 0 0 14px; color: var(--text-muted); font-size: .84rem; }
+        .schedule-choice-results { max-height: 270px; overflow: auto; margin-top: 8px; }
+        .schedule-choice-result { width: 100%; margin: 0 0 5px; text-align: left; }
+        .schedule-choice-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
         .slot-people {
             display: flex;
             flex-direction: column;
@@ -694,6 +721,18 @@
             <p>Dùng đúng Gmail đã nhận thư mời để mở lịch phỏng vấn dành cho bạn.</p>
             <button type="button" class="btn" id="scheduleGoogleLoginButton" onclick="signInToSchedule()">Đăng nhập bằng Google</button>
             <div id="scheduleLoginStatus" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div class="schedule-choice-modal hidden" id="scheduleChoiceModal" role="dialog" aria-modal="true" aria-labelledby="scheduleChoiceTitle">
+        <div class="schedule-choice-card">
+            <h3 id="scheduleChoiceTitle"></h3>
+            <p id="scheduleChoiceHint"></p>
+            <div id="scheduleChoiceContent"></div>
+            <div class="schedule-choice-actions">
+                <button type="button" class="btn secondary" id="scheduleChoiceCancel">Hủy</button>
+                <button type="button" class="btn" id="scheduleChoiceConfirm">Xác nhận</button>
+            </div>
         </div>
     </div>
 
@@ -968,6 +1007,124 @@
 
         function normalizeScheduleText(value) {
             return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        }
+
+        function openScheduleChoice(options) {
+            const modal = document.getElementById('scheduleChoiceModal');
+            const title = document.getElementById('scheduleChoiceTitle');
+            const hint = document.getElementById('scheduleChoiceHint');
+            const content = document.getElementById('scheduleChoiceContent');
+            const confirmButton = document.getElementById('scheduleChoiceConfirm');
+            const cancelButton = document.getElementById('scheduleChoiceCancel');
+            if (!modal || !title || !hint || !content || !confirmButton || !cancelButton) return Promise.resolve(null);
+            title.textContent = options.title || 'Chọn thông tin';
+            hint.textContent = options.hint || '';
+            content.innerHTML = options.content || '';
+            confirmButton.textContent = options.confirmText || 'Xác nhận';
+            modal.classList.remove('hidden');
+            return new Promise(function(resolve) {
+                function close(value) {
+                    modal.classList.add('hidden');
+                    confirmButton.onclick = null;
+                    cancelButton.onclick = null;
+                    modal.onclick = null;
+                    resolve(value);
+                }
+                confirmButton.onclick = function() { close(options.getValue ? options.getValue(content) : true); };
+                cancelButton.onclick = function() { close(null); };
+                modal.onclick = function(event) { if (event.target === modal) close(null); };
+                const firstInput = content.querySelector('input, select');
+                if (firstInput) setTimeout(function() { firstInput.focus(); }, 0);
+            });
+        }
+
+        async function chooseMemberForScheduleSlot() {
+            const members = directoryUsers.slice().sort(function(a, b) {
+                return String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'vi');
+            });
+            const content = '<label>Tìm thành viên (ít nhất 2 ký tự)<input id="scheduleMemberSearch" type="search" autocomplete="off" placeholder="Tên hoặc email thành viên"></label><div id="scheduleMemberResults" class="schedule-choice-results"><p>Nhập tên hoặc email để tìm thành viên.</p></div><input id="scheduleMemberId" type="hidden">';
+            const result = openScheduleChoice({
+                title: 'Thêm giờ cho thành viên',
+                hint: 'Danh sách không được mở toàn bộ; hãy tìm theo tên hoặc email.',
+                content: content,
+                confirmText: 'Thêm khung giờ',
+                getValue: function(container) {
+                    const id = container.querySelector('#scheduleMemberId').value;
+                    return members.find(function(member) { return String(member.id) === id; }) || null;
+                }
+            });
+            const search = document.getElementById('scheduleMemberSearch');
+            const results = document.getElementById('scheduleMemberResults');
+            const selectedId = document.getElementById('scheduleMemberId');
+            function renderResults() {
+                const query = String(search.value || '').trim().toLowerCase();
+                selectedId.value = '';
+                if (query.length < 2) {
+                    results.innerHTML = '<p>Nhập ít nhất 2 ký tự để tìm.</p>';
+                    return;
+                }
+                const matches = members.filter(function(member) {
+                    return [member.name, member.email, member.dept].some(function(value) { return String(value || '').toLowerCase().includes(query); });
+                }).slice(0, 20);
+                results.innerHTML = matches.length ? matches.map(function(member) {
+                    const label = (member.name || member.email) + (member.dept ? ' · ' + member.dept : '') + (member.email ? ' · ' + member.email : '');
+                    return '<button type="button" class="btn secondary schedule-choice-result" data-member-id="' + escapeHtml(member.id) + '">' + escapeHtml(label) + '</button>';
+                }).join('') : '<p>Không tìm thấy thành viên phù hợp.</p>';
+                Array.from(results.querySelectorAll('[data-member-id]')).forEach(function(button) {
+                    button.onclick = function() {
+                        selectedId.value = button.getAttribute('data-member-id');
+                        Array.from(results.querySelectorAll('[data-member-id]')).forEach(function(item) { item.classList.remove('active'); });
+                        button.classList.add('active');
+                    };
+                });
+            }
+            search.addEventListener('input', renderResults);
+            return result;
+        }
+
+        function assignmentDepartments(event, candidate) {
+            const standard = ['Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Nội Dung', 'Ban Media (Thiết kế&Edit)', 'Ban duyệt bài'];
+            const observed = directoryUsers.map(function(user) { return String(user.dept || '').trim(); }).filter(Boolean);
+            const all = Array.from(new Set(standard.concat(observed)));
+            const eventText = normalizeScheduleText([event && event.department, event && event.dept, event && event.title, event && event.notes].join(' '));
+            const departmentAliases = {
+                'Ban Nhân Sự': ['ban nhan su', 'nhan su', 'hr'],
+                'Ban Truyền Thông': ['ban truyen thong', 'truyen thong', 'pr', 'marketing', 'mkt'],
+                'Ban Nội Dung': ['ban noi dung', 'noi dung'],
+                'Ban Media (Thiết kế&Edit)': ['ban media', 'media', 'thiet ke', 'edit'],
+                'Ban duyệt bài': ['ban duyet bai', 'duyet bai']
+            };
+            const inferred = all.find(function(dept) {
+                return eventText.includes(normalizeScheduleText(dept)) || (departmentAliases[dept] || []).some(function(alias) { return eventText.includes(alias); });
+            });
+            const selected = inferred || (candidate && candidate.dept) || '';
+            if (selected && !all.includes(selected)) all.push(selected);
+            return { all: all, selected: selected, inferred: !!inferred };
+        }
+
+        async function chooseInterviewAssignment(event, candidate) {
+            const departments = assignmentDepartments(event, candidate);
+            const deptOptions = ['<option value="">Chưa phân ban</option>'].concat(departments.all.map(function(dept) {
+                return '<option value="' + escapeHtml(dept) + '"' + (dept === departments.selected ? ' selected' : '') + '>' + escapeHtml(dept) + '</option>';
+            })).join('');
+            const currentPosition = String(candidate && candidate.position || 'Thành viên');
+            const positions = ['Core', 'Phó ban', 'Thành viên'];
+            if (!positions.includes(currentPosition)) positions.push(currentPosition);
+            const positionOptions = positions.map(function(position) {
+                return '<option value="' + escapeHtml(position) + '"' + (position === currentPosition ? ' selected' : '') + '>' + escapeHtml(position) + '</option>';
+            }).join('');
+            return openScheduleChoice({
+                title: 'Xác nhận kết quả phỏng vấn',
+                hint: departments.inferred ? 'Ban đã được tự đề xuất theo tên/nội dung lịch phỏng vấn; bạn vẫn có thể đổi.' : 'Chọn ban và chức danh cho ứng viên.',
+                content: '<label>Ban<select id="interviewAssignmentDept">' + deptOptions + '</select></label><label>Chức danh<select id="interviewAssignmentPosition">' + positionOptions + '</select></label>',
+                confirmText: 'Hoàn tất phỏng vấn',
+                getValue: function(container) {
+                    return {
+                        dept: container.querySelector('#interviewAssignmentDept').value,
+                        position: container.querySelector('#interviewAssignmentPosition').value
+                    };
+                }
+            });
         }
 
         function isHrOrPrProfile(user) {
@@ -2047,8 +2204,22 @@
             if (!activePoll) return showAdminStatus('Hãy chọn một đợt vote trước khi xếp lịch.', 'var(--danger)');
             if (activePoll.type !== 'interview') return showAdminStatus('Đợt đang chọn là lịch họp, không phải đợt phỏng vấn.', 'var(--danger)');
             const pollSchedules = schedulesForActivePoll();
+            // Chỉ bỏ khỏi danh sách ưu tiên khi thư mời đã gửi thành công.
+            // Nếu email lỗi, Admin vẫn thấy ứng viên để có thể sửa Meet/gửi lại.
+            const invitedCandidateIds = new Set();
+            officialEvents.forEach(function(event) {
+                if (event.type === 'interview' && event.availabilityPollId === activePoll.id && event.candidateId && (event.invitationSentAt || event.lastInvitationSentAt)) {
+                    invitedCandidateIds.add(String(event.candidateId));
+                }
+            });
+            myBookings.forEach(function(booking) {
+                const event = officialEvents.find(function(item) { return item.id === booking.eventId; });
+                if (event && event.type === 'interview' && event.availabilityPollId === activePoll.id && booking.status === 'confirmed' && booking.candidateId && booking.invitationSentAt) {
+                    invitedCandidateIds.add(String(booking.candidateId));
+                }
+            });
             const candidates = pollSchedules
-                .filter(item => effectiveScheduleRole(item) === 'candidate' && item.name)
+                .filter(item => effectiveScheduleRole(item) === 'candidate' && item.name && !invitedCandidateIds.has(String(item.ownerId || '')))
                 .map(item => Object.assign({}, item, { role:'candidate' }));
             const target = document.getElementById('availabilityVotes');
             if (!candidates.length) {
@@ -2469,20 +2640,11 @@
                 return showAdminStatus('Chỉ Admin/BTC mới có thể thêm lịch cho thành viên.', 'var(--danger)');
             }
             if (!directoryUsers.length) return showAdminStatus('Danh sách thành viên chưa tải xong. Hãy thử lại sau vài giây.', 'var(--danger)');
-            const members = directoryUsers.slice().sort(function(a, b) {
-                return String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'vi');
-            });
-            const choices = members.map(function(member, index) {
-                return (index + 1) + '. ' + (member.name || member.email) + (member.dept ? ' · ' + member.dept : '') + ' · ' + member.email;
-            }).join('\n');
-            const selectedIndex = Number(prompt('Thêm khung giờ này cho thành viên nào?\n\n' + choices + '\n\nNhập số thứ tự:')) - 1;
-            const member = members[selectedIndex];
-            if (!Number.isInteger(selectedIndex) || !member || !member.id) return;
+            const member = await chooseMemberForScheduleSlot();
+            if (!member || !member.id) return;
             const slot = availabilitySlotInfo(slotId);
             if (!slot) return;
             const memberName = member.name || member.email;
-            if (!confirm('Ghi nhận ' + memberName + ' có thể tham gia ' + slot.date.label + ' · ' + slot.shift.name + ' (' + slot.shift.time + ')?')) return;
-
             const docId = activePoll.id + '_' + member.id;
             const existing = (localDB.meetingSchedules || []).find(function(schedule) {
                 return schedule.id === docId || (schedule.pollId === activePoll.id && schedule.ownerId === member.id);
@@ -2881,6 +3043,18 @@
                 if (canManageSchedules) {
                     if (event.type === 'interview') {
                         const markCandidate = document.createElement('button'); markCandidate.className = 'btn small'; markCandidate.textContent = '＋ Ghi nhận thí sinh'; markCandidate.onclick = () => manuallyConfirmCandidate(event.id); actions.appendChild(markCandidate);
+                        const bookingAwaitingEmail = allEventBookings.find(item => item.status === 'confirmed' && !item.invitationSentAt);
+                        if (bookingAwaitingEmail) {
+                            const sendInvitation = document.createElement('button');
+                            sendInvitation.className = 'btn small';
+                            sendInvitation.textContent = '✉️ Gửi mail mời';
+                            sendInvitation.title = 'Gửi hoặc gửi lại email mời cho thí sinh đã xác nhận';
+                            sendInvitation.onclick = async () => {
+                                const result = await sendScheduleInvitation(event, bookingAwaitingEmail);
+                                if (result && result.success) await fetchOfficialSchedule();
+                            };
+                            actions.appendChild(sendInvitation);
+                        }
                     }
                     const manage = document.createElement('button'); manage.className = 'btn small'; manage.textContent = 'Quản lý (' + allEventBookings.length + ')'; manage.onclick = () => manageEventBookings(event.id); actions.appendChild(manage);
                     if (event.type === 'interview') { const assign = document.createElement('button'); assign.className = 'btn small'; assign.textContent = event.assignedHrId ? 'Đổi HR' : 'Phân công HR'; assign.onclick = () => assignEventHr(event.id); actions.appendChild(assign); }
@@ -3088,10 +3262,10 @@
             if (!hr) return alert('Lịch chưa có người phỏng vấn hợp lệ.');
             if (!confirm('Xác nhận HR ' + (hr.name || hr.email) + ' đã hoàn thành buổi phỏng vấn và cộng 10 điểm?')) return;
             const candidate = directoryUsers.find(user => user.id === event.candidateId) || {};
-            const assignedDept = prompt('Gán Ban cho ứng viên sau phỏng vấn (để trống nếu chưa quyết định):', candidate.dept || '');
-            if (assignedDept === null) return;
-            const assignedPosition = prompt('Gán Vị trí sau phỏng vấn (VD: Core, Phó ban, Thành viên; để trống nếu chưa quyết định):', candidate.position || 'Core');
-            if (assignedPosition === null) return;
+            const assignment = await chooseInterviewAssignment(event, candidate);
+            if (!assignment) return;
+            const assignedDept = assignment.dept;
+            const assignedPosition = assignment.position;
             try {
                 const idToken = await scheduleTimeout(currentUser.getIdToken(), 5000, 'Không lấy được phiên đăng nhập.');
                 const response = await scheduleFetch('/api/schedule/complete-interview', {

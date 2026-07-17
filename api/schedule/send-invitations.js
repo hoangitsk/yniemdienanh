@@ -255,10 +255,18 @@ module.exports = async function sendInterviewInvitations(req, res) {
             invitationProviders: providers
         });
         try {
-            await eventDoc.ref.set({
+            var eventInvitationUpdate = {
                 lastInvitationSentAt: new Date().toISOString(),
                 lastInvitationProviders: providers
-            }, { merge: true });
+            };
+            if (event.type === 'interview') {
+                eventInvitationUpdate.invitationSentAt = eventInvitationUpdate.lastInvitationSentAt;
+                eventInvitationUpdate.candidateId = booking.candidateId;
+                eventInvitationUpdate.candidateName = booking.candidateName || '';
+                eventInvitationUpdate.candidateEmail = booking.candidateEmail || '';
+                eventInvitationUpdate.status = 'confirmed';
+            }
+            await eventDoc.ref.set(eventInvitationUpdate, { merge: true });
         } catch (metadataError) {
             console.warn('KhÃ´ng thÃªm Ä‘Æ°á»£c metadata email vÃ o lá»‹ch:', metadataError.message || metadataError);
         }

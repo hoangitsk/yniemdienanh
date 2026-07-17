@@ -161,6 +161,56 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
         }
 
+        .schedule-login-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(3, 9, 16, .78);
+            backdrop-filter: blur(10px);
+        }
+
+        .schedule-login-card {
+            width: min(410px, 100%);
+            padding: 32px 28px 28px;
+            text-align: center;
+            border: 1px solid rgba(228, 184, 102, .38);
+            border-radius: 20px;
+            background: linear-gradient(145deg, rgba(18, 43, 65, .98), rgba(6, 17, 29, .98));
+            box-shadow: 0 30px 90px rgba(0, 0, 0, .55), 0 0 40px rgba(228, 184, 102, .08);
+            animation: scheduleLoginPop .24s ease-out;
+        }
+
+        .schedule-login-card .login-lock {
+            display: grid;
+            place-items: center;
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            background: rgba(228, 184, 102, .12);
+            color: var(--gold-light);
+            font-size: 1.45rem;
+        }
+
+        .schedule-login-card h2 {
+            margin: 0 0 10px;
+            color: var(--gold-light);
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+        }
+
+        .schedule-login-card p { margin: 0 0 22px; color: var(--text-muted); font-size: .86rem; line-height: 1.65; }
+        .schedule-login-card .btn { margin: 0; }
+        .schedule-login-card #scheduleLoginStatus { min-height: 18px; margin-top: 12px; color: var(--text-muted); font-size: .76rem; }
+
+        @keyframes scheduleLoginPop {
+            from { opacity: 0; transform: translateY(12px) scale(.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
         h3 {
             color: var(--gold-light);
             margin-bottom: 18px;
@@ -637,20 +687,22 @@
 </head>
 <body>
 
+    <div class="schedule-login-overlay hidden" id="scheduleLoginPrompt" role="dialog" aria-modal="true" aria-labelledby="scheduleLoginTitle">
+        <div class="schedule-login-card">
+            <div class="login-lock" aria-hidden="true">🔐</div>
+            <h2 id="scheduleLoginTitle">Đăng nhập để chọn lịch</h2>
+            <p>Dùng đúng Gmail đã nhận thư mời để mở lịch phỏng vấn dành cho bạn.</p>
+            <button type="button" class="btn" id="scheduleGoogleLoginButton" onclick="signInToSchedule()">Đăng nhập bằng Google</button>
+            <div id="scheduleLoginStatus" aria-live="polite"></div>
+        </div>
+    </div>
+
     <div class="container">
         <header>
             <a href="/"><img src="/Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh"></a>
             <h1>Lịch Họp & Phỏng Vấn</h1>
             <p class="subtitle">Tìm khung giờ rảnh tối ưu của đội ngũ & ứng viên mùa giải</p>
         </header>
-
-        <div class="panel hidden" id="scheduleLoginPrompt" style="margin:0 auto 24px;max-width:720px;text-align:center;border-color:rgba(228,184,102,.42)">
-            <h3 style="margin-top:0">🔐 Đăng nhập để chọn lịch rảnh</h3>
-            <p style="font-size:.84rem;color:var(--text-muted);margin:0 0 14px">Dùng đúng Gmail đã nhận thư mời để hệ thống mở lịch phỏng vấn dành cho bạn.</p>
-            <button type="button" class="btn" id="scheduleGoogleLoginButton" onclick="signInToSchedule()" style="width:auto;min-width:220px">Đăng nhập bằng Google</button>
-            <div style="margin-top:10px"><a href="/register?tab=login" target="_blank" rel="noopener" style="font-size:.78rem;color:var(--gold-light)">Đăng nhập bằng email và mật khẩu</a></div>
-            <div id="scheduleLoginStatus" style="font-size:.78rem;color:var(--text-muted);margin-top:10px"></div>
-        </div>
 
         <div class="layout">
             <!-- Left Column: Controls & Recommendations -->
@@ -941,7 +993,7 @@
             const button = document.getElementById('scheduleGoogleLoginButton');
             const status = document.getElementById('scheduleLoginStatus');
             if (!useFirebase || !window.firebase || !firebase.auth) {
-                window.open('/register?tab=login', '_blank', 'noopener');
+                if (status) status.textContent = 'Chưa kết nối được Google. Vui lòng tải lại trang.';
                 return;
             }
             if (button) { button.disabled = true; button.textContent = '⏳ Đang đăng nhập...'; }
@@ -2108,6 +2160,12 @@
                     assignedHrRole: hr.role || '',
                     assignedHrDept: hr.dept || '',
                     assignedHrPosition: hr.position || hr.title || '',
+                    candidateId: candidateUser.id,
+                    candidateName: candidateUser.name || candidateUser.email,
+                    candidateEmail: candidateUser.email,
+                    slotId: item.choice.info.id,
+                    slotName: item.choice.info.shift.name,
+                    slotTime: item.choice.info.shift.time,
                     status: 'open',
                     generatedFromAvailability: true,
                     availabilityPollId: activePoll ? activePoll.id : null,

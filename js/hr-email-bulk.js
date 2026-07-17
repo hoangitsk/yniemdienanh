@@ -24,19 +24,35 @@
         });
     }
 
+    function renderEmailHistoryItem(item) {
+        return '<div style="margin-top:4px"><span class="chip" title="' + esc(item.subject || emailLabel(item.type)) + '" style="background:rgba(34,197,94,.13);color:var(--ok)">📨 ' +
+            esc(emailLabel(item.type)) + '</span><div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">' + esc(formatEmailTime(item.sentAt)) +
+            (item.attachmentName ? ' · 📎 ' + esc(item.attachmentName) : '') + '</div></div>';
+    }
+
+    window.toggleApplicationEmailHistory = function (button) {
+        var history = button && button.nextElementSibling;
+        if (!history) return;
+        var opening = history.style.display === 'none';
+        history.style.display = opening ? 'block' : 'none';
+        button.setAttribute('aria-expanded', opening ? 'true' : 'false');
+        button.textContent = opening ? 'Ẩn lịch sử' : '🕘 Lịch sử (' + (button.dataset.count || '0') + ')';
+    };
+
     window.renderApplicationEmailStatus = function (app) {
         var history = Array.isArray(app.emailHistory) ? app.emailHistory : [];
         var last = history.length ? history[history.length - 1] : null;
         var type = (last && last.type) || app.lastEmailType;
         var sentAt = (last && last.sentAt) || app.lastEmailSentAt;
         if (!type) return '<span style="font-size:.76rem;color:var(--text-muted)">Chưa gửi email</span>';
-        var count = history.length || 1;
-        var recent = history.length ? history.slice(-3).reverse() : [{ type: type, sentAt: sentAt, subject: app.lastEmailSubject }];
-        return recent.map(function (item) {
-            return '<div style="margin-top:4px"><span class="chip" title="' + esc(item.subject || emailLabel(item.type)) + '" style="background:rgba(34,197,94,.13);color:var(--ok)">📨 ' +
-                esc(emailLabel(item.type)) + '</span><div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">' + esc(formatEmailTime(item.sentAt)) +
-                (item.attachmentName ? ' · 📎 ' + esc(item.attachmentName) : '') + '</div></div>';
-        }).join('') + (count > 3 ? '<div style="font-size:.68rem;color:var(--text-muted);margin-top:3px">+' + (count - 3) + ' thư trước</div>' : '');
+        var latest = last || { type: type, sentAt: sentAt, subject: app.lastEmailSubject };
+        var older = history.length > 1 ? history.slice(0, -1).reverse() : [];
+        var output = renderEmailHistoryItem(latest);
+        if (older.length) {
+            output += '<button type="button" class="btn btn-line btn-sm" data-count="' + older.length + '" aria-expanded="false" onclick="toggleApplicationEmailHistory(this)" style="width:auto;margin-top:6px;padding:3px 8px;font-size:.68rem;color:var(--text-muted);border-color:rgba(148,163,184,.28)">🕘 Lịch sử (' + older.length + ')</button>' +
+                '<div class="application-email-history" style="display:none;margin-top:5px;padding-top:3px;border-top:1px solid rgba(148,163,184,.16)">' + older.map(renderEmailHistoryItem).join('') + '</div>';
+        }
+        return output;
     };
 
     window.updateBulkEmailCount = function () {

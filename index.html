@@ -2764,44 +2764,6 @@
 
 
             
-            <!-- SEASON JOURNEY SECTION -->
-            <template id="journey">
-                <div class="section-head">
-                    <h2>🗺️ Hành trình Mùa giải YNĐA Season 1</h2>
-                    <p>Hệ sinh thái học tập và sáng tạo toàn diện kéo dài 6 tháng dành cho các học sinh, sinh viên yêu thích làm phim.</p>
-                </div>
-                <div class="timeline" style="max-width: 800px; margin: 30px auto 0 auto; padding-left: 40px">
-                    <div class="timeline-item">
-                        <div class="timeline-date">Phase 1: Gieo Mầm Ý Tưởng (Tháng 7 - 8)</div>
-                        <div class="timeline-content">
-                            <h4>🌱 Tuyển Dụng & Creative Workshops</h4>
-                            <p>Khởi động tuyển dụng Core Member & Ban Tổ Chức. Ra mắt cộng đồng và tổ chức chuỗi Creative Workshops nhập môn điện ảnh.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-date">Phase 2: Rèn Luyện & Thử Thách (Tháng 9 - 10)</div>
-                        <div class="timeline-content">
-                            <h4>🎬 Mini Challenges & Kỹ thuật chuyên sâu</h4>
-                            <p>Tổ chức các thử thách làm phim / nhiếp ảnh nhanh (48 giờ). Các workshop chuyên sâu về Biên kịch, Quay phim, Dựng phim & Đạo diễn.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-date">Phase 3: Tăng Tốc & Đồng Hành (Tháng 11)</div>
-                        <div class="timeline-content">
-                            <h4>🤝 Team Matchmaking & Peer-Review kịch bản</h4>
-                            <p>Không gian kết nối nhóm (Team Matchmaking) và Peer-Review kịch bản. Chạy dự án tiền sản xuất có sự đồng hành hỗ trợ từ các chuyên gia.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-date">Phase 4: Chung Kết Toàn Quốc (Tháng 12)</div>
-                        <div class="timeline-content">
-                            <h4>🏆 YNĐA Final Season Competition</h4>
-                            <p>Khởi tranh cuộc thi làm phim ngắn YNĐA Final Season. Trưng bày và công chiếu tác phẩm xuất sắc nhất tại đêm Gala trao giải trang trọng.</p>
-                        </div>
-                    </div>
-                </div>
-            </template>
-
             <!-- EVENTS ONGOING/UPCOMING -->
             <section id="events" class="scroll-reveal">
                 <div class="section-head" id="eventsHeading">
@@ -7285,7 +7247,10 @@
                             return '<div class="feature-card"><h4>'+esc(w.name)+'</h4><p>📅 '+new Date(w.date).toLocaleString('vi-VN')+'</p><div class="meta" style="margin-bottom:8px">'+statusBadge+'</div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+(w.link?'<a href="'+esc(w.link)+'" target="_blank" class="btn btn-gold btn-sm">🔗 Tham gia</a>':'')+regButtonHtml+actionButtons+'</div></div>';
                         }).join('')}</div>
                     `;
-                },
+                }
+            };
+            if (renderers[tab]) renderers[tab]();
+        }
 
         // ================= DASHBOARD ACTIONS =================
         async function markFeedbackSeen(id) {

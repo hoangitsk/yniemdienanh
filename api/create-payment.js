@@ -1,5 +1,6 @@
 const PayOS = require('@payos/node');
 const admin = require('firebase-admin');
+const { confirmTransaction } = require('../lib/paymentFulfillment');
 
 const PAYOS_CLIENT_ID = process.env.PAYOS_CLIENT_ID || "";
 const PAYOS_API_KEY = process.env.PAYOS_API_KEY || "";
@@ -174,21 +175,36 @@ module.exports = async (req, res) => {
         txQuery.forEach(doc => {
             const t = doc.data();
             if (t.createdAt && t.createdAt > fiveMinAgo) {
-                if (type === 'registration' && t.eventId === String(targetId)) activeTx = t;
-                if (type === 'team_registration' && t.eventId === String(targetId)) activeTx = t;
-                if (type === 'vote' && t.submissionId === String(targetId)) activeTx = t;
-                if (type === 'sponsor') activeTx = t;
+                if (type === 'registration' && t.eventId === String(targetId)) activeTx = { ...t, _ref: doc.ref };
+                if (type === 'team_registration' && t.eventId === String(targetId)) activeTx = { ...t, _ref: doc.ref };
+                if (type === 'vote' && t.submissionId === String(targetId)) activeTx = { ...t, _ref: doc.ref };
+                if (type === 'sponsor') activeTx = { ...t, _ref: doc.ref };
             }
         });
 
-        // Nếu có giao dịch chờ xử lý hợp lệ, trả về thông tin cũ để tránh spam PayOS link
+        // PayOS có thể đã bị người dùng hủy nhưng webhook chưa về. Luôn hỏi PayOS
+        // trước khi tái sử dụng link cũ để không khóa người dùng ở trạng thái pending.
         if (activeTx && activeTx.checkoutUrl) {
-            console.log(`Returning existing pending checkout link for orderCode: ${activeTx.orderCode}`);
-            return res.json({
-                checkoutUrl: activeTx.checkoutUrl,
-                qrCode: activeTx.qrCode,
-                orderCode: activeTx.orderCode
-            });
+            try {
+                const existingPayment = await payos.getPaymentLinkInformation(Number(activeTx.orderCode));
+                const existingStatus = String(existingPayment.status || '').toUpperCase();
+                if (existingStatus === 'PAID' || existingStatus === 'SUCCESS') {
+                    await confirmTransaction(db, Number(activeTx.orderCode), existingPayment.amountPaid || existingPayment.amount);
+                    return res.status(409).json({ error: 'Giao dịch này đã được thanh toán. Hệ thống đang cập nhật xác nhận.' });
+                }
+                const closedStatuses = new Set(['CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED']);
+                if (closedStatuses.has(existingStatus)) {
+                    await activeTx._ref.set({ status: 'cancelled', cancelledAt: new Date().toISOString(), payosStatus: existingStatus }, { merge: true });
+                    activeTx = null;
+                } else {
+                    console.log(`Returning active PayOS link for orderCode: ${activeTx.orderCode} (${existingStatus || 'PENDING'})`);
+                    return res.json({ checkoutUrl: activeTx.checkoutUrl, qrCode: activeTx.qrCode, orderCode: activeTx.orderCode });
+                }
+            } catch (statusError) {
+                // Không tạo trùng khi PayOS tạm thời không phản hồi; người dùng có thể thử lại.
+                console.warn('Could not verify existing PayOS link:', statusError.message || statusError);
+                return res.json({ checkoutUrl: activeTx.checkoutUrl, qrCode: activeTx.qrCode, orderCode: activeTx.orderCode });
+            }
         }
 
         // 4. Tạo orderCode collision-resistant (16 chữ số)

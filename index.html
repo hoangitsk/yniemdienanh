@@ -1578,6 +1578,31 @@
             font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;
         }
 
+        /* WALL OF LIGHT / SUPPORTER RECOGNITION */
+        .honor-roll { max-width:1120px; margin:0 auto 56px; padding:38px; border:1px solid rgba(228,184,102,.3); border-radius:24px; background:radial-gradient(circle at 88% 12%,rgba(228,184,102,.18),transparent 13rem),linear-gradient(135deg,rgba(18,36,56,.96),rgba(5,12,20,.92)); box-shadow:var(--shadow-card); }
+        .honor-roll__eyebrow { color:var(--gold); font-size:.76rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px; }
+        .honor-roll__heading { margin:0; color:var(--gold-light); font-size:clamp(2rem,4vw,3.1rem); line-height:1.12; }
+        .honor-roll__intro { max-width:680px; margin:14px 0 28px; color:var(--text-muted); }
+        .honoree-card { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(260px,.8fr); gap:30px; padding:30px; border:1px solid rgba(243,219,163,.18); border-radius:18px; background:rgba(5,12,20,.4); }
+        .honoree-card__role { display:inline-flex; padding:5px 11px; border:1px solid rgba(228,184,102,.35); border-radius:999px; color:var(--gold-light); font-size:.75rem; font-weight:700; }
+        .honoree-card h3 { margin:14px 0 2px; color:var(--text-light); font-size:clamp(1.65rem,3vw,2.2rem); }
+        .honoree-card__affiliation { margin:0 0 20px; color:var(--gold); font-size:.92rem; }
+        .honoree-card__story p { margin:0 0 14px; color:var(--text-muted); }
+        .honoree-card__story strong { color:var(--text-light); }
+        .honoree-card__thanks { margin-top:22px !important; padding-top:18px; border-top:1px solid rgba(228,184,102,.18); color:var(--gold-light) !important; font-weight:700; }
+        .honoree-card__meta { align-self:start; padding:20px; border-radius:14px; background:rgba(228,184,102,.08); }
+        .honoree-card__meta dl { margin:0; }
+        .honoree-card__meta div { padding:12px 0; border-bottom:1px solid rgba(228,184,102,.16); }
+        .honoree-card__meta div:last-child { border-bottom:0; padding-bottom:0; }
+        .honoree-card__meta div:first-child { padding-top:0; }
+        .honoree-card__meta dt { color:var(--text-muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; }
+        .honoree-card__meta dd { margin:4px 0 0; color:var(--gold-light); font-weight:700; }
+        .honor-roll__quote { margin:26px 0 0; color:var(--text-muted); font-family:'Playfair Display',serif; font-size:1.05rem; font-style:italic; text-align:center; }
+        @media (max-width: 720px) {
+            .honor-roll { margin-left:16px; margin-right:16px; padding:25px 18px; }
+            .honoree-card { grid-template-columns:1fr; gap:22px; padding:22px 18px; }
+        }
+
         /* PAYMENT MODAL */
         .qr-box {
             text-align: center; padding: 20px 0;
@@ -2762,6 +2787,34 @@
             <!-- PRIZE POOL WIDGET -->
             <div id="prizePoolHome" class="scroll-reveal" style="margin-top: 40px; margin-bottom: 40px"></div>
 
+            <!-- WALL OF LIGHT / PUBLIC RECOGNITION -->
+            <section id="vinh-danh" class="honor-roll scroll-reveal" aria-labelledby="honorRollTitle">
+                <p class="honor-roll__eyebrow">Nội dung vinh danh trên website</p>
+                <h2 id="honorRollTitle" class="honor-roll__heading">Những Người Giữ Ánh Sáng</h2>
+                <p class="honor-roll__intro">Ghi nhận những cá nhân đã tin tưởng và góp phần gìn giữ không gian trực tuyến của Ý Niệm Điện Ảnh.</p>
+
+                <article class="honoree-card">
+                    <div class="honoree-card__story">
+                        <span class="honoree-card__role">Người đồng hành duy trì nền tảng — Season 1</span>
+                        <h3>Trần Đại Lục Châu</h3>
+                        <p class="honoree-card__affiliation">at Mollis Observation</p>
+                        <p>Có những sự đồng hành bắt đầu từ một buổi quay phim rất bình thường.</p>
+                        <p>Trần Đại Lục Châu là người bạn mà Ý Niệm Điện Ảnh tình cờ gặp trên hành trình ghi lại những khoảnh khắc đời thường. Từ tình yêu với quay phim và nhiếp ảnh mang màu sắc film, bạn đã dành tặng dự án <strong>100.000 VNĐ</strong> để hỗ trợ chi phí duy trì website.</p>
+                        <p>Khoản đóng góp này được sử dụng riêng cho hoạt động của nền tảng trực tuyến, <strong>không thuộc quỹ giải thưởng của dự án</strong>.</p>
+                        <p>Dù không phải một con số quá lớn, đây vẫn là sự tin tưởng đầu tiên mà Ý Niệm Điện Ảnh nhận được từ một người ngoài đội ngũ. Với chúng mình, điều ấy có ý nghĩa hơn rất nhiều so với giá trị được thể hiện bằng con số.</p>
+                        <p class="honoree-card__thanks">Cảm ơn Trần Đại Lục Châu vì đã giúp ngôi nhà trực tuyến của Ý Niệm Điện Ảnh tiếp tục sáng đèn.</p>
+                    </div>
+                    <aside class="honoree-card__meta" aria-label="Thông tin ghi nhận">
+                        <dl>
+                            <div><dt>Hạng mục</dt><dd>Duy trì website</dd></div>
+                            <div><dt>Giá trị đóng góp</dt><dd>100.000 VNĐ</dd></div>
+                            <div><dt>Thời gian ghi nhận</dt><dd>Season 1</dd></div>
+                            <div><dt>Danh hiệu</dt><dd>Người đồng hành cá nhân</dd></div>
+                        </dl>
+                    </aside>
+                </article>
+                <p class="honor-roll__quote">“Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức.”</p>
+            </section>
 
             
             <!-- EVENTS ONGOING/UPCOMING -->
@@ -9424,7 +9477,9 @@
                 t.qrCode
             );
             
-            if (existingTx) {
+            // Backend kiểm tra trạng thái PayOS thực tế (kể cả link vừa hủy); không dùng
+            // cache pending trên trình duyệt vì cache có thể đã cũ.
+            if (!useFirebase && existingTx) {
                 // Tái sử dụng QR và link thanh toán cũ
                 modal.innerHTML = `
                     <h3 style="margin-bottom:16px">💳 Thanh toán khoản góp quỹ tham gia: ${esc(extra?.eventTitle || 'Dự án')}</h3>
@@ -9551,10 +9606,18 @@
                 return t.userId === session.id && t.type === type && t.status === 'pending' &&
                     t.eventId === (extra?.eventId || '') && t.createdAt > fiveMinAgo;
             });
-            if (recentTx) {
-                showToast('Bạn đã có giao dịch đang chờ xử lý! Vui lòng đợi hoặc kiểm tra lại.', 'info');
+            if (recentTx && String(recentTx.orderCode || '') === String(orderCode || '')) {
+                recentTx.checkoutUrl = checkoutUrl || recentTx.checkoutUrl;
+                recentTx.qrCode = qrCode || recentTx.qrCode;
                 showPaymentReceipt(recentTx);
                 return;
+            }
+            if (recentTx) {
+                // Link mới từ server thay thế link local đã hủy/hết hạn.
+                recentTx.status = 'cancelled';
+                recentTx.cancelledAt = new Date().toISOString();
+                recentTx.cancelReason = 'replaced_by_new_payos_link';
+                await saveItem('transactions', recentTx);
             }
             const nextId = await getNextId();
             const timeStr = new Date().toISOString();

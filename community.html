@@ -9368,6 +9368,9 @@
                 // Tái sử dụng QR và link thanh toán cũ
                 modal.innerHTML = `
                     <h3 style="margin-bottom:16px">💳 Thanh toán khoản góp quỹ tham gia: ${esc(extra?.eventTitle || 'Dự án')}</h3>
+                    <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:14px;line-height:1.4">
+                        Phí tham gia được tái đầu tư vào hoạt động của sự kiện, bao gồm giải thưởng, chứng nhận và chi phí vận hành theo kế hoạch công khai.
+                    </p>
                     <div class="qr-box">
                         <div class="qr-amount">${existingTx.amount.toLocaleString('vi-VN')}đ</div>
                         <div class="qr-info" id="payosStatus">✅ Chọn phương thức thanh toán:</div>

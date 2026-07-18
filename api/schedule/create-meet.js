@@ -34,12 +34,10 @@ module.exports = async function createScheduleMeet(req, res) {
         const event = { id:eventDoc.id, ...eventDoc.data() };
         const candidateEmail = String(body.candidateEmail || '').trim().toLowerCase();
         const hrEmail = String(event.assignedHrEmail || '').trim().toLowerCase();
-        // Mọi tài khoản mang role admin đều nhận lời mời Calendar, để có thể vào Meet
-        // ngay cả khi không phải HR được phân công trực tiếp.
+        // Admin được thêm vào danh sách Google Calendar để vào Meet khi cần;
+        // lib/interviewFinalizer dùng sendUpdates=none nên họ không nhận thư mời.
         const adminsSnap = await db.collection('users').where('role', '==', 'admin').get();
-        const adminEmails = adminsSnap.docs
-            .map(doc => String((doc.data() || {}).email || '').trim().toLowerCase())
-            .filter(Boolean);
+        const adminEmails = adminsSnap.docs.map(doc => String((doc.data() || {}).email || '').trim().toLowerCase()).filter(Boolean);
         const calendar = event.googleCalendarEventId
             ? await addGoogleCalendarAttendees(event, candidateEmail, hrEmail, adminEmails)
             : await createGoogleMeet(event.id, event, candidateEmail, hrEmail, adminEmails);

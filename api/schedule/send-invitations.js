@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const { generateGeminiJson, getGeminiConfig } = require('../../lib/gemini');
 const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('../../lib/projectIdentity');
 const { preferredSender, sendMailWithFallback } = require('../../lib/mailer');
-const { isScheduleManager, isInterviewStaff: isInterviewStaffProfile } = require('../../lib/schedulePermissions');
+const { isScheduleManager } = require('../../lib/schedulePermissions');
 
 function escapeHtml(value) {
     return String(value || '').replace(/[&<>"']/g, function(char) {
@@ -23,14 +23,11 @@ function getDb() {
 }
 
 function isEligibleInterviewer(profile) {
-    if (isInterviewStaffProfile(null, profile)) return true;
     var role = String(profile && profile.role || '').trim().toLowerCase();
-    var dept = String(profile && profile.dept || '').trim().toLowerCase();
     var position = String(profile && (profile.position || profile.title) || '').trim().toLowerCase();
     var email = String(profile && profile.email || '').trim().toLowerCase();
-    var leadership = dept + ' ' + position;
+    var leadership = position;
     return email === 'yniemdienanh@gmail.com' || ['admin', 'organizer', 'president', 'core'].indexOf(role) !== -1 ||
-        leadership.indexOf('nhân sự') !== -1 || leadership.indexOf('nhan su') !== -1 || leadership.indexOf('hr') !== -1 ||
         leadership.indexOf('core') !== -1 || leadership.indexOf('president') !== -1 ||
         leadership.indexOf('chủ tịch') !== -1 || leadership.indexOf('chu tich') !== -1 ||
         leadership.indexOf('ban điều hành') !== -1 || leadership.indexOf('ban dieu hanh') !== -1;
@@ -160,14 +157,10 @@ module.exports = async function sendInterviewInvitations(req, res) {
         if (event.type === 'interview' && (!assignedHr || !assignedHr.email || !isEligibleInterviewer(assignedHr))) {
             return res.status(400).json({ error: 'Người phỏng vấn được phân công không hợp lệ hoặc chưa có email.' });
         }
-        var adminEmails = usersSnap.docs.map(function(doc) {
-            var profile = doc.data() || {};
-            return String(profile.role || '').trim().toLowerCase() === 'admin'
-                ? String(profile.email || '').trim().toLowerCase()
-                : '';
-        }).filter(Boolean);
+        // Chỉ ứng viên và người được phân công phỏng vấn nhận email.
+        // Admin xem link Meet trong lịch quản trị, không nhận thư mời tự động.
         var staffEmails = event.type === 'interview'
-            ? [assignedHr.email.trim().toLowerCase()].concat(adminEmails)
+            ? [assignedHr.email.trim().toLowerCase()]
             : [String(decoded.email || '').trim().toLowerCase()].filter(Boolean);
         var candidateDoc = usersSnap.docs.find(function(doc) { return doc.id === booking.candidateId; });
         var candidateProfile = candidateDoc ? candidateDoc.data() : {};
@@ -198,7 +191,6 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var fromEmail = sender.email;
         var candidateHtml = '<p>Chào ' + candidateName + ',</p>' + candidatePersonalization + '<p>Trân trọng mời bạn tham gia buổi phỏng vấn <strong>' + title + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes + '<p>Vui lòng vào phòng trước 5–10 phút. Nếu cần hỗ trợ, hãy phản hồi email này.</p>';
         var staffHtml = '<p>Chào ' + escapeHtml((assignedHr && assignedHr.name) || 'người phụ trách') + ',</p><p>Bạn được phân công phỏng vấn ứng viên <strong>' + candidateName + '</strong> trong lịch <strong>' + title + '</strong>.</p>' + interviewerPersonalization + '<p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes;
-        var adminHtml = '<p>Chào Admin,</p><p>Bạn được thêm vào lời mời để có thể tham dự hoặc hỗ trợ buổi phỏng vấn <strong>' + title + '</strong> của ứng viên <strong>' + candidateName + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes;
         var wrap = function(html) {
             return '<div style="max-width:600px;margin:auto;padding:28px;font-family:Arial,sans-serif;line-height:1.65;color:#1f2937">' + html + '<hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0"><small>Ý Niệm Điện Ảnh · Thư mời lịch làm việc</small></div>';
         };
@@ -245,8 +237,8 @@ module.exports = async function sendInterviewInvitations(req, res) {
         recipients.forEach(function(email) {
             messages.push(sendMailWithFallback({
                 to: email,
-                subject: (email === assignedHr.email.trim().toLowerCase() ? '[Người phỏng vấn] ' : '[Admin] ') + (event.type === 'interview' ? 'Lịch phỏng vấn' : 'Lịch họp') + ' đã xác nhận — ' + event.title,
-                html: wrap(email === assignedHr.email.trim().toLowerCase() ? staffHtml : adminHtml),
+                subject: '[Người phỏng vấn] ' + (event.type === 'interview' ? 'Lịch phỏng vấn' : 'Lịch họp') + ' đã xác nhận — ' + event.title,
+                html: wrap(staffHtml),
                 icalEvent: { method: 'request', content: createIcs(email) }
             }, { fromName:sender.name, preferredProvider:'brevo' }));
         });

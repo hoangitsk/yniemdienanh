@@ -51,6 +51,9 @@ module.exports = async function listScheduleEvents(req, res) {
         const ownBookingEventIds = new Set(bookings.filter(item => item.candidateId === decoded.uid).map(item => String(item.eventId)));
         const events = allEvents.filter(event =>
             ownBookingEventIds.has(String(event.id)) ||
+            // Người phỏng vấn chỉ thấy những ca được phân công cho chính mình,
+            // không cần (và không được) xem lịch của các hội đồng khác.
+            String(event.assignedHrId || '') === decoded.uid ||
             (event.isPublic === true && (!event.availabilityPollId || visiblePollIds.has(String(event.availabilityPollId)))) ||
             (event.availabilityPollId && visiblePollIds.has(String(event.availabilityPollId)) && !event.generatedFromAvailability)
         );

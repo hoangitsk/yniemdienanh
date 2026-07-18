@@ -490,6 +490,8 @@ const confirmScheduleInterview = require('./api/schedule/confirm-interview');
 app.post('/api/schedule/confirm-interview', confirmScheduleInterview);
 const requestScheduleReschedule = require('./api/schedule/request-reschedule');
 app.post('/api/schedule/request-reschedule', requestScheduleReschedule);
+const reassignScheduleInterviewer = require('./api/schedule/reassign-interviewer');
+app.post('/api/schedule/reassign-interviewer', reassignScheduleInterviewer);
 const upsertManagedUser = require('./api/admin/upsert-user');
 app.post('/api/admin/upsert-user', upsertManagedUser);
 const finalizeInterviewCron = require('./api/cron/finalize-interviews');

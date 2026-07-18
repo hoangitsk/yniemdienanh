@@ -842,7 +842,7 @@
                 </div>
 
                 <div class="panel" id="officialSchedulePanel">
-                    <h3>📌 Lịch đã mở</h3>
+                    <h3 id="officialScheduleTitle">📌 Lịch đã mở</h3>
                     <p id="bookingNotice" style="font-size:.82rem;color:var(--text-muted);margin:-6px 0 14px">Đăng nhập để đặt lịch và theo dõi trạng thái.</p>
                     <div id="officialEvents"><p style="color:var(--text-muted);font-size:.82rem">Đang tải lịch...</p></div>
                 </div>
@@ -995,7 +995,7 @@
                 </div>
 
                 <!-- Recommendation & Summary Panel -->
-                <div class="panel">
+                <div class="panel" id="scheduleRecommendationsPanel">
                     <h3>💡 Gợi ý lịch tối ưu</h3>
                     <div id="recsContainer" style="display:flex; flex-direction:column; gap:8px;">
                         <!-- Recommendations populated dynamically -->
@@ -1007,7 +1007,7 @@
             </div>
 
             <!-- Timetable Grid -->
-            <div class="panel board-container" style="flex:1; width: 100%;">
+            <div class="panel board-container" id="availabilityBoardPanel" style="flex:1; width: 100%;">
                 <h3 id="boardTitle">📅 Bảng Lưới Thời Gian Rảnh (Chế độ: Lịch Họp)</h3>
                 <p id="boardSaveStatus" aria-live="polite" style="font-size:.8rem;color:var(--text-muted);margin:-8px 0 12px">Chạm vào một khung giờ để chọn; hệ thống sẽ tự động lưu.</p>
                 
@@ -1681,13 +1681,11 @@
         }
 
         function isEligibleInterviewer(user) {
-            if (isHrOrPrProfile(user)) return true;
             const role = String(user && user.role || '').trim().toLowerCase();
             const dept = String(user && user.dept || '').trim().toLowerCase();
             const position = String(user && (user.position || user.title) || '').trim().toLowerCase();
             const leadership = [dept, position].join(' ');
             return ['admin', 'organizer', 'president', 'core'].includes(role) ||
-                leadership.includes('nhân sự') || leadership.includes('nhan su') || leadership.includes('hr') ||
                 leadership.includes('core') || leadership.includes('president') ||
                 leadership.includes('chủ tịch') || leadership.includes('chu tich') ||
                 leadership.includes('ban điều hành') || leadership.includes('ban dieu hanh');
@@ -1738,7 +1736,7 @@
             const isHrMember = currentDept === 'hr' || currentDept.includes('nhân sự') || currentDept.includes('nhan su');
             canManageSchedules = canManageSchedules || isScheduleManagerProfile({ ...currentProfile, email: currentUser && currentUser.email });
             canViewAllSchedules = canManageSchedules;
-            currentUserIsInterviewer = !!(currentUser && (canManageSchedules || isEligibleInterviewer({ ...currentProfile, email:currentUser.email })));
+            currentUserIsInterviewer = !!(currentUser && isEligibleInterviewer({ ...currentProfile, email:currentUser.email }));
             document.getElementById('adminSchedulePanel').classList.toggle('hidden', !canManageSchedules || !!SHARED_POLL_CODE);
             document.getElementById('adminPollPanel').classList.toggle('hidden', !canManageSchedules || !!SHARED_POLL_CODE);
             arrangeAdminToolsColumn();
@@ -1771,8 +1769,14 @@
             renderHrOptions();
             renderPollParticipantOptions();
             document.getElementById('bookingNotice').textContent = currentUser
-                ? (canManageSchedules ? 'Bạn có quyền quản lý và xem toàn bộ lịch.' : canViewAllSchedules ? 'Ban Nhân sự: bạn được xem toàn bộ đợt vote và phiếu lịch.' : 'Chọn lịch phù hợp để đặt chỗ. Bạn chỉ có thể quản lý lượt đặt của mình.')
+                ? (canManageSchedules ? 'Bạn có quyền quản lý và xem toàn bộ lịch.' : currentUserIsInterviewer ? 'Lịch phân công phỏng vấn của bạn. Mỗi ca hiển thị ứng viên và vị trí ứng tuyển.' : canViewAllSchedules ? 'Ban Nhân sự: bạn được xem toàn bộ đợt vote và phiếu lịch.' : 'Chọn lịch phù hợp để đặt chỗ. Bạn chỉ có thể quản lý lượt đặt của mình.')
                 : 'Vui lòng đăng nhập trước khi đặt lịch.';
+            const officialTitle = document.getElementById('officialScheduleTitle');
+            if (officialTitle) officialTitle.textContent = currentUserIsInterviewer && !canManageSchedules
+                ? '📌 Lịch phỏng vấn được phân công'
+                : '📌 Lịch đã mở';
+            syncAvailabilityEditControls();
+            renderOfficialEvents();
         }
 
         function renderHrOptions() {
@@ -1876,7 +1880,15 @@
             const panel = document.getElementById('availabilitySetupPanel');
             const notice = document.getElementById('availabilityReadOnlyNotice');
             const instructions = document.getElementById('availabilityInstructions');
-            if (panel) panel.classList.toggle('availability-locked', !editable);
+            const interviewerView = currentUserIsInterviewer && activePoll && activePoll.type === 'interview';
+            if (panel) {
+                panel.classList.toggle('availability-locked', !editable);
+                panel.classList.toggle('hidden', interviewerView);
+            }
+            const board = document.getElementById('availabilityBoardPanel');
+            const recommendations = document.getElementById('scheduleRecommendationsPanel');
+            if (board) board.classList.toggle('hidden', interviewerView);
+            if (recommendations) recommendations.classList.toggle('hidden', interviewerView);
             document.querySelectorAll('[data-availability-edit-control]').forEach(function(control) {
                 control.disabled = !editable;
                 control.setAttribute('aria-disabled', String(!editable));
@@ -2508,8 +2520,10 @@
                     if (!info) return null;
                     const vote = voteBySlot[slotId] || {};
                     const candidatePreferred = preferredSlots.has(slotId);
+                    // BTC không cần vote giờ rảnh. HR chọn người phỏng vấn khi chốt;
+                    // hệ thống chỉ loại người đã có lịch trùng.
                     const availableHrs = hrMembers.filter(function(hr) {
-                        return hrCanAttendSlot(hr, slotId) && !interviewSlotBusy(info, hr.id, candidateAccount.id);
+                        return !interviewSlotBusy(info, hr.id, candidateAccount.id);
                     });
                     if (!availableHrs.length) return null;
                     return { info:info, candidatePreferred:candidatePreferred, score:(candidatePreferred ? 100 : 0) + (vote.weight || 0) + availableHrs.length, btcVotes:vote.btc || 0, availableHrs:availableHrs };
@@ -2532,7 +2546,10 @@
                     const hrOptions = item.choice.availableHrs.map(function(hr) {
                         return '<option value="' + escapeHtml(hr.id) + '"' + (hr.id === item.defaultHrId ? ' selected' : '') + '>' + escapeHtml(scheduleUserLabel(hr)) + '</option>';
                     }).join('');
-                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta" style="margin-bottom:7px">Ưu tiên ứng viên trước; các giờ HR đã báo bận hoặc đã có lịch phỏng vấn được tự loại.</div><label style="font-size:.74rem">Khung giờ duyệt</label><select id="automaticSlot-' + index + '" onchange="updateAutomaticInterviewHrOptions(' + index + ')" style="margin:3px 0 7px">' + slotOptions + '</select><label style="font-size:.74rem">Người phỏng vấn rảnh</label><select id="automaticHr-' + index + '" style="margin:3px 0 0">' + hrOptions + '</select><div class="approval-actions"><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ', this)">✉️ Duyệt lịch & gửi mail</button><label class="ai-personalize-toggle" title="Dùng AI để tối ưu và cá nhân hoá nội dung email"><input id="automaticAi-' + index + '" type="checkbox" checked><span class="ai-toggle-track" aria-hidden="true"></span><span>AI cá nhân hoá</span></label></div></div>';
+                    const account = item.candidateAccount || {};
+                    const position = account.position || account.title || '';
+                    const department = account.dept || account.department || '';
+                    return '<div class="event-card" style="padding:8px;margin-bottom:6px"><strong>' + escapeHtml(item.candidate.name) + '</strong><div class="event-meta" style="margin-bottom:7px">Điền hoặc chỉnh sửa Ban và chức danh ứng tuyển trước khi duyệt lịch.</div><label style="font-size:.74rem">Ban ứng tuyển</label><input id="automaticCandidateDept-' + index + '" value="' + escapeHtml(department) + '" placeholder="VD: Truyền thông" style="margin:3px 0 7px"><label style="font-size:.74rem">Chức danh ứng tuyển</label><input id="automaticCandidatePosition-' + index + '" value="' + escapeHtml(position) + '" placeholder="VD: Thành viên / Core" style="margin:3px 0 7px"><label style="font-size:.74rem">Khung giờ duyệt</label><select id="automaticSlot-' + index + '" onchange="updateAutomaticInterviewHrOptions(' + index + ')" style="margin:3px 0 7px">' + slotOptions + '</select><label style="font-size:.74rem">Người phỏng vấn</label><select id="automaticHr-' + index + '" style="margin:3px 0 0">' + hrOptions + '</select><div class="approval-actions"><button type="button" class="btn small" onclick="confirmAndCreateAutomaticInterview(' + index + ', this)">✉️ Duyệt lịch & gửi mail</button><label class="ai-personalize-toggle" title="Dùng AI để tối ưu và cá nhân hoá nội dung email"><input id="automaticAi-' + index + '" type="checkbox" checked><span class="ai-toggle-track" aria-hidden="true"></span><span>AI cá nhân hoá</span></label></div></div>';
                 }).join('') + '<p style="font-size:.76rem;color:var(--text-muted);margin-top:8px">Sau khi xác nhận, hệ thống sẽ tạo lịch Google Meet và gửi thư mời cho ứng viên cùng HR đã phân công.</p>';
         }
 
@@ -2590,6 +2607,8 @@
             const hrName = selectedHr.name || selectedHr.email;
             const slotLabel = selectedChoice.info.date.label + ' · ' + selectedChoice.info.shift.name + ' (' + selectedChoice.info.shift.time + ')';
             item.aiPersonalized = !!document.getElementById('automaticAi-' + index)?.checked;
+            item.candidateDepartment = document.getElementById('automaticCandidateDept-' + index)?.value.trim() || '';
+            item.candidatePosition = document.getElementById('automaticCandidatePosition-' + index)?.value.trim() || '';
             if (!confirm('Tạo lịch phỏng vấn cho ' + candidateName + ' vào ' + slotLabel + ' với ' + hrName + '?\n\nAI cá nhân hoá email: ' + (item.aiPersonalized ? 'Có' : 'Không') + '.\nHệ thống sẽ tạo Google Meet và gửi email mời ngay.')) return;
             if (button) { button.disabled = true; button.textContent = 'Đang duyệt...'; }
             try {
@@ -2694,6 +2713,8 @@
                     candidateId: candidateUser.id,
                     candidateName: candidateUser.name || candidateUser.email,
                     candidateEmail: candidateUser.email,
+                    candidateDepartment: item.candidateDepartment || candidateUser.dept || '',
+                    candidatePosition: item.candidatePosition || candidateUser.position || candidateUser.title || '',
                     slotId: item.choice.info.id,
                     slotName: item.choice.info.shift.name,
                     slotTime: item.choice.info.shift.time,
@@ -3331,7 +3352,8 @@
             const canViewEvent = event => {
                 const inSharedPoll = !SHARED_POLL_CODE || (activePoll && event.availabilityPollId === activePoll.id);
                 const ownBooking = currentUser && myBookings.some(booking => booking.eventId === event.id && booking.candidateId === currentUser.uid);
-                const visibleToAccount = canManageSchedules || (!event.generatedFromAvailability || ownBooking);
+                const assignedInterviewer = currentUser && String(event.assignedHrId || '') === String(currentUser.uid);
+                const visibleToAccount = canManageSchedules || assignedInterviewer || (!event.generatedFromAvailability || ownBooking);
                 return inSharedPoll && visibleToAccount;
             };
             const futureEvents = officialEvents.filter(event => {
@@ -3358,12 +3380,15 @@
                 meta.className = 'event-meta';
                 const allEventBookings = myBookings.filter(booking => booking.eventId === event.id);
                 const ownBooking = currentUser && myBookings.find(booking => booking.eventId === event.id && booking.candidateId === currentUser.uid);
-                const privateEventDetails = canManageSchedules || (ownBooking && ownBooking.status === 'confirmed');
+                const assignedInterviewer = currentUser && String(event.assignedHrId || '') === String(currentUser.uid);
+                const privateEventDetails = canManageSchedules || assignedInterviewer || (ownBooking && ownBooking.status === 'confirmed');
                 const confirmed = allEventBookings.filter(booking => booking.status === 'confirmed').length;
                 const emailProviders = Array.from(new Set(allEventBookings.flatMap(booking => Array.isArray(booking.invitationProviders) ? booking.invitationProviders : [])));
                 meta.innerHTML = '📅 ' + eventStartLabel(event.startAt) + ' · ' + Number(event.duration || 0) + ' phút<br>' +
                     (event.location && (canManageSchedules || (ownBooking && ownBooking.status === 'confirmed')) ? '📍 ' + escapeHtml(event.location) + '<br>' : '') +
                     (event.assignedHrName && privateEventDetails ? '🧑‍💼 Người phỏng vấn: ' + escapeHtml(event.assignedHrName) + '<br>' : '') +
+                    (event.candidateName && privateEventDetails ? '👤 Ứng viên: ' + escapeHtml(event.candidateName) + '<br>' : '') +
+                    (event.candidatePosition && privateEventDetails ? '🎯 Vị trí ứng tuyển: ' + escapeHtml(event.candidatePosition) + (event.candidateDepartment ? ' · Ban ' + escapeHtml(event.candidateDepartment) : '') + '<br>' : '') +
                     '👤 Số chỗ: ' + (event.capacity || 1) + (canManageSchedules ? ' · Đã xác nhận: ' + confirmed : '') +
                     (canManageSchedules && confirmed ? '<br>✉️ Email: ' + (emailProviders.length ? escapeHtml(emailProviders.map(provider => provider === 'brevo' ? 'Brevo' : 'Gmail dự phòng').join(' + ')) : 'Chưa gửi') : '');
                 card.append(heading, meta);
@@ -3395,7 +3420,7 @@
                         }
                     }
                     const manage = document.createElement('button'); manage.className = 'btn small'; manage.textContent = 'Quản lý (' + allEventBookings.length + ')'; manage.onclick = () => manageEventBookings(event.id); actions.appendChild(manage);
-                    if (event.type === 'interview') { const assign = document.createElement('button'); assign.className = 'btn small'; assign.textContent = event.assignedHrId ? 'Đổi HR' : 'Phân công HR'; assign.onclick = () => assignEventHr(event.id); actions.appendChild(assign); }
+                    if (event.type === 'interview') { const assign = document.createElement('button'); assign.className = 'btn small'; assign.textContent = event.assignedHrId ? 'Đổi người phỏng vấn' : 'Phân công người phỏng vấn'; assign.onclick = () => assignEventHr(event.id); actions.appendChild(assign); }
                     const meet = document.createElement('button'); meet.className = 'btn small'; meet.textContent = isGoogleMeetRoom(event.location) ? 'Sửa link Meet' : '+ Thêm link Meet'; meet.onclick = () => updateEventMeetLink(event.id); actions.appendChild(meet);
                     if (event.type === 'interview' && !event.completedAt && allEventBookings.some(item => item.status === 'confirmed')) {
                         const complete = document.createElement('button'); complete.className = 'btn small'; complete.textContent = '✓ Hoàn tất PV +10 điểm HR'; complete.onclick = () => completeInterview(event.id); actions.appendChild(complete);
@@ -3584,14 +3609,29 @@
         }
         async function assignEventHr(id) {
             const event = officialEvents.find(item => item.id === id);
-            if (!event || !hrMembers.length) return alert('Chưa có tài khoản thuộc nhóm phỏng vấn. Hãy phân quyền Admin/BTC hoặc đặt ban Core/HR/President trong Quản lý tài khoản.');
-            const list = hrMembers.map((user, index) => (index + 1) + '. ' + (user.name || user.email)).join('\n');
+            if (!event || !hrMembers.length) return alert('Chưa có tài khoản Admin/Core/President hợp lệ để phỏng vấn.');
+            const list = hrMembers.map((user, index) => (index + 1) + '. ' + scheduleUserLabel(user)).join('\n');
             const choice = Number(prompt('Chọn người phỏng vấn:\n\n' + list)) - 1;
             if (!Number.isInteger(choice) || !hrMembers[choice]) return;
             const hr = hrMembers[choice];
-            await dbInstance.collection('scheduledEvents').doc(id).update({ assignedHrId: hr.id, assignedHrName: hr.name || hr.email, assignedHrEmail: hr.email || '', updatedAt: new Date().toISOString(), updatedBy: currentUser.uid });
-            showAdminStatus('✓ Đã phân công ' + (hr.name || hr.email) + ' phụ trách phỏng vấn.', 'var(--ok)');
-            await fetchOfficialSchedule();
+            if (String(event.assignedHrId || '') === String(hr.id)) return showAdminStatus('Người này đã được phân công cho lịch phỏng vấn.', 'var(--gold)');
+            if (!confirm('Đổi người phỏng vấn sang ' + (hr.name || hr.email) + '?\n\nHệ thống sẽ cập nhật lịch và gửi email phân công cho người này.')) return;
+            try {
+                showAdminStatus('Đang đổi người phỏng vấn và gửi email...', 'var(--gold)');
+                const idToken = await scheduleTimeout(currentUser.getIdToken(), 5000, 'Không lấy được phiên đăng nhập.');
+                const response = await scheduleFetch('/api/schedule/reassign-interviewer', {
+                    method:'POST', headers:{ 'Content-Type':'application/json' },
+                    body:JSON.stringify({ idToken, eventId:id, interviewerId:hr.id })
+                }, 30000, 'Đổi người phỏng vấn quá thời gian.');
+                const result = await response.json().catch(function() { return {}; });
+                if (!response.ok || !result.success) throw new Error(result.error || 'Không thể đổi người phỏng vấn.');
+                showAdminStatus(result.emailSent
+                    ? '✓ Đã phân công ' + (hr.name || hr.email) + ' và gửi email thông báo.'
+                    : '⚠ Đã đổi người phỏng vấn nhưng email chưa gửi được: ' + (result.warning || 'Hãy thử gửi lại.'), result.emailSent ? 'var(--ok)' : 'var(--gold)');
+                await fetchOfficialSchedule();
+            } catch (error) {
+                showAdminStatus('Không thể đổi người phỏng vấn: ' + (error.message || 'Lỗi không xác định'), 'var(--danger)');
+            }
         }
         async function completeInterview(id) {
             const event = officialEvents.find(item => item.id === id);
@@ -3599,7 +3639,7 @@
             if (new Date(event.startAt).getTime() > Date.now()) return alert('Chỉ cộng điểm sau khi buổi phỏng vấn đã bắt đầu.');
             const hr = hrMembers.find(user => user.id === event.assignedHrId);
             if (!hr) return alert('Lịch chưa có người phỏng vấn hợp lệ.');
-            if (!confirm('Xác nhận HR ' + (hr.name || hr.email) + ' đã hoàn thành buổi phỏng vấn và cộng 10 điểm?')) return;
+            if (!confirm('Xác nhận ' + (hr.name || hr.email) + ' đã hoàn thành buổi phỏng vấn và cộng 10 điểm?')) return;
             const candidate = directoryUsers.find(user => user.id === event.candidateId) || {};
             const assignment = await chooseInterviewAssignment(event, candidate);
             if (!assignment) return;

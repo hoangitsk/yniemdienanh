@@ -56,23 +56,17 @@ module.exports = async function confirmInterview(req, res) {
 
         await db.runTransaction(async tx => {
             const candidateScheduleRef = db.collection('meetingSchedules').doc(pollId + '_' + candidateId);
-            const hrScheduleRef = db.collection('meetingSchedules').doc(pollId + '_' + hrId);
-            const [candidateDoc, hrDoc, candidateScheduleDoc, hrScheduleDoc, eventsSnap, bookingsSnap] = await Promise.all([
+            const [candidateDoc, hrDoc, candidateScheduleDoc, eventsSnap, bookingsSnap] = await Promise.all([
                 tx.get(db.collection('users').doc(candidateId)),
                 tx.get(db.collection('users').doc(hrId)),
                 tx.get(candidateScheduleRef),
-                tx.get(hrScheduleRef),
                 tx.get(db.collection('scheduledEvents')),
                 tx.get(db.collection('scheduledBookings'))
             ]);
             if (!candidateDoc.exists || !hrDoc.exists) throw new Error('Không tìm thấy ứng viên hoặc người phỏng vấn.');
             const candidateSchedule = candidateScheduleDoc.exists ? candidateScheduleDoc.data() : {};
-            const hrSchedule = hrScheduleDoc.exists ? hrScheduleDoc.data() : {};
             if (candidateSchedule.role !== 'candidate' || !(candidateSchedule.slots || []).includes(slotId)) {
                 throw new Error('Khung giờ này không nằm trong phiếu vote hợp lệ của ứng viên.');
-            }
-            if (hrSchedule.role !== 'btc' || !(hrSchedule.slots || []).includes(slotId)) {
-                throw new Error('Người phỏng vấn không đăng ký rảnh ở khung giờ này.');
             }
 
             const activeEvents = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -105,6 +99,8 @@ module.exports = async function confirmInterview(req, res) {
                 id: eventRef.id,
                 type: 'interview', startAt, duration, capacity: 1, status: 'confirmed',
                 candidateId, candidateName: candidate.name || body.event.candidateName || '', candidateEmail: candidate.email || body.event.candidateEmail || '',
+                candidatePosition: body.event.candidatePosition || candidate.position || candidate.title || '',
+                candidateDepartment: body.event.candidateDepartment || candidate.dept || candidate.department || '',
                 assignedHrId: hrId, assignedHrName: hr.name || body.event.assignedHrName || '', assignedHrEmail: hr.email || body.event.assignedHrEmail || '',
                 slotId, availabilityPollId: pollId, confirmedAt: now, confirmedBy: decoded.uid, createdAt: now, createdBy: decoded.uid, updatedAt: now, updatedBy: decoded.uid
             };

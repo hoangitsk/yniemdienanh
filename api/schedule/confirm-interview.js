@@ -24,6 +24,19 @@ function eventInterval(event) {
     return { start, end: start + minutes * 60000 };
 }
 
+function candidateVotedSlot(schedule, requestedSlotId) {
+    const slots = Array.isArray(schedule && schedule.slots) ? schedule.slots.map(String) : [];
+    if (schedule && schedule.slotSchema === '30m-v1') return slots.includes(requestedSlotId);
+    const parts = String(requestedSlotId).split('_');
+    const index = Number(parts[1]);
+    if (!parts[0] || !Number.isInteger(index) || index < 0) return false;
+    return slots.some(slot => {
+        const oldParts = String(slot).split('_');
+        const oldIndex = Number(oldParts[1]);
+        return oldParts[0] === parts[0] && Number.isInteger(oldIndex) && oldIndex >= 0 && oldIndex < 6 && index >= oldIndex * 3 && index < oldIndex * 3 + 3;
+    });
+}
+
 module.exports = async function confirmInterview(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     try {
@@ -65,7 +78,7 @@ module.exports = async function confirmInterview(req, res) {
             ]);
             if (!candidateDoc.exists || !hrDoc.exists) throw new Error('Không tìm thấy ứng viên hoặc người phỏng vấn.');
             const candidateSchedule = candidateScheduleDoc.exists ? candidateScheduleDoc.data() : {};
-            if (candidateSchedule.role !== 'candidate' || !(candidateSchedule.slots || []).includes(slotId)) {
+            if (candidateSchedule.role !== 'candidate' || !candidateVotedSlot(candidateSchedule, slotId)) {
                 throw new Error('Khung giờ này không nằm trong phiếu vote hợp lệ của ứng viên.');
             }
 

@@ -1061,6 +1061,7 @@
             { name: "Ca 17", time: "21:30 - 22:00" },
             { name: "Ca 18", time: "22:00 - 22:30" }
         ];
+        const CURRENT_SLOT_SCHEMA = '30m-v1';
 
         let dbInstance = null;
         let useFirebase = false;
@@ -1644,8 +1645,10 @@
                 ? (currentUserIsInterviewer ? 'btc' : 'candidate')
                 : (schedule.role || 'member');
             updateScheduleRoleField();
-            selectedSlots = new Set((schedule.slots || []).filter(slotId => validSlots.has(slotId)));
-            preferredSlots = new Set((schedule.preferredSlots || []).filter(slotId => selectedSlots.has(slotId)));
+            const restoredSlots = schedule.slotSchema === CURRENT_SLOT_SCHEMA ? (schedule.slots || []) : expandLegacySlots(schedule.slots);
+            const restoredPreferred = schedule.slotSchema === CURRENT_SLOT_SCHEMA ? (schedule.preferredSlots || []) : expandLegacySlots(schedule.preferredSlots);
+            selectedSlots = new Set(restoredSlots.filter(slotId => validSlots.has(slotId)));
+            preferredSlots = new Set(restoredPreferred.filter(slotId => selectedSlots.has(slotId)));
             renderTimetable();
         }
 
@@ -1836,8 +1839,8 @@
                 : (localDB.meetingSchedules || []).filter(function(s) { return s.pollId === activePoll.id; });
             return raw.map(function(s) {
                 return Object.assign({}, s, {
-                    slots: expandLegacySlots(s.slots),
-                    preferredSlots: expandLegacySlots(s.preferredSlots)
+                    slots: s.slotSchema === CURRENT_SLOT_SCHEMA ? (s.slots || []) : expandLegacySlots(s.slots),
+                    preferredSlots: s.slotSchema === CURRENT_SLOT_SCHEMA ? (s.preferredSlots || []) : expandLegacySlots(s.preferredSlots)
                 });
             });
         }
@@ -2980,6 +2983,7 @@
                 role: existing && existing.role || defaultRole,
                 slots: Array.from(slots),
                 preferredSlots: (existing && existing.preferredSlots || []).filter(function(id) { return slots.has(id); }),
+                slotSchema: CURRENT_SLOT_SCHEMA,
                 rangeStart: activePoll.startDate || null,
                 dayCount: Math.max(1, Math.min(14, Number(activePoll.dayCount || 7))),
                 submittedAt: existing && existing.submittedAt || now,
@@ -3210,6 +3214,7 @@
                 role: role,
                 slots: Array.from(selectedSlots),
                 preferredSlots: Array.from(preferredSlots).filter(slotId => selectedSlots.has(slotId)),
+                slotSchema: CURRENT_SLOT_SCHEMA,
                 rangeStart: dynamicDates[0] ? dynamicDates[0].id : null,
                 dayCount: dynamicDates.length,
                 submittedAt: new Date().toISOString()

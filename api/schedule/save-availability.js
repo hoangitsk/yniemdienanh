@@ -123,6 +123,7 @@ module.exports = async function saveAvailability(req, res) {
         const slotSet = new Set(slots);
         const preferredSlots = Array.from(new Set(Array.isArray(body.preferredSlots) ? body.preferredSlots.map(String) : []))
             .filter((slotId) => slotSet.has(slotId));
+        const slotSchema = body.slotSchema === '30m-v1' ? '30m-v1' : (existingSchedule && existingSchedule.slotSchema) || 'legacy-90m';
         const allowedRoles = new Set(['member', 'btc', 'candidate', 'mentor']);
         const requestedRole = allowedRoles.has(body.role) ? body.role : 'member';
         // Người tham gia không phải hiểu vai trò nội bộ: đợt phỏng vấn tự phân biệt
@@ -140,6 +141,7 @@ module.exports = async function saveAvailability(req, res) {
             role,
             slots,
             preferredSlots,
+            slotSchema,
             rangeStart: poll.startDate || null,
             dayCount: Math.max(1, Math.min(14, Number(poll.dayCount || 7))),
             submittedAt: new Date().toISOString()

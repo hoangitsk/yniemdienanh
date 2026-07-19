@@ -1948,6 +1948,10 @@
         }
 
         function departmentGroupLabel(user) {
+            // Admin và Chủ tịch là quyền/vai trò cấp dự án, không phải một ban.
+            // Giữ chúng tách khỏi các nhóm ban để không hiển thị sai như
+            // "Admin · Ban Media" trong lịch và bộ lọc phân công.
+            if (scheduleAuthorityLabel(user)) return 'Quản trị hệ thống';
             const raw = String(user && (user.dept || user.department) || '').trim();
             const normalized = normalizeScheduleText(raw + ' ' + String(user && (user.position || user.title) || ''));
             if (normalized.includes('nhan su') || /(^|\s)hr($|\s)/.test(normalized)) return 'Ban Nhân Sự';
@@ -1956,6 +1960,19 @@
             if (normalized.includes('media') || normalized.includes('thiet ke') || normalized.includes('edit')) return 'Ban Media (Thiết kế&Edit)';
             if (normalized.includes('duyet bai')) return 'Ban duyệt bài';
             return raw || 'Chưa phân ban';
+        }
+
+        function scheduleAuthorityLabel(user) {
+            const email = normalizeScheduleText(user && user.email);
+            const role = normalizeScheduleText(user && user.role);
+            const leadership = normalizeScheduleText([
+                user && user.position,
+                user && user.title,
+                user && user.leadershipTitle
+            ].filter(Boolean).join(' '));
+            if (email === PROJECT_ADMIN_EMAIL || role === 'admin') return 'Admin hệ thống';
+            if (role === 'president' || leadership.includes('chu tich') || leadership.includes('president')) return 'Chủ tịch dự án';
+            return '';
         }
 
         function schedulePositionLabel(value) {
@@ -1970,6 +1987,8 @@
 
         function scheduleUserLabel(user) {
             const name = user && (user.name || user.email || user.id) || 'Thành viên';
+            const authority = scheduleAuthorityLabel(user);
+            if (authority) return name + ' · ' + authority + (user && user.email ? ' · ' + user.email : '');
             const dept = departmentGroupLabel(user);
             const position = schedulePositionLabel(user && (user.position || user.title));
             return name + ' · Ban: ' + dept + (position ? ' · Vị trí: ' + position : '') + (user && user.email ? ' · ' + user.email : '');
@@ -3104,8 +3123,10 @@
                             tag.className = "person-tag tag-" + (p.role || 'member');
                             const isPreferred = (p.preferredSlots || []).includes(slotId);
                             const userProfile = directoryUsers.find(u => u.id === p.ownerId);
+                            const authority = scheduleAuthorityLabel(userProfile);
                             const userDept = userProfile ? (userProfile.dept || userProfile.department || '') : '';
-                            const deptSuffix = userDept ? ' (' + userDept + ')' : '';
+                            const contextLabel = authority || userDept;
+                            const deptSuffix = contextLabel ? ' (' + contextLabel + ')' : '';
                             tag.textContent = (isPreferred ? '★ ' : '') + p.name + deptSuffix;
                             tag.title = p.name + deptSuffix + " (" + (p.role === 'btc' ? 'BTC' : p.role === 'candidate' ? 'Ứng viên' : p.role === 'mentor' ? 'Mentor' : 'Thành viên') + ")" + (isPreferred ? ' · Giờ ưu tiên' : ' · Có thể tham gia');
                             peopleContainer.appendChild(tag);

@@ -26,7 +26,12 @@ function eventInterval(event) {
 
 function candidateVotedSlot(schedule, requestedSlotId) {
     const slots = Array.isArray(schedule && schedule.slots) ? schedule.slots.map(String) : [];
-    if (schedule && schedule.slotSchema === '30m-v1') return slots.includes(requestedSlotId);
+    // Luôn ưu tiên mã ca trùng khớp tuyệt đối. Một số phiếu đã tạo trong giai
+    // đoạn chuyển đổi có slot 30 phút nhưng chưa lưu slotSchema; trước đây chúng
+    // bị hiểu nhầm là dữ liệu ca cũ và server từ chối một khung giờ đang hiện
+    // đúng trên giao diện.
+    if (slots.includes(requestedSlotId)) return true;
+    if (schedule && schedule.slotSchema === '30m-v1') return false;
     const parts = String(requestedSlotId).split('_');
     const index = Number(parts[1]);
     if (!parts[0] || !Number.isInteger(index) || index < 0) return false;

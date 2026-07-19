@@ -9,7 +9,7 @@
 | JavaScript toàn repo | `node --check` đệ quy | Đạt: 46/46 file | `npm test` | Không có lint/type-check riêng trong project | P2 | Thêm CI ở batch sau, không mở rộng lượt này |
 | Inline scripts HTML | Parse bằng `vm.Script` | Đạt: 19 script/10 HTML | `npm test` | Chưa chạy browser console/DOM đầy đủ | P1 | Browser smoke sau khi production Ready |
 | Express/API local | Load app và gọi route | Đạt | health/config 200 JSON; unknown API 404 JSON; vote 401; certificate/create-payment/status/webhook fail closed; generate-certificate 410 | Không có Firebase/PayOS thật trong local smoke | P1 | Integration test với sandbox |
-| Vercel route/build | Pull project settings, production build | Build đạt; deploy chưa đạt | Vercel CLI 56.3.2; output route có register/dashboard/community/schedule/verify/payment pages; single Express function chứa API | Ba lần deploy (prebuilt/source/archive) báo `UNKNOWN`, chưa gắn alias chính; alias chính vẫn trỏ bản Ready 14 giờ trước và `/api/health` còn trả HTML | P0 operational | Không coi deploy thành công; điều tra Vercel trước khi chuyển traffic |
+| Vercel route/build | Pull project settings, production build và smoke alias | Bản P0 chính đạt; bản bổ sung chức danh chưa đạt | Alias chính trỏ `dpl_GCmkDWSEYDWZfWzYSPfLSBPe7U66` Ready; `/api/health` trả 200 JSON; local build đạt | Deployment bổ sung Core/Founder `dpl_EqEF3aoNsTiLixPJVcQPLDo76fyv` đang `UNKNOWN`, chưa gắn alias | P1 operational | Chỉ promote khi deployment mới Ready; không ép alias thủ công |
 | Vercel env | Kiểm tra tên biến, bổ sung Turnstile | Đạt về sự hiện diện | Firebase Admin, PayOS, mail/calendar có Production/Preview; Turnstile secret/site key đã thêm Production/Preview | Chưa xác minh rotation/giá trị bằng integration request | P1 | Smoke Turnstile và rotate theo lịch |
 | Firestore rules | Code review | Đã harden trong repo | Auth email claim, self allowlist, transaction/vote/cert server-only, deny fallback | Chưa compile/emulator/deploy; production drift trước audit vẫn chưa được đóng | P0 | Firebase login → deploy rules → deny/allow matrix |
 | Storage rules | Code review | Đã harden trong repo | Chỉ avatar owner, JPEG/PNG/WebP, <5 MB; wildcard deny | Chưa compile/deploy/test upload | P0 | Deploy và test owner/non-owner/type/size |
@@ -31,6 +31,7 @@
 - Client chỉ cache giao dịch để render; không tạo/xác nhận payment document.
 - Turnstile, sync secret, Firebase Admin và PayOS thiếu cấu hình đều fail closed.
 - Vercel có explicit deep-link rewrites và unknown API không rơi vào HTML 200.
+- Chức danh lãnh đạo hỗ trợ `Founder`, `Co-founder`, `President`, `Core`; Admin được gán/chỉnh chức danh, kể cả trên chính tài khoản của mình. Quyền hệ thống Admin vẫn chỉ do tài khoản quản trị dự án cấp.
 
 ## File thay đổi trong phạm vi P0/P1 hiện có
 
@@ -66,7 +67,7 @@
 
 ## Điều kiện bắt buộc trước khi coi production an toàn
 
-1. Vercel deployment báo Ready, alias `yniemdienanh.vercel.app` trỏ đúng bản và production smoke đạt. Các deployment `dpl_EfPxjfX1nCFFXTpng4rUkrUKiYfv`, `dpl_C4ncvnDtYifMaiGAvfXLT9BqB5ey`, `dpl_79WPr9RPk9s5GfxQRbWQE5Fk47Gy` hiện không được dùng làm bằng chứng thành công vì đều `UNKNOWN`.
+1. Giữ alias `yniemdienanh.vercel.app` ở deployment Ready. Bản bổ sung chức danh chỉ được chuyển traffic khi `dpl_EqEF3aoNsTiLixPJVcQPLDo76fyv` chuyển sang Ready và smoke đạt; không dùng các deployment `UNKNOWN` làm bằng chứng thành công.
 2. Firebase rules được compile/deploy và test allow/deny độc lập.
 3. PayOS sandbox vượt qua duplicate/replay/concurrency/amount mismatch/network interruption.
 4. Rotate/revoke credential cũ và lập inventory secret production.

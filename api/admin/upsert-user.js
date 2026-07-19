@@ -39,6 +39,7 @@ module.exports = async function upsertManagedUser(req, res) {
         const operatorRole = clean(operator.role, 40).toLowerCase();
         const isProjectAdmin = String(decoded.email || '').toLowerCase() === 'yniemdienanh@gmail.com';
         const canGrantOrganizer = isProjectAdmin || operatorRole === 'admin';
+        const canGrantLeadership = canGrantOrganizer;
         const role = requestedRole === 'admin'
             ? (isProjectAdmin ? 'admin' : 'member')
             : requestedRole === 'organizer' && canGrantOrganizer ? 'organizer' : 'member';
@@ -49,7 +50,7 @@ module.exports = async function upsertManagedUser(req, res) {
                 ? requestedProjectGroup
                 : (role === 'organizer' ? 'organizer' : 'community'));
         const requestedLeadershipTitle = clean(body.leadershipTitle, 40).toLowerCase();
-        const leadershipTitle = isProjectAdmin && ['founder', 'cofounder', 'president'].includes(requestedLeadershipTitle)
+        const leadershipTitle = canGrantLeadership && ['founder', 'cofounder', 'president', 'core'].includes(requestedLeadershipTitle)
             ? requestedLeadershipTitle
             : '';
         // Department/position feed authorization helpers, so only Admin can
@@ -70,8 +71,11 @@ module.exports = async function upsertManagedUser(req, res) {
             const existingRole = clean(existingProfile && existingProfile.role, 40).toLowerCase();
             const existingProjectGroup = clean(existingProfile && existingProfile.projectGroup, 40).toLowerCase();
             const existingLeadershipTitle = clean(existingProfile && existingProfile.leadershipTitle, 40).toLowerCase();
-            if (!isProjectAdmin && (existingRole === 'admin' || Boolean(existingLeadershipTitle))) {
-                return res.status(403).json({ error: 'Chỉ tài khoản quản trị dự án được thay đổi Admin hoặc chức danh lãnh đạo.' });
+            if (!isProjectAdmin && existingRole === 'admin') {
+                return res.status(403).json({ error: 'Chỉ tài khoản quản trị dự án được thay đổi tài khoản Admin.' });
+            }
+            if (!canGrantLeadership && Boolean(existingLeadershipTitle)) {
+                return res.status(403).json({ error: 'Chỉ Admin được thay đổi chức danh lãnh đạo.' });
             }
             if (!canGrantOrganizer && (
                 ['admin', 'organizer'].includes(existingRole) ||

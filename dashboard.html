@@ -5304,6 +5304,7 @@
                                         <option value="founder">Founder</option>
                                         <option value="cofounder">Co-founder</option>
                                         <option value="president">President</option>
+                                        <option value="core">Core</option>
                                     </select></div>
                                     <div><label>Phòng ban</label><select id="usDept">
                                         <option value="">Không có</option>
@@ -5352,12 +5353,13 @@
                                                 ` : projectGroupLabel(u)}
                                             </td>
                                             <td data-label="Chức danh lãnh đạo">
-                                                ${(session.role === 'admin' && String(u.id) !== String(session.id) && projectGroupOf(u) === 'organizer') ? `
+                                                ${(session.role === 'admin' && projectGroupOf(u) === 'organizer') ? `
                                                     <select style="padding:6px" onchange="updateUserLeadershipTitle('${u.id}', this.value)">
                                                         <option value="" ${!leadershipTitleOf(u) ? 'selected' : ''}>Không có</option>
                                                         <option value="founder" ${leadershipTitleOf(u) === 'founder' ? 'selected' : ''}>Founder</option>
                                                         <option value="cofounder" ${leadershipTitleOf(u) === 'cofounder' ? 'selected' : ''}>Co-founder</option>
                                                         <option value="president" ${leadershipTitleOf(u) === 'president' ? 'selected' : ''}>President</option>
+                                                        <option value="core" ${leadershipTitleOf(u) === 'core' ? 'selected' : ''}>Core</option>
                                                     </select>
                                                 ` : leadershipTitleLabel(leadershipTitleOf(u))}
                                             </td>
@@ -7186,15 +7188,16 @@
         }
 
         function leadershipTitleLabel(value) {
-            return { founder: 'Founder', cofounder: 'Co-founder', president: 'President' }[value] || '—';
+            return { founder: 'Founder', cofounder: 'Co-founder', president: 'President', core: 'Core' }[value] || '—';
         }
 
         function leadershipTitleOf(user) {
-            if (user && ['founder', 'cofounder', 'president'].includes(user.leadershipTitle)) return user.leadershipTitle;
+            if (user && ['founder', 'cofounder', 'president', 'core'].includes(user.leadershipTitle)) return user.leadershipTitle;
             const legacy = String(user && [user.position, user.title, user.role].filter(Boolean).join(' ') || '').toLowerCase();
             if (legacy.includes('co-founder') || legacy.includes('cofounder')) return 'cofounder';
             if (legacy.includes('founder')) return 'founder';
             if (legacy.includes('president') || legacy.includes('chủ tịch')) return 'president';
+            if (legacy.includes('core')) return 'core';
             return '';
         }
 
@@ -7218,7 +7221,7 @@
 
         async function updateUserLeadershipTitle(id, newTitle) {
             const u = localDB.users.find(x => String(x.id) === String(id));
-            if (!u || !['', 'founder', 'cofounder', 'president'].includes(newTitle)) return;
+            if (!u || !['', 'founder', 'cofounder', 'president', 'core'].includes(newTitle)) return;
             u.leadershipTitle = newTitle;
             await saveItem('users', u);
             addAuditLog('change_leadership_title', 'Changed leadership title of ' + (u.name || u.email) + ' to ' + (newTitle || 'none') + ' (ID: ' + id + ')');

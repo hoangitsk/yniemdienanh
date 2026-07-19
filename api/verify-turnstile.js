@@ -20,7 +20,10 @@ module.exports = async (req, res) => {
         const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY || '';
 
         if (!TURNSTILE_SECRET_KEY) {
-            return res.json({ success: true, devMode: true });
+            const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+            const devMode = !isProduction && process.env.ALLOW_TURNSTILE_DEV_MODE === 'true';
+            if (devMode) return res.json({ success: true, devMode: true });
+            return res.status(503).json({ success: false, error: 'Turnstile chưa được cấu hình.' });
         }
 
         const formData = new URLSearchParams();

@@ -1,5 +1,18 @@
 {
   "cleanUrls": false,
+  "rewrites": [
+    { "source": "/register", "destination": "/register.html" },
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/community", "destination": "/community.html" },
+    { "source": "/schedule", "destination": "/schedule.html" },
+    { "source": "/schedule/:code", "destination": "/schedule.html" },
+    { "source": "/verify", "destination": "/verify.html" },
+    { "source": "/vinh-danh", "destination": "/vinh-danh.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/payment-success", "destination": "/index.html" },
+    { "source": "/payment-cancel", "destination": "/index.html" }
+  ],
   "crons": [
     {
       "path": "/api/cron/finalize-interviews",
@@ -14,6 +27,7 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" }
       ]
     }

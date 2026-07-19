@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
+const crypto = require('crypto');
 const PayOS = require('@payos/node');
 const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
@@ -55,6 +55,8 @@ if (FIREBASE_SERVICE_ACCOUNT) {
 }
 
 const app = express();
+// Do not disclose the framework/version in every response.
+app.disable('x-powered-by');
 var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
 app.use(express.json({ limit: '3mb' }));
@@ -84,6 +86,9 @@ app.use('/api/email/send-verification', rateLimit(5, 60000));
 app.use('/api/email/send-password-reset', rateLimit(5, 60000));
 app.use('/api/send-notification-email', rateLimit(5, 60000));
 app.use('/api/create-payment', rateLimit(10, 60000)); // 10 per minute for payments
+app.use('/api/payment-status', rateLimit(30, 60000));
+app.use('/api/cast-vote', rateLimit(20, 60000));
+app.use('/api/verify-certificate', rateLimit(30, 60000));
 app.use('/api/verify-turnstile', rateLimit(20, 60000)); // 20 per minute for turnstile
 app.use('/api/admin/', rateLimit(10, 60000));       // 10 per minute for admin APIs
 app.use('/api/schedule/', rateLimit(60, 60000));    // Autosave lịch có thể tạo nhiều yêu cầu liên tiếp
@@ -339,6 +344,12 @@ app.get('/api/payment-status', require('./api/payment-status'));
 
 app.post('/api/payos-webhook', require('./api/payos-webhook'));
 
+// Keep the local Express deployment in parity with the Vercel serverless
+// functions. These handlers validate records/tokens on the trusted backend;
+// the SPA fallback must never answer these API paths.
+app.get('/api/verify-certificate', require('./api/verify-certificate'));
+app.post('/api/cast-vote', require('./api/cast-vote'));
+
 // API: Send notification email (support questions, deadline extensions, etc.)
 app.post('/api/send-notification-email', requireScheduleManager, async (req, res) => {
     try {
@@ -499,29 +510,11 @@ app.get('/api/cron/finalize-interviews', finalizeInterviewCron);
 app.post('/api/cron/finalize-interviews', finalizeInterviewCron);
 
 
-// API: Generate certificate data (for PDF generation in future)
-app.post('/api/generate-certificate', async (req, res) => {
-    try {
-        const { userId, name, type, achievement, certId } = req.body;
-        if (!userId || !name) return res.status(400).json({ error: 'Missing required fields' });
-        // Generate certificate verification code
-        const verificationCode = 'YNDA-' + (certId || Date.now().toString(36).toUpperCase());
-        res.json({
-            success: true,
-            certificate: {
-                id: verificationCode,
-                userId,
-                name,
-                type: type || 'participation',
-                achievement: achievement || '',
-                issuedAt: new Date().toISOString(),
-                verifyUrl: `https://yniemdienanh.vercel.app/verify?code=${verificationCode}`
-            }
-        });
-    } catch (err) {
-        console.error('Generate certificate error:', err);
-        res.status(500).json({ error: err.message });
-    }
+// Certificate records must be issued by a trusted, persisted workflow.  Keep
+// this legacy endpoint closed instead of returning client-provided certificate
+// data that could be mistaken for an authentic award.
+app.post('/api/generate-certificate', (req, res) => {
+    res.status(410).json({ error: 'Certificate issuance has moved to the trusted backend workflow.' });
 });
 
 // API: Admin delete user (Firebase Auth + Firestore)
@@ -540,7 +533,10 @@ app.post('/api/verify-turnstile', async (req, res) => {
         const { token } = req.body;
         if (!token) return res.status(400).json({ success: false, error: 'Missing token' });
         if (!TURNSTILE_SECRET_KEY) {
-            return res.json({ success: true, devMode: true });
+            const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+            const devMode = !isProduction && process.env.ALLOW_TURNSTILE_DEV_MODE === 'true';
+            if (devMode) return res.json({ success: true, devMode: true });
+            return res.status(503).json({ success: false, error: 'Turnstile is not configured.' });
         }
         const formData = new URLSearchParams();
         formData.append('secret', TURNSTILE_SECRET_KEY);
@@ -561,6 +557,17 @@ app.get('/health', (req, res) => {
     res.json({ status: "ok" });
 });
 
+// Explicit JSON health/config endpoints must be registered before the SPA
+// fallback.  Keep the public response deliberately minimal.
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+app.get('/api/config', (req, res) => {
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.json({ turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || '' });
+});
+
 // Homepage content API — single source of truth for AI + manual edits
 const CONTENT_FILE = path.join(__dirname, 'homepage-content.json');
 
@@ -578,36 +585,11 @@ app.get('/api/homepage-content', (req, res) => {
     }
 });
 
-app.post('/api/homepage-content', express.json({ limit: '1mb' }), (req, res) => {
-    try {
-        const content = req.body;
-        if (!content || typeof content !== 'object') {
-            return res.status(400).json({ error: 'Invalid content' });
-        }
-        fs.writeFileSync(CONTENT_FILE, JSON.stringify(content, null, 2), 'utf-8');
-        console.log('Homepage content saved to file');
-
-        // Auto-commit to Git so AI can pull the latest
-        try {
-            const repoDir = __dirname;
-            execSync('git add homepage-content.json', { cwd: repoDir, stdio: 'pipe' });
-            const diff = execSync('git diff --cached --stat', { cwd: repoDir, encoding: 'utf-8', stdio: 'pipe' });
-            if (diff.trim()) {
-                execSync('git commit -m "auto: update homepage content [skip ci]"', { cwd: repoDir, stdio: 'pipe' });
-                execSync('git push origin main', { cwd: repoDir, stdio: 'pipe' });
-                console.log('Committed and pushed homepage-content.json to GitHub');
-            } else {
-                console.log('No changes to commit (homepage-content.json unchanged)');
-            }
-        } catch (gitErr) {
-            console.warn('Git auto-commit/push failed (non-blocking):', gitErr.message || gitErr);
-        }
-
-        res.json({ success: true });
-    } catch (err) {
-        console.error('Error saving homepage content:', err);
-        res.status(500).json({ error: err.message });
-    }
+app.post('/api/homepage-content', requirePeopleManager, (req, res) => {
+    // Vercel function filesystems are ephemeral. Firestore config/content is
+    // the only durable write path; this legacy endpoint remains explicitly
+    // closed so callers cannot mistake a temporary file write for persistence.
+    res.status(410).json({ error: 'Homepage content must be saved to Firestore.' });
 });
 
 // ================= SOCIAL MEDIA SYNC API =================
@@ -631,8 +613,16 @@ app.get('/api/social-posts', (req, res) => {
 const SYNC_ADMIN_KEY = process.env.SYNC_ADMIN_KEY || '';
 app.post('/api/sync/trigger', async (req, res) => {
     try {
-        const auth = req.headers['x-sync-key'] || req.body?.key || '';
-        if (SYNC_ADMIN_KEY && auth !== SYNC_ADMIN_KEY) {
+        // This endpoint changes external content and must fail closed.  Do not
+        // accept credentials in JSON bodies, where they are easier to log or
+        // accidentally persist.
+        if (!SYNC_ADMIN_KEY) {
+            return res.status(503).json({ error: 'Sync endpoint is not configured.' });
+        }
+        const suppliedKey = typeof req.headers['x-sync-key'] === 'string' ? req.headers['x-sync-key'] : '';
+        const expected = Buffer.from(SYNC_ADMIN_KEY, 'utf8');
+        const supplied = Buffer.from(suppliedKey, 'utf8');
+        if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) {
             return res.status(403).json({ error: 'Invalid sync key' });
         }
         const syncConfig = {
@@ -670,6 +660,13 @@ app.get('/api/sync/status', (req, res) => {
         tiktok: !!(process.env.TT_ACCESS_TOKEN && process.env.TT_OPEN_ID),
         totalPosts: socialSync.getPosts().length,
     });
+});
+
+// Never let the SPA fallback turn a mistyped/removed API into a successful
+// HTML response.  This also makes monitoring and client error handling
+// deterministic.
+app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'API endpoint not found' });
 });
 
 // Serve static files
@@ -730,9 +727,10 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`Node.js server running at ${BASE_URL}`);
-    console.log(`PayOS is ${PAYOS_ENABLED ? "ENABLED" : "DISABLED (Check your env variables)"}`);
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Node.js server running at ${BASE_URL}`);
+        console.log(`PayOS is ${PAYOS_ENABLED ? "ENABLED" : "DISABLED (Check your env variables)"}`);
 
     // Auto sync every 30 minutes if any platform is configured
     const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL_MINUTES || '30') * 60 * 1000;
@@ -792,5 +790,8 @@ app.listen(PORT, () => {
         }, SYNC_INTERVAL);
     } else {
         console.log('[SocialSync] Auto-sync disabled. Set YT_API_KEY, IG_ACCESS_TOKEN, or TT_ACCESS_TOKEN to enable.');
-    }
-});
+        }
+    });
+}
+
+module.exports = app;

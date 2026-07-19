@@ -23,10 +23,12 @@ function getDb() {
 }
 
 function isEligibleInterviewer(profile) {
+    var projectGroup = String(profile && profile.projectGroup || '').trim().toLowerCase();
+    if (projectGroup === 'candidate') return false;
     var role = String(profile && profile.role || '').trim().toLowerCase();
     var position = String(profile && (profile.position || profile.title) || '').trim().toLowerCase();
     var email = String(profile && profile.email || '').trim().toLowerCase();
-    var leadership = position;
+    var leadership = position + ' ' + String(profile && profile.leadershipTitle || '').trim().toLowerCase();
     return email === 'yniemdienanh@gmail.com' || ['admin', 'organizer', 'president', 'core'].indexOf(role) !== -1 ||
         leadership.indexOf('core') !== -1 || leadership.indexOf('president') !== -1 ||
         leadership.indexOf('chủ tịch') !== -1 || leadership.indexOf('chu tich') !== -1 ||

@@ -1240,8 +1240,12 @@
             })();
             
             const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `<span>${message.replace(/\n/g, '<br>')}</span>`;
+            const safeType = ['info', 'success', 'warning', 'error'].includes(type) ? type : 'info';
+            toast.className = `toast ${safeType}`;
+            const text = document.createElement('span');
+            text.style.whiteSpace = 'pre-line';
+            text.textContent = String(message == null ? '' : message);
+            toast.appendChild(text);
             container.appendChild(toast);
             
             setTimeout(() => {
@@ -1271,6 +1275,13 @@
         async function saveItem(collection, item) {
             var list = localDB[collection] || [];
             var isNew = !list.find(x => String(x.id) === String(item.id));
+            if (useFirebase && dbInstance) {
+                // Do not show success or mutate the local cache until the
+                // authoritative write succeeds.
+                await dbInstance.collection(collection).doc(String(item.id)).set(item);
+            } else {
+                throw new Error('Không thể lưu an toàn khi Firebase không khả dụng.');
+            }
             if (isNew) {
                 list.push(item);
             } else {
@@ -1278,16 +1289,6 @@
                 if (idx !== -1) list[idx] = item;
             }
             localDB[collection] = list;
-
-            if (useFirebase && dbInstance) {
-                try {
-                    await dbInstance.collection(collection).doc(String(item.id)).set(item);
-                } catch(e) {
-                    console.error("Firestore save failed:", e);
-                }
-            } else {
-                localStorage.setItem('ynda_db', JSON.stringify(localDB));
-            }
             
             // Try pushing audit log
             addAuditLog((isNew ? 'create_' : 'update_') + collection, item.name || String(item.id));
@@ -1350,6 +1351,15 @@
             
             msgEl.className = 'form-msg err';
             msgEl.textContent = '';
+            const currentAuthUser = authInstance && authInstance.currentUser;
+            if (!session || !currentAuthUser || String(session.id) !== String(currentAuthUser.uid)) {
+                msgEl.textContent = 'Vui lòng đăng nhập bằng tài khoản đã xác thực trước khi gửi đơn ứng tuyển.';
+                return;
+            }
+            if (!['organizer', 'cofounder', 'president'].includes(type)) {
+                msgEl.textContent = 'Loại đơn ứng tuyển không hợp lệ.';
+                return;
+            }
             
             const name = document.getElementById(prefix + 'Name').value.trim();
             const email = document.getElementById(prefix + 'Email').value.trim().toLowerCase();
@@ -1385,12 +1395,15 @@
             submitBtn.textContent = "Đang gửi đơn ứng tuyển...";
 
             try {
-                const nextId = await getNextId();
+                // One deterministic document per account/application type makes
+                // double-clicks and multi-tab retries converge on one record.
+                const nextId = String(session.id) + '_' + type;
                 const newApp = {
                     id: nextId,
                     type: type,
                     name: name,
-                    email: email,
+                    userId: session && session.id,
+                    email: session && session.email ? session.email : email,
                     phone: phone,
                     intro: intro,
                     dept: dept,
@@ -1447,17 +1460,7 @@
                 if (authInstance && useFirebase) {
                     const cred = await authInstance.signInWithEmailAndPassword(email, pass);
                     
-                    let isAdminApproved = false;
                     if (!cred.user.emailVerified && email !== PROJECT_ADMIN_EMAIL) {
-                        try {
-                            const userDoc = await dbInstance.collection('users').doc(cred.user.uid).get();
-                            isAdminApproved = userDoc.exists && userDoc.data().emailVerified === true;
-                        } catch (verifyErr) {
-                            console.warn('Không thể kiểm tra xác thực admin:', verifyErr);
-                        }
-                    }
-
-                    if (!cred.user.emailVerified && !isAdminApproved && email !== PROJECT_ADMIN_EMAIL) {
                         // Re-send verification link
                         try {
                             const idToken = await cred.user.getIdToken();
@@ -1482,26 +1485,8 @@
                     showToast("Đăng nhập thành công!", "success");
                     // Firestore handles redirect in onAuthStateChanged
                 } else {
-                    const u = localDB.users.find(u => u.email === email && (u.pass === pass || u.passHash === btoa(pass)));
-                    if (!u) {
-                        msg.textContent = 'Sai tài khoản hoặc mật khẩu!';
-                        return;
-                    }
-                    if (u.locked) {
-                        msg.textContent = 'Tài khoản đã bị khóa. Vui lòng liên hệ Admin để biết thêm chi tiết.';
-                        return;
-                    }
-                    
-                    u.lastLogin = new Date().toISOString();
-                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                    
-                    session = { id: u.id, name: u.name, email: u.email, role: u.role, dept: u.dept };
-                    sessionStorage.setItem('ynda_user', JSON.stringify(session));
-                    
-                    showToast("Đăng nhập ngoại tuyến thành công!", "success");
-                    setTimeout(() => {
-                        window.location.href = '/dashboard';
-                    }, 1000);
+                    msg.textContent = 'Không thể đăng nhập an toàn khi Firebase không khả dụng. Vui lòng mở website qua HTTPS và thử lại.';
+                    return;
                 }
             } catch (err) {
                 msg.textContent = err.message || 'Lỗi đăng nhập.';
@@ -1593,39 +1578,8 @@
                         msg.textContent = '';
                     }, 8000);
                 } else {
-                    // Offline fallback
-                    const userExists = localDB.users.find(u => u.email === email);
-                    if (userExists) {
-                        msg.textContent = 'Email này đã được đăng ký!';
-                        return;
-                    }
-                    
-                    const nextUserId = await getNextId();
-                    const newUser = {
-                        id: nextUserId,
-                        name: name,
-                        email: email,
-                        phone: phone,
-                        school: school,
-                        className: className,
-                        interest: interest,
-                        intro: intro,
-                        role: 'member',
-                        pass: pass,
-                        createdAt: new Date().toISOString().slice(0, 10)
-                    };
-                    
-                    localDB.users.push(newUser);
-                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                    
-                    msg.className = 'form-msg ok';
-                    msg.textContent = '✅ Đăng ký ngoại tuyến thành công! Bạn có thể đăng nhập ngay bây giờ.';
-                    showToast("Đăng ký thành công!", "success");
-                    
-                    setTimeout(() => {
-                        toggleAuthForm(true);
-                        msg.textContent = '';
-                    }, 2000);
+                    msg.textContent = 'Không thể tạo tài khoản an toàn khi Firebase không khả dụng. Vui lòng mở website qua HTTPS và thử lại.';
+                    return;
                 }
             } catch (err) {
                 msg.textContent = err.message || 'Có lỗi xảy ra khi tạo tài khoản.';
@@ -1709,10 +1663,7 @@
             submitBtn.textContent = "Đang lưu...";
 
             try {
-                const currentDoc = await dbInstance.collection('users').doc(googleUserTemp.uid).get();
-                const currentProfile = currentDoc.exists ? currentDoc.data() : {};
                 const userProfile = {
-                    id: googleUserTemp.uid,
                     name: name,
                     email: googleUserTemp.email.toLowerCase(),
                     phone: phone,
@@ -1720,11 +1671,6 @@
                     className: className,
                     interest: interest,
                     intro: intro,
-                    role: currentProfile.role || 'member',
-                    dept: currentProfile.dept || '',
-                    position: currentProfile.position || '',
-                    createdAt: currentProfile.createdAt || new Date().toISOString().slice(0, 10),
-                    emailVerified: true,
                     profileCompleted: true
                 };
 

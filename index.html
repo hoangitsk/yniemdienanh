@@ -3341,6 +3341,17 @@
         let txFilter = 'all';
 
         const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        function safeVideoEmbedUrl(value) {
+            try {
+                const url = new URL(String(value || ''));
+                const host = url.hostname.toLowerCase();
+                const allowedHost = host === 'www.youtube.com' || host === 'youtube.com' || host === 'www.youtube-nocookie.com';
+                if (url.protocol !== 'https:' || !allowedHost || !/^\/embed\/[A-Za-z0-9_-]{6,}$/.test(url.pathname)) return 'about:blank';
+                return url.origin + url.pathname;
+            } catch (_) {
+                return 'about:blank';
+            }
+        }
         const money = n => Number(n).toLocaleString('vi-VN') + 'đ';
         const fmtDate = d => d ? new Date(d).toISOString() : '';
         const displayDate = d => d ? new Date(d).toLocaleString('vi-VN') : '';
@@ -3529,7 +3540,14 @@
         }
 
         async function checkPayOSPaymentStatus(orderCode) {
-            const res = await fetch('/api/payment-status?orderCode=' + encodeURIComponent(orderCode), { cache: 'no-store' });
+            const paymentUser = (typeof authInstance !== 'undefined' && authInstance && authInstance.currentUser)
+                || (window.firebase && firebase.auth && firebase.auth().currentUser);
+            if (!paymentUser) throw new Error('Vui lòng đăng nhập lại để kiểm tra giao dịch.');
+            const idToken = await paymentUser.getIdToken();
+            const res = await fetch('/api/payment-status?orderCode=' + encodeURIComponent(orderCode), {
+                cache: 'no-store',
+                headers: { Authorization: 'Bearer ' + idToken, Accept: 'application/json' }
+            });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || 'Không thể kiểm tra trạng thái thanh toán');
             if (data.paid) {
@@ -3775,7 +3793,6 @@
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : (u.role || 'member');
                                     session = { id: firebaseUser.uid, name: u.name, email: u.email, role: u.role, dept: u.dept, phone: u.phone, school: u.school, className: u.className, interest: u.interest, intro: u.intro };
                                     session.role = effectiveRole;
-                                    await dbInstance.collection('users').doc(firebaseUser.uid).set({ emailVerified: true, role: effectiveRole }, { merge: true });
                                 } else {
                                     const effectiveRole = firebaseUser.email.toLowerCase() === PROJECT_ADMIN_EMAIL ? 'admin' : 'member';
                                     session = { id: firebaseUser.uid, name: firebaseUser.displayName || 'Thành viên mới', email: firebaseUser.email, role: effectiveRole, dept: '' };
@@ -4028,7 +4045,7 @@
             const isOrg = ['admin', 'organizer'].includes(role);
             const collections = isOrg 
                 ? ['users', 'applications', 'tasks', 'plans', 'announcements', 'budget', 'docs', 'submissions', 'votes', 'feedback', 'messages', 'posts', 'comments', 'transactions', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints']
-                : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations', 'featuredListings', 'certificates', 'meetingSchedules', 'staffPoints'];
+                : ['tasks', 'plans', 'announcements', 'docs', 'submissions', 'messages', 'posts', 'comments', 'registrations', 'featuredListings', 'meetingSchedules', 'staffPoints'];
             const promises = collections.map(async (col) => {
                 try {
                     const snap = await firestoreWithTimeout(dbInstance.collection(col).get());
@@ -4062,6 +4079,13 @@
                 } catch (err) {
                     console.warn("Không thể đọc transactions cá nhân:", err.message || err);
                     localDB.transactions = localDB.transactions || [];
+                }
+                try {
+                    const snap = await firestoreWithTimeout(dbInstance.collection('certificates').where('userId', '==', uid).get());
+                    localDB.certificates = snap.docs.map(doc => doc.data());
+                } catch (err) {
+                    console.warn('Không thể đọc chứng nhận cá nhân:', err.message || err);
+                    localDB.certificates = localDB.certificates || [];
                 }
             }
 
@@ -4494,24 +4518,15 @@
         async function saveContentToDB(newContent) {
             localDB.content = newContent;
             _contentFileFallback = newContent;
-            // Lưu xuống file JSON để AI deploy không ghi đè
-            try {
-                await fetch('/api/homepage-content', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newContent)
-                });
-            } catch (e) {
-                console.warn('Không thể lưu nội dung xuống file:', e);
-            }
             if (useFirebase) {
                 try {
                     await dbInstance.collection('config').doc('content').set(newContent, { merge: true });
                 } catch (e) {
                     console.error('Lỗi lưu content lên Firestore:', e);
+                    throw e;
                 }
             } else {
-                localStorage.setItem('ynda_db', JSON.stringify(localDB));
+                throw new Error('Không thể lưu nội dung khi Firebase không khả dụng.');
             }
         }
 
@@ -4717,13 +4732,9 @@
         let tempGoogleUser = null;
 
         async function syncUserToRTDB(userData) {
-            if (!rtdbInstance) return;
-            try {
-                await rtdbInstance.ref('users/' + userData.id).set(userData);
-                await rtdbInstance.ref('emailIndex/' + userData.email.replace(/\./g, ',')).set(userData.id);
-            } catch (e) {
-                console.warn('RTDB sync failed:', e.message || e);
-            }
+            // RTDB was a legacy PII mirror. Firestore is now canonical; keep
+            // this compatibility no-op so old call sites cannot re-create it.
+            return false;
         }
 
 
@@ -4802,6 +4813,8 @@
             if (!el) return;
             el.innerHTML = list.map(e => {
                 const fee = e.price || 5000;
+                const eventIdArg = esc(JSON.stringify(String(e.id)));
+                const eventTitleArg = esc(JSON.stringify(String(e.title || '')));
                 const feeText = e.feeOption === 'paid' ? `Có phí (${fee.toLocaleString('vi-VN')}đ)` : e.feeOption === 'free' ? 'Miễn phí' : '';
                 const isReg = isRegistered(e.id);
                 let regButton = '';
@@ -4810,9 +4823,9 @@
                         regButton = `<span class="chip chip-ok" style="margin-top:10px;display:inline-block;background:rgba(99,209,158,0.15);color:var(--ok)">✅ Đã đăng ký tham gia</span>`;
                     } else {
                         if (e.feeOption === 'paid') {
-                            regButton = `<button class="btn btn-gold btn-sm" style="margin-top:12px;width:100%" onclick="openRegisterEvent('${e.id}', '${esc(e.title)}')">🎟️ Đăng ký tham gia (${fee.toLocaleString('vi-VN')}đ)</button>`;
+                            regButton = `<button class="btn btn-gold btn-sm" style="margin-top:12px;width:100%" onclick="openRegisterEvent(${eventIdArg}, ${eventTitleArg})">🎟️ Đăng ký tham gia (${fee.toLocaleString('vi-VN')}đ)</button>`;
                         } else {
-                            regButton = `<button class="btn btn-gold btn-sm" style="margin-top:12px;width:100%" onclick="registerFreeEvent('${e.id}', '${esc(e.title)}')">🎟️ Đăng ký tham gia (Miễn phí)</button>`;
+                            regButton = `<button class="btn btn-gold btn-sm" style="margin-top:12px;width:100%" onclick="registerFreeEvent(${eventIdArg}, ${eventTitleArg})">🎟️ Đăng ký tham gia (Miễn phí)</button>`;
                         }
                     }
                 }
@@ -4826,7 +4839,7 @@
                             <h3>${esc(e.title)}</h3>
                             <p style="margin-bottom:12px">${esc(e.desc)}</p>
                             <div class="meta" style="margin-top:auto; display:grid; gap:6px; color:#dfe8f2; font-size:0.9rem">
-                                <span>📅 Thời gian: ${e.date}</span>
+                                <span>📅 Thời gian: ${esc(e.date)}</span>
                                 <span>📍 Địa điểm: ${esc(e.loc)}</span>
                             </div>
                         </div>
@@ -4857,7 +4870,9 @@
             });
         }
 
-        function shareVoteFB(id, title) {
+        function shareVoteFB(id) {
+            const submission = (localDB.submissions || []).find(item => String(item.id) === String(id));
+            const title = submission ? String(submission.title || '') : '';
             const url = encodeURIComponent(getVoteLink(id));
             const text = encodeURIComponent('🎬 Bình chọn cho tác phẩm "' + title + '" tại Ý Niệm Điện Ảnh!');
             window.open('https://www.facebook.com/sharer/sharer.php?u=' + url + '&quote=' + text, '_blank', 'width=600,height=400');
@@ -4893,10 +4908,11 @@
             
             vListEl.innerHTML = list.map(s => {
                 const pct = Math.round((s.votes / totalVotes) * 100);
+                const safeIdArg = esc(JSON.stringify(String(s.id)));
                 return `
                     <div class="card" style="padding:22px">
                         <div style="position:relative; padding-top:56.25%; width:100%; border-radius:10px; overflow:hidden; background:#000; border:1px solid rgba(228,184,102,0.15)">
-                            <iframe src="${s.url}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none" allowfullscreen></iframe>
+                            <iframe src="${esc(safeVideoEmbedUrl(s.url))}" title="Video: ${esc(s.title)}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none" sandbox="allow-scripts allow-same-origin allow-presentation" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
                         </div>
                         <h3 style="margin-top:14px;font-size:1.2rem">🎬 ${esc(s.title)}</h3>
                         <p style="font-size:0.85rem;color:var(--text-muted)">Đội thi: <b>${esc(s.team)}</b> ${s.eventTitle ? `· Dự án: <b style="color:var(--gold-light)">${esc(s.eventTitle)}</b>` : ''}</p>
@@ -4911,75 +4927,43 @@
                             </div>
                         </div>
                         
-                        ${session ? `<button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${s.id}, event)">🗳 Bình chọn</button>` : `<div style="text-align:center;margin-top:16px"><p style="color:var(--text-muted);font-size:0.85rem"><a href="/register?tab=login" target="_blank" style="color:var(--gold);cursor:pointer;font-weight:600">Đăng ký / Đăng nhập</a> để bình chọn</p></div>`}
+                        ${session ? `<button class="btn btn-gold btn-sm" style="width:100%; margin-top:16px" onclick="castVote(${safeIdArg}, event)">🗳 Bình chọn</button>` : `<div style="text-align:center;margin-top:16px"><p style="color:var(--text-muted);font-size:0.85rem"><a href="/register?tab=login" target="_blank" style="color:var(--gold);cursor:pointer;font-weight:600">Đăng ký / Đăng nhập</a> để bình chọn</p></div>`}
                         <div style="display:flex;gap:8px;margin-top:10px">
-                            <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${s.id}, '${esc(s.title)}')">📤 Share Facebook</button>
-                            <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="copyVoteLink(${s.id})">🔗 Copy link</button>
+                            <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="shareVoteFB(${safeIdArg})">📤 Share Facebook</button>
+                            <button class="btn btn-line btn-sm" style="flex:1;font-size:0.75rem" onclick="copyVoteLink(${safeIdArg})">🔗 Copy link</button>
                         </div>
                     </div>
                 `;
             }).join('') || '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px"><h3>Chưa có tác phẩm nào.</h3></div>';
         }
 
-        // Chức năng bình chọn chống gian lận (quét IP thiết bị và chặn cookie/localstorage)
+        // Bình chọn được ghi bởi endpoint tin cậy; client không tự tăng số lượt vote.
         async function castVote(id, e) {
             if (!session) { window.open('/register?tab=login', '_blank'); return showToast('Vui lòng đăng ký / đăng nhập để bình chọn!', 'info'); }
             const vOpen = isVoteOpen();
             if (!vOpen.open) return showToast(vOpen.msg, 'info');
-            // 1. Kiểm tra nhanh thiết bị qua LocalStorage để chặn bình chọn nhiều lần trên cùng 1 trình duyệt
-            if (localStorage.getItem('voted_sub_' + id)) {
-                return showToast("Thiết bị đã vote tác phẩm này rồi!", "info");
-            }
-            
-            const btn = e?.target;
+            const btn = e?.currentTarget || e?.target;
             if (btn) btn.disabled = true;
-            
             try {
-                // 2. Gọi API công khai để lấy IP công cộng của mạng đang kết nối
-                const res = await fetch('https://api.ipify.org?format=json');
-                const data = await res.json();
-                const userIp = data.ip;
-                
-                if (!userIp) throw new Error("Không thể quét địa chỉ IP.");
-                
-                localDB.votes = localDB.votes || [];
-                
-                // 3. Kiểm tra địa chỉ IP đã tồn tại trong danh sách đã bình chọn cho tác phẩm này chưa
-                const ipHasVoted = localDB.votes.some(v => v.submissionId === id && v.ip === userIp);
-                if (ipHasVoted) {
-                    showToast(`IP (${userIp}) đã vote tác phẩm này rồi!`, "info");
-                    localStorage.setItem('voted_sub_' + id, 'true'); // Cập nhật localstorage để tránh gọi API lần sau
-                    if (btn) btn.disabled = false;
-                    return;
-                }
-                
-                // 4. Thực hiện cộng vote và lưu trữ
-                const sub = localDB.submissions.find(s => s.id === id);
-                if (sub) {
-                    sub.votes++;
-                    const newVote = { submissionId: id, userId: session.id, ip: userIp, date: new Date().toISOString() };
-                    localDB.votes.push(newVote);
-                    
-                    // Chỉ ghi votes document — không ghi submissions từ client vì Firestore rules chặn
-                    if (useFirebase) {
-                        await dbInstance.collection('votes').add(newVote);
-                    } else {
-                        if (!localDB.votes) localDB.votes = [];
-                        localDB.votes.push(newVote);
-                    }
-                    
-                    // Cập nhật localDB submissions (không đẩy lên Firestore vì rules chỉ cho BTC sửa)
-                    var subIdx = localDB.submissions.findIndex(function(x) { return x.id === id; });
-                    if (subIdx !== -1) localDB.submissions[subIdx] = sub;
-                    localStorage.setItem('ynda_db', JSON.stringify(localDB));
-                    
-                    localStorage.setItem('voted_sub_' + id, 'true');
-                    showToast('Binh chon thanh cong "' + sub.title + '"!', 'success');
-                    renderVoting();
-                }
+                const authUser = (typeof authInstance !== 'undefined' && authInstance && authInstance.currentUser)
+                    || (window.firebase && firebase.auth && firebase.auth().currentUser);
+                if (!authUser) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                const idToken = await authUser.getIdToken();
+                const response = await fetch('/api/cast-vote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                    body: JSON.stringify({ idToken, submissionId: String(id) })
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.error || 'Không thể ghi nhận bình chọn.');
+                const sub = (localDB.submissions || []).find(s => String(s.id) === String(id));
+                if (sub && Number.isFinite(Number(payload.voteCount))) sub.votes = Number(payload.voteCount);
+                if (sub) localStorage.setItem('voted_sub_' + id, 'true');
+                showToast(payload.alreadyVoted ? 'Bạn đã bình chọn tác phẩm này rồi.' : 'Bình chọn thành công!', payload.alreadyVoted ? 'info' : 'success');
+                renderVoting();
             } catch (err) {
-                console.error("Lỗi bình chọn:", err);
-                showToast("⚠️ Kết nối mạng thất bại!", "error");
+                console.error('Lỗi bình chọn:', err);
+                showToast(err.message || 'Không thể ghi nhận bình chọn.', 'error');
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -9477,6 +9461,9 @@
         }
 
         function openPaymentModal(type, extra) {
+            if (type === 'vote') {
+                return showToast('Bình chọn không thu phí. Hãy dùng nút Bình chọn của tác phẩm.', 'info');
+            }
             const modal = document.getElementById('profileModalBody');
             const fee = extra?.customAmount || 5000;
             const memo = type === 'registration' ? ('Reg_' + (extra?.eventId || '')) : type === 'sponsor' ? 'Sponsor' : 'Vote_' + (extra?.submissionId || '');
@@ -9560,14 +9547,16 @@
                         idToken: await paymentUser.getIdToken(),
                         type,
                         targetId: String(targetId),
-                        title: extra?.submissionTitle || extra?.eventTitle || ''
+                        title: extra?.submissionTitle || extra?.eventTitle || '',
+                        amount
                     })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Không thể tạo liên kết thanh toán');
                 // Chỉ tạo giao dịch khi API thanh toán thành công
                 orderCode = data.orderCode || orderCode;
-                await addTransaction(type, extra?.submissionId, description, extra, orderCode, data.checkoutUrl, data.qrCode);
+                const canonicalExtra = { ...(extra || {}), customAmount: data.amount || amount };
+                await addTransaction(type, canonicalExtra.submissionId, description, canonicalExtra, orderCode, data.checkoutUrl, data.qrCode);
                 try {
                     startPaymentPolling(orderCode);
                 } catch (e) {
@@ -9598,6 +9587,7 @@
         }
 
         function openBuyVoteModal(submissionId, submissionTitle) {
+            return showToast('Bình chọn không thu phí. Hãy dùng nút Bình chọn của tác phẩm.', 'info');
             if (!session) return showToast('Vui lòng đăng nhập!', 'error');
             const u = localDB.users.find(x => String(x.id) === String(session.id));
             if (!u) return showToast('Không tìm thấy người dùng.', 'error');
@@ -9634,12 +9624,11 @@
                 recentTx.status = 'cancelled';
                 recentTx.cancelledAt = new Date().toISOString();
                 recentTx.cancelReason = 'replaced_by_new_payos_link';
-                await saveItem('transactions', recentTx);
+                localStorage.setItem('ynda_db', JSON.stringify(localDB));
             }
-            const nextId = await getNextId();
             const timeStr = new Date().toISOString();
             const tx = { 
-                id: nextId, 
+                id: orderCode,
                 orderCode: orderCode || null,
                 userId: session.id, 
                 userName: session.name, 
@@ -9656,7 +9645,11 @@
                 checkoutUrl: checkoutUrl || null,
                 qrCode: qrCode || null
             };
-            await saveItem('transactions', tx);
+            // The backend already persisted the canonical transaction. This is
+            // only a local rendering cache; clients cannot write payment data.
+            localDB.transactions = (localDB.transactions || []).filter(t => String(t.orderCode || '') !== String(orderCode));
+            localDB.transactions.push(tx);
+            localStorage.setItem('ynda_db', JSON.stringify(localDB));
             showPaymentReceipt(tx);
             renderAllPrizePools();
             if (document.getElementById('dashboard').style.display === 'block') {

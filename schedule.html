@@ -1010,7 +1010,7 @@
             <div class="panel board-container" id="availabilityBoardPanel" style="flex:1; width: 100%;">
                 <h3 id="boardTitle">📅 Bảng Lưới Thời Gian Rảnh (Chế độ: Lịch Họp)</h3>
                 <p id="boardSaveStatus" aria-live="polite" style="font-size:.8rem;color:var(--text-muted);margin:-8px 0 12px">Chạm vào một khung giờ để chọn; hệ thống sẽ tự động lưu.</p>
-                
+
                 <table class="timetable">
                     <thead>
                         <tr id="timetableHeadRow">
@@ -1684,10 +1684,12 @@
         }
 
         function isEligibleInterviewer(user) {
+            const projectGroup = String(user && user.projectGroup || '').trim().toLowerCase();
+            if (projectGroup === 'candidate') return false;
             const role = String(user && user.role || '').trim().toLowerCase();
             const dept = String(user && user.dept || '').trim().toLowerCase();
             const position = String(user && (user.position || user.title) || '').trim().toLowerCase();
-            const leadership = [dept, position].join(' ');
+            const leadership = [dept, position, user && user.leadershipTitle].join(' ').toLowerCase();
             return ['admin', 'organizer', 'president', 'core'].includes(role) ||
                 leadership.includes('core') || leadership.includes('president') ||
                 leadership.includes('chủ tịch') || leadership.includes('chu tich') ||
@@ -3101,8 +3103,11 @@
                             const tag = document.createElement('span');
                             tag.className = "person-tag tag-" + (p.role || 'member');
                             const isPreferred = (p.preferredSlots || []).includes(slotId);
-                            tag.textContent = (isPreferred ? '★ ' : '') + p.name;
-                            tag.title = p.name + " (" + (p.role === 'btc' ? 'BTC' : p.role === 'candidate' ? 'Ứng viên' : p.role === 'mentor' ? 'Mentor' : 'Thành viên') + ")" + (isPreferred ? ' · Giờ ưu tiên' : ' · Có thể tham gia');
+                            const userProfile = directoryUsers.find(u => u.id === p.ownerId);
+                            const userDept = userProfile ? (userProfile.dept || userProfile.department || '') : '';
+                            const deptSuffix = userDept ? ' (' + userDept + ')' : '';
+                            tag.textContent = (isPreferred ? '★ ' : '') + p.name + deptSuffix;
+                            tag.title = p.name + deptSuffix + " (" + (p.role === 'btc' ? 'BTC' : p.role === 'candidate' ? 'Ứng viên' : p.role === 'mentor' ? 'Mentor' : 'Thành viên') + ")" + (isPreferred ? ' · Giờ ưu tiên' : ' · Có thể tham gia');
                             peopleContainer.appendChild(tag);
                         });
                         td.appendChild(peopleContainer);
@@ -3389,11 +3394,19 @@
                 const privateEventDetails = canManageSchedules || assignedInterviewer || (ownBooking && ownBooking.status === 'confirmed');
                 const confirmed = allEventBookings.filter(booking => booking.status === 'confirmed').length;
                 const emailProviders = Array.from(new Set(allEventBookings.flatMap(booking => Array.isArray(booking.invitationProviders) ? booking.invitationProviders : [])));
+
+                const confirmedBooking = allEventBookings.find(booking => booking.status === 'confirmed');
+                const candId = event.candidateId || (confirmedBooking ? confirmedBooking.candidateId : '');
+                const candProfile = directoryUsers.find(u => u.id === candId);
+                const candDept = candProfile ? (candProfile.dept || candProfile.department || '') : (event.candidateDepartment || '');
+                const candName = event.candidateName || (confirmedBooking ? confirmedBooking.candidateName : '');
+                const candPosition = event.candidatePosition || (candProfile ? (candProfile.position || candProfile.title || '') : '');
+
                 meta.innerHTML = '📅 ' + eventStartLabel(event.startAt) + ' · ' + Number(event.duration || 0) + ' phút<br>' +
                     (event.location && (canManageSchedules || (ownBooking && ownBooking.status === 'confirmed')) ? '📍 ' + escapeHtml(event.location) + '<br>' : '') +
                     (event.assignedHrName && privateEventDetails ? '🧑‍💼 Người phỏng vấn: ' + escapeHtml(event.assignedHrName) + '<br>' : '') +
-                    (event.candidateName && privateEventDetails ? '👤 Ứng viên: ' + escapeHtml(event.candidateName) + '<br>' : '') +
-                    (event.candidatePosition && privateEventDetails ? '🎯 Vị trí ứng tuyển: ' + escapeHtml(event.candidatePosition) + (event.candidateDepartment ? ' · Ban ' + escapeHtml(event.candidateDepartment) : '') + '<br>' : '') +
+                    (candName && privateEventDetails ? '👤 Ứng viên: ' + escapeHtml(candName) + (candDept ? ' (' + escapeHtml(candDept) + ')' : '') + '<br>' : '') +
+                    (candPosition && privateEventDetails ? '🎯 Vị trí ứng tuyển: ' + escapeHtml(candPosition) + (candDept ? ' · Ban ' + escapeHtml(candDept) : '') + '<br>' : '') +
                     '👤 Số chỗ: ' + (event.capacity || 1) + (canManageSchedules ? ' · Đã xác nhận: ' + confirmed : '') +
                     (canManageSchedules && confirmed ? '<br>✉️ Email: ' + (emailProviders.length ? escapeHtml(emailProviders.map(provider => provider === 'brevo' ? 'Brevo' : 'Gmail dự phòng').join(' + ')) : 'Chưa gửi') : '');
                 card.append(heading, meta);

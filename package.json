@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "test": "test.bat"
+    "test": "node test.js"
   },
   "dependencies": {
     "@payos/node": "^1.0.9",

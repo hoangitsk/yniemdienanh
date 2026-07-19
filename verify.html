@@ -377,34 +377,11 @@
           measurementId: "G-YN751MBNH0"
         };
 
-        let dbInstance = null;
-        let useFirebase = false;
-        let localDB = { certificates: [] };
+        // Certificate verification must use the server's canonical Firestore
+        // data. LocalStorage is user-controlled and is never an authority.
 
         // Initialize App & Read Database
         async function init() {
-            // Load LocalStorage backup first
-            const raw = localStorage.getItem('ynda_db');
-            if (raw) {
-                try {
-                    localDB = JSON.parse(raw);
-                } catch(e) {}
-            }
-            if (!localDB.certificates) localDB.certificates = [];
-
-            // Attempt Firebase Firestore Init
-            const isFirebaseConfigured = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.trim() !== "";
-            if (isFirebaseConfigured) {
-                try {
-                    firebase.initializeApp(FIREBASE_CONFIG);
-                    dbInstance = firebase.firestore();
-                    useFirebase = true;
-                    console.log("Firebase initialized successfully on verification page.");
-                } catch (err) {
-                    console.warn("Failed to initialize Firebase, falling back to LocalStorage:", err);
-                }
-            }
-
             // Check if there is an ID in query parameter
             const params = new URLSearchParams(window.location.search);
             const queryId = params.get('id');
@@ -428,28 +405,18 @@
             }
 
             let cert = null;
-
-            // 1. Check LocalDB/LocalStorage first
-            cert = localDB.certificates.find(c => String(c.id).toLowerCase() === inputVal.toLowerCase());
-
-            // 2. If not found in LocalDB and Firebase is available, query Firestore
-            if (!cert && useFirebase && dbInstance) {
-                try {
-                    // search by doc ID
-                    const docRef = dbInstance.collection('certificates').doc(inputVal);
-                    const docSnap = await docRef.get();
-                    if (docSnap.exists) {
-                        cert = docSnap.data();
-                    } else {
-                        // search case insensitively by query
-                        const qSnap = await dbInstance.collection('certificates').where('id', '==', inputVal).limit(1).get();
-                        if (!qSnap.empty) {
-                            cert = qSnap.docs[0].data();
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Lỗi truy vấn Firestore:", e);
-                }
+            try {
+                const response = await fetch('/api/verify-certificate?code=' + encodeURIComponent(inputVal), {
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store'
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (response.ok) cert = payload;
+                else if (response.status !== 404) throw new Error(payload.error || 'Dịch vụ xác minh tạm thời không khả dụng.');
+            } catch (e) {
+                console.warn("Lỗi xác minh chứng nhận:", e);
+                showError(e.message || 'Không thể kết nối dịch vụ xác minh.');
+                return;
             }
 
             // 3. Render Results

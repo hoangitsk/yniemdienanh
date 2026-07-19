@@ -3,14 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
-      return request.auth != null
-        && (
-          request.auth.token.email_verified == true
-          || (
-            exists(/databases/$(database)/documents/users/$(request.auth.uid))
-            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.emailVerified == true
-          )
-        );
+      // Email verification is an Auth claim. Never trust a client-writable
+      // users.emailVerified field as an authentication signal.
+      return request.auth != null && request.auth.token.email_verified == true;
     }
 
     function hasUserDoc() {
@@ -25,6 +20,10 @@ service cloud.firestore {
       return myUserDoc().data.role;
     }
 
+    function isCandidateProfile(profile) {
+      return ('projectGroup' in profile) && profile.projectGroup == 'candidate';
+    }
+
     function isAdmin() {
       return isProjectAdminEmail() || (signedIn() && hasUserDoc() && myRole() == 'admin');
     }
@@ -35,9 +34,26 @@ service cloud.firestore {
         && request.auth.token.email_verified == true;
     }
 
-    function validUserRoleOnCreate() {
-      return (isProjectAdminEmail() && request.resource.data.role == 'admin')
-        || (!isProjectAdminEmail() && request.resource.data.role == 'member');
+    function validUserRoleOnCreate(userId) {
+      return request.auth != null
+        && request.auth.uid == userId
+        && ('id' in request.resource.data)
+        && request.resource.data.id == userId
+        && ('email' in request.resource.data)
+        && request.resource.data.email == request.auth.token.email
+        && (
+          (isProjectAdminEmail() && request.resource.data.role == 'admin')
+          || (!isProjectAdminEmail() && request.resource.data.role == 'member')
+        )
+        // A self-created profile cannot seed a privileged department/title.
+        && (isProjectAdminEmail() || (
+          (!('dept' in request.resource.data) || request.resource.data.dept == '')
+          && (!('position' in request.resource.data) || request.resource.data.position == '')
+          && (!('projectGroup' in request.resource.data) || request.resource.data.projectGroup == 'community')
+          && (!('leadershipTitle' in request.resource.data) || request.resource.data.leadershipTitle == '')
+        ))
+        && (!('emailVerified' in request.resource.data)
+          || request.resource.data.emailVerified == request.auth.token.email_verified);
     }
 
     function keepsOwnRole() {
@@ -46,14 +62,26 @@ service cloud.firestore {
         || isProjectAdminEmail();
     }
 
+    function safeSelfUserUpdate(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && ('email' in request.resource.data)
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'email', 'phone', 'school', 'className', 'interest', 'intro',
+          'photoUrl', 'profileCompleted', 'lastLogin', 'lastLoginAt', 'updatedAt'
+        ]);
+    }
+
     function isOrganizer() {
       return isProjectAdminEmail()
-        || (signedIn() && hasUserDoc() && (myRole() == 'admin' || myRole() == 'organizer'));
+        || (signedIn() && hasUserDoc() && !isCandidateProfile(myUserDoc().data)
+          && (myRole() == 'admin' || myRole() == 'organizer'));
     }
 
     // HR/PR staff coordinate polls, interviews and meeting attendance.
     function isScheduleManager() {
-      return isOrganizer() || (signedIn() && hasUserDoc() && (
+      return isOrganizer() || (signedIn() && hasUserDoc() && !isCandidateProfile(myUserDoc().data) && (
         myUserDoc().data.dept == 'Ban Nhân Sự' ||
         myUserDoc().data.dept == 'Ban Nhan Su' ||
         myUserDoc().data.dept == 'HR' ||
@@ -66,7 +94,7 @@ service cloud.firestore {
     }
 
     function isPeopleManager() {
-      return isOrganizer() || (signedIn() && hasUserDoc() && (
+      return isOrganizer() || (signedIn() && hasUserDoc() && !isCandidateProfile(myUserDoc().data) && (
         myUserDoc().data.dept == 'Ban Nhân Sự' ||
         myUserDoc().data.dept == 'Ban Nhan Su' ||
         myUserDoc().data.dept == 'HR' ||
@@ -105,39 +133,62 @@ service cloud.firestore {
 
     match /submissions/{submissionId} {
       allow read: if true;
-      allow create: if signedIn() && request.resource.data.status == 'pending' && !('fee' in request.resource.data && request.resource.data.fee > 0);
+      allow create: if signedIn()
+        && request.resource.data.status == 'pending'
+        && ('userId' in request.resource.data)
+        && request.resource.data.userId == request.auth.uid
+        && (!('votes' in request.resource.data) || request.resource.data.votes == 0)
+        && !('certIssued' in request.resource.data)
+        && !('certCount' in request.resource.data)
+        && !('paymentOrderCode' in request.resource.data)
+        && !('fee' in request.resource.data && request.resource.data.fee > 0);
       allow update, delete: if isOrganizer();
 
       match /votes/{userId} {
-        allow read: if true;
-        allow create: if signedIn()
-          && request.auth.uid == userId
-          && userId == request.resource.data.userId
-          && submissionId == request.resource.data.submissionId
-          && (!exists(/databases/$(database)/documents/config/settings) || (
-              let settings = get(/databases/$(database)/documents/config/settings).data;
-              (!("voteStart" in settings) || settings.voteStart == "" || request.time >= timestamp(settings.voteStart)) &&
-              (!("voteEnd" in settings) || settings.voteEnd == "" || request.time <= timestamp(settings.voteEnd))
-             ));
-        allow update: if false;
-        allow delete: if isOrganizer();
+        // Votes are created and counted by the trusted vote endpoint. Do not
+        // expose voter IDs/timestamps or allow a client to mint/delete votes.
+        allow read, create, update, delete: if false;
       }
     }
 
     match /feedback/{docId} {
-      allow create: if true;
+      allow create: if signedIn()
+        && (!('userId' in request.resource.data) || request.resource.data.userId == request.auth.uid);
       allow read, update, delete: if isOrganizer();
     }
 
     match /users/{userId} {
-      allow create: if request.auth != null && request.auth.uid == userId && validUserRoleOnCreate();
+      allow create: if validUserRoleOnCreate(userId);
       allow read: if request.auth != null && (request.auth.uid == userId || isPeopleManager());
-      allow update: if signedIn() && ((request.auth.uid == userId && keepsOwnRole()) || isAdmin());
+      allow update: if isAdmin() || safeSelfUserUpdate(userId);
       allow delete: if isAdmin();
     }
 
     match /applications/{docId} {
-      allow create: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'id', 'type', 'name', 'userId', 'email', 'phone', 'intro',
+          'dept', 'position', 'vision', 'status', 'date'
+        ])
+        && docId == request.auth.uid + '_' + request.resource.data.type
+        && request.resource.data.id == docId
+        && request.resource.data.type in ['organizer', 'cofounder', 'president']
+        && ('userId' in request.resource.data)
+        && request.resource.data.userId == request.auth.uid
+        && ('email' in request.resource.data)
+        && request.resource.data.email == request.auth.token.email
+        && ('status' in request.resource.data)
+        && request.resource.data.status == 'pending'
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 30
+        && request.resource.data.intro is string
+        && request.resource.data.intro.size() >= 20
+        && request.resource.data.intro.size() <= 5000
+        && request.resource.data.vision is string
+        && request.resource.data.vision.size() <= 5000;
       allow read, update, delete: if isPeopleManager();
     }
 
@@ -173,14 +224,18 @@ service cloud.firestore {
 
     match /posts/{docId} {
       allow read: if true;
-      allow create: if signedIn();
+      allow create: if signedIn()
+        && ('userId' in request.resource.data)
+        && request.resource.data.userId == request.auth.uid;
       allow update: if signedIn() && (isOwner(resource.data.userId) || isOrganizer()) && (!('userRole' in request.resource.data) || request.resource.data.userRole == resource.data.userRole) && (!('pinned' in request.resource.data) || request.resource.data.pinned == resource.data.pinned) && (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId);
       allow delete: if isOrganizer();
     }
 
     match /comments/{docId} {
       allow read: if true;
-      allow create: if signedIn();
+      allow create: if signedIn()
+        && ('userId' in request.resource.data)
+        && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isOrganizer();
     }
 
@@ -191,7 +246,10 @@ service cloud.firestore {
 
     match /registrations/{docId} {
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || isOrganizer());
-      allow create: if signedIn() && (!('price' in request.resource.data) || request.resource.data.price == 0);
+      allow create: if signedIn()
+        && ('userId' in request.resource.data)
+        && request.resource.data.userId == request.auth.uid
+        && (!('price' in request.resource.data) || request.resource.data.price == 0);
       allow update, delete: if isOrganizer();
     }
 
@@ -299,7 +357,8 @@ service cloud.firestore {
 
     match /notifications/{docId} {
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || resource.data.targetAll == true || isOrganizer());
-      allow create: if signedIn();
+      allow create: if isOrganizer()
+        || (signedIn() && ('userId' in request.resource.data) && request.resource.data.userId == request.auth.uid);
       allow update: if signedIn() && (resource.data.userId == request.auth.uid || isOrganizer());
       allow delete: if isOrganizer();
     }
@@ -312,16 +371,21 @@ service cloud.firestore {
 
     match /teams/{docId} {
       allow read: if true;
-      allow create: if signedIn();
+      allow create: if signedIn()
+        && ('leaderId' in request.resource.data)
+        && request.resource.data.leaderId == request.auth.uid;
       allow update: if signedIn() && (isOwner(resource.data.leaderId) || isOrganizer());
       allow delete: if isOrganizer();
     }
 
     match /team_members/{docId} {
       allow read: if true;
-      allow create: if signedIn();
+      allow create: if signedIn()
+        && ('userId' in request.resource.data)
+        && request.resource.data.userId == request.auth.uid;
       allow update: if isOrganizer();
-      allow delete: if signedIn() || isOrganizer();
+      allow delete: if isOrganizer()
+        || (signedIn() && resource.data.userId == request.auth.uid);
     }
 
     match /production_handbooks/{docId} {
@@ -392,7 +456,7 @@ service cloud.firestore {
 
     match /peer_review_matches/{docId} {
       allow read: if signedIn() && (resource.data.reviewerId == request.auth.uid || isOrganizer());
-      allow write: if signedIn();
+      allow write: if isOrganizer();
     }
 
     match /xp_ledger/{docId} {
@@ -495,7 +559,11 @@ service cloud.firestore {
 
     match /production_progress/{docId} {
       allow read: if signedIn();
-      allow write: if signedIn();
+      allow write: if isOrganizer()
+        || (signedIn() && (
+          ('userId' in request.resource.data && request.resource.data.userId == request.auth.uid)
+          || ('userId' in resource.data && resource.data.userId == request.auth.uid)
+        ));
     }
 
     match /mini_challenges/{docId} {
@@ -516,7 +584,8 @@ service cloud.firestore {
 
     match /judging_scores/{docId} {
       allow read: if isOrganizer();
-      allow write: if isOrganizer();
+      // Scorecards will be written by a validated judging endpoint.
+      allow write: if false;
     }
 
     match /leaderboard/{docId} {
@@ -530,8 +599,12 @@ service cloud.firestore {
     }
 
     match /certificates/{docId} {
-      allow read: if true;
-      allow write: if isOrganizer();
+      // Public verification is intentionally served by /api/verify-certificate,
+      // which returns only a minimal canonical projection.
+      allow read: if isOrganizer()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      // Certificates are issued by trusted backend/payment flows only.
+      allow write: if false;
     }
 
     match /partners/{docId} {

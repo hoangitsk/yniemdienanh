@@ -56,13 +56,24 @@ module.exports = async (req, res) => {
 
     try {
         if (!PAYOS_ENABLED) {
-            return res.status(400).json({ error: "PayOS chưa được cấu hình." });
+            return res.status(503).json({ error: "PayOS chưa được cấu hình." });
         }
+        if (!db) return res.status(503).json({ error: 'Firebase Service Account chưa được cấu hình.' });
 
         // Verify webhook signature (enforces checksum and format)
         const webhookData = payos.verifyPaymentWebhookData(req.body);
         const orderNum = Number(webhookData.orderCode);
         const amountPaid = Number(webhookData.amount);
+
+        // Signature validity alone does not mean the event is a successful
+        // payment. Never fulfil failed/test notifications.
+        const successful = req.body && req.body.success === true
+            && String(req.body.code || '').toUpperCase() === '00'
+            && String(webhookData.code || '').toUpperCase() === '00';
+        if (!successful) return res.status(200).json({ success: true, ignored: true });
+        if (!Number.isSafeInteger(orderNum) || orderNum <= 0 || !Number.isSafeInteger(amountPaid) || amountPaid <= 0) {
+            return res.status(400).json({ error: 'Invalid webhook payment data.' });
+        }
 
         console.log(`[Webhook] PayOS Webhook received & verified. OrderCode: ${orderNum}, Amount: ${amountPaid}`);
 
@@ -76,6 +87,6 @@ module.exports = async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('PayOS webhook error:', err.message || err);
-        res.status(400).json({ error: err.message || 'Lỗi xử lý Webhook' });
+        res.status(400).json({ error: 'Webhook không hợp lệ hoặc không thể xử lý.' });
     }
 };

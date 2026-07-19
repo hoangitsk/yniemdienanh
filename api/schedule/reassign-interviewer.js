@@ -21,8 +21,9 @@ function normalize(value) {
 }
 
 function eligibleInterviewer(profile) {
+    if (normalize(profile && profile.projectGroup) === 'candidate') return false;
     const role = normalize(profile && profile.role);
-    const context = normalize([profile && profile.position, profile && profile.title].filter(Boolean).join(' '));
+    const context = normalize([profile && profile.position, profile && profile.title, profile && profile.leadershipTitle].filter(Boolean).join(' '));
     const email = normalize(profile && profile.email);
     return email === 'yniemdienanh@gmail.com' || ['admin', 'organizer', 'president', 'core'].includes(role) ||
         context.includes('core') || context.includes('president') || context.includes('chu tich') || context.includes('ban dieu hanh');

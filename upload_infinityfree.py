@@ -2,12 +2,13 @@ import os
 import ftplib
 import sys
 
-# FTP Configuration
-FTP_HOST = "ftpupload.net"
-FTP_USER = "if0_42342185"
-FTP_PASS = "GB9eMqPMra3MCO1"
-FTP_PORT = 21
-REMOTE_ROOT = "/yniemdienanh.gt.tc/htdocs"
+# FTP configuration is intentionally read from the process environment.  Do
+# not put credentials in this repository (it is mirrored to public remotes).
+FTP_HOST = os.getenv("YNDA_FTP_HOST", "ftpupload.net")
+FTP_USER = os.getenv("YNDA_FTP_USER", "").strip()
+FTP_PASS = os.getenv("YNDA_FTP_PASS", "")
+FTP_PORT = int(os.getenv("YNDA_FTP_PORT", "21"))
+REMOTE_ROOT = os.getenv("YNDA_FTP_ROOT", "/yniemdienanh.gt.tc/htdocs")
 
 # Define what to upload
 # Files relative to the project root
@@ -66,6 +67,11 @@ def main():
     # Change working directory to the directory of this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
+
+    if not FTP_USER or not FTP_PASS:
+        raise RuntimeError(
+            "Thiếu YNDA_FTP_USER/YNDA_FTP_PASS. Đặt secret ngoài repository trước khi deploy."
+        )
     
     try:
         print(f"Connecting to {FTP_HOST}:{FTP_PORT}...")

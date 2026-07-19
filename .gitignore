@@ -9,3 +9,6 @@ demo payos/
 *.zip
 *.7z
 *.rar
+.vercel
+.env.local
+.env.*.local

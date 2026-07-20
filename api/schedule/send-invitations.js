@@ -161,9 +161,19 @@ module.exports = async function sendInterviewInvitations(req, res) {
         }
         // Chỉ ứng viên và người được phân công phỏng vấn nhận email.
         // Admin xem link Meet trong lịch quản trị, không nhận thư mời tự động.
-        var staffEmails = event.type === 'interview'
-            ? [assignedHr.email.trim().toLowerCase()]
-            : [String(decoded.email || '').trim().toLowerCase()].filter(Boolean);
+        var staffEmails = [];
+        if (event.type === 'interview') {
+            if (assignedHr.email) {
+                staffEmails.push(assignedHr.email.trim().toLowerCase());
+            }
+        } else {
+            if (decoded.email) {
+                staffEmails.push(String(decoded.email).trim().toLowerCase());
+            }
+            if (assignedHr.email) {
+                staffEmails.push(assignedHr.email.trim().toLowerCase());
+            }
+        }
         var candidateDoc = usersSnap.docs.find(function(doc) { return doc.id === booking.candidateId; });
         var candidateProfile = candidateDoc ? candidateDoc.data() : {};
         candidateProfile.name = candidateProfile.name || booking.candidateName || '';
@@ -191,8 +201,13 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var sender = preferredSender('brevo');
         if (!sender) throw new Error('Chưa cấu hình kênh gửi email trên máy chủ.');
         var fromEmail = sender.email;
-        var candidateHtml = '<p>Chào ' + candidateName + ',</p>' + candidatePersonalization + '<p>Trân trọng mời bạn tham gia buổi phỏng vấn <strong>' + title + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes + '<p>Vui lòng vào phòng trước 5–10 phút. Nếu cần hỗ trợ, hãy phản hồi email này.</p>';
-        var staffHtml = '<p>Chào ' + escapeHtml((assignedHr && assignedHr.name) || 'người phụ trách') + ',</p><p>Bạn được phân công phỏng vấn ứng viên <strong>' + candidateName + '</strong> trong lịch <strong>' + title + '</strong>.</p>' + interviewerPersonalization + '<p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes;
+        var isInterview = event.type === 'interview';
+        var candidateHtml = isInterview
+            ? '<p>Chào ' + candidateName + ',</p>' + candidatePersonalization + '<p>Trân trọng mời bạn tham gia buổi phỏng vấn <strong>' + title + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes + '<p>Vui lòng vào phòng trước 5–10 phút. Nếu cần hỗ trợ, hãy phản hồi email này.</p>'
+            : '<p>Chào ' + candidateName + ',</p><p>Trân trọng mời bạn tham gia lịch họp <strong>' + title + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes + '<p>Vui lòng vào phòng trước 5–10 phút. Nếu cần hỗ trợ, hãy phản hồi email này.</p>';
+        var staffHtml = isInterview
+            ? '<p>Chào ' + escapeHtml((assignedHr && assignedHr.name) || 'người phụ trách') + ',</p><p>Bạn được phân công phỏng vấn ứng viên <strong>' + candidateName + '</strong> trong lịch <strong>' + title + '</strong>.</p>' + interviewerPersonalization + '<p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes
+            : '<p>Chào bạn,</p><p>Bạn được mời tham gia cuộc họp <strong>' + title + '</strong> cùng thành viên <strong>' + candidateName + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> <a href="' + meetUrl + '">' + meetUrl + '</a></p>' + notes;
         var wrap = function(html) {
             return '<div style="max-width:600px;margin:auto;padding:28px;font-family:Arial,sans-serif;line-height:1.65;color:#1f2937">' + html + '<hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0"><small>Ý Niệm Điện Ảnh · Thư mời lịch làm việc</small></div>';
         };
@@ -239,7 +254,7 @@ module.exports = async function sendInterviewInvitations(req, res) {
         recipients.forEach(function(email) {
             messages.push(sendMailWithFallback({
                 to: email,
-                subject: '[Người phỏng vấn] ' + (event.type === 'interview' ? 'Lịch phỏng vấn' : 'Lịch họp') + ' đã xác nhận — ' + event.title,
+                subject: (event.type === 'interview' ? '[Người phỏng vấn] Lịch phỏng vấn' : '[Lịch họp]') + ' đã xác nhận — ' + event.title,
                 html: wrap(staffHtml),
                 icalEvent: { method: 'request', content: createIcs(email) }
             }, { fromName:sender.name, preferredProvider:'brevo' }));

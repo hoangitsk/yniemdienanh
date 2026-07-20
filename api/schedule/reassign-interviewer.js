@@ -107,8 +107,12 @@ module.exports = async function reassignInterviewer(req, res) {
                     updatedAt: now
                 }, { merge:true });
             }
-            if (event.type !== 'interview' || event.status === 'cancelled') throw new Error('Lịch này không thể đổi người phỏng vấn.');
-            if (!interviewer.email || !eligibleInterviewer(interviewer)) throw new Error('Chỉ Admin/Core/President hợp lệ mới được phân công phỏng vấn.');
+            if ((event.type !== 'interview' && event.type !== 'meeting') || event.status === 'cancelled') {
+                throw new Error('Lịch này không thể đổi người phụ trách.');
+            }
+            if (!interviewer.email || (event.type === 'interview' && !eligibleInterviewer(interviewer))) {
+                throw new Error(event.type === 'interview' ? 'Chỉ Admin/Core/President hợp lệ mới được phân công phỏng vấn.' : 'Người được phân công chưa có email.');
+            }
             const wanted = interval(event);
             const conflict = eventsSnap.docs.map(doc => ({ id:doc.id, ...doc.data() })).some(item => {
                 if (item.id === event.id || item.status === 'cancelled' || String(item.assignedHrId || '') !== interviewer.id) return false;
@@ -141,7 +145,7 @@ module.exports = async function reassignInterviewer(req, res) {
 
         const sender = preferredSender('brevo');
         const time = new Date(event.startAt).toLocaleString('vi-VN', { dateStyle:'full', timeStyle:'short', timeZone:'Asia/Ho_Chi_Minh' });
-        const candidate = escapeHtml(event.candidateName || 'ứng viên');
+        const attendeeName = escapeHtml(event.candidateName || 'thành viên');
         const meet = escapeHtml(event.location || 'Link Meet sẽ được bổ sung sau');
         let emailSent = false;
         let emailWarning = '';
@@ -149,10 +153,18 @@ module.exports = async function reassignInterviewer(req, res) {
             emailWarning = 'Chưa cấu hình kênh gửi email.';
         } else {
             try {
+                const isInterview = event.type === 'interview';
+                const subject = isInterview
+                    ? '[Người phỏng vấn] Bạn được phân công phỏng vấn — ' + (event.title || attendeeName)
+                    : '[Lịch họp] Bạn được phân công phụ trách cuộc họp — ' + (event.title || attendeeName);
+                const html = isInterview
+                    ? '<div style="max-width:600px;margin:auto;padding:28px;font-family:Arial,sans-serif;line-height:1.65;color:#1f2937"><p>Chào ' + escapeHtml(interviewer.name || interviewer.email) + ',</p><p>Bạn vừa được phân công phỏng vấn <strong>' + attendeeName + '</strong>.</p><p><strong>Ban ứng tuyển:</strong> ' + escapeHtml(event.candidateDepartment || 'Chưa cập nhật') + '<br><strong>Chức danh ứng tuyển:</strong> ' + escapeHtml(event.candidatePosition || 'Chưa cập nhật') + '<br><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> ' + (event.location ? '<a href="' + meet + '">' + meet + '</a>' : meet) + '</p><p>Vui lòng kiểm tra lịch phân công trước buổi phỏng vấn.</p></div>'
+                    : '<div style="max-width:600px;margin:auto;padding:28px;font-family:Arial,sans-serif;line-height:1.65;color:#1f2937"><p>Chào ' + escapeHtml(interviewer.name || interviewer.email) + ',</p><p>Bạn vừa được phân công phụ trách cuộc họp <strong>' + (event.title || 'Họp') + '</strong> cùng <strong>' + attendeeName + '</strong>.</p><p><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> ' + (event.location ? '<a href="' + meet + '">' + meet + '</a>' : meet) + '</p><p>Vui lòng kiểm tra lịch phân công trước giờ họp.</p></div>';
+
                 await sendMailWithFallback({
                     to:String(interviewer.email).trim().toLowerCase(),
-                    subject:'[Người phỏng vấn] Bạn được phân công phỏng vấn — ' + (event.title || candidate),
-                    html:'<div style="max-width:600px;margin:auto;padding:28px;font-family:Arial,sans-serif;line-height:1.65;color:#1f2937"><p>Chào ' + escapeHtml(interviewer.name || interviewer.email) + ',</p><p>Bạn vừa được phân công phỏng vấn <strong>' + candidate + '</strong>.</p><p><strong>Ban ứng tuyển:</strong> ' + escapeHtml(event.candidateDepartment || 'Chưa cập nhật') + '<br><strong>Chức danh ứng tuyển:</strong> ' + escapeHtml(event.candidatePosition || 'Chưa cập nhật') + '<br><strong>Thời gian:</strong> ' + escapeHtml(time) + '<br><strong>Google Meet:</strong> ' + (event.location ? '<a href="' + meet + '">' + meet + '</a>' : meet) + '</p><p>Vui lòng kiểm tra lịch phân công trước buổi phỏng vấn.</p></div>'
+                    subject:subject,
+                    html:html
                 }, { fromName:sender.name, preferredProvider:'brevo' });
                 emailSent = true;
                 await eventRef.set({ reassignmentEmailSentAt:new Date().toISOString(), reassignmentEmailRecipient:String(interviewer.email).trim().toLowerCase() }, { merge:true });

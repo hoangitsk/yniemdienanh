@@ -49,6 +49,27 @@ module.exports = async function reassignInterviewer(req, res) {
         const operator = operatorDoc.exists ? operatorDoc.data() : {};
         if (!decoded.email_verified || !isScheduleManager(decoded, operator)) return res.status(403).json({ error:'Bạn không có quyền đổi người phỏng vấn.' });
 
+        // Retrieve interviewer from Firebase Auth and applications in case their Firestore profile doc does not exist yet.
+        let interviewerAuth = null;
+        let interviewerApp = null;
+        try {
+            interviewerAuth = await admin.auth().getUser(String(body.interviewerId)).catch(err => {
+                console.warn(`Interviewer Auth fetch failed for ID ${body.interviewerId}:`, err);
+                return null;
+            });
+            if (interviewerAuth && interviewerAuth.email) {
+                const appSnap = await db.collection('applications')
+                    .where('email', '==', String(interviewerAuth.email).trim().toLowerCase())
+                    .limit(1)
+                    .get();
+                if (!appSnap.empty) {
+                    interviewerApp = appSnap.docs[0].data();
+                }
+            }
+        } catch (authErr) {
+            console.warn('Auth/App fetch error:', authErr);
+        }
+
         const eventRef = db.collection('scheduledEvents').doc(String(body.eventId));
         const interviewerRef = db.collection('users').doc(String(body.interviewerId));
         const auditRef = db.collection('auditLogs').doc();
@@ -61,9 +82,31 @@ module.exports = async function reassignInterviewer(req, res) {
             const [eventDoc, interviewerDoc, eventsSnap] = await Promise.all([
                 tx.get(eventRef), tx.get(interviewerRef), tx.get(db.collection('scheduledEvents'))
             ]);
-            if (!eventDoc.exists || !interviewerDoc.exists) throw new Error('Không tìm thấy lịch hoặc tài khoản người phỏng vấn.');
+            if (!eventDoc.exists || (!interviewerDoc.exists && !interviewerAuth)) {
+                throw new Error('Không tìm thấy lịch hoặc tài khoản người phỏng vấn.');
+            }
             event = { id:eventDoc.id, ...eventDoc.data() };
-            interviewer = { id:interviewerDoc.id, ...interviewerDoc.data() };
+            interviewer = interviewerDoc.exists ? { id:interviewerDoc.id, ...interviewerDoc.data() } : {
+                id: String(body.interviewerId),
+                name: interviewerAuth ? (interviewerAuth.displayName || interviewerAuth.email.split('@')[0]) : '',
+                email: interviewerAuth ? interviewerAuth.email : '',
+                role: String(interviewerAuth && interviewerAuth.email || '').toLowerCase() === 'yniemdienanh@gmail.com' ? 'admin' : 'member',
+                dept: interviewerApp ? (interviewerApp.dept || '') : '',
+                position: interviewerApp ? (interviewerApp.position || '') : ''
+            };
+
+            // Initialize Firestore profile if it did not exist
+            if (!interviewerDoc.exists) {
+                tx.set(interviewerRef, {
+                    name: interviewer.name,
+                    email: interviewer.email,
+                    role: interviewer.role,
+                    dept: interviewer.dept,
+                    position: interviewer.position,
+                    createdAt: now,
+                    updatedAt: now
+                }, { merge:true });
+            }
             if (event.type !== 'interview' || event.status === 'cancelled') throw new Error('Lịch này không thể đổi người phỏng vấn.');
             if (!interviewer.email || !eligibleInterviewer(interviewer)) throw new Error('Chỉ Admin/Core/President hợp lệ mới được phân công phỏng vấn.');
             const wanted = interval(event);

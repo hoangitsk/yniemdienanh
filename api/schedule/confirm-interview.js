@@ -66,6 +66,57 @@ module.exports = async function confirmInterview(req, res) {
         const interval = eventInterval({ startAt, duration });
         if (!Number.isFinite(interval.start)) return res.status(400).json({ error: 'Thời điểm phỏng vấn không hợp lệ.' });
 
+        // Retrieve candidate and HR from Firebase Auth and applications in case their Firestore profile docs do not exist yet.
+        let candidateAuth = null;
+        let hrAuth = null;
+        let candidateApp = null;
+        let hrApp = null;
+        try {
+            const [cAuth, hAuth] = await Promise.all([
+                admin.auth().getUser(candidateId).catch(err => {
+                    console.warn(`Candidate Auth fetch failed for ID ${candidateId}:`, err);
+                    return null;
+                }),
+                admin.auth().getUser(hrId).catch(err => {
+                    console.warn(`HR Auth fetch failed for ID ${hrId}:`, err);
+                    return null;
+                })
+            ]);
+            candidateAuth = cAuth;
+            hrAuth = hAuth;
+
+            const appQueries = [];
+            if (candidateAuth && candidateAuth.email) {
+                appQueries.push(
+                    db.collection('applications')
+                        .where('email', '==', String(candidateAuth.email).trim().toLowerCase())
+                        .limit(1)
+                        .get()
+                        .then(snap => {
+                            if (!snap.empty) candidateApp = snap.docs[0].data();
+                        })
+                        .catch(err => console.warn('Candidate App fetch error:', err))
+                );
+            }
+            if (hrAuth && hrAuth.email) {
+                appQueries.push(
+                    db.collection('applications')
+                        .where('email', '==', String(hrAuth.email).trim().toLowerCase())
+                        .limit(1)
+                        .get()
+                        .then(snap => {
+                            if (!snap.empty) hrApp = snap.docs[0].data();
+                        })
+                        .catch(err => console.warn('HR App fetch error:', err))
+                );
+            }
+            if (appQueries.length > 0) {
+                await Promise.all(appQueries);
+            }
+        } catch (authErr) {
+            console.warn('Auth/App fetch error:', authErr);
+        }
+
         const eventRef = db.collection('scheduledEvents').doc();
         const bookingRef = db.collection('scheduledBookings').doc(eventRef.id + '_' + candidateId);
         const auditRef = db.collection('auditLogs').doc();
@@ -81,7 +132,9 @@ module.exports = async function confirmInterview(req, res) {
                 tx.get(db.collection('scheduledEvents')),
                 tx.get(db.collection('scheduledBookings'))
             ]);
-            if (!candidateDoc.exists || !hrDoc.exists) throw new Error('Không tìm thấy ứng viên hoặc người phỏng vấn.');
+            if ((!candidateDoc.exists && !candidateAuth) || (!hrDoc.exists && !hrAuth)) {
+                throw new Error('Không tìm thấy ứng viên hoặc người phỏng vấn.');
+            }
             const candidateSchedule = candidateScheduleDoc.exists ? candidateScheduleDoc.data() : {};
             if (candidateSchedule.role !== 'candidate' || !candidateVotedSlot(candidateSchedule, slotId)) {
                 throw new Error('Khung giờ này không nằm trong phiếu vote hợp lệ của ứng viên.');
@@ -110,8 +163,45 @@ module.exports = async function confirmInterview(req, res) {
                 throw new Error('Ứng viên đã có lịch phỏng vấn đang hoạt động.');
             }
 
-            const candidate = candidateDoc.data();
-            const hr = hrDoc.data();
+            const candidate = candidateDoc.exists ? candidateDoc.data() : {
+                name: candidateAuth ? (candidateAuth.displayName || candidateAuth.email.split('@')[0]) : '',
+                email: candidateAuth ? candidateAuth.email : '',
+                role: 'member',
+                dept: candidateApp ? (candidateApp.dept || '') : '',
+                position: candidateApp ? (candidateApp.position || '') : ''
+            };
+            const hr = hrDoc.exists ? hrDoc.data() : {
+                name: hrAuth ? (hrAuth.displayName || hrAuth.email.split('@')[0]) : '',
+                email: hrAuth ? hrAuth.email : '',
+                role: String(hrAuth && hrAuth.email || '').toLowerCase() === 'yniemdienanh@gmail.com' ? 'admin' : 'member',
+                dept: hrApp ? (hrApp.dept || '') : '',
+                position: hrApp ? (hrApp.position || '') : ''
+            };
+
+            // Initialize Firestore profiles if they did not exist
+            if (!candidateDoc.exists) {
+                tx.set(db.collection('users').doc(candidateId), {
+                    name: candidate.name,
+                    email: candidate.email,
+                    role: candidate.role,
+                    dept: candidate.dept,
+                    position: candidate.position,
+                    createdAt: now,
+                    updatedAt: now
+                }, { merge: true });
+            }
+            if (!hrDoc.exists) {
+                tx.set(db.collection('users').doc(hrId), {
+                    name: hr.name,
+                    email: hr.email,
+                    role: hr.role,
+                    dept: hr.dept,
+                    position: hr.position,
+                    createdAt: now,
+                    updatedAt: now
+                }, { merge: true });
+            }
+
             confirmedEvent = {
                 ...body.event,
                 id: eventRef.id,

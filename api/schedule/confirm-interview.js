@@ -125,10 +125,11 @@ module.exports = async function confirmInterview(req, res) {
 
         await db.runTransaction(async tx => {
             const candidateScheduleRef = db.collection('meetingSchedules').doc(pollId + '_' + candidateId);
-            const [candidateDoc, hrDoc, candidateScheduleDoc, eventsSnap, bookingsSnap] = await Promise.all([
+            const [candidateDoc, hrDoc, candidateScheduleDoc, pollDoc, eventsSnap, bookingsSnap] = await Promise.all([
                 tx.get(db.collection('users').doc(candidateId)),
                 tx.get(db.collection('users').doc(hrId)),
                 tx.get(candidateScheduleRef),
+                tx.get(db.collection('availabilityPolls').doc(pollId)),
                 tx.get(db.collection('scheduledEvents')),
                 tx.get(db.collection('scheduledBookings'))
             ]);
@@ -136,7 +137,9 @@ module.exports = async function confirmInterview(req, res) {
                 throw new Error('Không tìm thấy ứng viên hoặc người phỏng vấn.');
             }
             const candidateSchedule = candidateScheduleDoc.exists ? candidateScheduleDoc.data() : {};
-            if (candidateSchedule.role !== 'candidate' || !candidateVotedSlot(candidateSchedule, slotId)) {
+            const poll = pollDoc.exists ? pollDoc.data() : {};
+            const allowedRoles = poll.type === 'interview' ? ['candidate', 'member'] : ['candidate'];
+            if (!allowedRoles.includes(candidateSchedule.role) || !candidateVotedSlot(candidateSchedule, slotId)) {
                 throw new Error('Khung giờ này không nằm trong phiếu vote hợp lệ của ứng viên.');
             }
 

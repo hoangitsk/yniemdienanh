@@ -85,7 +85,7 @@ module.exports = async (req, res) => {
 Thông tin chính thức từ Sổ tay dự án:
 ${PROJECT_HANDBOOK_EMAIL_CONTEXT}
 
-Link tham gia nhóm Messenger chính thức theo Ban (nếu là thư Duyệt/Chào mừng):
+Link tham gia nhóm Messenger chính thức theo Ban (CHỈ CHÈN khi thư là loại Duyệt/Chào mừng hoặc Mời nhóm phỏng vấn; KHÔNG tự ý chèn vào Thư tùy chỉnh trừ khi mô tả có yêu cầu):
 - Ban Nội dung / Ban Duyệt bài: https://m.me/j/AbYWXdZyqbheibXd/?send_source=gc%3Acopy_invite_link_c
 - Ban Media / Ban Truyền thông: https://m.me/j/AbbV1CGoOXkaGF0t/?send_source=gc%3Acopy_invite_link_c
 - Nếu không vào nhóm bằng link được, nhắc ứng viên kết bạn Facebook với Trưởng ban tại: https://www.facebook.com/Harlanitskt

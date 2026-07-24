@@ -491,7 +491,7 @@
 
             apps.forEach(function (app) {
                 if (!contents[String(app.id)]) contents[String(app.id)] = fallbackEmail(app, type, scheduleCode);
-                if (type === 'approve' || type === 'interview_group' || type === 'custom') {
+                if (type === 'approve' || type === 'interview_group') {
                     var c = contents[String(app.id)];
                     if (c && c.body) c.body = ensureDepartmentGroupLinksInBody(c.body, app);
                 }

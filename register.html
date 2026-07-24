@@ -1372,18 +1372,38 @@
                 return;
             }
 
+            const nameEl = document.getElementById(prefix + 'Name');
+            const emailEl = document.getElementById(prefix + 'Email');
+            const phoneEl = document.getElementById(prefix + 'Phone');
+            const introEl = document.getElementById(prefix + 'Intro');
+            const deptEl = document.getElementById(prefix + 'Dept');
+            const posEl = document.getElementById(prefix + 'Position');
+            const visionEl = document.getElementById(prefix + 'Vision');
+
+            const name = (nameEl ? nameEl.value : session?.name || '').trim();
+            const email = (emailEl ? emailEl.value : session?.email || '').trim();
+            const phone = (phoneEl ? phoneEl.value : '').trim();
+            const intro = (introEl ? introEl.value : '').trim();
+            const dept = (deptEl ? deptEl.value : '').trim();
+            const position = (posEl ? posEl.value : 'member').trim();
+            const vision = (visionEl ? visionEl.value : '').trim();
+
             const phoneRegex = /^0[0-9]{9}$/;
+            if (!phone) {
+                msgEl.textContent = "Vui lòng nhập số điện thoại / Zalo!";
+                return;
+            }
             if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
                 msgEl.textContent = "Số điện thoại Zalo phải có đúng 10 chữ số!";
                 return;
             }
 
-            if (intro.length < 20) {
+            if (!intro || intro.length < 20) {
                 msgEl.textContent = "Giới thiệu bản thân phải dài tối thiểu 20 ký tự!";
                 return;
             }
 
-            if (isCoFounder && vision.length < 30) {
+            if (isCoFounder && (!vision || vision.length < 30)) {
                 msgEl.textContent = "Tầm nhìn & đóng góp phải dài tối thiểu 30 ký tự!";
                 return;
             }
@@ -1415,12 +1435,10 @@
                 msgEl.className = "form-msg ok";
                 msgEl.textContent = "✅ Đã gửi đơn thành công! Hội đồng sáng lập sẽ liên hệ lại với bạn sớm nhất qua Zalo/Email.";
                 
-                // Clear form inputs
-                document.getElementById(prefix + 'Name').value = '';
-                document.getElementById(prefix + 'Email').value = '';
-                document.getElementById(prefix + 'Phone').value = '';
-                document.getElementById(prefix + 'Intro').value = '';
-                if(isCoFounder) document.getElementById(prefix + 'Vision').value = '';
+                // Clear form inputs safely
+                if (phoneEl) phoneEl.value = '';
+                if (introEl) introEl.value = '';
+                if (visionEl) visionEl.value = '';
 
                 showToast("Gửi đơn ứng tuyển thành công!", "success");
 
@@ -1429,10 +1447,11 @@
                     msgEl.className = 'form-msg';
                 }, 4000);
             } catch (err) {
+                msgEl.className = "form-msg err";
                 msgEl.textContent = "Gặp lỗi: " + err.message;
             } finally {
                 submitBtn.disabled = false;
-                                submitBtn.textContent = isCoFounder ? (type === 'president' ? "Gửi đơn ứng tuyển President" : "Gửi đơn ứng tuyển Co-founder") : "Gửi đơn ứng tuyển BTC";
+                submitBtn.textContent = isCoFounder ? (type === 'president' ? "Gửi đơn ứng tuyển President" : "Gửi đơn ứng tuyển Co-founder") : "Gửi đơn ứng tuyển BTC";
             }
         }
 

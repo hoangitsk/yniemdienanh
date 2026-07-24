@@ -206,8 +206,12 @@ async function pullFromSheets(db, sid) {
 
 module.exports = async (req, res) => {
   try {
-    const sid = process.env.SPREADSHEET_HR_DASHBOARD;
-    if (!sid) return res.status(503).json({ error: 'SPREADSHEET_HR_DASHBOARD chưa được cấu hình' });
+    let sid = req.body?.spreadsheetId || req.query?.spreadsheetId || process.env.SPREADSHEET_HR_DASHBOARD;
+    if (sid && typeof sid === 'string' && sid.includes('/spreadsheets/d/')) {
+      const match = sid.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+      if (match) sid = match[1];
+    }
+    if (!sid) return res.status(503).json({ error: 'Chưa nhập hoặc chưa cấu hình mã Google Sheet (SPREADSHEET_HR_DASHBOARD)' });
     if (!process.env.GOOGLE_SERVICE_ACCOUNT) return res.status(503).json({ error: 'GOOGLE_SERVICE_ACCOUNT chưa được cấu hình' });
 
     const db = ensureFirebase();

@@ -5235,9 +5235,15 @@
                                 <input id="bulkEmailAttachment" type="file" accept="application/pdf,.pdf" title="PDF dùng chung cho tất cả ứng viên đã chọn" style="max-width:260px;color:#cbd5e1;border:1px dashed rgba(228,184,102,.25);padding:7px;border-radius:8px;background:rgba(0,0,0,.2)">
                                 <textarea id="bulkEmailDescription" rows="2" maxlength="1000" placeholder="Mô tả cho AI (không bắt buộc), ví dụ: Nhắc ứng viên đọc handbook trước buổi phỏng vấn, giọng thân thiện..." style="flex:1 1 360px;min-width:280px;resize:vertical;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);padding:9px;border-radius:8px"></textarea>
                                 <button id="bulkEmailSendBtn" class="btn btn-gold btn-sm" onclick="sendBulkPersonalizedEmails()">🤖 Soạn & xem trước tất cả</button>
-                                <span id="bulkEmailCount" style="font-size:.8rem;color:var(--text-muted)">0 ứng viên đã chọn</span>
+                                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                                    <button type="button" class="btn btn-line btn-sm" onclick="filterApplicationsForBulkSelect('core', 'qualified')" style="padding:4px 8px;font-size:.72rem;color:var(--gold);border-color:var(--gold)">⚡ Lọc Core (Chưa loại)</button>
+                                    <button type="button" class="btn btn-line btn-sm" onclick="filterApplicationsForBulkSelect('member', 'qualified')" style="padding:4px 8px;font-size:.72rem;color:var(--ok);border-color:var(--ok)">⚡ Lọc Mem (Chưa loại)</button>
+                                    <button type="button" class="btn btn-line btn-sm" onclick="filterApplicationsForBulkSelect('all', 'qualified')" style="padding:4px 8px;font-size:.72rem">⚡ Chọn tất cả chưa loại</button>
+                                    <button type="button" class="btn btn-line btn-sm" onclick="toggleBulkEmailSelection(false)" style="padding:4px 8px;font-size:.72rem;color:var(--text-muted)">Bỏ chọn</button>
+                                    <span id="bulkEmailCount" style="font-size:.8rem;color:var(--gold-light);font-weight:600">0 ứng viên đã chọn</span>
+                                </div>
                             </div>
-                            <div id="bulkEmailProgress" style="font-size:.75rem;color:var(--text-muted);margin-top:8px">Chọn ứng viên, soạn bằng AI rồi xem và sửa riêng từng thư trước khi gửi. PDF tối đa 2 MB được gửi cho từng người.</div>
+                            <div id="bulkEmailProgress" style="font-size:.75rem;color:var(--text-muted);margin-top:8px">Chọn ứng viên, soạn bằng AI rồi xem và sửa riêng từng thư trước khi gửi. Tự động đính kèm nhóm Messenger theo Ban & Link Facebook Trưởng ban.</div>
                         </div>
                         
                         <!-- DANH SÁCH ĐƠN APPLY CHỜ DUYỆT -->
@@ -9688,6 +9694,13 @@
         }
 
         async function syncHRToGoogleSheets() {
+            let sheetId = localStorage.getItem('ynda_spreadsheet_id') || '';
+            if (!sheetId && typeof showPromptModal === 'function') {
+                let input = await showPromptModal('Nhập đường dẫn (URL) hoặc mã ID của Google Sheet:', 'https://docs.google.com/spreadsheets/d/1F1H-yWCHXZvU0f9suyT-W4uOgq9dOAJj/edit');
+                if (!input) return;
+                sheetId = input.trim();
+                localStorage.setItem('ynda_spreadsheet_id', sheetId);
+            }
             showToast('🔄 Đang đồng bộ 2 chiều dữ liệu với Google Sheets...', 'info');
             try {
                 var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
@@ -9695,7 +9708,7 @@
                 var res = await fetch('/api/hr/sync-to-sheets', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken: idToken, mode: 'two_way' })
+                    body: JSON.stringify({ idToken: idToken, mode: 'two_way', spreadsheetId: sheetId })
                 });
                 var data = await res.json();
                 if (data.success) {
@@ -9706,11 +9719,11 @@
                     showToast(msg, 'success');
                     if (typeof renderTab === 'function') renderTab('members');
                 } else {
-                    showToast('⚠️ Cần cấu hình Google Sheet API (' + (data.error || '') + '). Đang dùng xuất file Excel...', 'warning');
+                    showToast('⚠️ Cần cấu hình API (' + (data.error || '') + '). Tự động chuyển sang xuất file Excel...', 'warning');
                     exportExcelCoreTeam();
                 }
             } catch (e) {
-                showToast('⚠️ Không thể kết nối server đồng bộ. Tự động xuất file Excel...', 'warning');
+                showToast('⚠️ Không thể kết nối server đồng bộ. Tự động chuyển sang xuất file Excel...', 'warning');
                 exportExcelCoreTeam();
             }
         }
@@ -10109,13 +10122,29 @@
                 return;
             }
 
+            function getDepartmentGroupLink(deptName) {
+                var d = String(deptName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (d.includes('noi dung') || d.includes('duyet bai')) {
+                    return { name: 'Ban Nội dung & Duyệt bài', url: 'https://m.me/j/AbYWXdZyqbheibXd/?send_source=gc%3Acopy_invite_link_c' };
+                }
+                if (d.includes('media') || d.includes('truyen thong') || d.includes('pr') || d.includes('mkt') || d.includes('marketing') || d.includes('design') || d.includes('edit')) {
+                    return { name: 'Ban Media & Truyền thông', url: 'https://m.me/j/AbbV1CGoOXkaGF0t/?send_source=gc%3Acopy_invite_link_c' };
+                }
+                return null;
+            }
+            const grp = getDepartmentGroupLink(app.dept);
+            let groupInviteHtml = grp
+                ? `<p style="margin:16px 0"><a href="${grp.url}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700" target="_blank">👉 Tham gia nhóm Messenger ${grp.name}</a></p>`
+                : `<p style="margin:16px 0"><a href="https://m.me/j/AbYWXdZyqbheibXd/?send_source=gc%3Acopy_invite_link_c" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700;margin-right:8px" target="_blank">Nhóm Nội dung & Duyệt bài</a><a href="https://m.me/j/AbbV1CGoOXkaGF0t/?send_source=gc%3Acopy_invite_link_c" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700" target="_blank">Nhóm Media & Truyền thông</a></p>`;
+            groupInviteHtml += `<p style="margin-top:12px;font-size:0.88rem;color:#cbd5e1">💡 <em>Lưu ý: Nếu không tham gia bằng đường link Messenger trên được, bạn vui lòng kết bạn Facebook với Trưởng Ban tại <a href="https://www.facebook.com/Harlanitskt" style="color:#e4b866;font-weight:700" target="_blank">Facebook Harlanitskt</a> để được hỗ trợ thêm vào nhóm nhé!</em></p>`;
+
             const senderSignature = currentEmailSenderSignature();
             const templates = {
                 approve: {
                     subject: `[Ý Niệm Điện Ảnh] Kết quả ứng tuyển Ban Tổ Chức — ${app.name}`,
                     body: `<p>Xin chào <strong>${app.name}</strong>,</p>
 <p>Thay mặt Ban Nhân Sự dự án Ý Niệm Điện Ảnh, chúng tôi vô cùng vui mừng thông báo đơn ứng tuyển vị trí <strong>${app.dept || 'BTC'}</strong> của bạn đã được chính thức thông qua!</p>
-<p>Chúng tôi sẽ sớm liên hệ qua Zalo/Facebook để mời bạn tham gia nhóm làm việc chính thức và bắt đầu hành trình onboarding.</p>
+${groupInviteHtml}
 <p>Chào mừng bạn đến với đại gia đình Ý Niệm Điện Ảnh! ✨</p>
 ${senderSignature}`
                 },

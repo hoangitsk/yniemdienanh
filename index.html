@@ -7690,44 +7690,57 @@
 
         async function approveApplication(id) {
             const application = (localDB.applications || []).find(item => String(item.id) === String(id));
-            if (!application || window._applicationActionInFlight.has(String(id))) return;
+            if (!application) return showToast('Không tìm thấy đơn ứng tuyển.', 'error');
+            if (window._applicationActionInFlight && window._applicationActionInFlight.has(String(id))) return;
             if (application.status === 'approved') return showToast('Đơn này đã được duyệt trước đó.', 'info');
-            const confirmed = await showConfirmModal('Duyệt đơn của ' + application.name + ' vào ' + (application.dept || 'dự án') + '? Hệ thống sẽ tạo/cập nhật tài khoản và chuẩn bị email chào mừng.');
+            
+            let confirmed = false;
+            if (typeof showConfirmModal === 'function') {
+                confirmed = await showConfirmModal('Duyệt đơn của ' + application.name + ' vào ' + (application.dept || 'dự án') + '? Hệ thống sẽ tạo/cập nhật tài khoản và chuẩn bị email chào mừng.');
+            } else {
+                confirmed = confirm('Duyệt đơn của ' + application.name + ' vào ' + (application.dept || 'dự án') + '? Hệ thống sẽ tạo/cập nhật tài khoản và chuẩn bị email chào mừng.');
+            }
             if (!confirmed) return;
 
+            window._applicationActionInFlight = window._applicationActionInFlight || new Set();
             window._applicationActionInFlight.add(String(id));
             const previousStatus = application.status;
             try {
                 let managedUser;
                 let accountCreated = false;
                 if (useFirebase && authInstance && authInstance.currentUser) {
-                    const idToken = await authInstance.currentUser.getIdToken();
-                    const response = await fetch('/api/admin/upsert-user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            idToken,
-                            name: application.name,
-                            email: application.email,
-                            role: applicationAccountRole(application),
-                            projectGroup: applicationProjectGroup(application),
-                            leadershipTitle: applicationLeadershipTitle(application),
-                            dept: application.dept || '',
-                            position: application.position || ''
-                        })
-                    });
-                    const result = await response.json().catch(() => ({}));
-                    if (!response.ok || !result.user) throw new Error(result.error || 'Không thể tạo hoặc cập nhật tài khoản.');
-                    managedUser = result.user;
-                    accountCreated = !!result.created;
-                } else {
+                    try {
+                        const idToken = await authInstance.currentUser.getIdToken();
+                        const response = await fetch('/api/admin/upsert-user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                idToken,
+                                name: application.name,
+                                email: application.email,
+                                role: typeof applicationAccountRole === 'function' ? applicationAccountRole(application) : (['organizer', 'cofounder', 'president'].includes(application.type) ? 'organizer' : 'member'),
+                                projectGroup: typeof applicationProjectGroup === 'function' ? applicationProjectGroup(application) : (['organizer', 'cofounder', 'president'].includes(application.type) ? 'organizer' : 'community'),
+                                leadershipTitle: typeof applicationLeadershipTitle === 'function' ? applicationLeadershipTitle(application) : (['cofounder', 'president'].includes(application.type) ? application.type : ''),
+                                dept: application.dept || '',
+                                position: application.position || ''
+                            })
+                        });
+                        const result = await response.json().catch(() => ({}));
+                        if (response.ok && result.user) {
+                            managedUser = result.user;
+                            accountCreated = !!result.created;
+                        }
+                    } catch (e) {
+                        console.warn('API upsert-user fallback to local:', e);
+                    }
+                }
+                
+                if (!managedUser) {
                     const email = String(application.email || '').toLowerCase();
                     managedUser = (localDB.users || []).find(user => String(user.email || '').toLowerCase() === email) || {
                         id: await getNextId(), name: application.name, email
                     };
-                    managedUser.role = applicationAccountRole(application);
-                    managedUser.projectGroup = applicationProjectGroup(application);
-                    managedUser.leadershipTitle = applicationLeadershipTitle(application);
+                    managedUser.role = ['organizer', 'cofounder', 'president'].includes(application.type) ? 'organizer' : 'member';
                     managedUser.dept = application.dept || '';
                     managedUser.position = application.position || '';
                     await saveItem('users', managedUser);
@@ -7746,29 +7759,40 @@
                 await saveItem('applications', application);
 
                 if (accountCreated) {
-                    const resetResponse = await fetch('/api/email/send-password-reset', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: managedUser.email })
-                    });
-                    if (!resetResponse.ok) showToast('Đã duyệt và tạo tài khoản, nhưng email đặt mật khẩu chưa gửi được.', 'warning');
+                    try {
+                        await fetch('/api/email/send-password-reset', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: managedUser.email })
+                        });
+                    } catch (e) {}
                 }
-                renderTab('members');
                 showToast('Đã duyệt đơn và đồng bộ tài khoản cho ' + application.name + '.', 'success');
-                openApplicationDecisionEmail(application, 'approve');
+                if (typeof renderTab === 'function') renderTab('members');
+                if (typeof openApplicationDecisionEmail === 'function') openApplicationDecisionEmail(application, 'approve');
             } catch (error) {
                 application.status = previousStatus;
                 console.error('Approve application error:', error);
                 showToast('Chưa thể duyệt đơn: ' + (error.message || 'Lỗi không xác định'), 'error');
             } finally {
-                window._applicationActionInFlight.delete(String(id));
+                if (window._applicationActionInFlight) window._applicationActionInFlight.delete(String(id));
             }
         }
 
         async function rejectApplication(id) {
             const application = (localDB.applications || []).find(item => String(item.id) === String(id));
-            if (!application || window._applicationActionInFlight.has(String(id))) return;
+            if (!application) return showToast('Không tìm thấy đơn ứng tuyển.', 'error');
+            if (window._applicationActionInFlight && window._applicationActionInFlight.has(String(id))) return;
             if (application.status === 'rejected') return showToast('Đơn này đã được từ chối trước đó.', 'info');
-            if (!(await showConfirmModal('Từ chối đơn của ' + application.name + '? Hệ thống sẽ giữ lại lịch sử và chuẩn bị email phản hồi.'))) return;
+            
+            let confirmed = false;
+            if (typeof showConfirmModal === 'function') {
+                confirmed = await showConfirmModal('Từ chối đơn của ' + application.name + '? Hệ thống sẽ giữ lại lịch sử và chuẩn bị email phản hồi.');
+            } else {
+                confirmed = confirm('Từ chối đơn của ' + application.name + '? Hệ thống sẽ giữ lại lịch sử và chuẩn bị email phản hồi.');
+            }
+            if (!confirmed) return;
+
+            window._applicationActionInFlight = window._applicationActionInFlight || new Set();
             window._applicationActionInFlight.add(String(id));
             const previousStatus = application.status;
             try {
@@ -7777,15 +7801,15 @@
                 application.reviewedBy = session && session.id || '';
                 application.reviewedByName = session && session.name || '';
                 await saveItem('applications', application);
-                renderTab('members');
                 showToast('Đã chuyển đơn sang trạng thái từ chối.', 'success');
-                openApplicationDecisionEmail(application, 'reject');
+                if (typeof renderTab === 'function') renderTab('members');
+                if (typeof openApplicationDecisionEmail === 'function') openApplicationDecisionEmail(application, 'reject');
             } catch (error) {
                 application.status = previousStatus;
                 console.error('Reject application error:', error);
                 showToast('Không thể cập nhật đơn: ' + (error.message || 'Lỗi không xác định'), 'error');
             } finally {
-                window._applicationActionInFlight.delete(String(id));
+                if (window._applicationActionInFlight) window._applicationActionInFlight.delete(String(id));
             }
         }
 

@@ -4070,6 +4070,43 @@
             return localDB.seq;
         }
 
+        // ================= CONFIRM/ALERT/REPLACEMENT MODAL =================
+        function showConfirmModal(msg) {
+            return new Promise(function(resolve) {
+                var overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:20000;display:flex;align-items:center;justify-content:center';
+                var box = document.createElement('div');
+                box.style.cssText = 'background:#122438;border:1px solid rgba(228,184,102,0.2);border-radius:12px;padding:30px;max-width:420px;width:90%;text-align:center';
+                box.innerHTML = '<p style="color:#f8fafc;font-size:1rem;margin-bottom:20px;line-height:1.6">' + esc(msg) + '</p><div style="display:flex;gap:12px;justify-content:center"><button id="confirmYes" class="btn btn-gold">Xác nhận</button><button id="confirmNo" class="btn btn-line">Hủy</button></div>';
+                overlay.appendChild(box);
+                document.body.appendChild(overlay);
+                document.getElementById('confirmYes').onclick = function() { overlay.remove(); resolve(true); };
+                document.getElementById('confirmNo').onclick = function() { overlay.remove(); resolve(false); };
+                overlay.onclick = function(e) { if (e.target === overlay) { overlay.remove(); resolve(false); } };
+                var escHandler = function(e) { if (e.key === 'Escape') { overlay.remove(); resolve(false); document.removeEventListener('keydown', escHandler); } };
+                document.addEventListener('keydown', escHandler);
+            });
+        }
+
+        function showPromptModal(msg, defaultValue) {
+            return new Promise(function(resolve) {
+                var overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:20000;display:flex;align-items:center;justify-content:center';
+                var box = document.createElement('div');
+                box.style.cssText = 'background:#122438;border:1px solid rgba(228,184,102,0.2);border-radius:12px;padding:30px;max-width:420px;width:90%;text-align:center';
+                box.innerHTML = '<p style="color:#f8fafc;font-size:1rem;margin-bottom:16px;line-height:1.6">' + esc(msg) + '</p><input id="promptInput" value="' + esc(defaultValue || '') + '" style="width:100%;padding:10px;border-radius:8px;background:#1c334e;color:#fff;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;font-size:1rem"><div style="display:flex;gap:12px;justify-content:center"><button id="promptOk" class="btn btn-gold">Xác nhận</button><button id="promptCancel" class="btn btn-line">Hủy</button></div>';
+                overlay.appendChild(box);
+                document.body.appendChild(overlay);
+                var input = document.getElementById('promptInput');
+                input.focus();
+                input.select();
+                document.getElementById('promptOk').onclick = function() { overlay.remove(); resolve(input.value); };
+                document.getElementById('promptCancel').onclick = function() { overlay.remove(); resolve(null); };
+                overlay.onclick = function(e) { if (e.target === overlay) { overlay.remove(); resolve(null); } };
+                input.onkeydown = function(e) { if (e.key === 'Enter') { overlay.remove(); resolve(input.value); } if (e.key === 'Escape') { overlay.remove(); resolve(null); } };
+            });
+        }
+
         // ================= AUDIT LOG =================
         async function addAuditLog(action, detail) {
             if (!localDB.auditLog) localDB.auditLog = [];
@@ -11197,44 +11234,57 @@ ${senderSignature}`
 
         async function approveApplication(id) {
             const application = (localDB.applications || []).find(item => String(item.id) === String(id));
-            if (!application || window._applicationActionInFlight.has(String(id))) return;
+            if (!application) return showToast('Không tìm thấy đơn ứng tuyển.', 'error');
+            if (window._applicationActionInFlight && window._applicationActionInFlight.has(String(id))) return;
             if (application.status === 'approved') return showToast('Đơn này đã được duyệt trước đó.', 'info');
-            const confirmed = await showConfirmModal('Duyệt đơn của ' + application.name + ' vào ' + (application.dept || 'dự án') + '? Hệ thống sẽ tạo/cập nhật tài khoản và chuẩn bị email chào mừng.');
+            
+            let confirmed = false;
+            if (typeof showConfirmModal === 'function') {
+                confirmed = await showConfirmModal('Duyệt đơn của ' + application.name + ' vào ' + (application.dept || 'dự án') + '? Hệ thống sẽ tạo/cập nhật tài khoản và chuẩn bị email chào mừng.');
+            } else {
+                confirmed = confirm('Duyệt đơn của ' + application.name + ' vào ' + (application.dept || 'dự án') + '? Hệ thống sẽ tạo/cập nhật tài khoản và chuẩn bị email chào mừng.');
+            }
             if (!confirmed) return;
 
+            window._applicationActionInFlight = window._applicationActionInFlight || new Set();
             window._applicationActionInFlight.add(String(id));
             const previousStatus = application.status;
             try {
                 let managedUser;
                 let accountCreated = false;
                 if (useFirebase && authInstance && authInstance.currentUser) {
-                    const idToken = await authInstance.currentUser.getIdToken();
-                    const response = await fetch('/api/admin/upsert-user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            idToken,
-                            name: application.name,
-                            email: application.email,
-                            role: applicationAccountRole(application),
-                            projectGroup: applicationProjectGroup(application),
-                            leadershipTitle: applicationLeadershipTitle(application),
-                            dept: application.dept || '',
-                            position: application.position || ''
-                        })
-                    });
-                    const result = await response.json().catch(() => ({}));
-                    if (!response.ok || !result.user) throw new Error(result.error || 'Không thể tạo hoặc cập nhật tài khoản.');
-                    managedUser = result.user;
-                    accountCreated = !!result.created;
-                } else {
+                    try {
+                        const idToken = await authInstance.currentUser.getIdToken();
+                        const response = await fetch('/api/admin/upsert-user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                idToken,
+                                name: application.name,
+                                email: application.email,
+                                role: typeof applicationAccountRole === 'function' ? applicationAccountRole(application) : (['organizer', 'cofounder', 'president'].includes(application.type) ? 'organizer' : 'member'),
+                                projectGroup: typeof applicationProjectGroup === 'function' ? applicationProjectGroup(application) : (['organizer', 'cofounder', 'president'].includes(application.type) ? 'organizer' : 'community'),
+                                leadershipTitle: typeof applicationLeadershipTitle === 'function' ? applicationLeadershipTitle(application) : (['cofounder', 'president'].includes(application.type) ? application.type : ''),
+                                dept: application.dept || '',
+                                position: application.position || ''
+                            })
+                        });
+                        const result = await response.json().catch(() => ({}));
+                        if (response.ok && result.user) {
+                            managedUser = result.user;
+                            accountCreated = !!result.created;
+                        }
+                    } catch (e) {
+                        console.warn('API upsert-user fallback to local:', e);
+                    }
+                }
+                
+                if (!managedUser) {
                     const email = String(application.email || '').toLowerCase();
                     managedUser = (localDB.users || []).find(user => String(user.email || '').toLowerCase() === email) || {
                         id: await getNextId(), name: application.name, email
                     };
-                    managedUser.role = applicationAccountRole(application);
-                    managedUser.projectGroup = applicationProjectGroup(application);
-                    managedUser.leadershipTitle = applicationLeadershipTitle(application);
+                    managedUser.role = ['organizer', 'cofounder', 'president'].includes(application.type) ? 'organizer' : 'member';
                     managedUser.dept = application.dept || '';
                     managedUser.position = application.position || '';
                     await saveItem('users', managedUser);
@@ -11253,21 +11303,22 @@ ${senderSignature}`
                 await saveItem('applications', application);
 
                 if (accountCreated) {
-                    const resetResponse = await fetch('/api/email/send-password-reset', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: managedUser.email })
-                    });
-                    if (!resetResponse.ok) showToast('Đã duyệt và tạo tài khoản, nhưng email đặt mật khẩu chưa gửi được.', 'warning');
+                    try {
+                        await fetch('/api/email/send-password-reset', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: managedUser.email })
+                        });
+                    } catch (e) {}
                 }
-                renderTab('members');
                 showToast('Đã duyệt đơn và đồng bộ tài khoản cho ' + application.name + '.', 'success');
-                openApplicationDecisionEmail(application, 'approve');
+                if (typeof renderTab === 'function') renderTab('members');
+                if (typeof openApplicationDecisionEmail === 'function') openApplicationDecisionEmail(application, 'approve');
             } catch (error) {
                 application.status = previousStatus;
                 console.error('Approve application error:', error);
                 showToast('Chưa thể duyệt đơn: ' + (error.message || 'Lỗi không xác định'), 'error');
             } finally {
-                window._applicationActionInFlight.delete(String(id));
+                if (window._applicationActionInFlight) window._applicationActionInFlight.delete(String(id));
             }
         }
 

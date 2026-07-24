@@ -6,14 +6,18 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "test": "node test.js"
+    "test": "node test.js",
+    "sheets:setup": "node api/hr/setup-sheet.js",
+    "sheets:sync": "node -e \"require('./api/hr/sync-to-sheets')({ headers: {} }, { json: console.log, status: () => ({ json: console.log }) })\"",
+    "export:db": "node export-database.js"
   },
   "dependencies": {
     "@payos/node": "^1.0.9",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.19.2",
-    "firebase-admin": "^11.8.0",
+    "firebase-admin": "^11.11.1",
+    "googleapis": "^137.1.0",
     "nodemailer": "^6.9.15",
     "simple-git": "^3.36.0"
   }

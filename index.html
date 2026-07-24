@@ -3446,7 +3446,7 @@
                 submissions: [],
                 votes: [],
                 feedback: [],
-                config: { stage: 'Khởi động', voteStart: '', voteEnd: '', recruitment: { presidentOpen: true, cofounderOpen: true } },
+                config: { stage: 'Khởi động', voteStart: '', voteEnd: '', recruitment: { presidentOpen: true, cofounderOpen: true, coreOpen: true } },
                 content: { hero: { eyebrow: '', title: 'Ý Niệm<br>Điện Ảnh', lead: '', target: '', transparency: '', goal: '' }, events: { title: '', desc: '' }, about: { title: '', desc: '', cards: [] }, rules: { title: '', subtitle: '', col1Title: '', col1Items: [], col2Title: '', col2Text: '' }, apply: { title: '', desc: '', orgTitle: '', orgText: '', memberTitle: '', memberText: '', processTitle: 'Quy trình tuyển dụng', steps: [] }, footer: { text: '' } },
                 seq: 100
             };
@@ -3684,7 +3684,7 @@
                 useFirebase = false;
             }
 
-            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], registrations: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 }, voteStart: '', voteEnd: '', recruitment: { presidentOpen: true, cofounderOpen: true } }, content: getMockData().content, seq: 100 };
+            localDB = { users: [], applications: [], events: [], tasks: [], plans: [], announcements: [], budget: [], docs: [], submissions: [], votes: [], feedback: [], messages: [], posts: [], comments: [], transactions: [], registrations: [], config: { stage: 'Xây dựng đội ngũ', prizePool: { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 }, voteStart: '', voteEnd: '', recruitment: { presidentOpen: true, cofounderOpen: true, coreOpen: true } }, content: getMockData().content, seq: 100 };
 
             const backupRaw = localStorage.getItem('ynda_db');
             if (backupRaw) {
@@ -4025,7 +4025,7 @@
                     if (settingsData.voteEnd) localDB.config.voteEnd = settingsData.voteEnd;
                 }
                 const recruitmentDoc = await firestoreWithTimeout(dbInstance.collection('config').doc('recruitment').get());
-                if (recruitmentDoc.exists) localDB.config.recruitment = { presidentOpen: true, cofounderOpen: true, ...recruitmentDoc.data() };
+                if (recruitmentDoc.exists) localDB.config.recruitment = { presidentOpen: true, cofounderOpen: true, coreOpen: true, ...recruitmentDoc.data() };
             } catch (e) {
                 console.warn('Không thể đọc public config:', e.message || e);
             }
@@ -5798,9 +5798,9 @@
                                             <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : (a.position === 'core' ? 'Core' : 'Thành viên')}</strong>)` : ''}</td>
                                                                                         <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">${esc(a.intro)}</td>
                                             <td data-label="Quyết định">
-                                                <button class="btn btn-gold btn-sm" onclick="approveApplication(${a.id})">✔ Duyệt</button>
-                                                <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication(${a.id})">✕ Từ chối</button>
-                                                <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--gold);border-color:var(--gold)" onclick="openEmailModal(${a.id})">📧 Gửi Email</button>
+                                                <button class="btn btn-gold btn-sm" onclick="approveApplication('${a.id}')">✔ Duyệt</button>
+                                                <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication('${a.id}')">✕ Từ chối</button>
+                                                <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--gold);border-color:var(--gold)" onclick="openEmailModal('${a.id}')">📧 Gửi Email</button>
                                                 <div style="margin-top:8px">${renderApplicationEmailStatus(a)}</div>
                                             </td>
                                         </tr>
@@ -5844,7 +5844,7 @@
                                                 </span>
                                             </td>
                                             <td data-label="Hành động">
-                                                <button class="btn btn-line btn-sm" style="color:var(--gold);border-color:var(--gold)" onclick="openEmailModal(${a.id})">📧 Liên hệ</button>
+                                                <button class="btn btn-line btn-sm" style="color:var(--gold);border-color:var(--gold)" onclick="openEmailModal('${a.id}')">📧 Liên hệ</button>
                                                 <div style="margin-top:8px">${renderApplicationEmailStatus(a)}</div>
                                             </td>
                                         </tr>
@@ -6384,11 +6384,12 @@
                         '<div class="panel">',
                             '<p style="color:var(--text-muted);margin-bottom:16px">Quản lý tất cả tài khoản người dùng trong hệ thống.</p>',
                             '<div style="margin-bottom:18px;padding:14px 16px;border:1px solid rgba(228,184,102,.3);border-radius:10px;background:rgba(228,184,102,.05)">',
-                                '<h3 style="margin:0 0 6px;color:var(--gold)">⚙️ Mở/tắt đơn lãnh đạo</h3>',
-                                '<p style="color:var(--text-muted);font-size:.85rem;margin:0 0 12px">Chỉ Admin được chỉnh trạng thái nhận đơn. Khi tắt, form sẽ ẩn ở trang đăng ký.</p>',
+                                '<h3 style="margin:0 0 6px;color:var(--gold)">⚙️ Mở/tắt đơn tuyển dụng</h3>',
+                                '<p style="color:var(--text-muted);font-size:.85rem;margin:0 0 12px">Chỉ Admin được chỉnh trạng thái nhận đơn. Khi tắt, form tương ứng sẽ ẩn hoặc báo tạm đóng ở trang đăng ký.</p>',
                                 '<div style="display:flex;flex-wrap:wrap;gap:18px">',
                                     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.presidentOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'president\',this.checked)"> 👑 Nhận đơn President</label>',
                                     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.cofounderOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'cofounder\',this.checked)"> 🤝 Nhận đơn Co-founder</label>',
+                                    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.coreOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'core\',this.checked)"> 🔥 Nhận đơn Core / BTC</label>',
                                 '</div>',
                             '</div>',
                             '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">',
@@ -9971,16 +9972,20 @@
         // ================= ADMIN ACCOUNT MANAGEMENT =================
         async function toggleRecruitmentSetting(type, open) {
             if (!session || session.role !== 'admin') return showToast('Chỉ Admin mới được chỉnh cài đặt này.', 'error');
-            const key = type === 'president' ? 'presidentOpen' : 'cofounderOpen';
+            const keyMap = { president: 'presidentOpen', cofounder: 'cofounderOpen', core: 'coreOpen', organizer: 'coreOpen' };
+            const key = keyMap[type] || (type + 'Open');
+            const labelMap = { president: 'President', cofounder: 'Co-founder', core: 'Core / BTC', organizer: 'Core / BTC' };
+            const label = labelMap[type] || type;
+
             if (!localDB.config) localDB.config = {};
-            if (!localDB.config.recruitment) localDB.config.recruitment = { presidentOpen: true, cofounderOpen: true };
+            if (!localDB.config.recruitment) localDB.config.recruitment = { presidentOpen: true, cofounderOpen: true, coreOpen: true };
             const previous = localDB.config.recruitment[key] !== false;
             localDB.config.recruitment[key] = !!open;
             localStorage.setItem('ynda_db', JSON.stringify(localDB));
             try {
                 if (useFirebase && dbInstance) await dbInstance.collection('config').doc('recruitment').set(localDB.config.recruitment, { merge: true });
                 await addAuditLog('update_recruitment_setting', key + '=' + (!!open));
-                showToast((open ? 'Đã mở' : 'Đã tắt') + ' đơn ' + (type === 'president' ? 'President' : 'Co-founder') + '.', 'success');
+                showToast((open ? 'Đã mở' : 'Đã tắt') + ' đơn ' + label + '.', 'success');
             } catch (e) {
                 localDB.config.recruitment[key] = previous;
                 localStorage.setItem('ynda_db', JSON.stringify(localDB));

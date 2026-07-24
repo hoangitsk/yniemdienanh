@@ -725,24 +725,23 @@
         let session = null;
         let googleUserTemp = null;
         let currentTabId = '';
-        let recruitmentSettings = { presidentOpen:true, cofounderOpen:true };
+        let recruitmentSettings = { presidentOpen:true, cofounderOpen:true, coreOpen:true };
 
         function isRecruitmentOpen(type) {
-            return type === 'president' ? recruitmentSettings.presidentOpen !== false : recruitmentSettings.cofounderOpen !== false;
+            if (type === 'president') return recruitmentSettings.presidentOpen !== false;
+            if (type === 'cofounder') return recruitmentSettings.cofounderOpen !== false;
+            if (type === 'core' || type === 'organizer') return recruitmentSettings.coreOpen !== false;
+            return true;
         }
 
         function renderRecruitmentAvailability() {
-            [['president', 'President'], ['cofounder', 'Co-founder']].forEach(function(item) {
+            [['president', 'President'], ['cofounder', 'Co-founder'], ['organizer', 'Ban Tổ Chức']].forEach(function(item) {
                 const card = document.getElementById('card-' + item[0]);
                 if (!card) return;
-                const closed = !isRecruitmentOpen(item[0]);
-                // Khi Admin tắt nhận đơn, ẩn hoàn toàn khỏi trang công khai.
-                card.style.display = closed ? 'none' : '';
-                card.setAttribute('aria-hidden', closed ? 'true' : 'false');
-                if (closed && currentTabId === item[0]) {
-                    currentTabId = '';
-                    document.querySelectorAll('.form-card').forEach(function(form) { form.classList.remove('active'); });
-                }
+                const closed = (item[0] === 'president' || item[0] === 'cofounder') ? !isRecruitmentOpen(item[0]) : false;
+                // Giữ thẻ luôn hiển thị để người dùng thấy rõ trạng thái
+                card.style.display = '';
+                card.setAttribute('aria-hidden', 'false');
                 let badge = card.querySelector('.recruitment-status-badge');
                 if (closed && !badge) {
                     badge = document.createElement('small');
@@ -755,6 +754,14 @@
                     badge.style.display = closed ? 'inline-block' : 'none';
                 }
             });
+
+            // Xử lý riêng vị trí Core Member trong dropdown đơn BTC
+            const coreOpt = document.getElementById('opt-position-core');
+            if (coreOpt) {
+                const coreOpen = isRecruitmentOpen('core');
+                coreOpt.disabled = !coreOpen;
+                coreOpt.textContent = coreOpen ? 'Core Member (Thành viên cốt cán)' : 'Core Member (Tạm đóng nhận đơn)';
+            }
         }
 
         // Star Background Animation
@@ -839,21 +846,17 @@
                 try {
                     const recruitmentDoc = await dbInstance.collection('config').doc('recruitment').get();
                     if (recruitmentDoc.exists) recruitmentSettings = { ...recruitmentSettings, ...recruitmentDoc.data() };
-                    // Check auth state
                     authInstance.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
-                            // Find user in firestore/local db
                             const userDoc = await dbInstance.collection('users').doc(firebaseUser.uid).get().catch(() => null);
                             const profile = userDoc && userDoc.exists ? userDoc.data() : {};
                             if (userDoc && userDoc.exists) {
-                                const ud = profile;
-                                session = { id: firebaseUser.uid, name: ud.name, email: firebaseUser.email, role: ud.role || 'member', dept: ud.dept || '' };
+                                session = { id: firebaseUser.uid, name: profile.name, email: firebaseUser.email, role: profile.role || 'member', dept: profile.dept || '' };
                             } else {
                                 session = { id: firebaseUser.uid, name: firebaseUser.displayName || 'Thành viên mới', email: firebaseUser.email, role: 'member', dept: '' };
                             }
                             sessionStorage.setItem('ynda_user', JSON.stringify(session));
                             
-                                                        // If logged in and they are just on register page, redirect to dashboard only if on login/register tab
                             closeModal('recruitmentAuthModal');
                             const profileIncomplete = !profile.phone || !profile.school || !profile.className;
                             if ((currentTabId === 'member' || !currentTabId) && profileIncomplete) {
@@ -888,11 +891,6 @@
             }
             renderRecruitmentAvailability();
             fetchBTCUsers();
-        }
-
-                // Modal open/close helpers
-        function openModal(id) {
-            const el = document.getElementById(id);
             if (el) el.classList.add('open');
         }
         function closeModal(id) {
@@ -1043,7 +1041,8 @@
         // Tab selection logic
         function selectTab(tabId) {
             if ((tabId === 'president' || tabId === 'cofounder') && !isRecruitmentOpen(tabId)) {
-                showToast('Đơn ' + (tabId === 'president' ? 'President' : 'Co-founder') + ' hiện đang tạm đóng.', 'warning');
+                const labelMap = { president: 'President', cofounder: 'Co-founder' };
+                showToast('Đơn ' + (labelMap[tabId] || tabId) + ' hiện đang tạm đóng.', 'warning');
                 return;
             }
             currentTabId = tabId;

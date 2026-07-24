@@ -5418,9 +5418,9 @@
                                             <td data-label="Nguyện vọng Ban">${esc(a.dept) || 'Cộng đồng'} ${a.position ? `(<strong style="color:var(--gold-light)">${a.position === 'vice_lead' ? 'Phó ban' : (a.position === 'core' ? 'Core' : 'Thành viên')}</strong>)` : ''}</td>
                                                                                         <td data-label="Giới thiệu bản thân" style="font-size:0.82rem;color:var(--text-muted)">${esc(a.intro)}</td>
                                             <td data-label="Quyết định">
-                                                <button class="btn btn-gold btn-sm" onclick="approveApplication(${a.id})">✔ Duyệt</button>
-                                                <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication(${a.id})">✕ Từ chối</button>
-                                                <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--gold);border-color:var(--gold)" onclick="openEmailModal(${a.id})">📧 Gửi Email</button>
+                                                <button class="btn btn-gold btn-sm" onclick="approveApplication('${a.id}')">✔ Duyệt</button>
+                                                <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--danger);border-color:var(--danger)" onclick="rejectApplication('${a.id}')">✕ Từ chối</button>
+                                                <button class="btn btn-line btn-sm" style="margin-top:6px;color:var(--gold);border-color:var(--gold)" onclick="openEmailModal('${a.id}')">📧 Gửi Email</button>
                                                 <div style="margin-top:8px">${renderApplicationEmailStatus(a)}</div>
                                             </td>
                                         </tr>
@@ -5464,7 +5464,7 @@
                                                 </span>
                                             </td>
                                             <td data-label="Hành động">
-                                                <button class="btn btn-line btn-sm" style="color:var(--gold);border-color:var(--gold)" onclick="openEmailModal(${a.id})">📧 Liên hệ</button>
+                                                <button class="btn btn-line btn-sm" style="color:var(--gold);border-color:var(--gold)" onclick="openEmailModal('${a.id}')">📧 Liên hệ</button>
                                                 <div style="margin-top:8px">${renderApplicationEmailStatus(a)}</div>
                                             </td>
                                         </tr>

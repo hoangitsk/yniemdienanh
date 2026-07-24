@@ -174,6 +174,13 @@
                 subject = document.getElementById('emSubject').value;
                 html = document.getElementById('emBody').value;
             }
+            var sCode = (app && (app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode)) || '';
+            var sUrl = window.location.origin + (sCode ? '/schedule/' + encodeURIComponent(sCode) : '/schedule');
+            if (type === 'interview' || sCode) {
+                if (!html.includes(sUrl) && !/href=["'][^"']*\/(?:schedule|select-time)/i.test(html)) {
+                    html += '<p style="margin:20px 0;text-align:center"><a href="' + sUrl + '" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700">Chọn thời gian rảnh phỏng vấn</a></p>';
+                }
+            }
             var attachment;
             if (pdfFile) {
                 var dataUrl = await new Promise(function (resolve, reject) {
@@ -453,14 +460,22 @@
             var idToken = await currentIdToken();
             for (var i = 0; i < draft.apps.length; i += 1) {
                 var app = draft.apps[i];
-                var content = draft.contents[String(app.id)];
+                var content = draft.contents[String(app.id)] || {};
+                var emailBody = String(content.body || '');
+                var bulkSCode = draft.scheduleCode || app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '';
+                var bulkSUrl = window.location.origin + (bulkSCode ? '/schedule/' + encodeURIComponent(bulkSCode) : '/schedule');
+                if (draft.type === 'interview' || bulkSCode) {
+                    if (!emailBody.includes(bulkSUrl) && !/href=["'][^"']*\/(?:schedule|select-time)/i.test(emailBody)) {
+                        emailBody += '<p style="margin:20px 0;text-align:center"><a href="' + bulkSUrl + '" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700">Chọn thời gian rảnh phỏng vấn</a></p>';
+                    }
+                }
                 progress.textContent = 'Đang xử lý ' + (i + 1) + '/' + draft.apps.length + ': ' + app.name;
                 button.textContent = '⏳ ' + (i + 1) + '/' + draft.apps.length;
                 try {
                     if (draft.type === 'interview') {
                         await assignBulkApplicationToSchedule(app, draft.scheduleCode, idToken);
                     }
-                    await sendEmail({ to: app.email, subject: content.subject, html: content.body, attachment: attachment });
+                    await sendEmail({ to: app.email, subject: content.subject, html: emailBody, attachment: attachment });
                     sent += 1;
                     try {
                         await recordSentEmail(app, {

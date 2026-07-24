@@ -517,6 +517,10 @@ app.post('/api/generate-certificate', (req, res) => {
     res.status(410).json({ error: 'Certificate issuance has moved to the trusted backend workflow.' });
 });
 
+// API: HR — đồng bộ dữ liệu lên Google Sheets
+const hrSyncToSheets = require('./api/hr/sync-to-sheets');
+app.post('/api/hr/sync-to-sheets', requireScheduleManager, hrSyncToSheets);
+
 // API: Admin delete user (Firebase Auth + Firestore)
 const deleteUserHandler = require('./api/admin/delete-user');
 app.post('/api/admin/delete-user', async (req, res) => {

@@ -19,6 +19,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/Logo/avtar.png">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>window.turnstileWidgetReady=function(){window.isTurnstileApiReady=true;if(typeof _renderTurnstileWidgets==='function'){_renderTurnstileWidgets();}};</script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=turnstileWidgetReady" async defer></script>
     <script>
@@ -9567,26 +9568,150 @@
             showToast('Đã xuất CSV: ' + users.length + ' tài khoản.', 'success');
         }
 
+        function exportExcelCoreTeam() {
+            if (typeof XLSX === 'undefined') return showToast('Đang tải thư viện Excel...', 'info');
+            const users = localDB.users || [];
+            const rows = users.map(u => ({
+                'BAN': u.dept || u.projectGroup || 'BĐH',
+                'HỌ VÀ TÊN': u.name || '',
+                'CHỨC VỤ': u.position || u.leadershipTitle || (u.role === 'admin' ? 'President' : (u.role === 'organizer' ? 'Core' : 'Thành viên')),
+                'GIỚI TÍNH': u.gender || '',
+                'NGÀY SINH': u.dob || '',
+                'NƠI SINH SỐNG': u.address || u.hometown || '',
+                'TRƯỜNG - LỚP': u.school || '',
+                'EMAIL': u.email || '',
+                'SỐ ĐIỆN THOẠI': u.phone || '',
+                'LINK FACEBOOK': u.facebook || '',
+                'GHI CHÚ': u.notes || ''
+            }));
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'DATABASE CORE');
+            XLSX.writeFile(workbook, 'YNDA_CoreTeam_Database.xlsx');
+            showToast('Đã xuất file YNDA_CoreTeam_Database.xlsx thành công!', 'success');
+        }
+
+        function exportExcelInterviewList() {
+            if (typeof XLSX === 'undefined') return showToast('Đang tải thư viện Excel...', 'info');
+            const events = localDB.events || [];
+            const rows = events.map(e => ({
+                'THỜI GIAN': e.startAt || '',
+                'ỨNG VIÊN': e.candidateName || '',
+                'EMAIL UV': e.candidateEmail || '',
+                'VỊ TRÍ': e.candidatePosition || '',
+                'BAN': e.candidateDepartment || '',
+                'HR PHỤ TRÁCH': e.assignedHrName || '',
+                'EMAIL HR': e.assignedHrEmail || '',
+                'TRẠNG THÁI': e.status || '',
+                'LOẠI': e.type || '',
+                'THỜI LƯỢNG': e.duration ? e.duration + ' phút' : '',
+                'HOÀN THÀNH LÚC': e.completedAt || '',
+                'MÃ SỰ KIỆN': e.id || ''
+            }));
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'LỊCH PHỎNG VẤN');
+            XLSX.writeFile(workbook, 'YNDA_Danh_sach_phong_van.xlsx');
+            showToast('Đã xuất file YNDA_Danh_sach_phong_van.xlsx thành công!', 'success');
+        }
+
+        async function importExcelFile(file) {
+            if (!file) return;
+            if (typeof XLSX === 'undefined') return showToast('Đang tải thư viện Excel...', 'info');
+            const reader = new FileReader();
+            reader.onload = async function (e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    if (rows.length < 2) return showToast('Tệp Excel không chứa dữ liệu hợp lệ.', 'warning');
+                    
+                    const headerStr = JSON.stringify(rows[0] || []).toLowerCase();
+                    let count = 0;
+                    if (headerStr.includes('họ và tên') || headerStr.includes('email')) {
+                        const users = localDB.users || (localDB.users = []);
+                        for (let i = 1; i < rows.length; i++) {
+                            const r = rows[i];
+                            if (!r || !r[7] || !String(r[7]).includes('@')) continue;
+                            const email = String(r[7]).trim().toLowerCase();
+                            let u = users.find(x => String(x.email).toLowerCase() === email);
+                            if (!u) {
+                                u = { id: await getNextId(), email: email, createdAt: new Date().toISOString() };
+                                users.push(u);
+                            }
+                            u.dept = String(r[0] || u.dept || '');
+                            u.name = String(r[1] || u.name || '');
+                            u.position = String(r[2] || u.position || '');
+                            u.gender = String(r[3] || u.gender || '');
+                            u.dob = String(r[4] || u.dob || '');
+                            u.address = String(r[5] || u.address || '');
+                            u.school = String(r[6] || u.school || '');
+                            u.phone = String(r[8] || u.phone || '');
+                            u.facebook = String(r[9] || u.facebook || '');
+                            u.notes = String(r[10] || u.notes || '');
+                            count++;
+                        }
+                        await saveItem('users', localDB.users);
+                        showToast(`Đã nhập thành công ${count} thành viên vào Database Core Team!`, 'success');
+                    } else if (headerStr.includes('ứng viên') || headerStr.includes('thời gian')) {
+                        const events = localDB.events || (localDB.events = []);
+                        for (let i = 1; i < rows.length; i++) {
+                            const r = rows[i];
+                            if (!r || !r[1]) continue;
+                            events.push({
+                                id: r[11] || genId(),
+                                startAt: r[0] || new Date().toISOString(),
+                                candidateName: r[1] || '',
+                                candidateEmail: r[2] || '',
+                                candidatePosition: r[3] || '',
+                                candidateDepartment: r[4] || '',
+                                assignedHrName: r[5] || '',
+                                assignedHrEmail: r[6] || '',
+                                status: r[7] || 'confirmed',
+                                type: r[8] || 'interview',
+                                createdAt: new Date().toISOString()
+                            });
+                            count++;
+                        }
+                        await saveItem('events', localDB.events);
+                        showToast(`Đã nhập thành công ${count} lịch phỏng vấn!`, 'success');
+                    }
+                    if (typeof renderTab === 'function') renderTab('members');
+                } catch (err) {
+                    console.error('Import excel error:', err);
+                    showToast('Lỗi đọc tệp Excel: ' + err.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
         async function syncHRToGoogleSheets() {
-            showToast('Đang khởi tạo đồng bộ dữ liệu HR sang Google Sheets...', 'info');
+            showToast('🔄 Đang đồng bộ 2 chiều dữ liệu với Google Sheets...', 'info');
             try {
-                var user = firebase.auth().currentUser;
+                var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
                 var idToken = user ? await user.getIdToken() : '';
                 var res = await fetch('/api/hr/sync-to-sheets', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken: idToken })
+                    body: JSON.stringify({ idToken: idToken, mode: 'two_way' })
                 });
                 var data = await res.json();
                 if (data.success) {
-                    showToast('✅ Đã đồng bộ thành công sang Google Sheets!', 'success');
+                    let msg = '✅ Đồng bộ 2 chiều Google Sheets thành công!';
+                    if (data.pullResult && data.pullResult.importedUsers) {
+                        msg += ' Đã nhập ' + data.pullResult.importedUsers + ' thành viên từ Google Sheet.';
+                    }
+                    showToast(msg, 'success');
+                    if (typeof renderTab === 'function') renderTab('members');
                 } else {
-                    showToast('⚠️ Chưa cấu hình Google Sheet API (' + (data.error || '') + '). Đang xuất CSV...', 'warning');
-                    exportUsersCSV();
+                    showToast('⚠️ Cần cấu hình Google Sheet API (' + (data.error || '') + '). Đang dùng xuất file Excel...', 'warning');
+                    exportExcelCoreTeam();
                 }
             } catch (e) {
-                showToast('⚠️ Không thể kết nối server đồng bộ. Đang xuất CSV...', 'warning');
-                exportUsersCSV();
+                showToast('⚠️ Không thể kết nối server đồng bộ. Tự động xuất file Excel...', 'warning');
+                exportExcelCoreTeam();
             }
         }
 

@@ -140,6 +140,70 @@ async function syncAuditLogs(db, sid) {
   ], rows, -1);
 }
 
+async function syncCoreTeam(db, sid) {
+  const usersSnap = await db.collection('users').get();
+  const rows = [];
+  usersSnap.forEach(d => {
+    const u = d.data();
+    rows.push([
+      u.dept || u.projectGroup || 'BĐH',
+      u.name || '',
+      u.position || u.leadershipTitle || (u.role === 'admin' ? 'President' : (u.role === 'organizer' ? 'Core' : 'Thành viên')),
+      u.gender || '',
+      u.dob || '',
+      u.hometown || u.address || '',
+      u.school || '',
+      u.email || '',
+      u.phone || '',
+      u.facebook || u.facebookUrl || '',
+      u.notes || ''
+    ]);
+  });
+
+  await writeTable(sid, 'DATABASE CORE', [
+    'BAN', 'HỌ VÀ TÊN', 'CHỨC VỤ', 'GIỚI TÍNH', 'NGÀY SINH',
+    'NƠI SINH SỐNG', 'TRƯỜNG - LỚP', 'EMAIL', 'SỐ ĐIỆN THOẠI',
+    'LINK FACEBOOK', 'GHI CHÚ'
+  ], rows, -1);
+}
+
+async function pullFromSheets(db, sid) {
+  const { getRows } = require('../../lib/googleSheets');
+  try {
+    const coreRows = await getRows(sid, 'DATABASE CORE!A2:K500');
+    let importedUsers = 0;
+    for (const r of coreRows) {
+      if (!r[7] || !r[7].includes('@')) continue;
+      const email = r[7].trim().toLowerCase();
+      const userSnap = await db.collection('users').where('email', '==', email).limit(1).get();
+      const userData = {
+        dept: r[0] || '',
+        name: r[1] || '',
+        position: r[2] || '',
+        gender: r[3] || '',
+        dob: r[4] || '',
+        address: r[5] || '',
+        school: r[6] || '',
+        email: email,
+        phone: r[8] || '',
+        facebook: r[9] || '',
+        notes: r[10] || '',
+        updatedAt: new Date().toISOString()
+      };
+      if (userSnap.empty) {
+        await db.collection('users').add({ ...userData, createdAt: new Date().toISOString() });
+      } else {
+        await db.collection('users').doc(userSnap.docs[0].id).update(userData);
+      }
+      importedUsers++;
+    }
+    return { importedUsers };
+  } catch (err) {
+    console.warn('[SheetPull] Error:', err.message);
+    return { error: err.message };
+  }
+}
+
 module.exports = async (req, res) => {
   try {
     const sid = process.env.SPREADSHEET_HR_DASHBOARD;
@@ -148,7 +212,14 @@ module.exports = async (req, res) => {
 
     const db = ensureFirebase();
 
+    const mode = req.query?.mode || req.body?.mode || 'two_way';
+    let pullResult = null;
+    if (mode === 'pull' || mode === 'two_way') {
+      pullResult = await pullFromSheets(db, sid);
+    }
+
     const results = await Promise.allSettled([
+      syncCoreTeam(db, sid),
       syncApplications(db, sid),
       syncInterviews(db, sid),
       syncStaffPoints(db, sid),
@@ -156,12 +227,12 @@ module.exports = async (req, res) => {
     ]);
 
     const report = results.map((r, i) => {
-      const names = ['Ứng viên', 'Lịch PV', 'Staff Points', 'Nhật ký'];
+      const names = ['DATABASE CORE', 'Ứng viên', 'Lịch PV', 'Staff Points', 'Nhật ký'];
       return `${names[i]}: ${r.status === 'fulfilled' ? 'OK' : 'LỖI: ' + r.reason?.message}`;
     });
 
     console.log('[HRSync]', report.join(' | '));
-    res.json({ success: true, report });
+    res.json({ success: true, mode, pullResult, report });
   } catch (err) {
     console.error('[HRSync] Error:', err);
     res.status(500).json({ error: err.message });

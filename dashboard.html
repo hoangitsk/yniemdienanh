@@ -7045,89 +7045,19 @@
             URL.revokeObjectURL(link.href);
         }
 
-        async function approveApplication(id) {
-            const a = localDB.applications.find(x => String(x.id) === String(id));
-            if (!a) return;
-            a.status = 'approved';
-            await saveItem('applications', a);
-            
-            // Tự động tạo tài khoản & gửi email đặt mật khẩu
-            const userEmail = a.email.toLowerCase();
-            let matchedUser = localDB.users.find(u => u.email === userEmail);
-            if (matchedUser) {
-                matchedUser.role = (a.type === 'organizer' || a.type === 'cofounder' || a.type === 'president') ? 'organizer' : 'member';
-                matchedUser.dept = a.dept || '';
-                matchedUser.position = a.position || '';
-                await saveItem('users', matchedUser);
-            } else {
-                const nextId = await getNextId();
-                const newUser = {
-                    id: nextId,
-                    name: a.name,
-                    email: userEmail,
-                    role: (a.type === 'organizer' || a.type === 'cofounder' || a.type === 'president') ? 'organizer' : 'member',
-                    dept: a.dept || '',
-                    position: a.position || ''
-                };
-                await saveItem('users', newUser);
-                if (useFirebase) {
-                    try {
-                        const tempPass = Math.random().toString(36).slice(2, 14) + 'A1!';
-                        const cred = await authInstance.createUserWithEmailAndPassword(userEmail, tempPass);
-                        try {
-                            const idToken = await cred.user.getIdToken();
-                            const ctrl1 = new AbortController();
-                            const t1 = setTimeout(() => ctrl1.abort(), 10000);
-                            await fetch('/api/email/send-verification', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idToken, email: userEmail, userName: a.name }),
-                                signal: ctrl1.signal,
-                            });
-                            clearTimeout(t1);
-                            const ctrl2 = new AbortController();
-                            const t2 = setTimeout(() => ctrl2.abort(), 10000);
-                            await fetch('/api/email/send-password-reset', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email: userEmail }),
-                                signal: ctrl2.signal,
-                            });
-                            clearTimeout(t2);
-                            showToast(`Đã tạo tài khoản & gửi email đặt mật khẩu đến ${userEmail}!`, 'success');
-                        } catch (e) {
-                            console.warn('Email error:', e.message);
-                            showToast(`Đã tạo tài khoản cho ${userEmail} (email gửi lỗi: ${e.message})`, 'warning');
-                        }
-                    } catch (e) {
-                        console.warn('Auth skip:', e.message);
-                        if (e.code === 'auth/email-already-in-use') {
-                            showToast('Email đã có tài khoản Firebase.', 'info');
-                        }
-                    }
-                }
-            }
-            showToast(`Đã duyệt đơn cho ${a.name}!`, 'success');
-            renderTab('members');
-        }
-
-        async function rejectApplication(id) {
-            if (!(await showConfirmModal("Từ chối đơn đăng ký này?"))) return;
-            const a = localDB.applications.find(x => String(x.id) === String(id));
-            if (a) {
-                a.status = 'rejected';
-                await saveItem('applications', a);
-                renderTab('members');
-            }
-        }
-
         async function deleteApplicationHistory(id) {
-            const application = localDB.applications.find(x => String(x.id) === String(id));
-            if (!application) return;
-            if (!(await showConfirmModal(`Xóa lịch sử đơn của ${application.name}? Thao tác này chỉ xóa đơn ứng tuyển, không xóa tài khoản của người này.`))) return;
+            const application = (localDB.applications || []).find(x => String(x.id) === String(id));
+            if (!application) return showToast('Không tìm thấy đơn ứng tuyển.', 'error');
+            let confirmMessage = false;
+            if (typeof showConfirmModal === 'function') {
+                confirmMessage = await showConfirmModal('Xóa lịch sử đơn của ' + application.name + '? Thao tác này chỉ xóa đơn ứng tuyển, không xóa tài khoản của người này.');
+            } else {
+                confirmMessage = confirm('Xóa lịch sử đơn của ' + application.name + '? Thao tác này chỉ xóa đơn ứng tuyển, không xóa tài khoản của người này.');
+            }
+            if (!confirmMessage) return;
             await deleteItemFromDB('applications', id);
-            showToast(`Đã xóa lịch sử đơn của ${application.name}.`, 'success');
-            renderTab('members');
+            showToast('Đã xóa lịch sử đơn của ' + application.name + '.', 'success');
+            if (typeof renderTab === 'function') renderTab('members');
         }
 
         function accountMatchesSearch(user, query) {
@@ -9912,18 +9842,19 @@
             const app = list.find(x => String(x.id) === String(appId));
             if (!app) return showToast('Không tìm thấy đơn ứng tuyển.', 'error');
             window.currentEmailApp = app;
-            const sender = currentEmailSenderIdentity();
+            const sender = typeof currentEmailSenderIdentity === 'function' ? currentEmailSenderIdentity() : {};
             const roleLabels = { admin: 'Quản trị viên', organizer: 'Ban Tổ Chức', member: 'Thành viên' };
-            document.getElementById('emSenderIdentity').textContent = sender.name + ' · ' + (sender.email || 'Chưa có email') + ' · ' + (sender.dept || roleLabels[sender.role] || sender.role);
+            const senderEl = document.getElementById('emSenderIdentity');
+            if (senderEl) senderEl.textContent = (sender.name || 'Admin') + ' · ' + (sender.email || 'Chưa có email') + ' · ' + (sender.dept || roleLabels[sender.role] || sender.role || '');
             
-            document.getElementById('emTo').value = app.email;
-            document.getElementById('emTemplateSelect').value = '';
-            document.getElementById('emScheduleCode').innerHTML = '<option value="">-- Chọn lịch vote để gửi --</option>';
-            document.getElementById('emScheduleHint').textContent = 'Đang dò các đợt vote được cấp quyền…';
-            document.getElementById('emCustomDescription').value = '';
-            document.getElementById('emPdfAttachment').value = '';
-            document.getElementById('emSubject').value = '';
-            document.getElementById('emBody').value = '';
+            const emTo = document.getElementById('emTo'); if (emTo) emTo.value = app.email || '';
+            const emTpl = document.getElementById('emTemplateSelect'); if (emTpl) emTpl.value = '';
+            const emCode = document.getElementById('emScheduleCode'); if (emCode) emCode.innerHTML = '<option value="">-- Chọn lịch vote để gửi --</option>';
+            const emHint = document.getElementById('emScheduleHint'); if (emHint) emHint.textContent = 'Đang dò các đợt vote được cấp quyền…';
+            const emDesc = document.getElementById('emCustomDescription'); if (emDesc) emDesc.value = '';
+            const emPdf = document.getElementById('emPdfAttachment'); if (emPdf) emPdf.value = '';
+            const emSub = document.getElementById('emSubject'); if (emSub) emSub.value = '';
+            const emBody = document.getElementById('emBody'); if (emBody) emBody.value = '';
             openModal('emailModal');
             loadEmailScheduleOptions(app);
         }

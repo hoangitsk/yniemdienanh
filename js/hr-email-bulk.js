@@ -81,6 +81,8 @@
             var app = (localDB.applications || []).find(function (x) { return String(x.id) === appId; });
             if (!app) return;
 
+            var deptNorm = String(app.dept || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            var isHR = deptNorm.includes('nhan su') || String(app.dept || '').toLowerCase().includes('hr');
             var isVice = (app.position === 'vice_lead' || String(app.position || '').toLowerCase().includes('phó') || String(app.dept || '').toLowerCase().includes('phó') || String(app.intro || '').toLowerCase().includes('phó ban'));
             var isCore = (app.type === 'organizer' || app.type === 'cofounder' || app.type === 'president' || app.position === 'core' || isVice);
             var isMember = (app.type === 'member' || app.position === 'member') && !isVice;
@@ -89,7 +91,10 @@
             var matchesRole = true;
             if (roleFilter === 'vice_lead' || roleFilter === 'vice') matchesRole = isVice;
             else if (roleFilter === 'core') matchesRole = isCore;
-            else if (roleFilter === 'member') matchesRole = isMember;
+            else if (roleFilter === 'member') matchesRole = isMember && !isHR; // Mặc định Lọc Mem tự động LOẠI BỎ Ban Nhân sự (HR)
+            else if (roleFilter === 'member_all') matchesRole = isMember;
+            else if (roleFilter === 'hr' || roleFilter === 'hr_member') matchesRole = isMember && isHR;
+            else if (roleFilter === 'member_no_hr') matchesRole = isMember && !isHR;
 
             var matchesStatus = true;
             if (statusFilter === 'qualified') matchesStatus = !isRejected;

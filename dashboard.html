@@ -5224,6 +5224,7 @@
                                     <option value="">-- Chọn loại email --</option>
                                     <option value="round1_pass">Chúc mừng vượt qua vòng 1</option>
                                     <option value="interview">Mời chọn lịch phỏng vấn</option>
+                                    <option value="interview_group">Mời tham gia nhóm phỏng vấn</option>
                                     <option value="approve">Duyệt & chào mừng</option>
                                     <option value="reject">Từ chối ứng tuyển</option>
                                     <option value="attachment_followup">Bổ sung tài liệu còn thiếu</option>
@@ -5236,6 +5237,7 @@
                                 <textarea id="bulkEmailDescription" rows="2" maxlength="1000" placeholder="Mô tả cho AI (không bắt buộc), ví dụ: Nhắc ứng viên đọc handbook trước buổi phỏng vấn, giọng thân thiện..." style="flex:1 1 360px;min-width:280px;resize:vertical;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);padding:9px;border-radius:8px"></textarea>
                                 <button id="bulkEmailSendBtn" class="btn btn-gold btn-sm" onclick="sendBulkPersonalizedEmails()">🤖 Soạn & xem trước tất cả</button>
                                 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                                    <button type="button" class="btn btn-line btn-sm" onclick="filterApplicationsForBulkSelect('vice_lead', 'qualified')" style="padding:4px 8px;font-size:.72rem;color:#f59e0b;border-color:#f59e0b">⚡ Lọc Phó ban (Chưa loại)</button>
                                     <button type="button" class="btn btn-line btn-sm" onclick="filterApplicationsForBulkSelect('core', 'qualified')" style="padding:4px 8px;font-size:.72rem;color:var(--gold);border-color:var(--gold)">⚡ Lọc Core (Chưa loại)</button>
                                     <button type="button" class="btn btn-line btn-sm" onclick="filterApplicationsForBulkSelect('member', 'qualified')" style="padding:4px 8px;font-size:.72rem;color:var(--ok);border-color:var(--ok)">⚡ Lọc Mem (Chưa loại)</button>
                                     <button type="button" class="btn btn-line btn-sm" onclick="filterApplicationsForBulkSelect('all', 'qualified')" style="padding:4px 8px;font-size:.72rem">⚡ Chọn tất cả chưa loại</button>

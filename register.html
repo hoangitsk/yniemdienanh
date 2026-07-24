@@ -434,6 +434,11 @@
                     <h3>Apply President</h3>
                     <p>Chủ tịch / Trưởng ban điều hành toàn bộ hoạt động của dự án và định hướng tương lai.</p>
                 </div>
+                <div>
+                    <div class="icon">👑</div>
+                    <h3>Apply President</h3>
+                    <p>Chủ tịch / Trưởng ban điều hành toàn bộ hoạt động của dự án và định hướng tương lai.</p>
+                </div>
             </div>
             <div class="portal-card" id="card-cofounder" onclick="selectTab('cofounder')">
                 <div>
@@ -446,7 +451,7 @@
                 <div>
                     <div class="icon">🎬</div>
                     <h3>Apply Ban Tổ Chức</h3>
-                    <p>Trực tiếp vận hành các ban Media, duyệt bài, Nội dung, Nhân sự, Truyền thông.</p>
+                    <p>Trực tiếp vận hành các ban Media, duyệt bài, Nội dung, Nhân sự, Truyền thông (Tuyển Member & Phó ban).</p>
                 </div>
             </div>
             <div class="portal-card" id="card-member" onclick="selectTab('member')">
@@ -534,8 +539,8 @@
                 <label for="orgPosition">Vị trí ứng tuyển *</label>
                 <select id="orgPosition" onchange="updatePositionAvailability()" required style="margin-bottom:18px">
                     <option value="member" id="opt-position-member">Thành viên (Member)</option>
-                    <option value="core" id="opt-position-core">Core Member (Thành viên cốt cán)</option>
                     <option value="vice_lead" id="opt-position-vice_lead">Phó ban</option>
+                    <option value="core" id="opt-position-core" disabled style="color:rgba(255,255,255,0.4)">Core Member (Tạm đóng nhận đơn)</option>
                 </select>
                 
                 <label for="orgIntro">Giới thiệu bản thân & lý do muốn đồng hành *</label>
@@ -758,9 +763,9 @@
             // Xử lý riêng vị trí Core Member trong dropdown đơn BTC
             const coreOpt = document.getElementById('opt-position-core');
             if (coreOpt) {
-                const coreOpen = isRecruitmentOpen('core');
-                coreOpt.disabled = !coreOpen;
-                coreOpt.textContent = coreOpen ? 'Core Member (Thành viên cốt cán)' : 'Core Member (Tạm đóng nhận đơn)';
+                // Core Member position is temporarily closed per BTC policy
+                coreOpt.disabled = true;
+                coreOpt.textContent = 'Core Member (Tạm đóng nhận đơn)';
             }
         }
 
@@ -858,15 +863,24 @@
                             sessionStorage.setItem('ynda_user', JSON.stringify(session));
                             
                             closeModal('recruitmentAuthModal');
-                            const profileIncomplete = !profile.phone || !profile.school || !profile.className;
-                            if ((currentTabId === 'member' || !currentTabId) && profileIncomplete) {
-                                showGoogleProfileCompletion(firebaseUser, profile);
-                            } else if (currentTabId === 'member' || !currentTabId) {
-                                showToast("Đã đăng nhập! Đang chuyển hướng đến Khu nội bộ...", "success");
-                                setTimeout(() => {
-                                    window.location.href = '/dashboard';
-                                }, 1500);
+                            
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const hashTab = window.location.hash.replace('#', '');
+                            const activeTab = currentTabId || urlParams.get('tab') || hashTab || 'organizer';
+                            currentTabId = activeTab;
+
+                            if (activeTab === 'member') {
+                                const profileIncomplete = !profile.phone || !profile.school || !profile.className;
+                                if (profileIncomplete) {
+                                    showGoogleProfileCompletion(firebaseUser, profile);
+                                } else {
+                                    showToast("Đã đăng nhập! Đang chuyển hướng đến Khu nội bộ...", "success");
+                                    setTimeout(() => {
+                                        window.location.href = '/dashboard';
+                                    }, 1200);
+                                }
                             } else {
+                                selectTab(activeTab);
                                 renderRecruitmentForms();
                             }
                         } else {
@@ -882,20 +896,33 @@
                 if (stored) {
                     try {
                         session = JSON.parse(stored);
-                        showToast("Chào mừng quay lại, " + session.name, "success");
-                        setTimeout(() => {
-                            window.location.href = '/dashboard';
-                        }, 1000);
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const hashTab = window.location.hash.replace('#', '');
+                        const activeTab = currentTabId || urlParams.get('tab') || hashTab || 'organizer';
+                        currentTabId = activeTab;
+                        selectTab(activeTab);
+                        if (activeTab === 'member') {
+                            showToast("Chào mừng quay lại, " + session.name, "success");
+                            setTimeout(() => {
+                                window.location.href = '/dashboard';
+                            }, 1000);
+                        } else {
+                            renderRecruitmentForms();
+                        }
                     } catch (e) {}
                 }
             }
             renderRecruitmentAvailability();
             fetchBTCUsers();
-            if (el) el.classList.add('open');
+            initStars();
         }
         function closeModal(id) {
             const el = document.getElementById(id);
             if (el) el.classList.remove('open');
+        }
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('open');
         }
 
         // Check and render recruitment forms according to auth status
@@ -1161,12 +1188,8 @@
             
             // Count vice leads in this department
             const viceLeadCount = btcMembers.filter(u => u.dept === selectedDept && u.position === 'vice_lead').length;
-            
-            // Count core members in this department
-            const coreCount = btcMembers.filter(u => u.dept === selectedDept && u.position === 'core').length;
 
             const isViceLeadFull = viceLeadCount >= 1;
-            const isCoreFull = coreCount >= 3; // Limit of 3 core members per department
 
             // Update vice lead option
             if (isViceLeadFull) {
@@ -1179,22 +1202,13 @@
                 optViceLead.style.color = "";
             }
 
-            // Update core member option
-            if (isCoreFull) {
-                optCore.disabled = true;
-                optCore.text = "Core Member (Đã có người làm - Hết slot)";
-                optCore.style.color = "rgba(255,255,255,0.4)";
-            } else {
-                optCore.disabled = false;
-                optCore.text = "Core Member (Thành viên cốt cán)";
-                optCore.style.color = "";
-            }
+            // Core Member position is temporarily closed per BTC policy
+            optCore.disabled = true;
+            optCore.text = "Core Member (Tạm đóng nhận đơn)";
+            optCore.style.color = "rgba(255,255,255,0.4)";
 
-            // Automatically toggle selection if the current one is disabled
-            if (posSelect.value === 'vice_lead' && isViceLeadFull) {
-                if (!isCoreFull) posSelect.value = 'core';
-                else posSelect.value = 'member';
-            } else if (posSelect.value === 'core' && isCoreFull) {
+            // Automatically switch if core is selected
+            if (posSelect.value === 'core') {
                 if (!isViceLeadFull) posSelect.value = 'vice_lead';
                 else posSelect.value = 'member';
             }
@@ -1359,19 +1373,6 @@
                 msgEl.textContent = 'Loại đơn ứng tuyển không hợp lệ.';
                 return;
             }
-            
-            const name = document.getElementById(prefix + 'Name').value.trim();
-            const email = document.getElementById(prefix + 'Email').value.trim().toLowerCase();
-            const phone = document.getElementById(prefix + 'Phone').value.trim();
-            const intro = document.getElementById(prefix + 'Intro').value.trim();
-            const vision = isCoFounder ? document.getElementById(prefix + 'Vision').value.trim() : '';
-            const dept = isCoFounder ? '' : document.getElementById('orgDept').value;
-            const position = isCoFounder ? '' : document.getElementById('orgPosition').value;
-            
-            // Validate basic inputs
-            if (!name || !email || !phone || !intro || (isCoFounder && !vision)) {
-                msgEl.textContent = "Vui lòng nhập đầy đủ các trường thông tin bắt buộc!";
-                return;
             }
 
             const phoneRegex = /^0[0-9]{9}$/;

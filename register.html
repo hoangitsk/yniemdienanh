@@ -428,7 +428,9 @@
 
         <!-- 3 Portal Cards -->
         <div class="portal-grid">
-                        <div class="portal-card" id="card-president" onclick="selectTab('president')">
+            <!-- Ẩn tạm thời Apply President & Co-founder (Bỏ comment khi mở tuyển lại) -->
+            <!--
+            <div class="portal-card" id="card-president" onclick="selectTab('president')">
                 <div>
                     <div class="icon">👑</div>
                     <h3>Apply President</h3>
@@ -442,6 +444,7 @@
                     <p>Đồng sáng lập, cùng xây dựng chiến lược và phát triển dự án từ giai đoạn đầu.</p>
                 </div>
             </div>
+            -->
             <div class="portal-card" id="card-organizer" onclick="selectTab('organizer')">
                 <div>
                     <div class="icon">🎬</div>
@@ -725,7 +728,7 @@
         let session = null;
         let googleUserTemp = null;
         let currentTabId = '';
-        let recruitmentSettings = { presidentOpen:true, cofounderOpen:true, coreOpen:true };
+        let recruitmentSettings = { presidentOpen:false, cofounderOpen:false, coreOpen:false };
 
         function isRecruitmentOpen(type) {
             if (type === 'president') return recruitmentSettings.presidentOpen !== false;

@@ -32,7 +32,8 @@ async function syncDepartmentTab(sid, deptTitle, allApps) {
 
     if (!deptApps || deptApps.length === 0) return;
 
-    const rawRows = await getRows(sid, `${deptTitle}!A1:L500`).catch(() => []);
+    const safeTitle = `'${deptTitle.replace(/'/g, "''")}'`;
+    const rawRows = await getRows(sid, `${safeTitle}!A1:L500`).catch(() => []);
     
     let headerRowIdx = -1;
     for (let i = 0; i < rawRows.length; i++) {
@@ -95,7 +96,7 @@ async function syncDepartmentTab(sid, deptTitle, allApps) {
 
     if (newRowsToAppend.length > 0) {
       const nextRowNumber = headerRowIdx + 2 + dataRows.length;
-      const appendRange = `${deptTitle}!A${nextRowNumber}`;
+      const appendRange = `${safeTitle}!A${nextRowNumber}`;
       await appendRows(sid, appendRange, newRowsToAppend);
       console.log(`[HRSync] Appended ${newRowsToAppend.length} new applications to tab ${deptTitle}`);
     }
@@ -413,12 +414,29 @@ module.exports = async (req, res) => {
 
     const results = await Promise.allSettled(tasks);
 
-    const report = results.map((r, i) => `${names[i]}: ${r.status === 'fulfilled' ? 'OK' : 'LỖI: ' + r.reason?.message}`);
+    const errors = [];
+    const report = results.map((r, i) => {
+      if (r.status === 'rejected') {
+        const errMsg = r.reason?.message || String(r.reason || 'Lỗi không xác định');
+        errors.push(`${names[i]}: ${errMsg}`);
+        return `${names[i]}: LỖI (${errMsg})`;
+      }
+      return `${names[i]}: OK`;
+    });
 
     console.log('[HRSync]', report.join(' | '));
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: errors.join(' | '),
+        report
+      });
+    }
+
     res.json({ success: true, mode, pullResult, report });
   } catch (err) {
     console.error('[HRSync] Error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 };

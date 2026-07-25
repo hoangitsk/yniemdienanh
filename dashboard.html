@@ -5185,7 +5185,8 @@
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px">
                             <h2 style="margin:0">👥 Quản lý Nhân sự & Đơn Tuyển dụng</h2>
                             <div style="display:flex;gap:8px;flex-wrap:wrap">
-                                <button class="btn btn-gold btn-sm" onclick="syncHRToGoogleSheets()">📊 Đồng bộ Google Sheets (HR)</button>
+                                <button class="btn btn-gold btn-sm" onclick="syncHRToGoogleSheets()" title="Đồng bộ 1-click dữ liệu 2 chiều với Google Sheets">📊 Đồng bộ Google Sheets (HR)</button>
+                                <button class="btn btn-line btn-sm" onclick="configSheetLinks()" title="Cấu hình / Thay đổi Link Google Sheets">⚙️ Link Sheets</button>
                                 <button class="btn btn-line btn-sm" onclick="exportCSV('applications')">📥 Xuất đơn apply (CSV)</button>
                             </div>
                         </div>
@@ -9701,23 +9702,33 @@
             reader.readAsArrayBuffer(file);
         }
 
-        async function syncHRToGoogleSheets(forcePrompt = false) {
-            let coreSheetId = !forcePrompt ? (localStorage.getItem('ynda_spreadsheet_core_id') || localStorage.getItem('ynda_spreadsheet_id') || '') : '';
-            let appSheetId = !forcePrompt ? (localStorage.getItem('ynda_spreadsheet_app_id') || localStorage.getItem('ynda_spreadsheet_id') || '') : '';
+        async function configSheetLinks() {
+            let currentCore = localStorage.getItem('ynda_spreadsheet_core_id') || localStorage.getItem('ynda_spreadsheet_id') || '';
+            let currentApp = localStorage.getItem('ynda_spreadsheet_app_id') || localStorage.getItem('ynda_spreadsheet_id') || '';
 
-            if (!coreSheetId || forcePrompt) {
-                let inputCore = typeof showPromptModal === 'function' ? await showPromptModal('1/2. Nhập URL / ID Google Sheet cho DATABASE CORE (chỉ nhân sự Core/BTC):', coreSheetId || '') : prompt('1/2. Nhập URL / ID Google Sheet cho DATABASE CORE (chỉ nhân sự Core/BTC):', coreSheetId || '');
-                if (inputCore !== null && inputCore !== undefined) {
-                    coreSheetId = inputCore.trim();
-                    if (coreSheetId) localStorage.setItem('ynda_spreadsheet_core_id', coreSheetId);
-                } else return;
-                let inputApp = typeof showPromptModal === 'function' ? await showPromptModal('2/2. Nhập URL / ID Google Sheet cho ĐƠN ỨNG TUYỂN & LỊCH PV (để trống nếu dùng chung sheet trên):', appSheetId || '') : prompt('2/2. Nhập URL / ID Google Sheet cho ĐƠN ỨNG TUYỂN & LỊCH PV (để trống nếu dùng chung sheet trên):', appSheetId || '');
-                if (inputApp !== null && inputApp !== undefined) {
-                    appSheetId = inputApp.trim() || coreSheetId;
-                    if (appSheetId) localStorage.setItem('ynda_spreadsheet_app_id', appSheetId);
-                }
+            let inputCore = typeof showPromptModal === 'function' ? await showPromptModal('1/2. Nhập URL / ID Google Sheet cho DATABASE CORE (chỉ nhân sự Core/BTC):', currentCore) : prompt('1/2. Nhập URL / ID Google Sheet cho DATABASE CORE (chỉ nhân sự Core/BTC):', currentCore);
+            if (inputCore !== null && inputCore !== undefined) {
+                let val = inputCore.trim();
+                if (val) localStorage.setItem('ynda_spreadsheet_core_id', val);
+            } else return;
+
+            let inputApp = typeof showPromptModal === 'function' ? await showPromptModal('2/2. Nhập URL / ID Google Sheet cho ĐƠN ỨNG TUYỂN & LỊCH PV (để trống nếu dùng chung sheet trên):', currentApp) : prompt('2/2. Nhập URL / ID Google Sheet cho ĐƠN ỨNG TUYỂN & LỊCH PV (để trống nếu dùng chung sheet trên):', currentApp);
+            if (inputApp !== null && inputApp !== undefined) {
+                let val = inputApp.trim() || localStorage.getItem('ynda_spreadsheet_core_id');
+                if (val) localStorage.setItem('ynda_spreadsheet_app_id', val);
             }
-            if (!coreSheetId && !appSheetId) return;
+            showToast('✅ Đã lưu cấu hình Link Google Sheets mới!', 'success');
+        }
+
+        async function syncHRToGoogleSheets() {
+            let coreSheetId = localStorage.getItem('ynda_spreadsheet_core_id') || localStorage.getItem('ynda_spreadsheet_id') || '';
+            let appSheetId = localStorage.getItem('ynda_spreadsheet_app_id') || localStorage.getItem('ynda_spreadsheet_id') || '';
+
+            if (!coreSheetId && !appSheetId) {
+                await configSheetLinks();
+                coreSheetId = localStorage.getItem('ynda_spreadsheet_core_id') || '';
+                appSheetId = localStorage.getItem('ynda_spreadsheet_app_id') || '';
+            }
 
             showToast('🔄 Đang đồng bộ 2 chiều dữ liệu với Google Sheets...', 'info');
             try {
@@ -9737,9 +9748,6 @@
                     showToast(msg, 'success');
                     if (typeof renderTab === 'function') renderTab('members');
                 } else {
-                    localStorage.removeItem('ynda_spreadsheet_core_id');
-                    localStorage.removeItem('ynda_spreadsheet_app_id');
-                    localStorage.removeItem('ynda_spreadsheet_id');
                     showToast('⚠️ ' + (data.error || 'Cần kiểm tra quyền truy cập Google Sheet') + '. Tự động chuyển sang xuất file Excel...', 'warning');
                     if (typeof exportExcelCoreTeam === 'function') exportExcelCoreTeam();
                 }

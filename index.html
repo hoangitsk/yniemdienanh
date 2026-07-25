@@ -5748,8 +5748,14 @@
                     renderVoting();
                 },
                 members() {
-                    const pendings = d.applications.filter(a => a.status === 'pending');
-                    const processed = d.applications.filter(a => a.status === 'approved' || a.status === 'rejected');
+                    const sortedApps = [...(d.applications || [])].sort((a, b) => {
+                        const dateA = a.date || a.createdAt || a.timestamp || '';
+                        const dateB = b.date || b.createdAt || b.timestamp || '';
+                        if (dateA !== dateB) return dateA.localeCompare(dateB);
+                        return String(a.id || '').localeCompare(String(b.id || ''), undefined, { numeric: true });
+                    });
+                    const pendings = sortedApps.filter(a => a.status === 'pending');
+                    const processed = sortedApps.filter(a => a.status === 'approved' || a.status === 'rejected');
                     main.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px">
                             <h2 style="margin:0">👥 Quản lý Nhân sự & Đơn Tuyển dụng</h2>

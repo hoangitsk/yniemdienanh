@@ -5162,6 +5162,11 @@
                     const filteredApplications = d.applications.filter(a => {
                         const haystack = [a.name, a.email, a.phone, a.dept, a.position, a.type].map(value => String(value || '').toLowerCase()).join(' ');
                         return (!applicationSearch || haystack.includes(applicationSearch)) && (!applicationDept || a.dept === applicationDept);
+                    }).sort((a, b) => {
+                        const dateA = a.date || a.createdAt || a.timestamp || '';
+                        const dateB = b.date || b.createdAt || b.timestamp || '';
+                        if (dateA !== dateB) return dateA.localeCompare(dateB);
+                        return String(a.id || '').localeCompare(String(b.id || ''), undefined, { numeric: true });
                     });
                     const pendings = filteredApplications.filter(a => a.status === 'pending');
                     const processed = filteredApplications.filter(a => a.status === 'approved' || a.status === 'rejected');

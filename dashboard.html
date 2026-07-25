@@ -4750,11 +4750,7 @@
                     const voteStatus = !vs ? 'Chưa cấu hình' : now < vs ? 'Chưa mở' : ve && now > ve ? 'Đã đóng' : 'Đang mở';
                     const isBtcUser = u => {
                         if (!u) return false;
-                        if (u.role === 'admin') return true;
-                        const pos = String(u.position || '').toLowerCase();
-                        const dept = String(u.dept || u.projectGroup || '').toLowerCase();
-                        if (pos.includes('core') || pos.includes('vice') || pos.includes('trưởng') || pos.includes('phó') || u.isCore === true) return true;
-                        if (u.role === 'organizer' && (pos.includes('lead') || pos.includes('core') || pos.includes('vice') || pos.includes('trưởng') || pos.includes('phó') || dept.includes('bđh'))) return true;
+                        if (u.role === 'admin' || u.role === 'organizer') return true;
                         return false;
                     };
                     const registered = (d.registrations || []).length;

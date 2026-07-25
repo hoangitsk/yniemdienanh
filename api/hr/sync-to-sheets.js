@@ -534,16 +534,17 @@ module.exports = async (req, res) => {
 
     const db = ensureFirebase();
 
-    const mode = req.query?.mode || req.body?.mode || 'two_way';
+    const syncCore = req.query?.syncCore === 'true' || req.body?.syncCore === true;
+
     let pullResult = null;
-    if ((mode === 'pull' || mode === 'two_way') && sidCore) {
+    if ((mode === 'pull' || mode === 'two_way') && sidCore && syncCore) {
       pullResult = await pullFromSheets(db, sidCore);
     }
 
     const tasks = [];
     const names = [];
 
-    if (sidCore) {
+    if (sidCore && syncCore) {
       tasks.push(syncCoreTeam(db, sidCore));
       names.push('DATABASE CORE');
     }

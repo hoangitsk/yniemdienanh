@@ -145,6 +145,10 @@ async function syncCoreTeam(db, sid) {
   const rows = [];
   usersSnap.forEach(d => {
     const u = d.data();
+    // Lọc chỉ lấy thành viên Ban Tổ Chức / Core / Admin
+    const isCore = u.role === 'admin' || u.role === 'organizer' || u.position === 'core' || u.position === 'vice_lead' || u.isCore === true;
+    if (!isCore) return;
+
     rows.push([
       u.dept || u.projectGroup || 'BĐH',
       u.name || '',
@@ -188,6 +192,7 @@ async function pullFromSheets(db, sid) {
         phone: r[8] || '',
         facebook: r[9] || '',
         notes: r[10] || '',
+        role: 'organizer',
         updatedAt: new Date().toISOString()
       };
       if (userSnap.empty) {
@@ -206,34 +211,53 @@ async function pullFromSheets(db, sid) {
 
 module.exports = async (req, res) => {
   try {
-    let sid = req.body?.spreadsheetId || req.query?.spreadsheetId || process.env.SPREADSHEET_HR_DASHBOARD;
-    if (sid && typeof sid === 'string' && sid.includes('/spreadsheets/d/')) {
-      const match = sid.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-      if (match) sid = match[1];
-    }
-    if (!sid) return res.status(503).json({ error: 'Chưa nhập hoặc chưa cấu hình mã Google Sheet (SPREADSHEET_HR_DASHBOARD)' });
+    let rawDefaultSid = process.env.SPREADSHEET_HR_DASHBOARD || process.env.SPREADSHEET_ID;
+    let sidCore = req.body?.spreadsheetCoreId || req.query?.spreadsheetCoreId || req.body?.spreadsheetId || req.query?.spreadsheetId || process.env.SPREADSHEET_CORE_DATABASE || rawDefaultSid;
+    let sidApps = req.body?.spreadsheetAppId || req.query?.spreadsheetAppId || req.body?.spreadsheetId || req.query?.spreadsheetId || process.env.SPREADSHEET_APPLICATIONS || rawDefaultSid;
+
+    const parseId = (val) => {
+      if (val && typeof val === 'string' && val.includes('/spreadsheets/d/')) {
+        const match = val.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        if (match) return match[1];
+      }
+      return val ? String(val).trim() : '';
+    };
+
+    sidCore = parseId(sidCore);
+    sidApps = parseId(sidApps);
+
+    if (!sidCore && !sidApps) return res.status(503).json({ error: 'Chưa nhập hoặc chưa cấu hình mã Google Sheet' });
     if (!process.env.GOOGLE_SERVICE_ACCOUNT) return res.status(503).json({ error: 'GOOGLE_SERVICE_ACCOUNT chưa được cấu hình' });
 
     const db = ensureFirebase();
 
     const mode = req.query?.mode || req.body?.mode || 'two_way';
     let pullResult = null;
-    if (mode === 'pull' || mode === 'two_way') {
-      pullResult = await pullFromSheets(db, sid);
+    if ((mode === 'pull' || mode === 'two_way') && sidCore) {
+      pullResult = await pullFromSheets(db, sidCore);
     }
 
-    const results = await Promise.allSettled([
-      syncCoreTeam(db, sid),
-      syncApplications(db, sid),
-      syncInterviews(db, sid),
-      syncStaffPoints(db, sid),
-      syncAuditLogs(db, sid),
-    ]);
+    const tasks = [];
+    const names = [];
 
-    const report = results.map((r, i) => {
-      const names = ['DATABASE CORE', 'Ứng viên', 'Lịch PV', 'Staff Points', 'Nhật ký'];
-      return `${names[i]}: ${r.status === 'fulfilled' ? 'OK' : 'LỖI: ' + r.reason?.message}`;
-    });
+    if (sidCore) {
+      tasks.push(syncCoreTeam(db, sidCore));
+      names.push('DATABASE CORE');
+    }
+    if (sidApps) {
+      tasks.push(syncApplications(db, sidApps));
+      names.push('Ứng viên');
+      tasks.push(syncInterviews(db, sidApps));
+      names.push('Lịch PV');
+      tasks.push(syncStaffPoints(db, sidApps));
+      names.push('Staff Points');
+      tasks.push(syncAuditLogs(db, sidApps));
+      names.push('Nhật ký');
+    }
+
+    const results = await Promise.allSettled(tasks);
+
+    const report = results.map((r, i) => `${names[i]}: ${r.status === 'fulfilled' ? 'OK' : 'LỖI: ' + r.reason?.message}`);
 
     console.log('[HRSync]', report.join(' | '));
     res.json({ success: true, mode, pullResult, report });

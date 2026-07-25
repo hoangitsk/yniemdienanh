@@ -9702,13 +9702,23 @@
         }
 
         async function syncHRToGoogleSheets() {
-            let sheetId = localStorage.getItem('ynda_spreadsheet_id') || '';
-            if (!sheetId && typeof showPromptModal === 'function') {
-                let input = await showPromptModal('Nhập đường dẫn (URL) hoặc mã ID của Google Sheet:', 'https://docs.google.com/spreadsheets/d/1F1H-yWCHXZvU0f9suyT-W4uOgq9dOAJj/edit');
-                if (!input) return;
-                sheetId = input.trim();
-                localStorage.setItem('ynda_spreadsheet_id', sheetId);
+            let coreSheetId = localStorage.getItem('ynda_spreadsheet_core_id') || localStorage.getItem('ynda_spreadsheet_id') || '';
+            let appSheetId = localStorage.getItem('ynda_spreadsheet_app_id') || localStorage.getItem('ynda_spreadsheet_id') || '';
+
+            if (!coreSheetId && !appSheetId && typeof showPromptModal === 'function') {
+                let inputCore = await showPromptModal('1/2. Nhập URL / ID Google Sheet cho DATABASE CORE (chỉ nhân sự Core/BTC):', '');
+                if (inputCore !== null) {
+                    coreSheetId = inputCore.trim();
+                    if (coreSheetId) localStorage.setItem('ynda_spreadsheet_core_id', coreSheetId);
+                }
+                let inputApp = await showPromptModal('2/2. Nhập URL / ID Google Sheet cho ĐƠN ỨNG TUYỂN & LỊCH PV (để trống nếu dùng chung sheet trên):', '');
+                if (inputApp !== null) {
+                    appSheetId = inputApp.trim() || coreSheetId;
+                    if (appSheetId) localStorage.setItem('ynda_spreadsheet_app_id', appSheetId);
+                }
             }
+            if (!coreSheetId && !appSheetId) return;
+
             showToast('🔄 Đang đồng bộ 2 chiều dữ liệu với Google Sheets...', 'info');
             try {
                 var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
@@ -9716,11 +9726,11 @@
                 var res = await fetch('/api/hr/sync-to-sheets', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken: idToken, mode: 'two_way', spreadsheetId: sheetId })
+                    body: JSON.stringify({ idToken: idToken, mode: 'two_way', spreadsheetCoreId: coreSheetId, spreadsheetAppId: appSheetId || coreSheetId })
                 });
                 var data = await res.json();
                 if (data.success) {
-                    let msg = '✅ Đồng bộ 2 chiều Google Sheets thành công!';
+                    let msg = '✅ Đồng bộ Google Sheets thành công!';
                     if (data.pullResult && data.pullResult.importedUsers) {
                         msg += ' Đã nhập ' + data.pullResult.importedUsers + ' thành viên từ Google Sheet.';
                     }

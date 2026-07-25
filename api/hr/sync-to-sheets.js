@@ -201,8 +201,11 @@ async function syncHoSoChiTietTab(sid, allApps, usersMap) {
 
     dataRows.forEach(row => {
       const firstCol = String(row[0] || '').trim();
-      const emailVal = String(row[3] || '').trim().toLowerCase();
-      if (firstCol) existingKeys.add(firstCol);
+      const emailVal = String(row[3] || row[2] || '').trim().toLowerCase();
+      if (firstCol) {
+        existingKeys.add(firstCol);
+        firstCol.split(/\s+/).forEach(t => { if (t && t.length > 3) existingKeys.add(t); });
+      }
       if (emailVal) existingKeys.add(emailVal);
     });
 
@@ -221,9 +224,18 @@ async function syncHoSoChiTietTab(sid, allApps, usersMap) {
       const emailStr = String(app.email || '').trim().toLowerCase();
       const user = usersMap.get(app.approvedUserId || '') || usersMap.get(app.uid || '') || {};
 
-      if ((appIdStr && existingKeys.has(appIdStr)) || (emailStr && existingKeys.has(emailStr))) {
-        continue;
+      let alreadyExists = false;
+      if (appIdStr && existingKeys.has(appIdStr)) alreadyExists = true;
+      if (emailStr && existingKeys.has(emailStr)) alreadyExists = true;
+
+      if (!alreadyExists && (appIdStr || emailStr)) {
+        for (const k of existingKeys) {
+          if (appIdStr && k.includes(appIdStr)) { alreadyExists = true; break; }
+          if (emailStr && k.includes(emailStr)) { alreadyExists = true; break; }
+        }
       }
+
+      if (alreadyExists) continue;
 
       currentStt += 1;
       const combinedCode = `${currentStt} ${app.id || '0'}`;

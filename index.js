@@ -532,6 +532,17 @@ app.post('/api/admin/delete-user', async (req, res) => {
     }
 });
 
+// API: Admin cleanup roles (fix users incorrectly assigned as organizer)
+const cleanupRolesHandler = require('./api/admin/cleanup-roles');
+app.post('/api/admin/cleanup-roles', async (req, res) => {
+    try {
+        await cleanupRolesHandler(req, res);
+    } catch (err) {
+        console.error('Cleanup roles error:', err);
+        if (!res.headersSent) res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/verify-turnstile', async (req, res) => {
     try {
         const { token } = req.body;

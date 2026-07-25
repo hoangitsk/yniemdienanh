@@ -21,10 +21,13 @@ function isOrganizer(decoded, profile) {
 function isInterviewStaff(decoded, profile) {
     if (isInterviewStaffProfile(decoded, profile)) return true;
     const role = String(profile.role || '').trim().toLowerCase();
-    const context = [profile.dept, profile.position, profile.title].map(value => String(value || '').trim().toLowerCase()).join(' ');
+    const dept = String(profile.dept || '').trim().toLowerCase();
+    const position = String(profile.position || '').trim().toLowerCase();
+    const title = String(profile.title || '').trim().toLowerCase();
+    const context = [dept, position, title].join(' ');
     return isOrganizer(decoded, profile) || ['president', 'core'].includes(role) ||
         context.includes('nhân sự') || context.includes('nhan su') || context.includes('hr') ||
-        context.includes('core') || context.includes('president') ||
+        position === 'core' || title === 'core' || position === 'president' || title === 'president' ||
         context.includes('chủ tịch') || context.includes('chu tich');
 }
 

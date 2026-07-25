@@ -1687,11 +1687,12 @@
             const projectGroup = String(user && user.projectGroup || '').trim().toLowerCase();
             if (projectGroup === 'candidate') return false;
             const role = String(user && user.role || '').trim().toLowerCase();
-            const dept = String(user && user.dept || '').trim().toLowerCase();
             const position = String(user && (user.position || user.title) || '').trim().toLowerCase();
-            const leadership = [dept, position, user && user.leadershipTitle].join(' ').toLowerCase();
+            const dept = String(user && user.dept || '').trim().toLowerCase();
+            const leadershipTitle = String(user && user.leadershipTitle || '').trim().toLowerCase();
+            const leadership = [dept, position, leadershipTitle].join(' ').toLowerCase();
             return ['admin', 'organizer', 'president', 'core'].includes(role) ||
-                leadership.includes('core') || leadership.includes('president') ||
+                position === 'core' || position === 'president' ||
                 leadership.includes('chủ tịch') || leadership.includes('chu tich') ||
                 leadership.includes('ban điều hành') || leadership.includes('ban dieu hanh');
         }

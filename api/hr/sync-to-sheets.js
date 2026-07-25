@@ -507,7 +507,8 @@ async function syncCoreTeam(db, sid) {
   const memberUsers = [];
 
   allUsers.forEach(u => {
-    const isBdh = u.role === 'admin' || u.role === 'organizer' || u.position === 'core' || u.position === 'vice_lead' || u.isCore === true;
+    const pos = (u.position || '').toLowerCase();
+    const isBdh = u.role === 'admin' || u.role === 'organizer' || pos === 'core' || pos === 'vice_lead' || pos === 'head' || pos.includes('trưởng') || pos.includes('phó') || u.isCore === true;
     if (isBdh) bdhUsers.push(u);
     else memberUsers.push(u);
   });
@@ -550,7 +551,7 @@ async function syncCoreTeam(db, sid) {
     }
 
     let deptDisplay = u.dept || u.projectGroup || 'BĐH';
-    let posDisplay = u.position || u.leadershipTitle || (u.role === 'admin' ? 'President' : (u.role === 'organizer' ? 'Core' : 'Thành viên'));
+    let posDisplay = u.position || u.leadershipTitle || 'Thành viên';
 
     if (isBdh) {
       if (!deptDisplay.startsWith('BĐH')) deptDisplay = `BĐH - ${deptDisplay}`;
@@ -589,9 +590,9 @@ async function pullFromSheets(db, sid) {
       if (!r[7] || !r[7].includes('@')) continue;
       const email = r[7].trim().toLowerCase();
       const userSnap = await db.collection('users').where('email', '==', email).limit(1).get();
+      const existingUser = userSnap.empty ? null : { id: userSnap.docs[0].id, ...userSnap.docs[0].data() };
       const posLower = (r[2] || '').toLowerCase();
-      const deptLower = (r[0] || '').toLowerCase();
-      const isBtc = posLower.includes('core') || posLower.includes('vice') || posLower.includes('trưởng') || posLower.includes('phó') || posLower.includes('bđh') || deptLower.includes('bđh');
+      const isBtc = posLower.includes('vice') || posLower.includes('trưởng') || posLower.includes('phó') || posLower.includes('head') || posLower.includes('lead') || posLower.includes('bđh') || (posLower.includes('core') && !posLower.includes('member'));
       const role = isBtc ? 'organizer' : 'member';
       const userData = {
         dept: r[0] || '',
@@ -605,13 +606,23 @@ async function pullFromSheets(db, sid) {
         phone: r[8] || '',
         facebook: r[9] || '',
         notes: r[10] || '',
-        role: role,
         updatedAt: new Date().toISOString()
       };
-      if (userSnap.empty) {
-        await db.collection('users').add({ ...userData, createdAt: new Date().toISOString() });
+      if (existingUser) {
+        if (existingUser.role === 'admin') {
+          userData.role = 'admin';
+        } else if (existingUser.role === 'organizer' && role === 'member') {
+          const existingPos = (existingUser.position || '').toLowerCase();
+          if (existingPos.includes('vice') || existingPos.includes('trưởng') || existingPos.includes('phó') || existingPos.includes('head') || existingPos.includes('lead') || existingPos.includes('core')) {
+            userData.role = 'organizer';
+          }
+        } else {
+          userData.role = role;
+        }
+        userData.createdAt = existingUser.createdAt;
+        await db.collection('users').doc(existingUser.id).update(userData);
       } else {
-        await db.collection('users').doc(userSnap.docs[0].id).update(userData);
+        await db.collection('users').add({ ...userData, role, createdAt: new Date().toISOString() });
       }
       importedUsers++;
     }

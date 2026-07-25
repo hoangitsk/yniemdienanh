@@ -265,6 +265,46 @@ async function syncHoSoChiTietTab(sid, allApps, usersMap) {
   }
 }
 
+function parseYMD(val) {
+  if (!val) return '';
+  if (typeof val === 'object' && val.toDate) {
+    val = val.toDate();
+  }
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return '';
+    const pad = n => String(n).padStart(2, '0');
+    return `${val.getFullYear()}-${pad(val.getMonth() + 1)}-${pad(val.getDate())}`;
+  }
+  const s = String(val).trim();
+  if (s.includes('/')) {
+    const parts = s.split(/[\/\s]/);
+    if (parts.length >= 3) {
+      let day = parts[0].padStart(2, '0');
+      let month = parts[1].padStart(2, '0');
+      let year = parts[2];
+      if (day.length === 4) {
+        return `${day}-${month}-${parts[2].padStart(2, '0')}`;
+      }
+      return `${year}-${month}-${day}`;
+    }
+  }
+  if (s.includes('-')) {
+    const parts = s.split('-');
+    if (parts.length >= 3) {
+      let year = parts[0];
+      let month = parts[1].padStart(2, '0');
+      let day = parts[2].slice(0, 2).padStart(2, '0');
+      if (year.length === 4) return `${year}-${month}-${day}`;
+    }
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+  return s.slice(0, 10);
+}
+
 async function syncApplications(db, sid) {
   const appsSnap = await db.collection('applications').get();
   const usersSnap = await db.collection('users').get();
@@ -272,22 +312,45 @@ async function syncApplications(db, sid) {
   usersSnap.forEach(d => usersMap.set(d.id, d.data()));
 
   const allApps = [];
+  const appEmails = new Set();
+
   appsSnap.forEach(d => {
     const a = d.data();
+    const email = String(a.email || '').trim().toLowerCase();
+    if (email) appEmails.add(email);
     allApps.push({ ...a, docId: d.id });
+  });
+
+  // Include accounts registered from 2026-07-25 in users collection without a separate application doc
+  usersSnap.forEach(d => {
+    const u = d.data();
+    const email = String(u.email || '').trim().toLowerCase();
+    if (!email) return;
+    const ymd = parseYMD(u.createdAt || u.date);
+    if (ymd >= '2026-07-25' && !appEmails.has(email)) {
+      allApps.push({
+        id: u.id || d.id,
+        docId: d.id,
+        name: u.name || '',
+        email: email,
+        phone: u.phone || '',
+        dept: u.dept || 'Ban Nội dung',
+        position: u.position || 'member',
+        intro: u.intro || u.interest || 'Đăng ký tài khoản trực tuyến',
+        date: ymd,
+        createdAt: u.createdAt || ymd,
+        status: 'pending'
+      });
+      appEmails.add(email);
+    }
   });
 
   // Candidate applications registered from 2026-07-25 onwards ONLY
   const candidateApps = allApps.filter(a => {
-    // 1. Must be registered from 2026-07-25 onwards (exclude 2026-07-24 and earlier)
-    let dStr = a.date || formatDate(a.createdAt) || a.createdAt || '';
-    if (typeof dStr === 'object' && dStr.toDate) {
-      dStr = dStr.toDate().toISOString().slice(0, 10);
-    }
-    const dateOnly = String(dStr).trim().slice(0, 10);
-    if (!dateOnly || dateOnly < '2026-07-25') return false;
+    const ymd = parseYMD(a.date || a.createdAt);
+    if (!ymd || ymd < '2026-07-25') return false;
 
-    // 2. Exclude Core / Vice / Lead / Admin team members
+    // Exclude Core / Vice / Lead / Admin team members
     const pos = String(a.position || '').toLowerCase();
     const type = String(a.type || '').toLowerCase();
 

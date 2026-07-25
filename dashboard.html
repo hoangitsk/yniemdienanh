@@ -4792,6 +4792,7 @@
                                 <button class="btn btn-gold btn-sm" onclick="exportCSV('tasks')">📤 Xuat cong viec (CSV)</button>
                                 <button class="btn btn-line btn-sm" onclick="importBackupData()">📥 Nhap du lieu tu file</button>
                                 <button class="btn btn-line btn-sm" onclick="toggleMaintenance()">${localDB.config && localDB.config.maintenance ? '🔓 Tat bao tri' : '🔧 Bat bao tri'}</button>
+                                <button class="btn btn-danger btn-sm" onclick="cleanupRoles()" style="background:#dc2626;color:#fff">⚠️ Cleanup role sai</button>
                             </div>
                         </div>
                         ` : ''}
@@ -9539,6 +9540,30 @@
             addAuditLog('admin_' + (u.locked ? 'lock' : 'unlock') + '_user', (u.locked ? 'Locked' : 'Unlocked') + ' user ' + (u.name || u.email) + ' (ID: ' + id + ')');
             renderTab('accounts');
             showToast(u.locked ? 'Đã khóa tài khoản.' : 'Đã mở khóa tài khoản.', 'success');
+        }
+
+        async function cleanupRoles() {
+            if (!(await showConfirmModal('⚠️ Cleanup sẽ set role="member" cho tất cả user có role="organizer" nhung khong co chuc danh lanh dao. Tiep tuc?'))) return;
+            try {
+                var auth = window.firebase ? firebase.auth() : authInstance;
+                if (!auth || !auth.currentUser) throw new Error('Chua dang nhap');
+                var idToken = await auth.currentUser.getIdToken();
+                var res = await fetch('/api/admin/cleanup-roles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+                var data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Loi cleanup');
+                showToast('Cleanup hoan tat: ' + data.corrected + ' user da sua, ' + data.skipped + ' user giu nguyen.', 'success');
+                addAuditLog('admin_cleanup_roles', 'Corrected ' + data.corrected + ' users, skipped ' + data.skipped);
+                if (data.details && data.details.length > 0) {
+                    console.log('Cleanup details:', data.details);
+                }
+                setTimeout(function() { location.reload(); }, 2000);
+            } catch (e) {
+                showToast('Loi cleanup: ' + (e.message || 'Khong the cleanup roles.'), 'error');
+            }
         }
 
         async function adminEditNotes(id) {

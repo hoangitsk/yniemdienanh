@@ -277,7 +277,24 @@ async function syncApplications(db, sid) {
     allApps.push({ ...a, docId: d.id });
   });
 
-  const rows = allApps.map(a => {
+  // Candidate applications only (filter out existing Core / Vice / Lead / Admin team members)
+  const candidateApps = allApps.filter(a => {
+    const pos = String(a.position || '').toLowerCase();
+    const type = String(a.type || '').toLowerCase();
+
+    if (pos.includes('core') || pos.includes('vice') || pos.includes('head') || pos.includes('lead') || pos.includes('trưởng') || pos.includes('phó')) return false;
+    if (type.includes('organizer') || type.includes('core')) return false;
+
+    const user = usersMap.get(a.approvedUserId || '') || usersMap.get(a.uid || '') || {};
+    const userRole = String(user.role || '').toLowerCase();
+    const userPos = String(user.position || '').toLowerCase();
+    if (userRole === 'admin' || userRole === 'organizer' || user.isCore === true) return false;
+    if (userPos.includes('core') || userPos.includes('vice') || userPos.includes('head') || userPos.includes('lead') || userPos.includes('trưởng') || userPos.includes('phó')) return false;
+
+    return true;
+  });
+
+  const rows = candidateApps.map(a => {
     const user = usersMap.get(a.approvedUserId || '');
     return [
       a.name || '',
@@ -304,10 +321,10 @@ async function syncApplications(db, sid) {
   // Sync to department tabs matching YNDA_Danh_sach_phong_van
   const depts = ['Ban Nội dung', 'Ban Nhân sự', 'Ban Truyền thông', 'Ban Media', 'Ban Duyệt bài'];
   for (const deptName of depts) {
-    await syncDepartmentTab(sid, deptName, allApps);
+    await syncDepartmentTab(sid, deptName, candidateApps);
   }
-  await syncTongHopTab(sid, allApps);
-  await syncHoSoChiTietTab(sid, allApps, usersMap);
+  await syncTongHopTab(sid, candidateApps);
+  await syncHoSoChiTietTab(sid, candidateApps, usersMap);
 }
 
 async function syncInterviews(db, sid) {

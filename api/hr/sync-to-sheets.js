@@ -482,6 +482,10 @@ async function pullFromSheets(db, sid) {
       if (!r[7] || !r[7].includes('@')) continue;
       const email = r[7].trim().toLowerCase();
       const userSnap = await db.collection('users').where('email', '==', email).limit(1).get();
+      const posLower = (r[2] || '').toLowerCase();
+      const deptLower = (r[0] || '').toLowerCase();
+      const isBtc = posLower.includes('core') || posLower.includes('vice') || posLower.includes('trưởng') || posLower.includes('phó') || posLower.includes('bđh') || deptLower.includes('bđh');
+      const role = isBtc ? 'organizer' : 'member';
       const userData = {
         dept: r[0] || '',
         name: r[1] || '',
@@ -494,7 +498,7 @@ async function pullFromSheets(db, sid) {
         phone: r[8] || '',
         facebook: r[9] || '',
         notes: r[10] || '',
-        role: 'organizer',
+        role: role,
         updatedAt: new Date().toISOString()
       };
       if (userSnap.empty) {

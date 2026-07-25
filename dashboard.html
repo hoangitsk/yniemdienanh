@@ -4748,8 +4748,16 @@
                     const vs = cfg.voteStart ? new Date(cfg.voteStart) : null;
                     const ve = cfg.voteEnd ? new Date(cfg.voteEnd) : null;
                     const voteStatus = !vs ? 'Chưa cấu hình' : now < vs ? 'Chưa mở' : ve && now > ve ? 'Đã đóng' : 'Đang mở';
-                    const registered = (d.registrations || []).length;
-                    const personnelCount = (d.users || []).filter(user => projectGroupOf(user) === 'organizer').length;
+                    const isBtcUser = u => {
+                        if (!u) return false;
+                        if (u.role === 'admin') return true;
+                        const pos = String(u.position || '').toLowerCase();
+                        const dept = String(u.dept || u.projectGroup || '').toLowerCase();
+                        if (pos.includes('core') || pos.includes('vice') || pos.includes('trưởng') || pos.includes('phó') || u.isCore === true) return true;
+                        if (u.role === 'organizer' && (pos.includes('lead') || pos.includes('core') || pos.includes('vice') || pos.includes('trưởng') || pos.includes('phó') || dept.includes('bđh'))) return true;
+                        return false;
+                    };
+                    const personnelCount = (d.users || []).filter(isBtcUser).length;
                     const accountCount = (d.users || []).length;
                     main.innerHTML = `
                         <h2>📊 Tổng quan vận hành</h2>

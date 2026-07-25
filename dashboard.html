@@ -9701,18 +9701,18 @@
             reader.readAsArrayBuffer(file);
         }
 
-        async function syncHRToGoogleSheets() {
-            let coreSheetId = localStorage.getItem('ynda_spreadsheet_core_id') || localStorage.getItem('ynda_spreadsheet_id') || '';
-            let appSheetId = localStorage.getItem('ynda_spreadsheet_app_id') || localStorage.getItem('ynda_spreadsheet_id') || '';
+        async function syncHRToGoogleSheets(forcePrompt = false) {
+            let coreSheetId = !forcePrompt ? (localStorage.getItem('ynda_spreadsheet_core_id') || localStorage.getItem('ynda_spreadsheet_id') || '') : '';
+            let appSheetId = !forcePrompt ? (localStorage.getItem('ynda_spreadsheet_app_id') || localStorage.getItem('ynda_spreadsheet_id') || '') : '';
 
-            if (!coreSheetId && !appSheetId && typeof showPromptModal === 'function') {
-                let inputCore = await showPromptModal('1/2. Nhập URL / ID Google Sheet cho DATABASE CORE (chỉ nhân sự Core/BTC):', '');
-                if (inputCore !== null) {
+            if (!coreSheetId || forcePrompt) {
+                let inputCore = typeof showPromptModal === 'function' ? await showPromptModal('1/2. Nhập URL / ID Google Sheet cho DATABASE CORE (chỉ nhân sự Core/BTC):', coreSheetId || '') : prompt('1/2. Nhập URL / ID Google Sheet cho DATABASE CORE (chỉ nhân sự Core/BTC):', coreSheetId || '');
+                if (inputCore !== null && inputCore !== undefined) {
                     coreSheetId = inputCore.trim();
                     if (coreSheetId) localStorage.setItem('ynda_spreadsheet_core_id', coreSheetId);
-                }
-                let inputApp = await showPromptModal('2/2. Nhập URL / ID Google Sheet cho ĐƠN ỨNG TUYỂN & LỊCH PV (để trống nếu dùng chung sheet trên):', '');
-                if (inputApp !== null) {
+                } else return;
+                let inputApp = typeof showPromptModal === 'function' ? await showPromptModal('2/2. Nhập URL / ID Google Sheet cho ĐƠN ỨNG TUYỂN & LỊCH PV (để trống nếu dùng chung sheet trên):', appSheetId || '') : prompt('2/2. Nhập URL / ID Google Sheet cho ĐƠN ỨNG TUYỂN & LỊCH PV (để trống nếu dùng chung sheet trên):', appSheetId || '');
+                if (inputApp !== null && inputApp !== undefined) {
                     appSheetId = inputApp.trim() || coreSheetId;
                     if (appSheetId) localStorage.setItem('ynda_spreadsheet_app_id', appSheetId);
                 }
@@ -9737,12 +9737,15 @@
                     showToast(msg, 'success');
                     if (typeof renderTab === 'function') renderTab('members');
                 } else {
-                    showToast('⚠️ Cần cấu hình API (' + (data.error || '') + '). Tự động chuyển sang xuất file Excel...', 'warning');
-                    exportExcelCoreTeam();
+                    localStorage.removeItem('ynda_spreadsheet_core_id');
+                    localStorage.removeItem('ynda_spreadsheet_app_id');
+                    localStorage.removeItem('ynda_spreadsheet_id');
+                    showToast('⚠️ ' + (data.error || 'Cần kiểm tra quyền truy cập Google Sheet') + '. Tự động chuyển sang xuất file Excel...', 'warning');
+                    if (typeof exportExcelCoreTeam === 'function') exportExcelCoreTeam();
                 }
             } catch (e) {
                 showToast('⚠️ Không thể kết nối server đồng bộ. Tự động chuyển sang xuất file Excel...', 'warning');
-                exportExcelCoreTeam();
+                if (typeof exportExcelCoreTeam === 'function') exportExcelCoreTeam();
             }
         }
 

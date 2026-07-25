@@ -23,9 +23,13 @@ function formatDate(ts) {
 async function syncDepartmentTab(sid, deptTitle, allApps) {
   const { getRows, appendRows } = require('../../lib/googleSheetsFormatter');
   try {
-    const norm = s => String(s || '').toLowerCase().replace(/^ban\s+/, '').trim();
+    const norm = s => String(s || '').toLowerCase().replace(/^ban\s+/, '').replace(/\([^)]*\)/g, '').trim();
     const targetNorm = norm(deptTitle);
-    const deptApps = allApps.filter(a => norm(a.dept).includes(targetNorm) || targetNorm.includes(norm(a.dept)));
+    const deptApps = allApps.filter(a => {
+      const appDeptNorm = norm(a.dept);
+      if (!appDeptNorm) return false;
+      return appDeptNorm.includes(targetNorm) || targetNorm.includes(appDeptNorm);
+    });
 
     if (!deptApps || deptApps.length === 0) return;
 

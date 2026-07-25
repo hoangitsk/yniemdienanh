@@ -350,17 +350,19 @@ async function syncApplications(db, sid) {
     const ymd = parseYMD(a.date || a.createdAt);
     if (!ymd || ymd < '2026-07-25') return false;
 
-    // Exclude Core / Vice / Lead / Admin team members
-    const pos = String(a.position || '').toLowerCase();
-    const type = String(a.type || '').toLowerCase();
+    // Ensure application has a department (default to Ban Nội dung if blank)
+    if (!a.dept || !String(a.dept).trim()) {
+      a.dept = 'Ban Nội dung';
+    }
 
+    // Exclude actual Core / Vice / Lead / Admin official team members
+    const pos = String(a.position || '').toLowerCase();
     if (pos.includes('core') || pos.includes('vice') || pos.includes('head') || pos.includes('lead') || pos.includes('trưởng') || pos.includes('phó')) return false;
-    if (type.includes('organizer') || type.includes('core')) return false;
 
     const user = usersMap.get(a.approvedUserId || '') || usersMap.get(a.uid || '') || {};
     const userRole = String(user.role || '').toLowerCase();
     const userPos = String(user.position || '').toLowerCase();
-    if (userRole === 'admin' || userRole === 'organizer' || user.isCore === true) return false;
+    if (userRole === 'admin' || user.isCore === true) return false;
     if (userPos.includes('core') || userPos.includes('vice') || userPos.includes('head') || userPos.includes('lead') || userPos.includes('trưởng') || userPos.includes('phó')) return false;
 
     return true;

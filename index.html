@@ -4991,7 +4991,7 @@
             const email = emailEl.value.trim();
             const phone = phoneEl.value.trim();
             const intro = introEl.value.trim();
-            const dept = applyType === 'organizer' ? deptEl.value : '';
+            const dept = deptEl ? deptEl.value : '';
             
             // Reset validation states
             [nameEl, emailEl, phoneEl, introEl].forEach(el => el.classList.remove('invalid'));

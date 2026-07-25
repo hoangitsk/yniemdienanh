@@ -23,17 +23,102 @@ function formatDate(ts) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+async function syncDepartmentTab(sid, deptTitle, allApps) {
+  const { getRows, appendRows } = require('../../lib/googleSheetsFormatter');
+  try {
+    const norm = s => String(s || '').toLowerCase().replace(/^ban\s+/, '').trim();
+    const targetNorm = norm(deptTitle);
+    const deptApps = allApps.filter(a => norm(a.dept).includes(targetNorm) || targetNorm.includes(norm(a.dept)));
+
+    if (!deptApps || deptApps.length === 0) return;
+
+    const rawRows = await getRows(sid, `${deptTitle}!A1:L500`).catch(() => []);
+    
+    let headerRowIdx = -1;
+    for (let i = 0; i < rawRows.length; i++) {
+      const line = (rawRows[i] || []).map(c => String(c || '').toLowerCase()).join(' ');
+      if (line.includes('mã hồ sơ') || line.includes('họ và tên') || line.includes('email')) {
+        headerRowIdx = i;
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1) return;
+
+    const dataRows = rawRows.slice(headerRowIdx + 1);
+    const existingKeys = new Set();
+
+    dataRows.forEach(row => {
+      const idVal = String(row[1] || '').trim();
+      const emailVal = String(row[5] || '').trim().toLowerCase();
+      if (idVal && idVal !== '0') existingKeys.add(idVal);
+      if (emailVal) existingKeys.add(emailVal);
+    });
+
+    let currentStt = dataRows.length;
+    const newRowsToAppend = [];
+
+    const sortedDeptApps = [...deptApps].sort((a, b) => {
+      const dateA = a.date || formatDate(a.createdAt) || '';
+      const dateB = b.date || formatDate(b.createdAt) || '';
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return String(a.id || '').localeCompare(String(b.id || ''), undefined, { numeric: true });
+    });
+
+    for (const app of sortedDeptApps) {
+      const appIdStr = String(app.id || '').trim();
+      const emailStr = String(app.email || '').trim().toLowerCase();
+
+      if ((appIdStr && existingKeys.has(appIdStr)) || (emailStr && existingKeys.has(emailStr))) {
+        continue;
+      }
+
+      currentStt += 1;
+      const posText = app.position === 'vice_lead' ? 'Vice' : (app.position === 'core' ? 'Core' : 'Thành viên');
+      const dateStr = app.date || formatDate(app.createdAt) || new Date().toISOString().slice(0, 10);
+
+      newRowsToAppend.push([
+        currentStt,
+        app.id || '0',
+        app.name || '',
+        app.name || '',
+        posText,
+        app.email || '',
+        app.phone || '',
+        dateStr,
+        'Qua vòng đơn',
+        'Chờ xếp lịch',
+        '',
+        ''
+      ]);
+    }
+
+    if (newRowsToAppend.length > 0) {
+      const nextRowNumber = headerRowIdx + 2 + dataRows.length;
+      const appendRange = `${deptTitle}!A${nextRowNumber}`;
+      await appendRows(sid, appendRange, newRowsToAppend);
+      console.log(`[HRSync] Appended ${newRowsToAppend.length} new applications to tab ${deptTitle}`);
+    }
+  } catch (err) {
+    console.warn(`[HRSync] Department tab '${deptTitle}' sync skipped:`, err.message);
+  }
+}
+
 async function syncApplications(db, sid) {
   const appsSnap = await db.collection('applications').get();
   const usersSnap = await db.collection('users').get();
   const usersMap = new Map();
   usersSnap.forEach(d => usersMap.set(d.id, d.data()));
 
-  const rows = [];
+  const allApps = [];
   appsSnap.forEach(d => {
     const a = d.data();
+    allApps.push({ ...a, docId: d.id });
+  });
+
+  const rows = allApps.map(a => {
     const user = usersMap.get(a.approvedUserId || '');
-    rows.push([
+    return [
       a.name || '',
       a.email || '',
       a.dept || '',
@@ -41,19 +126,25 @@ async function syncApplications(db, sid) {
       a.type || '',
       a.recruitmentStage || '',
       a.status || 'pending',
-      formatDate(a.createdAt),
+      formatDate(a.createdAt || a.date),
       a.approvedUserId || '',
       user?.interviewStatus || '',
-      a.id || d.id,
-    ]);
+      a.id || a.docId,
+    ];
   });
 
-  rows.sort((a, b) => (b[7] || '').localeCompare(a[7] || ''));
+  rows.sort((a, b) => (a[7] || '').localeCompare(b[7] || ''));
 
   await writeTable(sid, 'Ứng viên', [
     'Họ tên', 'Email', 'Ban', 'Vị trí', 'Loại', 'Giai đoạn', 'Trạng thái',
     'Ngày đăng ký', 'UID', 'Tình trạng PV', 'Mã ứng viên',
-  ], rows, 6);
+  ], rows, 6).catch(() => {});
+
+  // Sync to department tabs matching YNDA_Danh_sach_phong_van
+  const depts = ['Ban Nội dung', 'Ban Nhân sự', 'Ban Truyền thông', 'Ban Media', 'Ban Duyệt bài'];
+  for (const deptName of depts) {
+    await syncDepartmentTab(sid, deptName, allApps);
+  }
 }
 
 async function syncInterviews(db, sid) {

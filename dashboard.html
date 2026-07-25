@@ -4757,6 +4757,7 @@
                         if (u.role === 'organizer' && (pos.includes('lead') || pos.includes('core') || pos.includes('vice') || pos.includes('trưởng') || pos.includes('phó') || dept.includes('bđh'))) return true;
                         return false;
                     };
+                    const registered = (d.registrations || []).length;
                     const personnelCount = (d.users || []).filter(isBtcUser).length;
                     const accountCount = (d.users || []).length;
                     main.innerHTML = `

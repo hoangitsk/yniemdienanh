@@ -1184,15 +1184,33 @@
             const selectedDept = deptSelect.value;
             const btcMembers = activeBTCUsers || [];
             
-            // Count vice leads in this department
-            const viceLeadCount = btcMembers.filter(u => u.dept === selectedDept && u.position === 'vice_lead').length;
+            const normDept = (d) => String(d || '').trim().toLowerCase().replace(/^ban\s+/, '');
+            const targetDeptNorm = normDept(selectedDept);
 
-            const isViceLeadFull = viceLeadCount >= 1;
+            // Check if vice lead exists in this department
+            const viceLeadUser = btcMembers.find(u => {
+                const uDept = normDept(u.dept || u.projectGroup);
+                const uPos = String(u.position || u.role || '').toLowerCase();
+                return uDept === targetDeptNorm && (uPos.includes('vice') || uPos.includes('phó') || uPos.includes('pho'));
+            });
+
+            // Check if core member exists in this department
+            const coreUser = btcMembers.find(u => {
+                const uDept = normDept(u.dept || u.projectGroup);
+                const uPos = String(u.position || u.role || '').toLowerCase();
+                return uDept === targetDeptNorm && (uPos.includes('core') || uPos.includes('trưởng') || uPos.includes('lead') || u.isCore);
+            });
+
+            const filledConfig = (recruitmentSettings && recruitmentSettings.filledPositions) || {};
+            const deptFilled = filledConfig[selectedDept] || filledConfig[targetDeptNorm] || {};
+
+            const isViceLeadFull = !!viceLeadUser || !!deptFilled.vice_lead || !!(recruitmentSettings && recruitmentSettings['vice_full_' + selectedDept]);
+            const isCoreFull = !!coreUser || !!deptFilled.core || recruitmentSettings.coreOpen === false || !!(recruitmentSettings && recruitmentSettings['core_full_' + selectedDept]);
 
             // Update vice lead option
             if (isViceLeadFull) {
                 optViceLead.disabled = true;
-                optViceLead.text = "Phó ban (Đã có người làm - Hết slot)";
+                optViceLead.text = "Phó ban (Đã tuyển - Hết slot)";
                 optViceLead.style.color = "rgba(255,255,255,0.4)";
             } else {
                 optViceLead.disabled = false;
@@ -1200,15 +1218,23 @@
                 optViceLead.style.color = "";
             }
 
-            // Core Member position is temporarily closed per BTC policy
-            optCore.disabled = true;
-            optCore.text = "Core Member (Tạm đóng nhận đơn)";
-            optCore.style.color = "rgba(255,255,255,0.4)";
+            // Update core option
+            if (isCoreFull) {
+                optCore.disabled = true;
+                optCore.text = "Core Member (Đã tuyển - Hết slot)";
+                optCore.style.color = "rgba(255,255,255,0.4)";
+            } else {
+                optCore.disabled = false;
+                optCore.text = "Core Member";
+                optCore.style.color = "";
+            }
 
-            // Automatically switch if core is selected
-            if (posSelect.value === 'core') {
-                if (!isViceLeadFull) posSelect.value = 'vice_lead';
-                else posSelect.value = 'member';
+            // Automatically switch dropdown if selected position is full
+            if (posSelect.value === 'vice_lead' && isViceLeadFull) {
+                posSelect.value = 'member';
+            }
+            if (posSelect.value === 'core' && isCoreFull) {
+                posSelect.value = !isViceLeadFull ? 'vice_lead' : 'member';
             }
 
             const submitBtn = document.getElementById('orgSubmitBtn');

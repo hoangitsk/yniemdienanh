@@ -277,8 +277,17 @@ async function syncApplications(db, sid) {
     allApps.push({ ...a, docId: d.id });
   });
 
-  // Candidate applications only (filter out existing Core / Vice / Lead / Admin team members)
+  // Candidate applications registered from 2026-07-25 onwards ONLY
   const candidateApps = allApps.filter(a => {
+    // 1. Must be registered from 2026-07-25 onwards (exclude 2026-07-24 and earlier)
+    let dStr = a.date || formatDate(a.createdAt) || a.createdAt || '';
+    if (typeof dStr === 'object' && dStr.toDate) {
+      dStr = dStr.toDate().toISOString().slice(0, 10);
+    }
+    const dateOnly = String(dStr).trim().slice(0, 10);
+    if (!dateOnly || dateOnly < '2026-07-25') return false;
+
+    // 2. Exclude Core / Vice / Lead / Admin team members
     const pos = String(a.position || '').toLowerCase();
     const type = String(a.type || '').toLowerCase();
 

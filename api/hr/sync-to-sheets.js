@@ -382,7 +382,8 @@ module.exports = async (req, res) => {
     sidApps = parseId(sidApps);
 
     if (!sidCore && !sidApps) return res.status(503).json({ error: 'Chưa nhập hoặc chưa cấu hình mã Google Sheet' });
-    if (!process.env.GOOGLE_SERVICE_ACCOUNT) return res.status(503).json({ error: 'GOOGLE_SERVICE_ACCOUNT chưa được cấu hình' });
+    const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountKey) return res.status(503).json({ error: 'Chưa cấu hình GOOGLE_SERVICE_ACCOUNT hoặc FIREBASE_SERVICE_ACCOUNT trên Vercel' });
 
     const db = ensureFirebase();
 

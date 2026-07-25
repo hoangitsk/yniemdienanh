@@ -534,6 +534,7 @@ module.exports = async (req, res) => {
 
     const db = ensureFirebase();
 
+    const mode = req.query?.mode || req.body?.mode || 'two_way';
     const syncCore = req.query?.syncCore === 'true' || req.body?.syncCore === true;
 
     let pullResult = null;

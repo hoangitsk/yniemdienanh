@@ -6398,6 +6398,8 @@
                         if (dateFrom && u.createdAt && u.createdAt < dateFrom) return false;
                         if (dateTo && u.createdAt && u.createdAt > dateTo + 'T23:59:59') return false;
                         return true;
+                    }).sort(function(a, b) {
+                        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
                     });
                     main.innerHTML = [
                         '<h2>🔐 Quản lý tài khoản</h2>',
@@ -6422,13 +6424,14 @@
                             '</div>',
                             '<div class="table-wrap">',
                                 '<table>',
-                                    '<tr><th>ID</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Phòng ban</th><th>Xác thực</th><th>Trạng thái</th><th>Hoạt động</th><th>Ghi chú</th><th>Thao tác</th></tr>',
+                                    '<tr><th>ID</th><th>Ngày tạo</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Phòng ban</th><th>Xác thực</th><th>Trạng thái</th><th>Hoạt động</th><th>Ghi chú</th><th>Thao tác</th></tr>',
                                     filteredUsers.map(function(u) {
                                         var locked = u.locked ? '🔒 Đã khóa' : '🔓 Hoạt động';
                                         var lockColor = u.locked ? '#ef4444' : '#63d19e';
                                         var lastAct = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('vi-VN') : (u.lastAction ? new Date(u.lastAction).toLocaleDateString('vi-VN') : '—');
                                         return '<tr>' +
                                             '<td data-label="ID">' + u.id + '</td>' +
+                                            '<td data-label="Ngày tạo">' + (u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—') + '</td>' +
                                             '<td data-label="Họ tên"><b>' + esc(u.name || 'N/A') + '</b></td>' +
                                             '<td data-label="Email">' + esc(u.email) + '</td>' +
                                             '<td data-label="Vai trò">' + (String(u.id) !== String(session.id) ?

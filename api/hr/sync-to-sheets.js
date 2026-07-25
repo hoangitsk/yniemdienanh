@@ -5,11 +5,8 @@ function ensureFirebase() {
   if (!admin.apps.length) {
     const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT chưa được cấu hình');
-    let s = raw.trim();
-    if (s.startsWith('"') && s.endsWith('"')) s = s.slice(1, -1);
-    let acc = JSON.parse(s);
-    if (typeof acc === 'string') acc = JSON.parse(acc);
-    acc.private_key = acc.private_key.replace(/\\n/g, '\n');
+    const { parseServiceAccount } = require('../../lib/googleSheetsFormatter');
+    const acc = parseServiceAccount(raw);
     admin.initializeApp({ credential: admin.credential.cert(acc) });
   }
   return admin.firestore();

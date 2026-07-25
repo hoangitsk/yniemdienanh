@@ -102,6 +102,153 @@ async function syncDepartmentTab(sid, deptTitle, allApps) {
   }
 }
 
+async function syncTongHopTab(sid, allApps) {
+  const { getRows, appendRows } = require('../../lib/googleSheetsFormatter');
+  try {
+    const safeTitle = `'Tổng hợp'`;
+    const rawRows = await getRows(sid, `${safeTitle}!A1:L500`).catch(() => []);
+    
+    let headerRowIdx = -1;
+    for (let i = 0; i < rawRows.length; i++) {
+      const line = (rawRows[i] || []).map(c => String(c || '').toLowerCase()).join(' ');
+      if (line.includes('mã hồ sơ') || line.includes('họ và tên') || line.includes('email')) {
+        headerRowIdx = i;
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1) return;
+
+    const dataRows = rawRows.slice(headerRowIdx + 1);
+    const existingKeys = new Set();
+
+    dataRows.forEach(row => {
+      const idVal = String(row[1] || '').trim();
+      const emailVal = String(row[5] || row[6] || '').trim().toLowerCase();
+      if (idVal && idVal !== '0') existingKeys.add(idVal);
+      if (emailVal) existingKeys.add(emailVal);
+    });
+
+    let currentStt = dataRows.length;
+    const newRowsToAppend = [];
+
+    const sortedApps = [...allApps].sort((a, b) => {
+      const dateA = a.date || formatDate(a.createdAt) || '';
+      const dateB = b.date || formatDate(b.createdAt) || '';
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return String(a.id || '').localeCompare(String(b.id || ''), undefined, { numeric: true });
+    });
+
+    for (const app of sortedApps) {
+      const appIdStr = String(app.id || '').trim();
+      const emailStr = String(app.email || '').trim().toLowerCase();
+
+      if ((appIdStr && existingKeys.has(appIdStr)) || (emailStr && existingKeys.has(emailStr))) {
+        continue;
+      }
+
+      currentStt += 1;
+      const posText = app.position === 'vice_lead' ? 'Vice' : (app.position === 'core' ? 'Core' : 'Thành viên');
+      const dateStr = app.date || formatDate(app.createdAt) || new Date().toISOString().slice(0, 10);
+
+      newRowsToAppend.push([
+        currentStt,
+        app.id || '0',
+        app.name || '',
+        app.name || '',
+        posText,
+        app.dept || '',
+        app.email || '',
+        app.phone || '',
+        dateStr,
+        'Qua vòng đơn',
+        'Chờ xếp lịch',
+        '',
+        ''
+      ]);
+    }
+
+    if (newRowsToAppend.length > 0) {
+      const nextRowNumber = headerRowIdx + 2 + dataRows.length;
+      const appendRange = `${safeTitle}!A${nextRowNumber}`;
+      await appendRows(sid, appendRange, newRowsToAppend);
+      console.log(`[HRSync] Appended ${newRowsToAppend.length} new applications to tab 'Tổng hợp'`);
+    }
+  } catch (err) {
+    console.warn(`[HRSync] Tab 'Tổng hợp' sync skipped:`, err.message);
+  }
+}
+
+async function syncHoSoChiTietTab(sid, allApps, usersMap) {
+  const { getRows, appendRows } = require('../../lib/googleSheetsFormatter');
+  try {
+    const safeTitle = `'Hồ sơ chi tiết'`;
+    const rawRows = await getRows(sid, `${safeTitle}!A1:E500`).catch(() => []);
+    
+    let headerRowIdx = -1;
+    for (let i = 0; i < rawRows.length; i++) {
+      const line = (rawRows[i] || []).map(c => String(c || '').toLowerCase()).join(' ');
+      if (line.includes('mã hồ sơ') || line.includes('họ và tên') || line.includes('email') || line.includes('ban')) {
+        headerRowIdx = i;
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1) return;
+
+    const dataRows = rawRows.slice(headerRowIdx + 1);
+    const existingKeys = new Set();
+
+    dataRows.forEach(row => {
+      const firstCol = String(row[0] || '').trim();
+      const emailVal = String(row[3] || '').trim().toLowerCase();
+      if (firstCol) existingKeys.add(firstCol);
+      if (emailVal) existingKeys.add(emailVal);
+    });
+
+    let currentStt = dataRows.length;
+    const newRowsToAppend = [];
+
+    const sortedApps = [...allApps].sort((a, b) => {
+      const dateA = a.date || formatDate(a.createdAt) || '';
+      const dateB = b.date || formatDate(b.createdAt) || '';
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return String(a.id || '').localeCompare(String(b.id || ''), undefined, { numeric: true });
+    });
+
+    for (const app of sortedApps) {
+      const appIdStr = String(app.id || '').trim();
+      const emailStr = String(app.email || '').trim().toLowerCase();
+      const user = usersMap.get(app.approvedUserId || '') || usersMap.get(app.uid || '') || {};
+
+      if ((appIdStr && existingKeys.has(appIdStr)) || (emailStr && existingKeys.has(emailStr))) {
+        continue;
+      }
+
+      currentStt += 1;
+      const combinedCode = `${currentStt} ${app.id || '0'}`;
+      const detailEssay = app.intro || app.essay || app.answers || user.intro || user.interest || 'Chưa có thông tin bài luận';
+
+      newRowsToAppend.push([
+        combinedCode,
+        app.dept || '',
+        app.name || '',
+        app.email || '',
+        detailEssay
+      ]);
+    }
+
+    if (newRowsToAppend.length > 0) {
+      const nextRowNumber = headerRowIdx + 2 + dataRows.length;
+      const appendRange = `${safeTitle}!A${nextRowNumber}`;
+      await appendRows(sid, appendRange, newRowsToAppend);
+      console.log(`[HRSync] Appended ${newRowsToAppend.length} new applications to tab 'Hồ sơ chi tiết'`);
+    }
+  } catch (err) {
+    console.warn(`[HRSync] Tab 'Hồ sơ chi tiết' sync skipped:`, err.message);
+  }
+}
+
 async function syncApplications(db, sid) {
   const appsSnap = await db.collection('applications').get();
   const usersSnap = await db.collection('users').get();
@@ -143,6 +290,8 @@ async function syncApplications(db, sid) {
   for (const deptName of depts) {
     await syncDepartmentTab(sid, deptName, allApps);
   }
+  await syncTongHopTab(sid, allApps);
+  await syncHoSoChiTietTab(sid, allApps, usersMap);
 }
 
 async function syncInterviews(db, sid) {

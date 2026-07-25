@@ -233,17 +233,81 @@ async function syncAuditLogs(db, sid) {
 
 async function syncCoreTeam(db, sid) {
   const usersSnap = await db.collection('users').get();
-  const rows = [];
+  const allUsers = [];
   usersSnap.forEach(d => {
-    const u = d.data();
-    // Lọc chỉ lấy thành viên Ban Tổ Chức / Core / Admin
-    const isCore = u.role === 'admin' || u.role === 'organizer' || u.position === 'core' || u.position === 'vice_lead' || u.isCore === true;
-    if (!isCore) return;
+    allUsers.push({ ...d.data(), id: d.id });
+  });
+
+  const depts = [
+    'BĐH',
+    'Ban Nội dung',
+    'Ban Nhân sự',
+    'Ban Truyền thông',
+    'Ban Media',
+    'Ban Duyệt bài'
+  ];
+
+  const norm = s => String(s || '').toLowerCase().replace(/^ban\s+/, '').replace(/^bđh\s*-?\s*/, '').trim();
+
+  const bdhUsers = [];
+  const memberUsers = [];
+
+  allUsers.forEach(u => {
+    const isBdh = u.role === 'admin' || u.role === 'organizer' || u.position === 'core' || u.position === 'vice_lead' || u.isCore === true;
+    if (isBdh) bdhUsers.push(u);
+    else memberUsers.push(u);
+  });
+
+  const bdhOrdered = [];
+  depts.forEach(deptName => {
+    const deptNorm = norm(deptName);
+    const inDept = bdhUsers.filter(u => norm(u.dept || u.projectGroup) === deptNorm || (deptName === 'BĐH' && (!u.dept || u.role === 'admin')));
+
+    const cores = inDept.filter(u => u.position === 'core' || u.position === 'head' || u.role === 'admin' || (!u.position && u.role === 'organizer'));
+    const vices = [...inDept.filter(u => u.position === 'vice_lead' || u.position === 'vice')];
+    const others = inDept.filter(u => !cores.includes(u) && !vices.includes(u));
+
+    const deptRows = [];
+    cores.forEach(c => {
+      deptRows.push(c);
+      if (vices.length > 0) {
+        deptRows.push(vices.shift());
+      }
+    });
+    vices.forEach(v => deptRows.push(v));
+    others.forEach(o => deptRows.push(o));
+
+    bdhOrdered.push(...deptRows);
+  });
+
+  bdhUsers.forEach(u => {
+    if (!bdhOrdered.includes(u)) bdhOrdered.push(u);
+  });
+
+  const finalUsers = [...bdhOrdered, ...memberUsers];
+
+  const rows = [];
+  const bdhRowIndices = [];
+
+  finalUsers.forEach((u, index) => {
+    const isBdh = bdhOrdered.includes(u);
+    if (isBdh) {
+      bdhRowIndices.push(index + 1);
+    }
+
+    let deptDisplay = u.dept || u.projectGroup || 'BĐH';
+    let posDisplay = u.position || u.leadershipTitle || (u.role === 'admin' ? 'President' : (u.role === 'organizer' ? 'Core' : 'Thành viên'));
+
+    if (isBdh) {
+      if (!deptDisplay.startsWith('BĐH')) deptDisplay = `BĐH - ${deptDisplay}`;
+      if (posDisplay === 'vice_lead' || posDisplay === 'vice') posDisplay = 'Phó ban';
+      if (!posDisplay.startsWith('BĐH')) posDisplay = `BĐH - ${posDisplay}`;
+    }
 
     rows.push([
-      u.dept || u.projectGroup || 'BĐH',
+      deptDisplay,
       u.name || '',
-      u.position || u.leadershipTitle || (u.role === 'admin' ? 'President' : (u.role === 'organizer' ? 'Core' : 'Thành viên')),
+      posDisplay,
       u.gender || '',
       u.dob || '',
       u.hometown || u.address || '',
@@ -259,7 +323,7 @@ async function syncCoreTeam(db, sid) {
     'BAN', 'HỌ VÀ TÊN', 'CHỨC VỤ', 'GIỚI TÍNH', 'NGÀY SINH',
     'NƠI SINH SỐNG', 'TRƯỜNG - LỚP', 'EMAIL', 'SỐ ĐIỆN THOẠI',
     'LINK FACEBOOK', 'GHI CHÚ'
-  ], rows, -1);
+  ], rows, -1, bdhRowIndices);
 }
 
 async function pullFromSheets(db, sid) {

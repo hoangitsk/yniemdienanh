@@ -550,7 +550,7 @@ async function syncCoreTeam(db, sid) {
       bdhRowIndices.push(index + 1);
     }
 
-    let deptDisplay = u.dept || u.projectGroup || 'BĐH';
+    let deptDisplay = u.dept || u.projectGroup || '';
     let posDisplay = u.position || u.leadershipTitle || 'Thành viên';
 
     if (isBdh) {

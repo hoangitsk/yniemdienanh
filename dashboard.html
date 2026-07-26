@@ -9624,7 +9624,7 @@
             if (typeof XLSX === 'undefined') return showToast('Đang tải thư viện Excel...', 'info');
             const users = localDB.users || [];
             const rows = users.map(u => ({
-                'BAN': u.dept || u.projectGroup || 'BĐH',
+                'BAN': u.dept || u.projectGroup || '',
                 'HỌ VÀ TÊN': u.name || '',
                 'CHỨC VỤ': u.position || u.leadershipTitle || (u.role === 'admin' ? 'President' : (u.role === 'organizer' ? 'Core' : 'Thành viên')),
                 'GIỚI TÍNH': u.gender || '',

@@ -874,7 +874,9 @@
                                 } else {
                                     showToast("Đã đăng nhập! Đang chuyển hướng đến Khu nội bộ...", "success");
                                     setTimeout(() => {
-                                        window.location.href = '/dashboard';
+                                        if (authInstance.currentUser) {
+                                            window.location.href = '/dashboard';
+                                        }
                                     }, 1200);
                                 }
                             } else {
@@ -1110,15 +1112,23 @@
                 <h2 style="color:var(--gold);margin-bottom:10px">🔐 Đăng nhập bằng Google</h2>
                 <p style="color:var(--text-muted);font-size:.9rem;line-height:1.6;margin-bottom:22px">Dùng tài khoản Google để vào cộng đồng, tham gia hoạt động và quản lý hồ sơ. Không cần mật khẩu hoặc mã xác nhận email riêng.</p>
                 <button class="btn btn-gold" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="submitGoogleLogin()">🔐 Tiếp tục với Google</button>
-                <p style="color:var(--text-muted);font-size:.78rem;text-align:center;line-height:1.5;margin:16px 0 0">Lần đầu đăng nhập, bạn có thể bổ sung số điện thoại, trường học và thông tin quan tâm sau.</p>`;
+                <p style="color:var(--text-muted);font-size:.78rem;text-align:center;line-height:1.5;margin:16px 0 0">Lần đầu đăng nhập, bạn có thể bổ sung số điện thoại, trường học và thông tin quan tâm sau.</p>
+                <p style="margin-top:20px;font-size:0.88rem;text-align:center;color:var(--text-muted)">
+                    Chưa có tài khoản? <span class="toggle-link" onclick="toggleAuthForm(false)">Đăng ký thành viên</span>
+                </p>`;
             document.getElementById('registerArea').style.display = 'none';
         }
 
-        function toggleAuthForm() {
-            renderGoogleOnlyAuth();
-            document.getElementById('loginArea').style.display = 'block';
-            document.getElementById('registerArea').style.display = 'none';
+        function toggleAuthForm(showLogin) {
             document.getElementById('googleAdditionalArea').style.display = 'none';
+            if (showLogin) {
+                renderGoogleOnlyAuth();
+                document.getElementById('loginArea').style.display = 'block';
+                document.getElementById('registerArea').style.display = 'none';
+            } else {
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('registerArea').style.display = 'block';
+            }
         }
 
         function showGoogleProfileCompletion(user, profile) {
@@ -1781,7 +1791,7 @@
                 selectTab('organizer');
             } else if (tabAction === 'register') {
                 selectTab('member');
-                toggleAuthForm(true);
+                toggleAuthForm(false);
             } else {
                 // Default: member / login tab
                 selectTab('member');

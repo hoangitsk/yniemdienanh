@@ -543,6 +543,17 @@ app.post('/api/admin/cleanup-roles', async (req, res) => {
     }
 });
 
+// API: Admin cleanup BDH (remove incorrect "BĐH" department from non-admin users)
+const cleanupBdhHandler = require('./api/admin/cleanup-bdh');
+app.post('/api/admin/cleanup-bdh', async (req, res) => {
+    try {
+        await cleanupBdhHandler(req, res);
+    } catch (err) {
+        console.error('Cleanup BDH error:', err);
+        if (!res.headersSent) res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/verify-turnstile', async (req, res) => {
     try {
         const { token } = req.body;

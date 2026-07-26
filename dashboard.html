@@ -5923,8 +5923,9 @@
                                 '<span style="color:var(--text-muted)">→</span>',
                                 '<input type="date" id="acctDateTo" value="', esc(dateTo), '" onchange="window._acctDateTo=this.value;renderTab(\'accounts\')" style="padding:6px;border-radius:6px;background:rgba(255,255,255,0.04);color:#e2e8f0;border:1px solid rgba(255,255,255,0.1)">',
                                 '<button class="btn btn-line btn-sm" onclick="clearAccountFilters()">Xóa lọc</button>',
-                                '<button class="btn btn-gold btn-sm" onclick="exportUsersCSV()" style="margin-left:auto">📥 Xuất CSV</button>',
-                            '</div>',
+                            '<button class="btn btn-gold btn-sm" onclick="exportUsersCSV()" style="margin-left:auto">📥 Xuất CSV</button>',
+                            '<button class="btn btn-danger btn-sm" onclick="cleanupBdh()" style="background:#dc2626;color:#fff">🧹 Xóa BĐH sai</button>',
+                        '</div>',
                             '<div class="table-wrap">',
                                 '<table id="accountsTable">',
                                     '<tr><th>Ngày tạo</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Ban</th><th>Vị trí</th><th>Trạng thái & thao tác</th></tr>',
@@ -9563,6 +9564,30 @@
                 setTimeout(function() { location.reload(); }, 2000);
             } catch (e) {
                 showToast('Loi cleanup: ' + (e.message || 'Khong the cleanup roles.'), 'error');
+            }
+        }
+
+        async function cleanupBdh() {
+            if (!(await showConfirmModal('🧹 Cleanup sẽ xóa Ban "BĐH" cho tất cả user không phải Admin/BTC. Tiếp tục?'))) return;
+            try {
+                var auth = window.firebase ? firebase.auth() : authInstance;
+                if (!auth || !auth.currentUser) throw new Error('Chưa đăng nhập');
+                var idToken = await auth.currentUser.getIdToken();
+                var res = await fetch('/api/admin/cleanup-bdh', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+                var data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Lỗi cleanup');
+                showToast('Cleanup hoàn tất: ' + data.corrected + ' user đã sửa, ' + data.skipped + ' user giữ nguyên.', 'success');
+                addAuditLog('admin_cleanup_bdh', 'Corrected ' + data.corrected + ' users, skipped ' + data.skipped);
+                if (data.details && data.details.length > 0) {
+                    console.log('Cleanup BDH details:', data.details);
+                }
+                setTimeout(function() { location.reload(); }, 2000);
+            } catch (e) {
+                showToast('Lỗi cleanup: ' + (e.message || 'Không thể cleanup BDH.'), 'error');
             }
         }
 

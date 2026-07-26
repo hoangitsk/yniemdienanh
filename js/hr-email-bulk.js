@@ -124,6 +124,8 @@
         var senderPosition = esc(sender.dept || roleLabels[sender.role] || sender.role || 'Thành viên');
         var signature = '<p>Trân trọng,<br><strong>' + senderName + '</strong><br>' + senderPosition + '<br>Ý Niệm Điện Ảnh</p>';
         function getDepartmentGroupLink(deptName) {
+            var customLink = document.getElementById('bulkMessLink') ? document.getElementById('bulkMessLink').value.trim() : '';
+            if (customLink) return { name: 'Messenger', url: customLink };
             var d = String(deptName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
             if (d.includes('noi dung') || d.includes('duyet bai')) {
                 return {
@@ -166,7 +168,7 @@
             },
             interview: {
                 subject: '[Ý Niệm Điện Ảnh] Mời chọn lịch phỏng vấn — ' + (app.name || ''),
-                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Chúng tôi trân trọng mời bạn tham gia vòng phỏng vấn.</p><p><a href="' + scheduleUrl + '" style="color:#b7791f;font-weight:700">Chọn các khung giờ bạn có thể tham gia tại đây</a>.</p><p>Hệ thống chốt lịch lúc 0h hằng ngày theo giờ Việt Nam. Nếu chưa được chốt, bạn vẫn có thể cập nhật lựa chọn đến hết hạn của đợt phỏng vấn.</p>' + signature
+                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Chúng tôi trân trọng mời bạn tham gia vòng phỏng vấn.</p><p><a href="' + scheduleUrl + '" style="color:#b7791f;font-weight:700">Chọn các khung giờ bạn có thể tham gia tại đây</a>.</p><p>Hệ thống chốt lịch lúc 0h hằng ngày theo giờ Việt Nam. Nếu chưa được chốt, bạn vẫn có thể cập nhật lựa chọn đến hết hạn của đợt phỏng vấn.</p>' + groupInviteHtml + signature
             },
             reject: {
                 subject: '[Ý Niệm Điện Ảnh] Thư cảm ơn ứng tuyển — ' + (app.name || ''),

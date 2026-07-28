@@ -4689,12 +4689,25 @@
                 await saveItem('applications', newApp);
                 hideLoadingToast(lt);
                 m.className = 'form-msg ok'; 
-                m.textContent = '✅ Đã gửi đơn thành công! BTC sẽ liên hệ lại với bạn sớm nhất.';
+                m.textContent = '✅ Đã gửi đơn tuyển đợt 2 thành công! Dữ liệu sẽ được đồng bộ về Google Sheet.';
                 
                 nameEl.value = '';
                 emailEl.value = '';
                 phoneEl.value = '';
                 introEl.value = '';
+                
+                try {
+                    var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+                    var idToken = user ? await user.getIdToken() : '';
+                    var sheetId = localStorage.getItem('ynda_spreadsheet_app_id') || localStorage.getItem('ynda_spreadsheet_core_id') || '';
+                    if (idToken && sheetId) {
+                        fetch('/api/hr/sync-to-sheets', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ idToken: idToken, mode: 'push', spreadsheetAppId: sheetId, syncCore: false })
+                        }).catch(function(e) { console.warn('Sheet sync background:', e); });
+                    }
+                } catch (sheetErr) { console.warn('Sheet sync error:', sheetErr); }
                 
                 setTimeout(() => {
                     closeModal('applyModal');
@@ -4833,50 +4846,12 @@
             accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
             content: { icon: '📝', label: 'Quản lý nội dung', roles: ['admin'] },
             auditLog: { icon: '📋', label: 'Nhật ký hoạt động', roles: ['admin'] },
-            // === NEW FEATURES ===
-            // Contestant features
+            // === FEATURES ===
             support: { icon: '🆘', label: 'Trung tâm hỗ trợ', roles: ['admin', 'organizer', 'member'] },
             checklist: { icon: '✅', label: 'Checklist Onboarding', roles: ['admin', 'organizer', 'member'] },
             mycalendar: { icon: '📅', label: 'Lịch của tôi', roles: ['admin', 'organizer', 'member'] },
             notifications: { icon: '🔔', label: 'Thông báo', roles: ['admin', 'organizer', 'member'] },
-            myteam: { icon: '👥', label: 'Đội thi của tôi', roles: ['admin', 'organizer', 'member'] },
-            handbook: { icon: '📖', label: 'Sổ tay sản xuất', roles: ['admin', 'organizer', 'member'] },
             crew: { icon: '🔍', label: 'Bảng tìm ekip', roles: ['admin', 'organizer', 'member'] },
-            talent: { icon: '⭐', label: 'Hồ sơ diễn viên', roles: ['admin', 'organizer', 'member'] },
-            locations: { icon: '📍', label: 'Kho địa điểm quay', roles: ['admin', 'organizer', 'member'] },
-            equipment: { icon: '🎥', label: 'Mượn/Cho mượn TB', roles: ['admin', 'organizer', 'member'] },
-            ideas: { icon: '💡', label: 'Bảng ý tưởng phim', roles: ['admin', 'organizer', 'member'] },
-            diary: { icon: '📓', label: 'Nhật ký sản xuất', roles: ['admin', 'organizer', 'member'] },
-            risks: { icon: '⚠️', label: 'Quản lý rủi ro', roles: ['admin', 'organizer', 'member'] },
-            trailers: { icon: '🎬', label: 'Kho Trailer/Teaser', roles: ['admin', 'organizer', 'member'] },
-            learning: { icon: '📚', label: 'Thư viện học tập', roles: ['admin', 'organizer', 'member'] },
-            musiclib: { icon: '🎵', label: 'Thư viện Nhạc/SFX', roles: ['admin', 'organizer', 'member'] },
-            portfolio: { icon: '📂', label: 'Portfolio cá nhân', roles: ['admin', 'organizer', 'member'] },
-            archive: { icon: '🏛️', label: 'Kho phim/Archive', roles: ['admin', 'organizer', 'member'] },
-            peerreview: { icon: '🔍', label: 'Peer Review', roles: ['admin', 'organizer', 'member'] },
-            surveys: { icon: '📊', label: 'Khảo sát', roles: ['admin', 'organizer', 'member'] },
-            alumnis: { icon: '🎓', label: 'Cựu thí sinh', roles: ['admin', 'organizer', 'member'] },
-            communitymap: { icon: '🗺️', label: 'Bản đồ cộng đồng', roles: ['admin', 'organizer', 'member'] },
-            // Organizer features
-            seasons: { icon: '🏆', label: 'Quản lý mùa thi', roles: ['admin', 'organizer'] },
-            themes: { icon: '🎨', label: 'Chủ đề mùa', roles: ['admin', 'organizer'] },
-            workshops: { icon: '🎯', label: 'Workshop online', roles: ['admin', 'organizer'] },
-            mentors: { icon: '🧑‍🏫', label: 'Mentor', roles: ['admin', 'organizer'] },
-            teams: { icon: '👥', label: 'Quản lý đội thi', roles: ['admin', 'organizer'] },
-            categories: { icon: '🏷️', label: 'Hạng mục thi', roles: ['admin', 'organizer'] },
-            production: { icon: '📈', label: 'Tiến độ sản xuất', roles: ['admin', 'organizer'] },
-            minichallenges: { icon: '⚡', label: 'Mini-challenge', roles: ['admin', 'organizer'] },
-            judging: { icon: '⚖️', label: 'Chấm giải', roles: ['admin', 'organizer'] },
-            leaderboard: { icon: '🏅', label: 'Bảng xếp hạng', roles: ['admin', 'organizer'] },
-            gala: { icon: '🎉', label: 'Gala trao giải', roles: ['admin', 'organizer'] },
-            certificates: { icon: '📜', label: 'Chứng nhận', roles: ['admin', 'organizer'] },
-            partners: { icon: '🤝', label: 'Đối tác & Tài trợ', roles: ['admin', 'organizer'] },
-            ambassadors: { icon: '📢', label: 'Đại sứ truyền thông', roles: ['admin', 'organizer'] },
-            schoolpartners: { icon: '🏫', label: 'CLB/Trường đối tác', roles: ['admin', 'organizer'] },
-            kpi: { icon: '📊', label: 'KPI mùa giải', roles: ['admin', 'organizer'] },
-            deadlines: { icon: '⏰', label: 'Gia hạn deadline', roles: ['admin', 'organizer'] },
-            brandkit: { icon: '🎨', label: 'Bộ nhận diện', roles: ['admin', 'organizer'] },
-            mediatasks: { icon: '📣', label: 'Nhiệm vụ TH', roles: ['admin', 'organizer', 'member'] },
         };
 
         let curTab = 'overview';

@@ -493,7 +493,6 @@ async function syncCoreTeam(db, sid) {
   });
 
   const depts = [
-    'BĐH',
     'Ban Nội dung',
     'Ban Nhân sự',
     'Ban Truyền thông',
@@ -554,9 +553,7 @@ async function syncCoreTeam(db, sid) {
     let posDisplay = u.position || u.leadershipTitle || 'Thành viên';
 
     if (isBdh) {
-      if (!deptDisplay.startsWith('BĐH')) deptDisplay = `BĐH - ${deptDisplay}`;
       if (posDisplay === 'vice_lead' || posDisplay === 'vice') posDisplay = 'Phó ban';
-      if (!posDisplay.startsWith('BĐH')) posDisplay = `BĐH - ${posDisplay}`;
     }
 
     rows.push([

@@ -1180,8 +1180,9 @@
 
         function assignmentDepartments(event, candidate) {
             const standard = ['Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Nội Dung', 'Ban Media (Thiết kế&Edit)', 'Ban duyệt bài'];
-            const observed = directoryUsers.map(function(user) { return String(user.dept || '').trim(); }).filter(Boolean);
-            const all = Array.from(new Set(standard.concat(observed)));
+            var observed = directoryUsers.map(function(user) { return String(user.dept || '').trim(); }).filter(Boolean);
+            observed = observed.filter(function(d) { return !/^BĐH/i.test(d); });
+            var all = Array.from(new Set(standard.concat(observed)));
             const eventText = normalizeScheduleText([event && event.department, event && event.dept, event && event.title, event && event.notes].join(' '));
             const departmentAliases = {
                 'Ban Nhân Sự': ['ban nhan su', 'nhan su', 'hr'],

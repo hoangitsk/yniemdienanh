@@ -483,7 +483,7 @@
                 <textarea id="cfVision" required placeholder="Tại sao bạn muốn ứng cử vị trí President? Định hướng và giá trị bạn mong muốn mang lại cho Ý Niệm Điện Ảnh là gì (tối thiểu 30 ký tự)..."></textarea>
                 
                 <div class="form-msg" id="cfMsg"></div>
-                                <button class="btn btn-gold" id="cfSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn ứng tuyển President</button>
+                                <button class="btn btn-gold" id="cfSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn tuyển đợt 2 - President</button>
             </form>
         </div>
 
@@ -502,13 +502,13 @@
                 <label for="coVision">Tầm nhìn & đóng góp dự kiến *</label>
                 <textarea id="coVision" required placeholder="Bạn muốn đồng hành và tạo giá trị gì cho Ý Niệm Điện Ảnh (tối thiểu 30 ký tự)..."></textarea>
                 <div class="form-msg" id="coMsg"></div>
-                <button class="btn btn-gold" id="coSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn ứng tuyển Co-founder</button>
+                <button class="btn btn-gold" id="coSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn tuyển đợt 2 - Co-founder</button>
             </form>
         </div>
 
         <!-- ============ FORM 2: APPLY BAN TỔ CHỨC ============ -->
         <div class="form-card" id="form-organizer">
-            <h2 style="color:var(--gold);margin-bottom:10px">🎬 Đơn Ứng Tuyển Ban Tổ Chức (BTC)</h2>
+            <h2 style="color:var(--gold);margin-bottom:10px">🎬 Đơn tuyển đợt 2 - Ban Tổ Chức (BTC)</h2>
             <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:20px">Chọn phân ban thế mạnh và cùng chúng tôi tổ chức các hoạt động sôi nổi của dự án.</p>
             
             <form onsubmit="event.preventDefault();submitApplication('organizer')">
@@ -545,7 +545,7 @@
                 <textarea id="orgIntro" required placeholder="Giới thiệu bản thân và lý do tại sao bạn lựa chọn phân ban này (tối thiểu 20 ký tự)..."></textarea>
                 
                 <div class="form-msg" id="orgMsg"></div>
-                <button class="btn btn-gold" id="orgSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn ứng tuyển BTC</button>
+                <button class="btn btn-gold" id="orgSubmitBtn" style="width:100%;margin-top:24px" type="submit">Gửi đơn tuyển đợt 2 - BTC</button>
             </form>
         </div>
 
@@ -1250,7 +1250,7 @@
             const submitBtn = document.getElementById('orgSubmitBtn');
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerText = "Gửi đơn ứng tuyển BTC";
+                submitBtn.innerText = "Gửi đơn tuyển đợt 2 - BTC";
                 submitBtn.style.opacity = "";
             }
         }
@@ -1476,7 +1476,7 @@
                 if (introEl) introEl.value = '';
                 if (visionEl) visionEl.value = '';
 
-                showToast("Gửi đơn ứng tuyển thành công!", "success");
+                showToast("Gửi đơn tuyển đợt 2 thành công!", "success");
 
                 setTimeout(() => {
                     msgEl.textContent = '';
@@ -1487,7 +1487,7 @@
                 msgEl.textContent = "Gặp lỗi: " + err.message;
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = isCoFounder ? (type === 'president' ? "Gửi đơn ứng tuyển President" : "Gửi đơn ứng tuyển Co-founder") : "Gửi đơn ứng tuyển BTC";
+                submitBtn.textContent = isCoFounder ? (type === 'president' ? "Gửi đơn tuyển đợt 2 - President" : "Gửi đơn tuyển đợt 2 - Co-founder") : "Gửi đơn tuyển đợt 2 - BTC";
             }
         }
 

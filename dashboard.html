@@ -2761,23 +2761,36 @@
         </div>
     </div>
 
-    <!-- ============ APPLICATION FORM MODAL (ĐƠN APPLY) ============ -->
+    <!-- ============ APPLICATION FORM MODAL (ĐƠN TUYỂN ĐỢT 2) ============ -->
     <div class="modal" id="applyModal">
         <div class="modal-box">
             <span class="close-x" onclick="closeModal('applyModal')" aria-label="Đóng cửa sổ" role="button">✕</span>
-            <h3 id="applyTitle">Apply Đơn Tuyển Dụng</h3>
+            <h3 id="applyTitle">Đơn tuyển đợt 2</h3>
             
-            <label for="apName">Họ và tên *</label>
-            <input id="apName" name="name" required placeholder="Họ và tên đầy đủ">
-            <div class="error-hint">Họ và tên không được để trống!</div>
+            <div class="row">
+                <div>
+                    <label for="apName">Họ và tên *</label>
+                    <input id="apName" name="name" required placeholder="Họ và tên đầy đủ">
+                </div>
+                <div>
+                    <label for="apDob">Ngày sinh</label>
+                    <input id="apDob" type="date">
+                </div>
+            </div>
             
             <label for="apEmail">Email liên hệ *</label>
             <input id="apEmail" name="email" type="email" required placeholder="email@gmail.com">
-            <div class="error-hint">Định dạng Email không hợp lệ (ví dụ: email@gmail.com)!</div>
             
-            <label for="apPhone">Số điện thoại *</label>
-            <input id="apPhone" name="phone" type="tel" required placeholder="Số điện thoại Zalo (10 chữ số)">
-            <div class="error-hint">Số điện thoại Zalo phải bao gồm 10 chữ số hợp lệ!</div>
+            <div class="row">
+                <div>
+                    <label for="apPhone">Số điện thoại *</label>
+                    <input id="apPhone" name="phone" type="tel" required placeholder="Số điện thoại Zalo (10 số)">
+                </div>
+                <div>
+                    <label for="apFacebook">Facebook / Zalo</label>
+                    <input id="apFacebook" placeholder="Link hoặc số điện thoại">
+                </div>
+            </div>
             
             <!-- Phân ban cho BTC -->
             <div id="apRoleWrap">
@@ -2796,13 +2809,50 @@
                     <option value="vice_lead">Phó ban</option>
                 </select>
             </div>
-            
-            <label for="apIntro">Giới thiệu bản thân & lý do muốn đồng hành *</label>
-            <textarea id="apIntro" name="intro" required placeholder="Hãy giới thiệu một chút về bản thân, các dự án trước đây (nếu có) và mong muốn của bạn khi tham gia (tối thiểu 20 ký tự)..."></textarea>
-            <div class="error-hint">Mục giới thiệu bản thân cần dài tối thiểu 20 ký tự!</div>
+
+            <label for="apIntro">Giới thiệu bản thân *</label>
+            <textarea id="apIntro" required placeholder="Hãy kể về bản thân bạn: bạn là ai, học tập/làm việc ở đâu, sở thích cá nhân, tính cách, điều gì khiến bạn đặc biệt? (tối thiểu 30 ký tự)" style="min-height:100px"></textarea>
+
+            <label for="apSkills">Kỹ năng & Thế mạnh *</label>
+            <textarea id="apSkills" required placeholder="Bạn giỏi mảng gì? (viết lách, design, quay phim, edit, tổ chức sự kiện, giao tiếp, ngoại ngữ, v.v.) Kể chi tiết về các kỹ năng bạn đã có hoặc muốn phát triển. (tối thiểu 30 ký tự)" style="min-height:80px"></textarea>
+
+            <label for="apExperience">Kinh nghiệm trước đây *</label>
+            <textarea id="apExperience" required placeholder="Bạn đã từng tham gia CLB, dự án, tổ chức sự kiện nào chưa? Hãy mô tả cụ thể vai trò, công việc bạn đã làm và kết quả đạt được. Nếu chưa có kinh nghiệm hãy ghi rõ. (tối thiểu 30 ký tự)" style="min-height:80px"></textarea>
+
+            <label for="apReason">Tại sao bạn chọn ban này? *</label>
+            <textarea id="apReason" required placeholder="Điều gì ở ban này thu hút bạn? Bạn muốn học hỏi/đóng góp điều gì? Bạn hình dung công việc của mình ở ban này sẽ như thế nào? (tối thiểu 30 ký tự)" style="min-height:80px"></textarea>
+
+            <div class="row">
+                <div>
+                    <label for="apHours">Số giờ rảnh/tuần *</label>
+                    <select id="apHours">
+                        <option value="">-- Chọn --</option>
+                        <option value="Dưới 5 giờ">Dưới 5 giờ/tuần</option>
+                        <option value="5-10 giờ">5-10 giờ/tuần</option>
+                        <option value="10-20 giờ">10-20 giờ/tuần</option>
+                        <option value="Trên 20 giờ">Trên 20 giờ/tuần</option>
+                        <option value="Linh hoạt">Linh hoạt (không cố định)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="apReferral">Biết đến dự án qua đâu? *</label>
+                    <select id="apReferral">
+                        <option value="">-- Chọn --</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="Bạn bè">Bạn bè rủ rê</option>
+                        <option value="Trường/CLB">Trường học/CLB</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                </div>
+            </div>
+
+            <label for="apQuestions">Câu hỏi cho BTC (nếu có)</label>
+            <textarea id="apQuestions" placeholder="Bạn còn thắc mắc gì về dự án, công việc hay quy trình tuyển dụng? Hãy hỏi chúng tôi!" style="min-height:60px"></textarea>
             
             <div class="form-msg" id="apMsg"></div>
-            <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitApply()">Gửi đơn ứng tuyển</button>
+            <button class="btn btn-gold" style="width:100%;margin-top:16px" onclick="submitApply()">Gửi đơn tuyển đợt 2</button>
         </div>
     </div>
 
@@ -4385,22 +4435,22 @@
         let applyType = 'member';
         function openApply(type) {
             applyType = type;
-            document.getElementById('applyTitle').textContent = type === 'organizer' ? '🎬 Đơn ứng tuyển Ban Tổ Chức' : '🍿 Đăng ký làm Thành viên dự án';
+            document.getElementById('applyTitle').textContent = type === 'organizer' ? '🎬 Đơn tuyển đợt 2 - Ban Tổ Chức' : '🍿 Đăng ký làm Thành viên dự án';
             document.getElementById('apRoleWrap').style.display = type === 'organizer' ? 'block' : 'none';
             
-            // Reset form states
-            const formFields = ['apName', 'apEmail', 'apPhone', 'apIntro'];
+            const formFields = ['apName', 'apEmail', 'apPhone', 'apIntro', 'apSkills', 'apExperience', 'apReason', 'apFacebook', 'apDob', 'apQuestions'];
             formFields.forEach(id => {
                 const field = document.getElementById(id);
-                if (field) {
-                    field.classList.remove('invalid');
-                    field.value = '';
-                }
+                if (field) { field.classList.remove('invalid'); field.value = ''; }
             });
             const msg = document.getElementById('apMsg');
             if (msg) msg.textContent = '';
             const positionEl = document.getElementById('apPosition');
             if (positionEl) positionEl.value = 'member';
+            const hoursEl = document.getElementById('apHours');
+            if (hoursEl) hoursEl.value = '';
+            const referralEl = document.getElementById('apReferral');
+            if (referralEl) referralEl.value = '';
 
             openModal('applyModal');
         }
@@ -4414,67 +4464,49 @@
             const emailEl = document.getElementById('apEmail');
             const phoneEl = document.getElementById('apPhone');
             const introEl = document.getElementById('apIntro');
+            const skillsEl = document.getElementById('apSkills');
+            const expEl = document.getElementById('apExperience');
+            const reasonEl = document.getElementById('apReason');
+            const hoursEl = document.getElementById('apHours');
+            const referralEl = document.getElementById('apReferral');
             const deptEl = document.getElementById('apDept');
+            const facebookEl = document.getElementById('apFacebook');
+            const dobEl = document.getElementById('apDob');
+            const questionsEl = document.getElementById('apQuestions');
             
             const name = nameEl.value.trim();
             const email = emailEl.value.trim();
             const phone = phoneEl.value.trim();
             const intro = introEl.value.trim();
+            const skills = skillsEl ? skillsEl.value.trim() : '';
+            const experience = expEl ? expEl.value.trim() : '';
+            const reason = reasonEl ? reasonEl.value.trim() : '';
+            const hours = hoursEl ? hoursEl.value : '';
+            const referral = referralEl ? referralEl.value : '';
             const dept = deptEl ? deptEl.value : '';
+            const facebook = facebookEl ? facebookEl.value.trim() : '';
+            const dob = dobEl ? dobEl.value : '';
+            const questions = questionsEl ? questionsEl.value.trim() : '';
             const position = applyType === 'organizer' ? (document.getElementById('apPosition')?.value || 'member') : 'member';
-            
-            // Reset validation states
-            [nameEl, emailEl, phoneEl, introEl].forEach(el => el.classList.remove('invalid'));
             
             let hasError = false;
             let errorMsg = '';
             
-            // 1. Kiểm tra họ tên
-            if (!name) {
-                nameEl.classList.add('invalid');
-                hasError = true;
-                errorMsg = 'Họ và tên không được để trống!';
-            }
-            
-            // 2. Kiểm tra email bằng Regex
+            if (!name) { hasError = true; errorMsg = 'Họ và tên không được để trống!'; }
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!email) {
-                emailEl.classList.add('invalid');
-                hasError = true;
-                errorMsg = errorMsg || 'Email không được để trống!';
-            } else if (!emailRegex.test(email)) {
-                emailEl.classList.add('invalid');
-                hasError = true;
-                errorMsg = errorMsg || 'Định dạng Email không hợp lệ (ví dụ: email@gmail.com)!';
-            }
-            
-            // 3. Kiểm tra số điện thoại (chấp nhận 10 chữ số)
+            if (!email) { hasError = true; errorMsg = errorMsg || 'Email không được để trống!'; }
+            else if (!emailRegex.test(email)) { hasError = true; errorMsg = errorMsg || 'Định dạng Email không hợp lệ!'; }
             const phoneRegex = /^0[0-9]{9}$/;
-            if (!phone) {
-                phoneEl.classList.add('invalid');
-                hasError = true;
-                errorMsg = errorMsg || 'Số điện thoại không được để trống!';
-            } else if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
-                phoneEl.classList.add('invalid');
-                hasError = true;
-                errorMsg = errorMsg || 'Số điện thoại Zalo phải bao gồm 10 chữ số hợp lệ!';
-            }
+            if (!phone) { hasError = true; errorMsg = errorMsg || 'Số điện thoại không được để trống!'; }
+            else if (!phoneRegex.test(phone.replace(/\s+/g, ''))) { hasError = true; errorMsg = errorMsg || 'Số điện thoại phải 10 chữ số!'; }
+            if (!intro || intro.length < 30) { hasError = true; errorMsg = errorMsg || 'Giới thiệu bản thân cần tối thiểu 30 ký tự!'; }
+            if (!skills || skills.length < 30) { hasError = true; errorMsg = errorMsg || 'Kỹ năng & thế mạnh cần tối thiểu 30 ký tự!'; }
+            if (!experience || experience.length < 30) { hasError = true; errorMsg = errorMsg || 'Kinh nghiệm cần tối thiểu 30 ký tự!'; }
+            if (!reason || reason.length < 30) { hasError = true; errorMsg = errorMsg || 'Vui lòng cho biết lý do bạn chọn ban này (tối thiểu 30 ký tự)!'; }
+            if (!hours) { hasError = true; errorMsg = errorMsg || 'Vui lòng chọn số giờ rảnh/tuần!'; }
+            if (!referral) { hasError = true; errorMsg = errorMsg || 'Vui lòng cho biết bạn biết đến dự án qua đâu!'; }
             
-            // 4. Kiểm tra giới thiệu bản thân
-            if (!intro) {
-                introEl.classList.add('invalid');
-                hasError = true;
-                errorMsg = errorMsg || 'Vui lòng điền giới thiệu bản thân!';
-            } else if (intro.length < 20) {
-                introEl.classList.add('invalid');
-                hasError = true;
-                errorMsg = errorMsg || 'Mục giới thiệu bản thân cần dài tối thiểu 20 ký tự!';
-            }
-            
-            if (hasError) {
-                m.textContent = errorMsg;
-                return;
-            }
+            if (hasError) { m.textContent = errorMsg; return; }
             
             const lt = showLoadingToast('Đang gửi đơn...');
             const nextId = await getNextId();
@@ -4484,9 +4516,17 @@
                 name,
                 email,
                 phone,
+                facebook,
+                dob,
                 dept,
                 position,
                 intro,
+                skills,
+                experience,
+                reason,
+                hours,
+                referral,
+                questions,
                 status: 'pending',
                 date: new Date().toISOString().slice(0, 10)
             };
@@ -4495,17 +4535,29 @@
                 await saveItem('applications', newApp);
                 hideLoadingToast(lt);
                 m.className = 'form-msg ok'; 
-                m.textContent = '✅ Đã gửi đơn thành công! BTC sẽ liên hệ lại với bạn sớm nhất.';
+                m.textContent = '✅ Đã gửi đơn tuyển đợt 2 thành công! Dữ liệu sẽ được đồng bộ về Google Sheet.';
                 
-                nameEl.value = '';
-                emailEl.value = '';
-                phoneEl.value = '';
-                introEl.value = '';
+                nameEl.value = ''; emailEl.value = ''; phoneEl.value = ''; introEl.value = '';
+                if (skillsEl) skillsEl.value = ''; if (expEl) expEl.value = '';
+                if (reasonEl) reasonEl.value = ''; if (hoursEl) hoursEl.value = '';
+                if (referralEl) referralEl.value = ''; if (facebookEl) facebookEl.value = '';
+                if (dobEl) dobEl.value = ''; if (questionsEl) questionsEl.value = '';
                 
-                setTimeout(() => {
-                    closeModal('applyModal');
-                    m.textContent = '';
-                }, 2500);
+                // Direct sync to Google Sheet
+                try {
+                    var user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+                    var idToken = user ? await user.getIdToken() : '';
+                    var sheetId = localStorage.getItem('ynda_spreadsheet_app_id') || localStorage.getItem('ynda_spreadsheet_core_id') || '';
+                    if (idToken && sheetId) {
+                        fetch('/api/hr/sync-to-sheets', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ idToken: idToken, mode: 'push', spreadsheetAppId: sheetId, syncCore: false })
+                        }).catch(function(e) { console.warn('Sheet sync background:', e); });
+                    }
+                } catch (sheetErr) { console.warn('Sheet sync error:', sheetErr); }
+                
+                setTimeout(() => { closeModal('applyModal'); m.textContent = ''; }, 2500);
             } catch (e) {
                 hideLoadingToast(lt);
                 m.textContent = 'Có lỗi xảy ra khi gửi dữ liệu: ' + e.message;
@@ -4639,50 +4691,12 @@
             accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
             content: { icon: '📝', label: 'Quản lý nội dung', roles: ['admin'] },
             auditLog: { icon: '📋', label: 'Nhật ký hoạt động', roles: ['admin'] },
-            // === NEW FEATURES ===
-            // Contestant features
+            // === FEATURES ===
             support: { icon: '🆘', label: 'Trung tâm hỗ trợ', roles: ['admin', 'organizer', 'member'] },
             checklist: { icon: '✅', label: 'Checklist Onboarding', roles: ['admin', 'organizer', 'member'] },
             mycalendar: { icon: '📅', label: 'Lịch của tôi', roles: ['admin', 'organizer', 'member'] },
             notifications: { icon: '🔔', label: 'Thông báo', roles: ['admin', 'organizer', 'member'] },
-            myteam: { icon: '👥', label: 'Đội thi của tôi', roles: ['admin', 'organizer', 'member'] },
-            handbook: { icon: '📖', label: 'Sổ tay sản xuất', roles: ['admin', 'organizer', 'member'] },
             crew: { icon: '🔍', label: 'Bảng tìm ekip', roles: ['admin', 'organizer', 'member'] },
-            talent: { icon: '⭐', label: 'Hồ sơ diễn viên', roles: ['admin', 'organizer', 'member'] },
-            locations: { icon: '📍', label: 'Kho địa điểm quay', roles: ['admin', 'organizer', 'member'] },
-            equipment: { icon: '🎥', label: 'Mượn/Cho mượn TB', roles: ['admin', 'organizer', 'member'] },
-            ideas: { icon: '💡', label: 'Bảng ý tưởng phim', roles: ['admin', 'organizer', 'member'] },
-            diary: { icon: '📓', label: 'Nhật ký sản xuất', roles: ['admin', 'organizer', 'member'] },
-            risks: { icon: '⚠️', label: 'Quản lý rủi ro', roles: ['admin', 'organizer', 'member'] },
-            trailers: { icon: '🎬', label: 'Kho Trailer/Teaser', roles: ['admin', 'organizer', 'member'] },
-            learning: { icon: '📚', label: 'Thư viện học tập', roles: ['admin', 'organizer', 'member'] },
-            musiclib: { icon: '🎵', label: 'Thư viện Nhạc/SFX', roles: ['admin', 'organizer', 'member'] },
-            portfolio: { icon: '📂', label: 'Portfolio cá nhân', roles: ['admin', 'organizer', 'member'] },
-            archive: { icon: '🏛️', label: 'Kho phim/Archive', roles: ['admin', 'organizer', 'member'] },
-            peerreview: { icon: '🔍', label: 'Peer Review', roles: ['admin', 'organizer', 'member'] },
-            surveys: { icon: '📊', label: 'Khảo sát', roles: ['admin', 'organizer', 'member'] },
-            alumnis: { icon: '🎓', label: 'Cựu thí sinh', roles: ['admin', 'organizer', 'member'] },
-            communitymap: { icon: '🗺️', label: 'Bản đồ cộng đồng', roles: ['admin', 'organizer', 'member'] },
-            // Organizer features
-            seasons: { icon: '🏆', label: 'Quản lý mùa thi', roles: ['admin', 'organizer'] },
-            themes: { icon: '🎨', label: 'Chủ đề mùa', roles: ['admin', 'organizer'] },
-            workshops: { icon: '🎯', label: 'Workshop online', roles: ['admin', 'organizer'] },
-            mentors: { icon: '🧑‍🏫', label: 'Mentor', roles: ['admin', 'organizer'] },
-            teams: { icon: '👥', label: 'Quản lý đội thi', roles: ['admin', 'organizer'] },
-            categories: { icon: '🏷️', label: 'Hạng mục thi', roles: ['admin', 'organizer'] },
-            production: { icon: '📈', label: 'Tiến độ sản xuất', roles: ['admin', 'organizer'] },
-            minichallenges: { icon: '⚡', label: 'Mini-challenge', roles: ['admin', 'organizer'] },
-            judging: { icon: '⚖️', label: 'Chấm giải', roles: ['admin', 'organizer'] },
-            leaderboard: { icon: '🏅', label: 'Bảng xếp hạng', roles: ['admin', 'organizer'] },
-            gala: { icon: '🎉', label: 'Gala trao giải', roles: ['admin', 'organizer'] },
-            certificates: { icon: '📜', label: 'Chứng nhận', roles: ['admin', 'organizer'] },
-            partners: { icon: '🤝', label: 'Đối tác & Tài trợ', roles: ['admin', 'organizer'] },
-            ambassadors: { icon: '📢', label: 'Đại sứ truyền thông', roles: ['admin', 'organizer'] },
-            schoolpartners: { icon: '🏫', label: 'CLB/Trường đối tác', roles: ['admin', 'organizer'] },
-            kpi: { icon: '📊', label: 'KPI mùa giải', roles: ['admin', 'organizer'] },
-            deadlines: { icon: '⏰', label: 'Gia hạn deadline', roles: ['admin', 'organizer'] },
-            brandkit: { icon: '🎨', label: 'Bộ nhận diện', roles: ['admin', 'organizer'] },
-            mediatasks: { icon: '📣', label: 'Nhiệm vụ TH', roles: ['admin', 'organizer', 'member'] },
         };
 
         let curTab = 'overview';

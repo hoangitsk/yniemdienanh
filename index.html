@@ -3247,6 +3247,13 @@
                     <input id="emPdfAttachment" type="file" accept="application/pdf,.pdf" style="width:100%;color:#cbd5e1;border:1px dashed rgba(228,184,102,0.25);padding:10px;border-radius:8px;background:rgba(0,0,0,0.2)">
                 </div>
 
+                <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:var(--text-muted)">
+                        <input type="checkbox" id="emScheduleToggle" onchange="document.getElementById('emScheduleTime').style.display=this.checked?'inline-block':'none'"> 📅 Đặt lịch gửi sau
+                    </label>
+                    <input type="datetime-local" id="emScheduleTime" style="display:none;padding:6px;border-radius:6px;background:rgba(0,0,0,0.3);color:#e2e8f0;border:1px solid rgba(228,184,102,0.2)">
+                </div>
+
                 <div>
                     <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Link nhóm Messenger <span style="color:#64748b">(để trống nếu dùng link mặc định theo ban)</span></label>
                     <input id="emMessLink" type="url" placeholder="https://m.me/j/..." oninput="applyEmailTemplate()" style="width:100%;background:rgba(0,0,0,0.3);color:#e2e8f0;border:1px solid rgba(228,184,102,0.2);padding:10px;border-radius:8px">
@@ -10945,6 +10952,8 @@ ${senderSignature}`
             const subjectEl = document.getElementById('emSubject');
             const bodyEl = document.getElementById('emBody');
             const pdfEl = document.getElementById('emPdfAttachment');
+            const scheduleToggle = document.getElementById('emScheduleToggle');
+            const scheduleTimeEl = document.getElementById('emScheduleTime');
             if (!toEl || !subjectEl || !bodyEl) {
                 return showToast('Không tải được biểu mẫu email. Hãy tải lại trang rồi thử lại.', 'error');
             }
@@ -10952,6 +10961,8 @@ ${senderSignature}`
             const subject = subjectEl.value;
             const html = bodyEl.value;
             const pdfFile = pdfEl && pdfEl.files ? pdfEl.files[0] : null;
+            const isScheduled = scheduleToggle && scheduleToggle.checked;
+            const scheduleTime = isScheduled && scheduleTimeEl ? scheduleTimeEl.value : '';
             
             if (!subject.trim() || !html.trim()) {
                 return showToast('Vui lòng điền đầy đủ tiêu đề và nội dung email.', 'warning');
@@ -10961,11 +10972,48 @@ ${senderSignature}`
                 return showToast('Tài liệu đính kèm phải là PDF và không vượt quá 2 MB.', 'warning');
             }
 
+            if (isScheduled && !scheduleTime) {
+                return showToast('Vui lòng chọn thời gian gửi.', 'warning');
+            }
+
             const btn = document.getElementById('emSendBtn');
             if (!btn) return showToast('Không tìm thấy nút gửi email. Hãy tải lại trang.', 'error');
             btn.disabled = true;
-            btn.textContent = '⏳ Đang gửi...';
 
+            if (isScheduled) {
+                btn.textContent = '⏳ Đang lưu lịch...';
+                try {
+                    const schId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+                    const scheduledEmail = {
+                        id: schId,
+                        to, subject, html,
+                        scheduledAt: new Date(scheduleTime).toISOString(),
+                        status: 'scheduled',
+                        createdBy: (window.session && session.name) || (window.session && session.email) || 'unknown',
+                        createdAt: new Date().toISOString()
+                    };
+                    if (pdfFile) {
+                        const dataUrl = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = () => reject(new Error('Không thể đọc tệp PDF.'));
+                            reader.readAsDataURL(pdfFile);
+                        });
+                        scheduledEmail.attachment = { filename: pdfFile.name, base64: String(dataUrl).split(',')[1] };
+                    }
+                    await saveItem('scheduledEmails', scheduledEmail);
+                    showToast('✅ Đã lưu lịch gửi email! Email sẽ được gửi vào ' + new Date(scheduleTime).toLocaleString('vi-VN'), 'success');
+                    closeModal('emailModal');
+                } catch (err) {
+                    showToast('Lỗi lưu lịch: ' + err.message, 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = '📤 Gửi Email';
+                }
+                return;
+            }
+
+            btn.textContent = '⏳ Đang gửi...';
             try {
                 let attachment;
                 if (pdfFile) {

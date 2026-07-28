@@ -630,11 +630,13 @@ async function pullFromSheets(db, sid) {
   }
 }
 
+const YNDA_APPS_SHEET_ID = '1I2cknwFytPGVxISHjnUamAaqOJ6ZbHhwKe9b9vtKD30';
+
 module.exports = async (req, res) => {
   try {
     let rawDefaultSid = process.env.SPREADSHEET_HR_DASHBOARD || process.env.SPREADSHEET_ID;
     let sidCore = req.body?.spreadsheetCoreId || req.query?.spreadsheetCoreId || req.body?.spreadsheetId || req.query?.spreadsheetId || process.env.SPREADSHEET_CORE_DATABASE || rawDefaultSid;
-    let sidApps = req.body?.spreadsheetAppId || req.query?.spreadsheetAppId || req.body?.spreadsheetId || req.query?.spreadsheetId || process.env.SPREADSHEET_APPLICATIONS || rawDefaultSid;
+    let sidApps = req.body?.spreadsheetAppId || req.query?.spreadsheetAppId || req.body?.spreadsheetId || req.query?.spreadsheetId || process.env.SPREADSHEET_APPLICATIONS || YNDA_APPS_SHEET_ID;
 
     const parseId = (val) => {
       if (val && typeof val === 'string' && val.includes('/spreadsheets/d/')) {

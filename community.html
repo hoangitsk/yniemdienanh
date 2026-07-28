@@ -10116,7 +10116,6 @@ ${groupInviteHtml}
             const scheduleField = document.getElementById('emScheduleField');
             if (scheduleField) scheduleField.classList.toggle('hidden', document.getElementById('emTemplateSelect').value !== 'interview');
             applyEmailTemplate();
-            if (document.getElementById('emTemplateSelect').value) generateEmailWithAI();
         }
 
         async function generateEmailWithAI() {

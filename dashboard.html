@@ -10300,7 +10300,7 @@ ${senderSignature}`
             const scheduleField = document.getElementById('emScheduleField');
             if (scheduleField) scheduleField.classList.toggle('hidden', document.getElementById('emTemplateSelect').value !== 'interview');
             applyEmailTemplate();
-            if (document.getElementById('emTemplateSelect').value) generateEmailWithAI();
+            // Không tự động gọi AI — để người dùng tự nhập tay hoặc bấm nút AI nếu muốn
         }
 
         async function generateEmailWithAI() {

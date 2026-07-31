@@ -3330,6 +3330,34 @@
         </div>
     </div>
 
+    <!-- BULK EMAIL MANUAL (soạn tay, gửi y nguyên cho tất cả ứng viên đã chọn, không dùng AI) -->
+    <div class="modal" id="bulkManualEmailModal">
+        <div class="modal-box" style="width:min(700px,100%);background:var(--navy-dark);border:1px solid rgba(228,184,102,.25)">
+            <span class="close-x" onclick="closeModal('bulkManualEmailModal')">✕</span>
+            <h3 style="color:var(--gold-light);font-size:1.3rem;margin-bottom:8px">✍️ Soạn tay & gửi hàng loạt</h3>
+            <div id="bulkManualCount" style="font-size:.82rem;color:var(--gold-light);margin-bottom:14px"></div>
+            <div style="display:grid;gap:12px;text-align:left">
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text-muted)">Tiêu đề email</label>
+                    <input id="bulkManualSubject" type="text" placeholder="Tiêu đề email..." style="width:100%;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.2);padding:10px;border-radius:8px">
+                </div>
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text-muted)">Nội dung (hỗ trợ HTML, gửi y nguyên cho tất cả, không chỉnh sửa)</label>
+                    <textarea id="bulkManualBody" rows="15" placeholder="Soạn nội dung HTML ở đây..." style="width:100%;resize:vertical;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.2);font-family:monospace;font-size:.86rem;padding:12px;border-radius:8px"></textarea>
+                </div>
+                <div>
+                    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text-muted)">PDF đính kèm (tùy chọn, tối đa 2 MB)</label>
+                    <input id="bulkManualAttachment" type="file" accept="application/pdf,.pdf" style="color:#cbd5e1;border:1px dashed rgba(228,184,102,.25);padding:7px;border-radius:8px;background:rgba(0,0,0,.2)">
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+                <button class="btn btn-line btn-sm" onclick="closeModal('bulkManualEmailModal')">Hủy</button>
+                <button id="bulkManualSendBtn" class="btn btn-gold btn-sm" onclick="sendBulkManualEmails()">📤 Gửi cho tất cả</button>
+            </div>
+            <div id="bulkManualProgress" style="font-size:.76rem;color:var(--text-muted);margin-top:10px"></div>
+        </div>
+    </div>
+
     <script>
 
 
@@ -5820,6 +5848,7 @@
                                 <input id="bulkMessLink" type="url" placeholder="Link nhóm Messenger (để trống nếu dùng mặc định)" title="Link nhóm Messenger cho tất cả ứng viên" style="max-width:300px;padding:9px;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);border-radius:8px">
                                 <textarea id="bulkEmailDescription" rows="2" maxlength="1000" placeholder="Mô tả cho AI (không bắt buộc), ví dụ: Nhắc ứng viên đọc handbook trước buổi phỏng vấn, giọng thân thiện..." style="flex:1 1 360px;min-width:280px;resize:vertical;background:rgba(0,0,0,.3);color:#e2e8f0;border:1px solid rgba(228,184,102,.25);padding:9px;border-radius:8px"></textarea>
                                 <button id="bulkEmailSendBtn" class="btn btn-gold btn-sm" onclick="sendBulkPersonalizedEmails()">🤖 Soạn & xem trước tất cả</button>
+                                <button type="button" class="btn btn-line btn-sm" onclick="openBulkManualEmail()" title="Tự gõ tiêu đề và nội dung HTML rồi gửi y nguyên cho tất cả ứng viên đã chọn, không dùng AI">✍️ Soạn tay & gửi hàng loạt</button>
                                 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
                                     <button type="button" class="btn btn-line btn-sm" onclick="filterApplicationsForBulkSelect('vice_lead', 'qualified')" style="padding:4px 8px;font-size:.72rem;color:#f59e0b;border-color:#f59e0b">⚡ Lọc Phó ban</button>
                                     <button type="button" class="btn btn-line btn-sm" onclick="filterApplicationsForBulkSelect('core', 'qualified')" style="padding:4px 8px;font-size:.72rem;color:var(--gold);border-color:var(--gold)">⚡ Lọc Core</button>

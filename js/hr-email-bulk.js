@@ -8,7 +8,8 @@
         interview_group: 'Mời tham gia nhóm phỏng vấn',
         reject: 'Từ chối ứng tuyển',
         attachment_followup: 'Bổ sung tài liệu',
-        custom: 'Thư tùy chỉnh'
+        custom: 'Thư tùy chỉnh',
+        manual: 'Thư soạn tay hàng loạt'
     };
 
     function emailLabel(type) {
@@ -621,6 +622,94 @@
         } finally {
             button.disabled = false;
             button.textContent = '📤 Gửi tất cả email đã duyệt';
+        }
+    };
+
+    window.openBulkManualEmail = function () {
+        var apps = selectedApplications();
+        if (!apps.length) return showToast('Hãy chọn ít nhất một ứng viên để gửi.', 'warning');
+        window.bulkManualApps = apps;
+        var countEl = document.getElementById('bulkManualCount');
+        if (countEl) countEl.textContent = 'Gửi cho ' + apps.length + ' ứng viên đã chọn. Nội dung sẽ được gửi y nguyên, không chỉnh sửa gì.';
+        document.getElementById('bulkManualSubject').value = '';
+        document.getElementById('bulkManualBody').value = '';
+        var attachment = document.getElementById('bulkManualAttachment');
+        if (attachment) attachment.value = '';
+        document.getElementById('bulkManualProgress').textContent = '';
+        openModal('bulkManualEmailModal');
+    };
+
+    window.sendBulkManualEmails = async function () {
+        var apps = window.bulkManualApps || [];
+        var subject = document.getElementById('bulkManualSubject').value;
+        var html = document.getElementById('bulkManualBody').value;
+        var pdfFile = document.getElementById('bulkManualAttachment').files[0];
+        var button = document.getElementById('bulkManualSendBtn');
+        var progress = document.getElementById('bulkManualProgress');
+        if (!apps.length) return showToast('Không có ứng viên nào được chọn. Hãy đóng và chọn lại.', 'warning');
+        if (!String(subject || '').trim() || !String(html || '').trim()) return showToast('Vui lòng điền đầy đủ tiêu đề và nội dung email.', 'warning');
+        if (pdfFile && (!pdfFile.name.toLowerCase().endsWith('.pdf') || pdfFile.size > 2 * 1024 * 1024)) {
+            return showToast('Tài liệu đính kèm phải là PDF và không vượt quá 2 MB.', 'warning');
+        }
+        if (!window.confirm('Gửi email vừa soạn cho ' + apps.length + ' ứng viên? Nội dung sẽ được gửi y nguyên không chỉnh sửa.')) return;
+        button.disabled = true;
+        var attachment;
+        try {
+            if (pdfFile) {
+                progress.textContent = 'Đang đọc file PDF đính kèm...';
+                var dataUrl = await new Promise(function (resolve, reject) {
+                    var reader = new FileReader();
+                    reader.onload = function () { resolve(reader.result); };
+                    reader.onerror = function () { reject(new Error('Không thể đọc file PDF.')); };
+                    reader.readAsDataURL(pdfFile);
+                });
+                attachment = { filename: pdfFile.name, base64: String(dataUrl).split(',')[1] };
+            }
+            var sent = 0;
+            var sendFailures = [];
+            var historyWarnings = [];
+            for (var i = 0; i < apps.length; i += 1) {
+                var app = apps[i];
+                progress.textContent = 'Đang gửi ' + (i + 1) + '/' + apps.length + ': ' + app.name;
+                button.textContent = '⏳ ' + (i + 1) + '/' + apps.length;
+                try {
+                    await sendEmail({ to: app.email, subject: subject, html: html, attachment: attachment });
+                    sent += 1;
+                    try {
+                        await recordSentEmail(app, {
+                            type: 'manual',
+                            subject: subject,
+                            source: 'bulk_manual',
+                            aiPersonalized: false,
+                            attachmentName: pdfFile ? pdfFile.name : ''
+                        });
+                    } catch (historyError) {
+                        historyWarnings.push(app.name);
+                    }
+                } catch (error) {
+                    sendFailures.push(app.name + ' (' + error.message + ')');
+                }
+            }
+            if (sendFailures.length || historyWarnings.length) {
+                var details = [];
+                if (sendFailures.length) details.push('Chưa gửi: ' + sendFailures.join('; '));
+                if (historyWarnings.length) details.push('Đã gửi nhưng lỗi lưu lịch sử: ' + historyWarnings.join(', '));
+                progress.textContent = details.join(' | ');
+                showToast('Hoàn tất ' + sent + '/' + apps.length + ' email. ' + (sendFailures.length ? 'Có thư gửi lỗi.' : 'Có lỗi lưu lịch sử.'), 'warning');
+            } else {
+                progress.textContent = 'Hoàn tất ' + sent + '/' + apps.length + ' email.';
+                showToast('Đã gửi và lưu lịch sử cho ' + sent + ' ứng viên!', 'success');
+                window.bulkManualApps = null;
+                setTimeout(function () { closeModal('bulkManualEmailModal'); }, 800);
+                if (typeof renderTab === 'function') renderTab('members');
+            }
+        } catch (error) {
+            console.error(error);
+            progress.textContent = 'Đã dừng: ' + (error.message || 'Lỗi không xác định');
+            showToast(error.message || 'Không thể gửi email hàng loạt.', 'error');
+        } finally {
+            button.disabled = false;
+            button.textContent = '📤 Gửi cho tất cả';
         }
     };
 })();

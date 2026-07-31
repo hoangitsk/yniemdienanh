@@ -4735,6 +4735,7 @@
         const TABS = {
             overview: { icon: 'ðŸ“Š', label: 'Tá»•ng quan', roles: ['admin', 'organizer', 'member'] },
             profile: { icon: 'ðŸ‘¤', label: 'Há»“ sÆ¡ cá»§a tÃ´i', roles: ['admin', 'organizer', 'member'] },
+            changeFrame: { icon: '🖼️', label: 'Thay frame', roles: ['admin', 'organizer', 'member'] },
             tasks: { icon: 'âœ…', label: 'Báº£ng CÃ´ng viá»‡c', roles: ['admin', 'organizer', 'member'] },
             staffscore: { icon: 'â­', label: 'Äiá»ƒm Ä‘Ã³ng gÃ³p BTC', roles: ['admin', 'organizer', 'member'] },
             events: { icon: 'ðŸŽ¬', label: 'Quáº£n lÃ½ sá»± kiá»‡n', roles: ['admin', 'organizer'] },
@@ -4818,6 +4819,7 @@
             const isOrg = ['admin', 'organizer'].includes(session.role);
             
             const renderers = {
+                changeFrame() { window.location.href = 'change-frame.html'; },
                 overview() {
                     const myTasks = d.tasks.filter(t => t.assignee === session.name && t.status !== 'done').length;
                     const cfg = d.config || {};

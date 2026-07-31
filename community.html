@@ -2517,6 +2517,46 @@
         .footer-social-link:hover { color:var(--gold); border-color:var(--gold); background:rgba(228,184,102,0.05); transform:translateY(-2px); }
         .footer-social-link svg { width:18px; height:18px; fill:currentColor; }
 
+        .ai-personalize-toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 9px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(5,12,20,.5);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: .75rem;
+            line-height: 1.25;
+            user-select: none;
+        }
+        .ai-personalize-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+        .ai-toggle-track {
+            position: relative;
+            width: 30px;
+            height: 17px;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            background: rgba(170,182,197,.25);
+            transition: background .2s ease;
+        }
+        .ai-toggle-track::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            transition: transform .2s ease, background .2s ease;
+        }
+        .ai-personalize-toggle input:checked + .ai-toggle-track { background: rgba(99,209,158,.38); }
+        .ai-personalize-toggle input:checked + .ai-toggle-track::after { transform: translateX(13px); background: var(--ok); }
+        .ai-personalize-toggle input:focus-visible + .ai-toggle-track { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+        .ai-personalize-toggle:has(input:checked) { color: var(--ok); border-color: rgba(99,209,158,.4); }
 
     </style>
 </head>
@@ -2927,7 +2967,12 @@
                     <input id="emMessLink" type="url" placeholder="https://m.me/j/..." oninput="applyEmailTemplate()" style="width:100%;background:rgba(0,0,0,0.3);color:#e2e8f0;border:1px solid rgba(228,184,102,0.2);padding:10px;border-radius:8px">
                 </div>
                 
-                <div style="display:flex; justify-content:flex-end; align-items:center">
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                    <label class="ai-personalize-toggle" title="Bật/tắt AI soạn thư tự động">
+                        <input id="emAiToggle" type="checkbox" checked onchange="var b=document.getElementById('emAiButton');var d=document.getElementById('emCustomDescription');b.disabled=!this.checked;b.style.opacity=this.checked?'1':'0.5';d.style.opacity=this.checked?'1':'0.5';document.getElementById('emAiToggleText').textContent=this.checked?'AI':'AI tắt'">
+                        <span class="ai-toggle-track" aria-hidden="true"></span>
+                        <span id="emAiToggleText">AI</span>
+                    </label>
                     <button id="emAiButton" class="btn btn-line btn-sm" onclick="generateEmailWithAI()" style="background:rgba(228,184,102,0.05);color:var(--gold-light);border-color:var(--gold);padding:6px 12px;border-radius:8px;cursor:pointer">
                         🤖 Soạn thư bằng Gemini AI
                     </button>
@@ -2939,7 +2984,10 @@
                 </div>
                 
                 <div>
-                    <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text-muted)">Nội dung (hỗ trợ HTML)</label>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <label style="font-size:0.85rem;color:var(--text-muted)">Nội dung (hỗ trợ HTML)</label>
+                        <button type="button" onclick="formatEmailBodyToHTML()" title="Chuyển văn bản thuần sang định dạng HTML" style="background:rgba(228,184,102,0.08);color:var(--gold-light);border:1px solid rgba(228,184,102,0.2);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.78rem">📝 Định dạng HTML</button>
+                    </div>
                     <textarea id="emBody" rows="12" placeholder="Nội dung email soạn thảo ở đây..." style="width:100%;resize:vertical;background:rgba(0,0,0,0.3);color:#e2e8f0;border:1px solid rgba(228,184,102,0.2);font-family:monospace;font-size:0.88rem;padding:12px;border-radius:8px"></textarea>
                 </div>
             </div>
@@ -5602,7 +5650,10 @@
                     var txs = d.transactions || [];
                     var pending = txs.filter(function(t) { return t.status === 'pending' && !isExpiredTx(t); });
                     var confirmed = txs.filter(function(t) { return t.status === 'confirmed'; });
-                    var pp = (d.config && d.config.prizePool) || { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
+                    var sponsorConfirmed = txs.filter(t => t.status === 'confirmed' && t.type === 'sponsor');
+                    var prizeFund = sponsorConfirmed.filter(t => t.donationType === 'prize').reduce((s, t) => s + (t.amount || 0), 0);
+                    var opsFund = sponsorConfirmed.filter(t => t.donationType === 'operation').reduce((s, t) => s + (t.amount || 0), 0);
+                    var generalFund = sponsorConfirmed.filter(t => (t.donationType === 'general' || !t.donationType)).reduce((s, t) => s + (t.amount || 0), 0);
                     if (!window._txFilter) window._txFilter = { search: '', dateFrom: '', dateTo: '', type: '' };
                     var txf = window._txFilter;
                     var filteredTxs = txs.filter(function(t) {
@@ -5628,12 +5679,14 @@
                         return true;
                     });
                     main.innerHTML = [
-                        '<h2>💳 Giao dịch & Quỹ giải thưởng</h2>',
-                        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px">',
-                            '<div class="stat"><div class="num" style="color:var(--gold-light)">', pp.total.toLocaleString('vi-VN'), 'đ</div><div class="lbl">Tổng quỹ giải thưởng</div></div>',
-                            '<div class="stat"><div class="num" style="color:#60a5fa">', txs.length, '</div><div class="lbl">Tổng giao dịch</div></div>',
+                        '<h2>💳 Giao dịch & Minh bạch tài chính</h2>',
+                        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:20px">',
+                            '<div class="stat"><div class="num" style="color:var(--gold-light);font-size:1.1rem">', prizeFund.toLocaleString('vi-VN'), 'đ</div><div class="lbl">🏆 Quỹ giải thưởng</div></div>',
+                            '<div class="stat"><div class="num" style="color:#60a5fa;font-size:1.1rem">', opsFund.toLocaleString('vi-VN'), 'đ</div><div class="lbl">⚙️ Quỹ vận hành</div></div>',
+                            '<div class="stat"><div class="num" style="color:#c084fc;font-size:1.1rem">', generalFund.toLocaleString('vi-VN'), 'đ</div><div class="lbl">💖 Đóng góp chung</div></div>',
                             '<div class="stat"><div class="num" style="color:#fbbf24">', pending.length, '</div><div class="lbl">Chờ xác nhận</div></div>',
                             '<div class="stat"><div class="num" style="color:#63d19e">', confirmed.length, '</div><div class="lbl">Đã xác nhận</div></div>',
+                            '<div class="stat"><div class="num" style="color:#60a5fa">', txs.length, '</div><div class="lbl">Tổng giao dịch</div></div>',
                         '</div>',
                         '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:center">',
                             '<input placeholder="Tìm user, memo..." value="', esc(txf.search), '" oninput="window._txFilter.search=this.value;renderTab(\'transactions\')" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#e2e8f0;width:200px">',
@@ -5700,8 +5753,12 @@
                                 label = `Thu phí đăng ký: ${t.eventTitle || t.eventId} - ${t.userName}`;
                             } else if (t.type === 'vote') {
                                 label = `Thu phí bình chọn: MS ${t.submissionTitle || t.submissionId} - ${t.userName}`;
+                            } else if (t.donationType === 'prize') {
+                                label = `Donate Quỹ giải thưởng - ${t.userName}`;
+                            } else if (t.donationType === 'operation') {
+                                label = `Donate Vận hành dự án - ${t.userName}`;
                             } else {
-                                label = `Nhận tài trợ: Gói ủng hộ - ${t.userName}`;
+                                label = `Đóng góp chung / Tài trợ - ${t.userName}`;
                             }
                             
                             let dateStr = '';
@@ -5732,13 +5789,10 @@
                     const totalOut = allLedgers.filter(b => b.type === 'out').reduce((sum, b) => sum + b.amount, 0);
                     const balance = totalIn - totalOut;
 
-                    const outLedgers = allLedgers.filter(b => b.type === 'out');
-                    const directSpend = outLedgers.filter(b => b.category === 'direct' || !b.category).reduce((sum, b) => sum + b.amount, 0);
-                    const opsSpend = outLedgers.filter(b => b.category === 'ops').reduce((sum, b) => sum + b.amount, 0);
-                    
-                    const directPct = totalOut > 0 ? Math.round((directSpend / totalOut) * 100) : 70;
-                    const opsPct = totalOut > 0 ? Math.round((opsSpend / totalOut) * 100) : 30;
-                    const isOpsOver = opsPct > 30;
+                    const confirmedSponsor = (d.transactions || []).filter(t => t.status === 'confirmed' && t.type === 'sponsor');
+                    const prizeFund = confirmedSponsor.filter(t => t.donationType === 'prize').reduce((s, t) => s + (t.amount || 0), 0);
+                    const opsFund = confirmedSponsor.filter(t => t.donationType === 'operation').reduce((s, t) => s + (t.amount || 0), 0);
+                    const generalFund = confirmedSponsor.filter(t => (t.donationType === 'general' || !t.donationType)).reduce((s, t) => s + (t.amount || 0), 0);
 
                     window.toggleBudgetCat = function() {
                         var type = document.getElementById('bgType');
@@ -5757,21 +5811,16 @@
                             <div class="stat"><div class="num">${money(balance)}</div><div class="lbl">Quỹ dự án còn lại</div></div>
                         </div>
 
-                        <!-- 70/30 spend rule visual bar -->
+                        <!-- Minh bạch theo quỹ -->
                         <div class="panel" style="margin-bottom:24px">
-                            <h3 style="color:var(--gold-light);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-                                <span>📊 Tỷ lệ phân bổ chi tiêu thực tế (Mục tiêu 70% Hoạt động / 30% Vận hành)</span>
-                                ${isOpsOver ? '<span class="badge badge-red" style="background:#ef4444;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem">⚠️ Vượt định mức (>30%)</span>' : '<span class="badge badge-green" style="background:#63d19e;color:#1e293b;padding:2px 8px;border-radius:4px;font-size:0.75rem">✓ Hợp lệ</span>'}
-                            </h3>
-                            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.85rem;color:var(--text-muted)">
-                                <span>Chi trực tiếp hoạt động: <strong>${money(directSpend)} (${directPct}%)</strong></span>
-                                <span>Chi vận hành & Phát triển: <strong>${money(opsSpend)} (${opsPct}%)</strong></span>
+                            <h3 style="color:var(--gold-light);margin-bottom:12px">📊 MINH BẠCH TÀI CHÍNH</h3>
+                            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:14px">Mỗi khoản đóng góp được ghi nhận theo đúng mục đích mà người đóng góp lựa chọn.</p>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+                                <div class="stat"><div class="num" style="color:var(--gold-light)">${money(prizeFund)}</div><div class="lbl">🏆 Quỹ giải thưởng</div></div>
+                                <div class="stat"><div class="num" style="color:#60a5fa">${money(opsFund)}</div><div class="lbl">⚙️ Quỹ vận hành</div></div>
+                                <div class="stat"><div class="num" style="color:#c084fc">${money(generalFund)}</div><div class="lbl">💖 Đóng góp chung</div></div>
                             </div>
-                            <div style="width:100%;height:12px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;display:flex">
-                                <div style="width:${directPct}%;height:100%;background:linear-gradient(90deg, #64b4ff, #3b82f6);transition:width 0.3s"></div>
-                                <div style="width:${opsPct}%;height:100%;background:linear-gradient(90deg, #f43f5e, #e11d48);transition:width 0.3s"></div>
-                            </div>
-                            <p style="color:var(--text-muted);font-size:0.75rem;margin-top:8px">💡 <i>Theo Chương 6.3 Sổ tay: 70% ngân sách dành trực tiếp cho hoạt động (Giải thưởng, in ấn, hậu cần...). 30% dành cho vận hành & phát triển (Chứng nhận, truyền thông, website, dự phòng...).</i></p>
+                            <p style="color:var(--text-muted);font-size:0.75rem;margin-top:10px">BTC sẽ công khai tổng hợp tình hình sử dụng nguồn đóng góp trong báo cáo tổng kết mùa 1.</p>
                         </div>
                         
                         <div class="panel">
@@ -5781,9 +5830,9 @@
                                     <option value="in">Thu tiền quỹ</option>
                                     <option value="out">Chi hoạt động</option>
                                 </select></div>
-                                <div id="bgCatGroup" style="flex:1;min-width:160px;display:none"><label>Phân nhóm chi (70/30)</label><select id="bgCategory">
-                                    <option value="direct">Trực tiếp hoạt động (70%)</option>
-                                    <option value="ops">Vận hành & Phát triển (30%)</option>
+                                <div id="bgCatGroup" style="flex:1;min-width:160px;display:none"><label>Phân loại chi</label><select id="bgCategory">
+                                    <option value="direct">Chi hoạt động trực tiếp</option>
+                                    <option value="ops">Chi vận hành</option>
                                 </select></div>
                                 <div style="flex:2;min-width:180px"><label>Nội dung giao dịch *</label><input id="bgLabel" placeholder="Ví dụ: Phí tham gia Mùa 1"></div>
                                 <div style="flex:1;min-width:120px"><label>Số tiền (VNĐ) *</label><input id="bgAmount" type="number" placeholder="5000"></div>
@@ -5807,7 +5856,7 @@
                                         <td data-label="Thời gian">${b.date}</td>
                                         <td data-label="Nội dung thu chi">${esc(b.label)}</td>
                                         <td data-label="Phân loại" style="font-size:0.8rem;color:var(--text-muted)">
-                                            ${b.type === 'in' ? 'Thu nhập' : (b.category === 'ops' ? '<span style="color:#f43f5e">Vận hành (30%)</span>' : '<span style="color:#64b4ff">Hoạt động (70%)</span>')}
+                                            ${b.type === 'in' ? 'Thu nhập' : (b.category === 'ops' ? '<span style="color:#f43f5e">Vận hành</span>' : '<span style="color:#64b4ff">Hoạt động trực tiếp</span>')}
                                         </td>
                                         <td data-label="Loại hình">${b.type === 'in' ? `<span style="color:var(--ok);font-weight:600">Thu quỹ</span>` : `<span style="color:var(--danger);font-weight:600">Chi phí</span>`}</td>
                                         <td data-label="Số tiền giao dịch">${money(b.amount)}</td>
@@ -7956,7 +8005,7 @@
                     ${u.intro ? `<p style="margin-top:6px;color:var(--text-muted);font-size:0.85rem;font-style:italic">"${esc(u.intro)}"</p>` : ''}
                     <p style="margin-top:6px;color:var(--text-muted);font-size:0.75rem">Tham gia từ: ${u.createdAt || 'Không rõ'}</p>
                     
-                    ${isOwn ? `<button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="closeModal('profileModal');openEditProfileModal()">📝 Chỉnh sửa hồ sơ</button>` : ''}
+                    ${isOwn ? `<button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="closeModal('profileModal');openEditProfileModal()">📝 Chỉnh sửa hồ sơ</button> <button class="btn btn-gold btn-sm" style="margin-top:12px; margin-left:8px; background:var(--gold-light); color:#000" onclick="window.location.href='change-frame.html'">🖼️ Thay frame</button>` : ''}
                 </div>
                 ${(u.awards || []).length > 0 ? `
                     <div style="margin-bottom:16px;padding:0 4px">
@@ -8992,27 +9041,23 @@
         function renderPrizePool(containerId) {
             const el = document.getElementById(containerId);
             if (!el) return;
-            const cfg = localDB.config || {};
-            const pp = cfg.prizePool || { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
-            const pct = Math.min(100, Math.round((pp.total / pp.target) * 100));
             const fmt = n => (n || 0).toLocaleString('vi-VN') + 'đ';
+            const txs = localDB.transactions || [];
+            const prizeTotal = txs.filter(t => t.status === 'confirmed' && t.donationType === 'prize').reduce((s, t) => s + (t.amount || 0), 0);
+            const opsTotal = txs.filter(t => t.status === 'confirmed' && t.donationType === 'operation').reduce((s, t) => s + (t.amount || 0), 0);
+            const generalTotal = txs.filter(t => t.status === 'confirmed' && (t.donationType === 'general' || (!t.donationType && t.type === 'sponsor'))).reduce((s, t) => s + (t.amount || 0), 0);
             el.innerHTML = `
                 <div class="prize-pool">
-                    <div class="pp-label">🏆 TỔNG QUỸ GIẢI THƯỞNG</div>
-                    <div class="pp-amount">${fmt(pp.total)}</div>
-                    <div class="pp-bar-wrap">
-                        <div class="pp-bar">
-                            <div class="pp-bar-fill" style="width:${pct}%"></div>
-                        </div>
-                        <div class="pp-bar-label">
-                            <span>Đã đạt: ${fmt(pp.total)}</span>
-                            <span>Mục tiêu: ${fmt(pp.target)}</span>
-                        </div>
+                    <div class="pp-label">📊 MINH BẠCH TÀI CHÍNH</div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0">
+                        <div class="stat"><div class="num" style="color:var(--gold-light);font-size:1.3rem">${fmt(prizeTotal)}</div><div class="lbl" style="font-size:0.78rem">🏆 Quỹ giải thưởng</div></div>
+                        <div class="stat"><div class="num" style="color:#60a5fa;font-size:1.3rem">${fmt(opsTotal)}</div><div class="lbl" style="font-size:0.78rem">⚙️ Quỹ vận hành</div></div>
+                        <div class="stat"><div class="num" style="color:#c084fc;font-size:1.3rem">${fmt(generalTotal)}</div><div class="lbl" style="font-size:0.78rem">💖 Đóng góp chung</div></div>
                     </div>
-                    <div style="margin-top:14px;font-size:0.82rem;color:var(--gold-light);line-height:1.4">
-                        📌 <b>Góp quỹ dự án (5.000đ/lượt đăng ký):</b> 70% (3.500đ) cộng trực tiếp vào Quỹ giải thưởng, 30% (1.500đ) phục vụ chi phí duy trì hoạt động dự án.
+                    <div style="margin-top:8px;font-size:0.82rem;color:var(--text-muted);line-height:1.5">
+                        Mỗi khoản đóng góp được ghi nhận theo đúng mục đích mà người đóng góp lựa chọn.
                         <br>
-                        <span style="display:inline-block;margin-top:6px;font-size:0.8rem">
+                        <span style="display:inline-block;margin-top:8px;font-size:0.8rem">
                             ☕ Bạn muốn đồng hành cùng chúng tôi? 
                             <a href="#" onclick="openSponsorModal(event)" style="color:var(--gold);text-decoration:underline;font-weight:600">Đồng hành & Ủng hộ dự án</a>
                         </span>
@@ -9047,13 +9092,12 @@
                 t.qrCode
             );
             
+            const donationLabel = extra?.donationType === 'prize' ? '🏆 Quỹ giải thưởng' : extra?.donationType === 'operation' ? '⚙️ Vận hành dự án' : extra?.donationType === 'sponsor_tier' ? '🤝 Tài trợ dự án' : '💖 Đóng góp chung';
+
             if (existingTx) {
                 // Tái sử dụng QR và link thanh toán cũ
                 modal.innerHTML = `
-                    <h3 style="margin-bottom:16px">💳 Thanh toán khoản góp quỹ tham gia: ${esc(extra?.eventTitle || 'Dự án')}</h3>
-                    <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:14px;line-height:1.4">
-                        Phí tham gia được tái đầu tư vào hoạt động của sự kiện, bao gồm giải thưởng, chứng nhận và chi phí vận hành theo kế hoạch công khai.
-                    </p>
+                    <h3 style="margin-bottom:16px">💳 Thanh toán: ${esc(extra?.eventTitle || 'Đồng hành cùng YNĐA')}</h3>
                     <div class="qr-box">
                         <div class="qr-amount">${existingTx.amount.toLocaleString('vi-VN')}đ</div>
                         <div class="qr-info" id="payosStatus">✅ Chọn phương thức thanh toán:</div>
@@ -9063,10 +9107,10 @@
                             <div>
                                 <a href="${existingTx.checkoutUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-gold" style="text-decoration:none">Thanh toán ngay</a>
                             </div>
-                            <p style="margin-top:16px;font-size:0.82rem;color:var(--text-muted)">Sau khi thanh toán, quay lại trang này. Admin sẽ xác nhận trong thời gian sớm nhất.</p>
+                            <p style="margin-top:16px;font-size:0.82rem;color:var(--text-muted)">Sau khi thanh toán, quay lại trang này. Hệ thống sẽ tự động xác nhận.</p>
                         </div>
                         <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
-                            Khoản đóng góp (${existingTx.amount.toLocaleString('vi-VN')}đ) được phân bổ: 70% (${Math.round(existingTx.amount * 0.7).toLocaleString('vi-VN')}đ) vào Quỹ giải thưởng, 30% (${Math.round(existingTx.amount * 0.3).toLocaleString('vi-VN')}đ) cho chi phí duy trì.
+                            Mục đích: <strong>${donationLabel}</strong> · Số tiền: <strong>${existingTx.amount.toLocaleString('vi-VN')}đ</strong>
                         </div>
                     </div>
                 `;
@@ -9079,7 +9123,7 @@
             }
             
             modal.innerHTML = `
-                <h3 style="margin-bottom:16px">💳 Thanh toán khoản góp quỹ tham gia: ${esc(extra?.eventTitle || 'Dự án')}</h3>
+                <h3 style="margin-bottom:16px">💳 Thanh toán: ${esc(extra?.eventTitle || 'Đồng hành cùng YNĐA')}</h3>
                 <div class="qr-box">
                     <div class="qr-amount">${fee.toLocaleString('vi-VN')}đ</div>
                     <div class="qr-info" id="payosStatus">Đang tạo liên kết thanh toán...</div>
@@ -9087,7 +9131,7 @@
                         <div class="toast-spinner" style="margin:20px auto"></div>
                     </div>
                     <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
-                        Khoản đóng góp (${fee.toLocaleString('vi-VN')}đ) được phân bổ: 70% (${Math.round(fee * 0.7).toLocaleString('vi-VN')}đ) vào Quỹ giải thưởng, 30% (${Math.round(fee * 0.3).toLocaleString('vi-VN')}đ) cho chi phí duy trì.
+                        Mục đích: <strong>${donationLabel}</strong> · Số tiền: <strong>${fee.toLocaleString('vi-VN')}đ</strong>
                     </div>
                 </div>
             `;
@@ -9104,12 +9148,26 @@
                 }
                 const idToken = await firebase.auth().currentUser.getIdToken(true);
                 const targetId = extra?.eventId || extra?.submissionId || 'sponsor';
-                const title = extra?.submissionTitle || '';
+                const title = extra?.submissionTitle || extra?.eventTitle || '';
 
+                const bodyPayload = {
+                    idToken,
+                    type,
+                    targetId: String(targetId),
+                    title,
+                    amount
+                };
+                if (type === 'sponsor') {
+                    bodyPayload.donationType = extra?.donationType || 'general';
+                    if (extra?.sponsorTier) bodyPayload.sponsorTier = extra.sponsorTier;
+                    bodyPayload.displayName = extra?.displayName || '';
+                    bodyPayload.displayType = extra?.displayType || 'name';
+                    bodyPayload.anonymous = extra?.anonymous === true;
+                }
                 const res = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken, type, targetId, title, amount })
+                    body: JSON.stringify(bodyPayload)
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Không thể tạo liên kết thanh toán');
@@ -9129,7 +9187,12 @@
                     status: 'pending',
                     time: new Date().toISOString(),
                     checkoutUrl: data.checkoutUrl,
-                    qrCode: data.qrCode
+                    qrCode: data.qrCode,
+                    donationType: type === 'sponsor' ? (extra?.donationType || 'general') : undefined,
+                    sponsorTier: type === 'sponsor' ? (extra?.sponsorTier || '') : undefined,
+                    displayName: type === 'sponsor' ? (extra?.displayName || '') : undefined,
+                    displayType: type === 'sponsor' ? (extra?.displayType || 'name') : undefined,
+                    anonymous: type === 'sponsor' ? (extra?.anonymous === true) : undefined
                 };
                 if (!localDB.transactions) localDB.transactions = [];
                 localDB.transactions = localDB.transactions.filter(t => t.orderCode !== orderCode);
@@ -9270,12 +9333,6 @@
             if (!tx) return showToast('Không tìm thấy giao dịch.', 'error');
             tx.status = 'confirmed';
             
-            // Cập nhật prize pool (70% vào giải thưởng, 30% duy trì)
-            const cfg = localDB.config || {};
-            if (!cfg.prizePool) cfg.prizePool = { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
-            cfg.prizePool.total = (cfg.prizePool.total || 0) + Math.round((tx.amount || 5000) * 0.7);
-            if (localDB.config) localDB.config = cfg;
-            
             // Nếu là giao dịch đăng ký, thêm vào danh sách registrations
             if (tx.type === 'registration') {
                 if (!localDB.registrations) localDB.registrations = [];
@@ -9301,8 +9358,12 @@
                 label = `Thu phí đăng ký: ${tx.eventTitle || tx.eventId} - ${tx.userName}`;
             } else if (tx.type === 'vote') {
                 label = `Thu phí bình chọn: MS ${tx.submissionTitle || tx.submissionId} - ${tx.userName}`;
+            } else if (tx.donationType === 'prize') {
+                label = `Donate Quỹ giải thưởng - ${tx.userName}`;
+            } else if (tx.donationType === 'operation') {
+                label = `Donate Vận hành dự án - ${tx.userName}`;
             } else {
-                label = `Nhận tài trợ: Gói ủng hộ - ${tx.userName}`;
+                label = `Đóng góp chung / Tài trợ - ${tx.userName}`;
             }
             const newLedger = {
                 id: budgetId,
@@ -9316,7 +9377,6 @@
             if (useFirebase) {
                 try {
                     await dbInstance.collection('transactions').doc(String(txId)).set(tx, { merge: true });
-                    await dbInstance.collection('config').doc('prizePool').set(cfg.prizePool, { merge: true });
                 } catch (e) { console.error(e); }
             }
             if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
@@ -9331,12 +9391,6 @@
             if (!tx) return;
             tx.status = 'confirmed';
             
-            // Cập nhật prize pool (70% vào giải thưởng, 30% duy trì)
-            const cfg = localDB.config || {};
-            if (!cfg.prizePool) cfg.prizePool = { total: 0, target: 5000000, registrationFee: 5000, voteFee: 5000 };
-            cfg.prizePool.total = (cfg.prizePool.total || 0) + Math.round((tx.amount || 5000) * 0.7);
-            if (localDB.config) localDB.config = cfg;
-            
             // Nếu là giao dịch đăng ký, thêm vào danh sách registrations
             if (tx.type === 'registration') {
                 if (!localDB.registrations) localDB.registrations = [];
@@ -9362,8 +9416,12 @@
                 label = `Thu phí đăng ký: ${tx.eventTitle || tx.eventId} - ${tx.userName}`;
             } else if (tx.type === 'vote') {
                 label = `Thu phí bình chọn: MS ${tx.submissionTitle || tx.submissionId} - ${tx.userName}`;
+            } else if (tx.donationType === 'prize') {
+                label = `Donate Quỹ giải thưởng - ${tx.userName}`;
+            } else if (tx.donationType === 'operation') {
+                label = `Donate Vận hành dự án - ${tx.userName}`;
             } else {
-                label = `Nhận tài trợ: Gói ủng hộ - ${tx.userName}`;
+                label = `Đóng góp chung / Tài trợ - ${tx.userName}`;
             }
             const newLedger = {
                 id: budgetId,
@@ -9377,7 +9435,6 @@
             if (useFirebase) {
                 try {
                     await dbInstance.collection('transactions').doc(String(txId)).set(tx, { merge: true });
-                    await dbInstance.collection('config').doc('prizePool').set(cfg.prizePool, { merge: true });
                 } catch (e) { console.error(e); }
             }
             if (!useFirebase) localStorage.setItem('ynda_db', JSON.stringify(localDB));
@@ -9388,24 +9445,13 @@
         }
 
         async function deleteTx(txId) {
-            if (!(await showConfirmModal('Bạn có chắc chắn muốn xoá giao dịch này? Hành động này sẽ gỡ bỏ cả lượt đăng ký/vote và trừ tiền trong quỹ tương ứng.'))) return;
+            if (!(await showConfirmModal('Bạn có chắc chắn muốn xoá giao dịch này? Hành động này sẽ gỡ bỏ cả lượt đăng ký/vote tương ứng.'))) return;
             const tx = (localDB.transactions || []).find(t => String(t.id) === String(txId));
             if (!tx) return showToast('Không tìm thấy giao dịch.', 'error');
             
             const lt = showLoadingToast('Đang xoá giao dịch...');
             try {
-                // 1. Trừ tiền khỏi prize pool nếu giao dịch đã được xác nhận
-                if (tx.status === 'confirmed') {
-                    const cfg = localDB.config || {};
-                    if (cfg.prizePool) {
-                        cfg.prizePool.total = Math.max(0, (cfg.prizePool.total || 0) - Math.round((tx.amount || 5000) * 0.7));
-                        if (useFirebase) {
-                            await dbInstance.collection('config').doc('prizePool').set(cfg.prizePool, { merge: true });
-                        }
-                    }
-                }
-                
-                // 2. Gỡ lượt đăng ký nếu là giao dịch đăng ký sự kiện
+                // 1. Gỡ lượt đăng ký nếu là giao dịch đăng ký sự kiện
                 if (tx.type === 'registration') {
                     const reg = (localDB.registrations || []).find(r => String(r.userId) === String(tx.userId) && String(r.eventId) === String(tx.eventId));
                     if (reg) {
@@ -9413,13 +9459,13 @@
                     }
                 }
                 
-                // 3. Xoá giao dịch khỏi DB
+                // 2. Xoá giao dịch khỏi DB
                 await deleteItemFromDB('transactions', txId);
                 
                 hideLoadingToast(lt);
                 showToast('🗑 Xoá giao dịch thành công!', 'success');
                 
-                // 4. Cập nhật lại UI
+                // 3. Cập nhật lại UI
                 renderAllPrizePools();
                 renderEvents();
                 renderVoting();
@@ -9437,15 +9483,6 @@
             const lt = showLoadingToast('Đang xử lý...');
             try {
                 if (tx.status === 'confirmed') {
-                    // Hoàn tiền: trừ khỏi prize pool
-                    const cfg = localDB.config || {};
-                    if (cfg.prizePool) {
-                        cfg.prizePool.total = Math.max(0, (cfg.prizePool.total || 0) - Math.round((tx.amount || 5000) * 0.7));
-                        if (useFirebase) {
-                            await dbInstance.collection('config').doc('prizePool').set(cfg.prizePool, { merge: true });
-                        }
-                    }
-                    // Gỡ đăng ký nếu là registration
                     if (tx.type === 'registration') {
                         const reg = (localDB.registrations || []).find(r => String(r.userId) === String(tx.userId) && String(r.eventId) === String(tx.eventId));
                         if (reg) {
@@ -9483,36 +9520,202 @@
             }
         }
 
-        function openSponsorModal(event) {
-            if (event) event.preventDefault();
-            if (!session) return showToast('Vui lòng đăng nhập để đồng hành cùng dự án!', 'error');
+        // Donation flow state
+        let _donationState = { step: 1, type: 'general', amount: 0, displayName: '', displayType: 'name', anonymous: false, sponsorTier: '' };
+
+        function renderDonationStep1() {
             const modal = document.getElementById('profileModalBody');
             modal.innerHTML = `
-                <h3 style="margin-bottom:12px">💖 Đồng hành & Tài trợ dự án</h3>
-                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:14px;line-height:1.4">
-                    Ý Niệm Điện Ảnh là dự án cộng đồng. Khoản đóng góp được tái đầu tư vào hoạt động của dự án, bao gồm giải thưởng, chứng nhận và chi phí vận hành. Chi tiết ngân sách được cập nhật trong báo cáo tài chính định kỳ.
+                <h3 style="margin-bottom:12px">💖 ĐỒNG HÀNH CÙNG YNĐA</h3>
+                <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:16px;line-height:1.5">
+                    Ý Niệm Điện Ảnh là một dự án cộng đồng và không bắt buộc người tham gia đóng phí. Mọi đóng góp đều hoàn toàn tự nguyện và được sử dụng theo mục đích mà bạn lựa chọn.
                 </p>
-                <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;border:1px solid var(--line);line-height:1.4">
-                    <div style="margin-bottom:6px">🌱 <b>Gói dưới 100k (Cơ bản/Đồng hành/Phát triển):</b> Vinh danh tại Bảng vàng trên Website.</div>
-                    <div>👑 <b>Gói từ 100k trở lên (Vàng/Bạch kim/Kim cương):</b> Ghi danh lên Banner dự án & Website (BTC sẽ liên hệ để nhận Logo và Tên hiển thị của bạn).</div>
+                <p style="font-size:0.85rem;color:var(--gold-light);margin-bottom:12px;font-weight:600">Bạn muốn đóng góp cho:</p>
+                <div style="display:grid;gap:10px;margin-bottom:20px">
+                    <button class="btn btn-line" style="padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;height:auto;text-align:left" onclick="_donationState.type='prize';renderDonationStep2()">
+                        <span style="font-size:0.95rem;font-weight:600">🏆 Quỹ giải thưởng</span>
+                        <span style="font-size:0.78rem;color:var(--text-muted);font-weight:400">Khoản đóng góp được đưa trực tiếp vào Quỹ giải thưởng, dành cho các thí sinh và thành viên có thành tích nổi bật.</span>
+                    </button>
+                    <button class="btn btn-line" style="padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;height:auto;text-align:left" onclick="_donationState.type='operation';renderDonationStep2()">
+                        <span style="font-size:0.95rem;font-weight:600">⚙️ Vận hành dự án</span>
+                        <span style="font-size:0.78rem;color:var(--text-muted);font-weight:400">Hỗ trợ chi phí duy trì website, máy chủ, công cụ, workshop và các chi phí cần thiết để YNĐA tiếp tục hoạt động.</span>
+                    </button>
+                    <button class="btn btn-line" style="padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;height:auto;text-align:left" onclick="_donationState.type='general';renderDonationStep2()">
+                        <span style="font-size:0.95rem;font-weight:600">💖 Tùy BTC phân bổ</span>
+                        <span style="font-size:0.78rem;color:var(--text-muted);font-weight:400">Cho phép BTC chủ động sử dụng khoản đóng góp cho nhu cầu phù hợp của dự án.</span>
+                    </button>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(10000)">🌱 Gói Cơ bản (10.000đ)</button>
-                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(20000)">🤝 Gói Đồng hành (20.000đ)</button>
-                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(50000)">🚀 Gói Phát triển (50.000đ)</button>
-                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(100000)">👑 Gói Tài trợ Vàng (100.000đ)</button>
-                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(200000)">💎 Gói Bạch kim (200.000đ)</button>
-                    <button class="btn btn-line" style="padding:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="triggerSponsor(500000)">✨ Gói Kim cương (500.000đ)</button>
-                </div>
-                <div style="text-align:center;border-top:1px solid var(--line);padding-top:16px">
-                    <label style="display:block;margin-bottom:8px;font-size:0.85rem;color:var(--gold-light)">Hoặc nhập số tiền tùy chọn (VND):</label>
-                    <div style="display:flex;gap:8px;justify-content:center">
-                        <input type="number" id="customSponsorAmount" min="5000" step="5000" placeholder="Ví dụ: 15000" class="input" style="max-width:180px;text-align:center;background:rgba(0,0,0,0.2)">
-                        <button class="btn btn-gold" onclick="triggerCustomSponsor()">Xác nhận</button>
+                <div style="border-top:1px solid var(--line);padding-top:16px;margin-top:8px">
+                    <h4 style="color:var(--gold-light);margin-bottom:12px;font-size:0.9rem">🤝 TÀI TRỢ DỰ ÁN</h4>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px">Dành cho cá nhân, tổ chức, thương hiệu muốn đồng hành ở quy mô lớn hơn.</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                        <button class="btn btn-line" style="padding:12px;font-size:0.82rem;height:auto" onclick="_donationState.type='sponsor_tier';_donationState.sponsorTier='silver';renderDonationStep2()">🥉 BẠC — 500.000đ</button>
+                        <button class="btn btn-line" style="padding:12px;font-size:0.82rem;height:auto" onclick="_donationState.type='sponsor_tier';_donationState.sponsorTier='gold';renderDonationStep2()">🥇 VÀNG — 1.000.000đ</button>
+                        <button class="btn btn-line" style="padding:12px;font-size:0.82rem;height:auto" onclick="_donationState.type='sponsor_tier';_donationState.sponsorTier='platinum';renderDonationStep2()">💎 BẠCH KIM — 2.000.000đ</button>
+                        <button class="btn btn-line" style="padding:12px;font-size:0.82rem;height:auto" onclick="_donationState.type='sponsor_tier';_donationState.sponsorTier='diamond';renderDonationStep2()">👑 KIM CƯƠNG — 3.000.000đ</button>
+                    </div>
+                    <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid var(--line)">
+                        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:8px">✨ <strong>TÀI TRỢ ĐẶC BIỆT</strong> — Trên 3.000.000đ</p>
+                        <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px">BTC sẽ liên hệ trực tiếp để trao đổi về hình thức hỗ trợ và quyền lợi phù hợp.</p>
+                        <a href="mailto:yniemdienanh@gmail.com" class="btn btn-gold" style="text-decoration:none;font-size:0.82rem">📧 Liên hệ BTC</a>
                     </div>
                 </div>
             `;
+            document.getElementById('profileModal').querySelector('.modal-box').style.maxWidth = '520px';
+        }
+
+        function renderDonationStep2() {
+            const tierAmounts = { silver: 500000, gold: 1000000, platinum: 2000000, diamond: 3000000 };
+            const tierLabels = { silver: '🥉 BẠC', gold: '🥇 VÀNG', platinum: '💎 BẠCH KIM', diamond: '👑 KIM CƯƠNG' };
+            const typeLabels = { prize: '🏆 Quỹ giải thưởng', operation: '⚙️ Vận hành dự án', general: '💖 Tùy BTC phân bổ' };
+            const typeLabel = _donationState.type === 'sponsor_tier' ? '🤝 ' + (tierLabels[_donationState.sponsorTier] || 'Tài trợ') : typeLabels[_donationState.type];
+            const fixedAmount = _donationState.type === 'sponsor_tier' ? tierAmounts[_donationState.sponsorTier] : 0;
+
+            const modal = document.getElementById('profileModalBody');
+            modal.innerHTML = `
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+                    <button class="btn btn-line" style="padding:4px 10px;font-size:0.78rem" onclick="renderDonationStep1()">← Quay lại</button>
+                    <h3 style="margin:0;font-size:1rem">Bước 2: Số tiền đóng góp</h3>
+                </div>
+                <div style="background:rgba(255,255,255,0.03);padding:10px 14px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;font-size:0.82rem">
+                    Mục đích: <strong>${typeLabel}</strong>
+                </div>
+                ${fixedAmount ? `
+                    <p style="font-size:0.9rem;color:var(--gold-light);margin-bottom:16px;text-align:center">Số tiền tài trợ: <strong>${fixedAmount.toLocaleString('vi-VN')}đ</strong></p>
+                    <div style="text-align:center;margin-bottom:16px">
+                        <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Quyền lợi ${tierLabels[_donationState.sponsorTier]}:</p>
+                        <ul style="text-align:left;font-size:0.78rem;color:var(--text-muted);line-height:1.6;max-width:340px;margin:0 auto">
+                            ${_donationState.sponsorTier === 'silver' ? '<li>Vinh danh trên Website</li><li>Ghi tên/nickname trên Bảng vàng</li><li>Thư/giấy tri ân nhà tài trợ</li>' : ''}
+                            ${_donationState.sponsorTier === 'gold' ? '<li>Tất cả quyền lợi Bạc</li><li>Logo/tên hiển thị nổi bật trên Website</li><li>Vinh danh trong nội dung tri ân</li>' : ''}
+                            ${_donationState.sponsorTier === 'platinum' ? '<li>Tất cả quyền lợi Vàng</li><li>Logo/tên trên Banner Nhà đồng hành</li><li>Vị trí hiển thị nổi bật hơn</li><li>Vinh danh trong tổng kết mùa</li>' : ''}
+                            ${_donationState.sponsorTier === 'diamond' ? '<li>Tất cả quyền lợi Bạch kim</li><li>Vị trí nổi bật trên Banner Nhà đồng hành</li><li>Tên/nickname/logo/avatar theo lựa chọn</li><li>Vinh danh nổi bật trong tổng kết</li><li>Thư/giấy tri ân đặc biệt</li>' : ''}
+                        </ul>
+                    </div>
+                    <button class="btn btn-gold" style="width:100%" onclick="_donationState.amount=${fixedAmount};renderDonationStep3()">Tiếp theo →</button>
+                ` : `
+                    <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">Chọn mức đóng góp hoặc nhập số tiền tùy ý:</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+                        ${[10000, 20000, 50000, 100000, 200000, 500000].map(a => `
+                            <button class="btn btn-line" style="padding:12px;font-size:0.85rem" onclick="_donationState.amount=${a};renderDonationStep3()">${a.toLocaleString('vi-VN')}đ</button>
+                        `).join('')}
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:16px">
+                        <input type="number" id="customDonateAmount" min="1000" placeholder="Nhập số tiền (VND)" class="input" style="flex:1;text-align:center">
+                        <button class="btn btn-gold" onclick="var a=parseInt(document.getElementById('customDonateAmount')?.value);if(!a||a<1000)return showToast('Vui lòng nhập số tiền hợp lệ','error');_donationState.amount=a;renderDonationStep3()">Xác nhận</button>
+                    </div>
+                `}
+            `;
+            document.getElementById('profileModal').querySelector('.modal-box').style.maxWidth = '480px';
+        }
+
+        function renderDonationStep3() {
+            const tierLabels = { silver: '🥉 BẠC', gold: '🥇 VÀNG', platinum: '💎 BẠCH KIM', diamond: '👑 KIM CƯƠNG' };
+            const typeLabels = { prize: '🏆 Quỹ giải thưởng', operation: '⚙️ Vận hành dự án', general: '💖 Tùy BTC phân bổ' };
+            const typeLabel = _donationState.type === 'sponsor_tier' ? '🤝 ' + (tierLabels[_donationState.sponsorTier] || 'Tài trợ') : typeLabels[_donationState.type];
+
+            const modal = document.getElementById('profileModalBody');
+            modal.innerHTML = `
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+                    <button class="btn btn-line" style="padding:4px 10px;font-size:0.78rem" onclick="renderDonationStep2()">← Quay lại</button>
+                    <h3 style="margin:0;font-size:1rem">Bước 3: Thông tin hiển thị</h3>
+                </div>
+                <div style="background:rgba(255,255,255,0.03);padding:10px 14px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;font-size:0.82rem">
+                    Mục đích: <strong>${typeLabel}</strong> · Số tiền: <strong>${_donationState.amount.toLocaleString('vi-VN')}đ</strong>
+                </div>
+                <p style="font-size:0.85rem;color:var(--gold-light);margin-bottom:12px">Bạn muốn được vinh danh như thế nào?</p>
+                <div style="display:grid;gap:8px;margin-bottom:16px">
+                    <button class="btn btn-line" style="padding:10px;text-align:left;height:auto" onclick="_donationState.displayType='name';_donationState.anonymous=false;document.querySelectorAll('.display-opt').forEach(b=>b.style.borderColor='var(--line)');this.style.borderColor='var(--gold)';document.getElementById('displayNameGroup').style.display='block';document.getElementById('displayNameInput').placeholder='Nhập tên thật của bạn'">👤 Tên thật</button>
+                    <button class="btn btn-line display-opt" style="padding:10px;text-align:left;height:auto" onclick="_donationState.displayType='nickname';_donationState.anonymous=false;document.querySelectorAll('.display-opt').forEach(b=>b.style.borderColor='var(--line)');this.style.borderColor='var(--gold)';document.getElementById('displayNameGroup').style.display='block';document.getElementById('displayNameInput').placeholder='Nhập nickname của bạn'">🎭 Nickname</button>
+                    <button class="btn btn-line display-opt" style="padding:10px;text-align:left;height:auto" onclick="_donationState.displayType='logo';_donationState.anonymous=false;document.querySelectorAll('.display-opt').forEach(b=>b.style.borderColor='var(--line)');this.style.borderColor='var(--gold)';document.getElementById('displayNameGroup').style.display='block';document.getElementById('displayNameInput').placeholder='Tên tổ chức/cá nhân';showToast('BTC sẽ liên hệ để nhận Logo sau khi xác nhận đóng góp.','info')">🖼️ Logo</button>
+                    <button class="btn btn-line display-opt" style="padding:10px;text-align:left;height:auto" onclick="_donationState.displayType='avatar';_donationState.anonymous=false;document.querySelectorAll('.display-opt').forEach(b=>b.style.borderColor='var(--line)');this.style.borderColor='var(--gold)';document.getElementById('displayNameGroup').style.display='block';document.getElementById('displayNameInput').placeholder='Nhập tên hiển thị';showToast('BTC sẽ liên hệ để nhận Avatar sau khi xác nhận đóng góp.','info')">🖼️ Avatar</button>
+                    <button class="btn btn-line display-opt" style="padding:10px;text-align:left;height:auto" onclick="_donationState.displayType='';_donationState.anonymous=true;document.querySelectorAll('.display-opt').forEach(b=>b.style.borderColor='var(--line)');this.style.borderColor='var(--gold)';document.getElementById('displayNameGroup').style.display='none'">🙈 Ẩn danh</button>
+                </div>
+                <div id="displayNameGroup" style="display:none;margin-bottom:16px">
+                    <label style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px;display:block">Tên hiển thị:</label>
+                    <input id="displayNameInput" type="text" class="input" placeholder="Nhập tên của bạn" style="width:100%">
+                </div>
+                <button class="btn btn-gold" style="width:100%" onclick="proceedToConfirm()">Tiếp theo →</button>
+            `;
+            document.getElementById('profileModal').querySelector('.modal-box').style.maxWidth = '480px';
+        }
+
+        function proceedToConfirm() {
+            const nameInput = document.getElementById('displayNameInput');
+            if (!_donationState.anonymous) {
+                _donationState.displayName = nameInput ? nameInput.value.trim() : '';
+                if (!_donationState.displayName) {
+                    return showToast('Vui lòng nhập tên hiển thị hoặc chọn Ẩn danh.', 'error');
+                }
+            } else {
+                _donationState.displayName = '';
+            }
+            renderDonationStep4();
+        }
+
+        function renderDonationStep4() {
+            const tierLabels = { silver: '🥉 BẠC — 500.000đ', gold: '🥇 VÀNG — 1.000.000đ', platinum: '💎 BẠCH KIM — 2.000.000đ', diamond: '👑 KIM CƯƠNG — 3.000.000đ' };
+            const typeLabels = { prize: '🏆 Quỹ giải thưởng', operation: '⚙️ Vận hành dự án', general: '💖 Tùy BTC phân bổ' };
+            const typeLabel = _donationState.type === 'sponsor_tier' ? '🤝 ' + (tierLabels[_donationState.sponsorTier] || 'Tài trợ') : typeLabels[_donationState.type];
+            const displayInfo = _donationState.anonymous ? '🙈 Ẩn danh' : (_donationState.displayName || 'Chưa nhập');
+
+            const modal = document.getElementById('profileModalBody');
+            modal.innerHTML = `
+                <h3 style="margin-bottom:16px">📝 Xác nhận đóng góp</h3>
+                <div style="background:rgba(255,255,255,0.03);padding:20px;border-radius:12px;border:1px solid var(--line);margin-bottom:20px">
+                    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+                        <span style="color:var(--text-muted)">Mục đích</span>
+                        <span style="font-weight:600">${typeLabel}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+                        <span style="color:var(--text-muted)">Số tiền</span>
+                        <span style="color:var(--gold-light);font-weight:600;font-size:1.1rem">${_donationState.amount.toLocaleString('vi-VN')}đ</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:10px 0">
+                        <span style="color:var(--text-muted)">Tên hiển thị</span>
+                        <span style="font-weight:600">${esc(displayInfo)}</span>
+                    </div>
+                </div>
+                <button class="btn btn-gold" style="width:100%;margin-bottom:8px" onclick="finalizeDonation()">✅ Xác nhận & Thanh toán</button>
+                <button class="btn btn-line" style="width:100%" onclick="renderDonationStep3()">← Quay lại</button>
+            `;
             document.getElementById('profileModal').querySelector('.modal-box').style.maxWidth = '460px';
+        }
+
+        async function finalizeDonation() {
+            const amount = _donationState.amount;
+            if (amount < 1000) return showToast('Số tiền không hợp lệ.', 'error');
+
+            const tierAmounts = { silver: 500000, gold: 1000000, platinum: 2000000, diamond: 3000000 };
+            let eventTitle = 'Đồng hành cùng YNĐA';
+            let targetId = 'sponsor';
+
+            if (_donationState.type === 'sponsor_tier') {
+                eventTitle = `Tài trợ ${_donationState.sponsorTier.toUpperCase()}`;
+            } else if (_donationState.type === 'prize') {
+                eventTitle = 'Donate Quỹ giải thưởng';
+            } else if (_donationState.type === 'operation') {
+                eventTitle = 'Donate Vận hành dự án';
+            } else {
+                eventTitle = 'Đóng góp chung';
+            }
+
+            openPaymentModal('sponsor', {
+                eventId: targetId,
+                eventTitle: eventTitle,
+                customAmount: amount,
+                donationType: _donationState.type === 'sponsor_tier' ? 'sponsor' : _donationState.type,
+                sponsorTier: _donationState.sponsorTier,
+                displayName: _donationState.displayName,
+                displayType: _donationState.displayType,
+                anonymous: _donationState.anonymous
+            });
+        }
+
+        function openSponsorModal(event) {
+            if (event) event.preventDefault();
+            if (!session) return showToast('Vui lòng đăng nhập để đồng hành cùng dự án!', 'error');
+            _donationState = { step: 1, type: 'general', amount: 0, displayName: '', displayType: 'name', anonymous: false, sponsorTier: '' };
+            renderDonationStep1();
             openModal('profileModal');
         }
 
@@ -9520,7 +9723,9 @@
 
         function triggerSponsor(amount) {
             if (amount < 5000) return showToast('Số tiền tối thiểu là 5.000đ', 'error');
-            openPaymentModal('sponsor', { eventId: 'sponsor', eventTitle: 'Tài trợ dự án', customAmount: amount });
+            _donationState = { step: 3, type: 'general', amount, displayName: session?.name || '', displayType: 'name', anonymous: false, sponsorTier: '' };
+            renderDonationStep3();
+            openModal('profileModal');
         }
 
         window.triggerSponsor = triggerSponsor;
@@ -10125,9 +10330,37 @@ ${groupInviteHtml}
             applyEmailTemplate();
         }
 
+        function formatEmailBodyToHTML() {
+            const bodyEl = document.getElementById('emBody');
+            if (!bodyEl) return;
+            let text = bodyEl.value.trim();
+            if (!text) return showToast('Không có nội dung để định dạng.', 'warning');
+            if (/<[a-z][\s\S]*>/i.test(text)) {
+                if (!confirm('Nội dung có vẻ đã là HTML. Bạn có muốn định dạng lại không?')) return;
+            }
+            text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            text = text
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/__(.+?)__/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/_(.+?)_/g, '<em>$1</em>')
+                .replace(/(https?:\/\/[^\s<>"']+)/g, '<a href="$1" style="color:#e4b866">$1</a>');
+            const paragraphs = text.split(/\n\s*\n/);
+            const html = paragraphs.map(function(p) {
+                p = p.trim();
+                if (!p) return '';
+                p = p.replace(/\n/g, '<br>');
+                return '<p>' + p + '</p>';
+            }).join('\n');
+            bodyEl.value = html;
+            showToast('Đã chuyển sang định dạng HTML!', 'success');
+        }
+
         async function generateEmailWithAI() {
             const app = window.currentEmailApp;
             if (!app) return showToast('Không xác định được ứng viên.', 'error');
+            const aiToggle = document.getElementById('emAiToggle');
+            if (aiToggle && !aiToggle.checked) return showToast('Vui lòng bật AI để sử dụng tính năng soạn thư tự động.', 'warning');
             const customDescription = document.getElementById('emCustomDescription').value.trim();
             const emailType = document.getElementById('emTemplateSelect').value || (customDescription ? 'custom' : 'approve');
             const aiButton = document.getElementById('emAiButton');

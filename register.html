@@ -729,6 +729,24 @@
         let googleUserTemp = null;
         let currentTabId = '';
         let recruitmentSettings = { presidentOpen:false, cofounderOpen:false, coreOpen:false };
+        let recruitmentFilledByDept = null;
+        let recruitmentDataKnown = false;
+
+        function canonDept(value) {
+            const s = String(value || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .replace(/^ban\s+/, '');
+            if (s.includes('media') || s.includes('thiet ke') || s.includes('edit')) return 'media';
+            if (s.includes('nhan su') || s === 'hr') return 'nhan su';
+            if (s.includes('truyen thong') || s.includes('pr') || s.includes('marketing') || s.includes('mkt')) return 'truyen thong';
+            if (s.includes('noi dung')) return 'noi dung';
+            if (s.includes('duyet bai')) return 'duyet bai';
+            return s;
+        }
 
         function isRecruitmentOpen(type) {
             if (type === 'president') return recruitmentSettings.presidentOpen !== false;
@@ -1157,6 +1175,22 @@
 
         async function fetchBTCUsers() {
             activeBTCUsers = [];
+            const endpoints = ['/api/recruitment/positions', 'https://yniemdienanh.vercel.app/api/recruitment/positions'];
+            for (const url of endpoints) {
+                try {
+                    const ctrl = new AbortController();
+                    const timer = setTimeout(() => ctrl.abort(), 8000);
+                    const resp = await fetch(url, { signal: ctrl.signal });
+                    clearTimeout(timer);
+                    if (!resp.ok) continue;
+                    const data = await resp.json();
+                    recruitmentFilledByDept = (data && data.filled) || {};
+                    recruitmentDataKnown = true;
+                    break;
+                } catch (err) {
+                    console.warn("Không tải được trạng thái vị trí từ server:", err);
+                }
+            }
             if (useFirebase && dbInstance) {
                 try {
                     const snap = await dbInstance.collection('users').get();
@@ -1172,6 +1206,7 @@
                             });
                         }
                     });
+                    if (activeBTCUsers.length) recruitmentDataKnown = true;
                 } catch (err) {
                     console.warn("Public read of users failed. Falling back to localDB:", err);
                     activeBTCUsers = (localDB && localDB.users || []).filter(u => u.role === 'organizer' || u.role === 'admin');
@@ -1214,8 +1249,10 @@
             const filledConfig = (recruitmentSettings && recruitmentSettings.filledPositions) || {};
             const deptFilled = filledConfig[selectedDept] || filledConfig[targetDeptNorm] || {};
 
-            const isViceLeadFull = !!viceLeadUser || !!deptFilled.vice_lead || !!(recruitmentSettings && recruitmentSettings['vice_full_' + selectedDept]);
-            const isCoreFull = !!coreUser || !!deptFilled.core || recruitmentSettings.coreOpen === false || !!(recruitmentSettings && recruitmentSettings['core_full_' + selectedDept]);
+            const apiFilled = (recruitmentFilledByDept && (recruitmentFilledByDept[canonDept(selectedDept)] || recruitmentFilledByDept[selectedDept] || recruitmentFilledByDept[targetDeptNorm])) || {};
+
+            const isViceLeadFull = !!viceLeadUser || !!apiFilled.vice_lead || !!deptFilled.vice_lead || !!(recruitmentSettings && recruitmentSettings['vice_full_' + selectedDept]);
+            const isCoreFull = !!coreUser || !!apiFilled.core || !!deptFilled.core || recruitmentSettings.coreOpen === false || !!(recruitmentSettings && recruitmentSettings['core_full_' + selectedDept]);
 
             // Update vice lead option
             if (isViceLeadFull) {
@@ -1228,8 +1265,12 @@
                 optViceLead.style.color = "";
             }
 
-            // Update core option
-            if (isCoreFull) {
+            // Update core option — mặc định đóng khi chưa xác minh được dữ liệu
+            if (!recruitmentDataKnown) {
+                optCore.disabled = true;
+                optCore.text = "Core Member (Tạm đóng nhận đơn)";
+                optCore.style.color = "rgba(255,255,255,0.4)";
+            } else if (isCoreFull) {
                 optCore.disabled = true;
                 optCore.text = "Core Member (Đã tuyển - Hết slot)";
                 optCore.style.color = "rgba(255,255,255,0.4)";

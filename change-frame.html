@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thay Frame — Ý Niệm Điện Ảnh</title>
+    <link rel="icon" type="image/png" href="/Logo/avtar.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy-darkest: #050c14;
+            --navy-card: #122438;
+            --gold: #e4b866;
+            --gold-light: #f3dba3;
+            --text-light: #f8fafc;
+            --text-muted: #aab6c5;
+        }
+        body {
+            margin: 0;
+            background: var(--navy-darkest);
+            color: var(--text-light);
+            font-family: 'Be Vietnam Pro', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        p {
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .container {
+            background: var(--navy-card);
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 20px;
+            background: #000;
+            cursor: grab;
+            touch-action: none;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        .btn {
+            background: var(--gold);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 8px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .btn-line {
+            background: transparent;
+            color: var(--gold);
+            border: 1px solid var(--gold);
+        }
+        .btn-line:hover {
+            background: rgba(228, 184, 102, 0.1);
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        input[type="range"] {
+            width: 200px;
+            accent-color: var(--gold);
+        }
+        .instruction {
+            font-size: 0.85rem;
+            color: var(--gold-light);
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Thay Frame</h1>
+    <p>Nơi Ý Tưởng Cất Cánh</p>
+    
+    <div class="container">
+        <label class="btn btn-line" style="cursor:pointer">
+            Tải ảnh của bạn lên
+            <input type="file" id="uploadInput" accept="image/*">
+        </label>
+        
+        <div class="slider-container">
+            <span style="font-size: 0.9rem;">Thu phóng:</span>
+            <input type="range" id="scaleSlider" min="0.1" max="3" step="0.01" value="1">
+        </div>
+
+        <div class="instruction">*(Bạn có thể kéo thả ảnh để di chuyển)*</div>
+
+        <!-- Canvas will be sized to the frame's native resolution -->
+        <canvas id="canvas" width="1080" height="1080"></canvas>
+        
+        <div class="controls">
+            <button class="btn" id="downloadBtn">Tải ảnh xuống</button>
+            <button class="btn btn-line" onclick="window.history.back()">Quay lại</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const uploadInput = document.getElementById('uploadInput');
+        const scaleSlider = document.getElementById('scaleSlider');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let bgImage = new Image();
+        let frameImage = new Image();
+        let userImage = null;
+        
+        let userX = canvas.width / 2;
+        let userY = canvas.height / 2;
+        let userScale = 1;
+        let isDragging = false;
+        let startX, startY;
+
+        // Fetch user from session if they are logged in to pre-fill avatar
+        try {
+            const sessionData = localStorage.getItem('ynda_session');
+            if (sessionData) {
+                const session = JSON.parse(sessionData);
+                if (session && session.photoUrl) {
+                    loadUserImage(session.photoUrl);
+                }
+            }
+        } catch(e) {
+            console.error(e);
+        }
+
+        // Load frame images
+        bgImage.src = 'frame/nền%20frame.png';
+        frameImage.src = 'frame/Frame.png';
+
+        Promise.all([
+            new Promise(resolve => bgImage.onload = () => {
+                canvas.width = bgImage.width || 1080;
+                canvas.height = bgImage.height || 1080;
+                resolve();
+            }),
+            new Promise(resolve => frameImage.onload = resolve)
+        ]).then(() => {
+            userX = canvas.width / 2;
+            userY = canvas.height / 2;
+            draw();
+        });
+
+        uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    loadUserImage(event.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function loadUserImage(src) {
+            userImage = new Image();
+            userImage.crossOrigin = "Anonymous";
+            userImage.onload = () => {
+                userX = canvas.width / 2;
+                userY = canvas.height / 2;
+                // Auto scale to cover
+                const scale = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
+                userScale = scale;
+                scaleSlider.value = scale;
+                draw();
+            };
+            userImage.src = src;
+        }
+
+        scaleSlider.addEventListener('input', (e) => {
+            userScale = parseFloat(e.target.value);
+            draw();
+        });
+
+        // Dragging logic
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            const pos = getPointerPos(e);
+            startX = pos.x - userX;
+            startY = pos.y - userY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging && userImage) {
+                const pos = getPointerPos(e);
+                userX = pos.x - startX;
+                userY = pos.y - startY;
+                draw();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch support
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            startX = pos.x - userX;
+            startY = pos.y - userY;
+            isDragging = true;
+        }, {passive: false});
+
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging && userImage) {
+                e.preventDefault();
+                const pos = getPointerPos(e);
+                userX = pos.x - startX;
+                userY = pos.y - startY;
+                draw();
+            }
+        }, {passive: false});
+
+        window.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 1. Draw bottom bg
+            if (bgImage.complete) {
+                ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+            }
+            
+            // 2. Draw user photo
+            if (userImage && userImage.complete) {
+                ctx.save();
+                ctx.translate(userX, userY);
+                ctx.scale(userScale, userScale);
+                ctx.drawImage(userImage, -userImage.width / 2, -userImage.height / 2);
+                ctx.restore();
+            }
+            
+            // 3. Draw top frame
+            if (frameImage.complete) {
+                ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'Avatar-Y-Niem-Dien-Anh.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>

@@ -594,6 +594,9 @@ app.get('/api/config', (req, res) => {
     res.json({ turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || '' });
 });
 
+// Trạng thái vị trí Core/Phó ban theo ban — public, phục vụ trang đăng ký.
+app.get('/api/recruitment/positions', require('./api/recruitment/positions'));
+
 // Homepage content API — single source of truth for AI + manual edits
 const CONTENT_FILE = path.join(__dirname, 'homepage-content.json');
 

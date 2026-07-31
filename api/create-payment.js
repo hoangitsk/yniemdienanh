@@ -194,6 +194,29 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: "Thiếu idToken, type hoặc targetId." });
         }
 
+        // New donation fields (only for sponsor type)
+        const donationType = String(body.donationType || 'general').trim().toLowerCase();
+        const sponsorTier = String(body.sponsorTier || '').trim().toLowerCase();
+        const displayName = String(body.displayName || '').trim().slice(0, 200);
+        const displayType = String(body.displayType || 'name').trim().toLowerCase();
+        const anonymous = body.anonymous === true;
+
+        if (type === 'sponsor') {
+            const validDonationTypes = ['prize', 'operation', 'general'];
+            if (!validDonationTypes.includes(donationType)) {
+                return res.status(400).json({ error: "Donation type không hợp lệ. Chấp nhận: prize, operation, general." });
+            }
+            if (sponsorTier) {
+                const validTiers = ['silver', 'gold', 'platinum', 'diamond', 'special'];
+                if (!validTiers.includes(sponsorTier)) {
+                    return res.status(400).json({ error: "Sponsor tier không hợp lệ." });
+                }
+            }
+            if (!displayName && !anonymous) {
+                return res.status(400).json({ error: "Vui lòng cung cấp tên hiển thị hoặc chọn ẩn danh." });
+            }
+        }
+
         // Paid voting is retired. Votes are recorded by the trusted vote
         // endpoint, never by a payment entitlement.
         if (type === 'vote') {
@@ -376,7 +399,12 @@ module.exports = async (req, res) => {
             targetId: String(targetId),
             amount: amountNum,
             eventTitle,
-            submissionTitle
+            submissionTitle,
+            donationType: type === 'sponsor' ? donationType : undefined,
+            sponsorTier: type === 'sponsor' && sponsorTier ? sponsorTier : undefined,
+            displayName: type === 'sponsor' ? displayName : undefined,
+            displayType: type === 'sponsor' ? displayType : undefined,
+            anonymous: type === 'sponsor' ? anonymous : undefined
         });
         if (reservation.state === 'ready') {
             return res.json({
@@ -500,7 +528,12 @@ module.exports = async (req, res) => {
             paymentIntentId: intentId,
             pricingSource: type === 'sponsor' ? 'validated-user-choice' : 'firestore',
             checkoutUrl: paymentLink.checkoutUrl,
-            qrCode: paymentLink.qrCode || ''
+            qrCode: paymentLink.qrCode || '',
+            donationType: type === 'sponsor' ? donationType : undefined,
+            sponsorTier: type === 'sponsor' && sponsorTier ? sponsorTier : undefined,
+            displayName: type === 'sponsor' ? displayName : undefined,
+            displayType: type === 'sponsor' ? displayType : undefined,
+            anonymous: type === 'sponsor' ? anonymous : undefined
         };
 
         // Persist the transaction and publish the reusable intent in one atomic

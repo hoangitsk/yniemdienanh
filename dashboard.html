@@ -4938,6 +4938,7 @@
                             </div>
                             <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">
                                 <button class="btn btn-gold btn-sm" onclick="openEditProfileModal()">ðŸ“ Chá»‰nh sá»­a há»“ sÆ¡</button>
+                                <button class="btn btn-gold btn-sm" style="background:var(--gold-light); color:#000; margin-left: 8px" onclick="window.location.href='change-frame.html'">🖼️ Thay frame</button>
                                 <button class="btn btn-line btn-sm" onclick="changePassword()">ðŸ”‘ Äá»•i máº­t kháº©u</button>
                                 <button class="btn btn-line btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteAccount()">ðŸ—‘ XÃ³a tÃ i khoáº£n</button>
                             </div>
@@ -7952,7 +7953,7 @@
                     ${u.intro ? `<p style="margin-top:6px;color:var(--text-muted);font-size:0.85rem;font-style:italic">"${esc(u.intro)}"</p>` : ''}
                     <p style="margin-top:6px;color:var(--text-muted);font-size:0.75rem">Tham gia tá»«: ${u.createdAt || 'KhÃ´ng rÃµ'}</p>
                     
-                    ${isOwn ? `<button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="closeModal('profileModal');openEditProfileModal()">ðŸ“ Chá»‰nh sá»­a há»“ sÆ¡</button>` : ''}
+                    ${isOwn ? `<button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="closeModal('profileModal');openEditProfileModal()">ðŸ“ Chá»‰nh sá»­a há»“ sÆ¡</button> <button class="btn btn-gold btn-sm" style="margin-top:12px; margin-left:8px; background:var(--gold-light); color:#000" onclick="window.location.href='change-frame.html'">🖼️ Thay frame</button>` : ''}
                 </div>
                 ${(u.awards || []).length > 0 ? `
                     <div style="margin-bottom:16px;padding:0 4px">

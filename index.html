@@ -2797,7 +2797,6 @@
                 <a href="#" onclick="event.preventDefault();showPage('home');scrollTo(0,0);closeMobileMenu()" role="button">Trang chủ</a>
                 <a href="#" onclick="event.preventDefault();goSection('events');closeMobileMenu()" role="button">Sự kiện</a>
                 <a href="#" onclick="event.preventDefault();showPage('voting');closeMobileMenu()" role="button">Bình chọn</a>
-                <a href="/community">Cộng đồng</a>
                 <a href="/vinh-danh">Vinh danh</a>
                 <a href="/verify">Tra cứu chứng nhận</a>
                 <a href="/schedule">Lịch họp & PV</a>
@@ -5268,6 +5267,7 @@
         const TABS = {
             overview: { icon: '📊', label: 'Tổng quan', roles: ['admin', 'organizer', 'member'] },
             profile: { icon: '👤', label: 'Hồ sơ của tôi', roles: ['admin', 'organizer', 'member'] },
+            changeFrame: { icon: '🖼️', label: 'Thay frame', roles: ['admin', 'organizer', 'member'] },
             tasks: { icon: '✅', label: 'Bảng Công việc', roles: ['admin', 'organizer', 'member'] },
             staffscore: { icon: '⭐', label: 'Điểm đóng góp BTC', roles: ['admin', 'organizer', 'member'] },
             plan: { icon: '🗓️', label: 'Lộ trình 3 tháng', roles: ['admin', 'organizer'] },
@@ -5323,6 +5323,7 @@
             const isOrg = ['admin', 'organizer'].includes(session.role);
             
             const renderers = {
+                changeFrame() { window.location.href = 'change-frame.html'; },
                 overview() {
                     const myTasks = d.tasks.filter(t => t.assignee === session.name && t.status !== 'done').length;
                     const cfg = d.config || {};

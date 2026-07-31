@@ -702,6 +702,7 @@ app.use('/api', (req, res) => {
 app.use('/Logo', express.static(path.join(__dirname, 'Logo')));
 app.use('/Kế hoạch', express.static(path.join(__dirname, 'Kế hoạch')));
 app.use('/js', express.static(path.join(__dirname, 'js')));
+app.use('/frame', express.static(path.join(__dirname, 'frame')));
 
 // SPA routing fallback
 app.get('/payment-success', (req, res) => {
@@ -748,8 +749,20 @@ app.get('/schedule/:code', (req, res) => {
     res.sendFile(path.join(__dirname, 'schedule.html'));
 });
 
+app.get('/change-frame.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'change-frame.html'));
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+const staticHtmlPages = ['index.html', 'dashboard.html', 'community.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'privacy.html', 'terms.html', 'change-frame.html'];
+app.get('/:page.html', (req, res, next) => {
+    if (staticHtmlPages.includes(req.params.page + '.html')) {
+        return res.sendFile(path.join(__dirname, req.params.page + '.html'));
+    }
+    next();
 });
 
 app.get('*', (req, res) => {

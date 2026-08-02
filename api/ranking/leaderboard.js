@@ -11,21 +11,45 @@ function isCore(role) {
   return r.includes('core') || r.includes('btc') || r.includes('ban tổ chức') || r.includes('trưởng') || r.includes('phó') || r.includes('vice') || r.includes('head') || r.includes('lead');
 }
 
+function colIndex(headerRow, ...aliases) {
+  if (!Array.isArray(headerRow)) return -1;
+  const normalized = headerRow.map(h => norm(h));
+  for (let i = 0; i < normalized.length; i++) {
+    if (aliases.some(a => normalized[i] === a)) return i;
+  }
+  return -1;
+}
+
+function cell(row, idx) {
+  return row && idx >= 0 && idx < row.length ? String(row[idx] || '').trim() : '';
+}
+
 async function readMembers(sid) {
-  const raw = await getRows(sid, "'Thành viên'!A1:G1000").catch(() => []);
+  const raw = await getRows(sid, "'Thành viên'!A1:H1000").catch(() => []);
+  if (!raw.length) return [];
+  const header = raw[0];
+  const iName = colIndex(header, 'họ và tên', 'tên');
+  if (iName < 0) return [];
+  const iDept = colIndex(header, 'ban');
+  const iRole = colIndex(header, 'vai trò');
+  const iTitle = colIndex(header, 'chức danh', 'chuc danh', 'vị trí');
+  const iEmail = colIndex(header, 'email');
+  const iPhone = colIndex(header, 'sđt', 'sdt', 'số điện thoại', 'điện thoại');
+  const iNote = colIndex(header, 'ghi chú');
+
   const members = [];
-  for (const row of raw) {
-    if (!row || row.length < 2) continue;
-    const name = String(row[1] || '').trim();
-    if (!name) continue;
-    if (norm(name) === 'họ và tên' || norm(name) === 'tên' || norm(name) === 'stt') continue;
+  for (let r = 1; r < raw.length; r++) {
+    const row = raw[r];
+    const name = cell(row, iName);
+    if (!name || norm(name) === 'stt' || norm(name) === 'tên') continue;
     members.push({
       name,
-      dept: String(row[2] || '').trim(),
-      role: String(row[3] || '').trim(),
-      email: String(row[4] || '').trim(),
-      phone: String(row[5] || '').trim(),
-      note: String(row[6] || '').trim()
+      dept: cell(row, iDept),
+      role: cell(row, iRole),
+      title: cell(row, iTitle),
+      email: cell(row, iEmail),
+      phone: cell(row, iPhone),
+      note: cell(row, iNote)
     });
   }
   return members;
@@ -33,20 +57,27 @@ async function readMembers(sid) {
 
 async function readPoints(sid) {
   const raw = await getRows(sid, "'Điểm'!A1:E1000").catch(() => []);
+  if (!raw.length) return [];
+  const header = raw[0];
+  const iName = colIndex(header, 'họ và tên', 'tên');
+  const iPts = colIndex(header, 'số điểm', 'điểm');
+  if (iName < 0 || iPts < 0) return [];
+  const iReason = colIndex(header, 'lý do');
+  const iDate = colIndex(header, 'ngày');
+
   const points = [];
-  for (const row of raw) {
-    if (!row || row.length < 3) continue;
-    const name = String(row[1] || '').trim();
-    if (!name) continue;
-    if (norm(name) === 'họ và tên' || norm(name) === 'tên' || norm(name) === 'stt') continue;
-    const val = String(row[2] || '0').replace(/[^\d.-]/g, '');
+  for (let r = 1; r < raw.length; r++) {
+    const row = raw[r];
+    const name = cell(row, iName);
+    if (!name || norm(name) === 'stt' || norm(name) === 'tên') continue;
+    const val = cell(row, iPts).replace(/[^\d.-]/g, '');
     const pts = parseFloat(val);
     if (isNaN(pts) || pts <= 0) continue;
     points.push({
       name,
       points: pts,
-      reason: String(row[3] || '').trim(),
-      date: String(row[4] || '').trim()
+      reason: cell(row, iReason),
+      date: cell(row, iDate)
     });
   }
   return points;
@@ -99,13 +130,14 @@ module.exports = async (req, res) => {
         name: m.name,
         dept: m.dept,
         role: m.role,
+        title: m.title,
         email: m.email,
         phone: m.phone,
         note: m.note,
         totalPoints: Math.round(pt.total * 10) / 10,
         pointEntries: pt.count,
         reasons: pt.reasons,
-        group: isCore(m.role) ? 'core' : 'mem'
+        group: isCore(m.role) || isCore(m.title) ? 'core' : 'mem'
       });
     }
     for (const p of points) {
@@ -117,6 +149,7 @@ module.exports = async (req, res) => {
         name: p.name,
         dept: '',
         role: '',
+        title: '',
         email: '',
         phone: '',
         note: '',
@@ -131,6 +164,7 @@ module.exports = async (req, res) => {
       .sort((a, b) => b.totalPoints - a.totalPoints || a.name.localeCompare(b.name, 'vi'))
       .map((item, i) => ({ ...item, rank: i + 1 }));
 
+    const all = rank(allEntries);
     const core = rank(allEntries.filter(e => e.group === 'core'));
     const mem = rank(allEntries.filter(e => e.group === 'mem'));
 
@@ -139,6 +173,7 @@ module.exports = async (req, res) => {
       updatedAt: new Date().toISOString(),
       spreadsheetId: sid,
       summary: { totalMembers: allEntries.length, core: core.length, mem: mem.length },
+      all,
       core,
       mem
     });

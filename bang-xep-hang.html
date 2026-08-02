@@ -72,7 +72,8 @@
         <p class="lead">Xếp hạng theo tổng điểm đóng góp của các thành viên và Ban Tổ Chức. Điểm được cập nhật mỗi khi cộng điểm vào Google Sheet.</p>
 
         <div class="tabs">
-            <button class="tab active" data-group="mem" onclick="switchGroup('mem')">👥 Thành viên <span class="count" id="countMem"></span></button>
+            <button class="tab active" data-group="all" onclick="switchGroup('all')">🏆 Overall Ranking <span class="count" id="countAll"></span></button>
+            <button class="tab" data-group="mem" onclick="switchGroup('mem')">👥 Thành viên <span class="count" id="countMem"></span></button>
             <button class="tab" data-group="core" onclick="switchGroup('core')">⭐ Ban Tổ Chức <span class="count" id="countCore"></span></button>
         </div>
 
@@ -87,7 +88,7 @@
     <footer>Ý Niệm Điện Ảnh · “Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức.”</footer>
 
     <script>
-        let currentGroup = 'mem';
+        let currentGroup = 'all';
         let cached = null;
 
         function esc(s) {
@@ -137,7 +138,9 @@
                 '<div class="row head"><div>Hạng</div><div>Thành viên</div><div>Ban</div><div>Điểm</div></div>' +
                 list.map(function(item) {
                     const metaParts = [];
-                    if (item.role) metaParts.push(item.role);
+                    if (item.title) metaParts.push(item.title);
+                    if (item.role && !item.title) metaParts.push(item.role);
+                    if (currentGroup === 'all') metaParts.push(item.group === 'core' ? '⭐ BTC' : '👥 Thành viên');
                     if (item.pointEntries) metaParts.push(item.pointEntries + ' lần cộng điểm');
                     if (item.reasons && item.reasons.length) metaParts.push(item.reasons.join(', '));
                     return '<div class="row">' +
@@ -150,7 +153,8 @@
         }
 
         function render(data) {
-            const list = currentGroup === 'core' ? data.core : data.mem;
+            const list = currentGroup === 'core' ? data.core : currentGroup === 'all' ? data.all : data.mem;
+            document.getElementById('countAll').textContent = data.summary ? '(' + data.summary.totalMembers + ')' : '';
             document.getElementById('countMem').textContent = data.summary ? '(' + data.summary.mem + ')' : '';
             document.getElementById('countCore').textContent = data.summary ? '(' + data.summary.core + ')' : '';
             document.getElementById('rankContent').innerHTML =

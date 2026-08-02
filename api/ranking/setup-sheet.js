@@ -28,7 +28,7 @@ async function run() {
 
   const tabs = {
     'Thành viên': [
-      'STT', 'Họ và tên', 'Ban', 'Vai trò', 'Email', 'SĐT', 'Ghi chú'
+      'STT', 'Họ và tên', 'Ban', 'Vai trò', 'Chức danh', 'Email', 'SĐT', 'Ghi chú'
     ],
     'Điểm': [
       'STT', 'Họ và tên', 'Số điểm', 'Lý do', 'Ngày'
@@ -108,7 +108,7 @@ async function run() {
   console.log(`🔗 https://docs.google.com/spreadsheets/d/${RANKING_SHEET_ID}`);
   console.log('');
   console.log('Hướng dẫn nhập liệu:');
-  console.log('- Tab "Thành viên": STT | Họ và tên | Ban | Vai trò (Core hoặc Thành viên) | Email | SĐT | Ghi chú');
+  console.log('- Tab "Thành viên": STT | Họ và tên | Ban | Vai trò (Core hoặc Thành viên) | Chức danh (Trưởng ban, Phó ban, Trưởng nhóm...) | Email | SĐT | Ghi chú');
   console.log('- Tab "Điểm": STT | Họ và tên | Số điểm | Lý do | Ngày. Mỗi lần cộng điểm ghi 1 dòng.');
 }
 

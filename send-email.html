@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Gửi email hàng loạt hoặc chọn lọc — Ý Niệm Điện Ảnh. Công cụ nội bộ dành cho HR/PR/Admin/BTC.">
+    <title>Gửi Email Hàng Loạt — Ý Niệm Điện Ảnh</title>
+    <link rel="icon" type="image/png" href="/Logo/avtar.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --navy-darkest: #050c14;
+            --navy-dark: #0d2034;
+            --navy-card: #122438;
+            --navy-light: #1c334e;
+            --gold: #e4b866;
+            --gold-light: #f3dba3;
+            --gold-dark: #cc9d4f;
+            --text-light: #f8fafc;
+            --text-muted: #aab6c5;
+            --danger: #ff7f7f;
+            --ok: #63d19e;
+            --warn: #f0b352;
+            --line: rgba(229, 184, 103, 0.2);
+            --glass: rgba(12, 29, 45, 0.75);
+            --glow: 0 0 20px rgba(228, 184, 102, 0.25);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(228, 184, 102, 0.12), transparent 30rem),
+                radial-gradient(circle at 85% 85%, rgba(84, 132, 170, 0.15), transparent 25rem),
+                linear-gradient(135deg, #07111d 0%, #102b44 50%, #06101b 100%);
+            background-attachment: fixed;
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(5, 12, 20, 0.6);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand img {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            box-shadow: var(--glow);
+        }
+
+        .brand h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            color: var(--gold-light);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .brand small {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 0.75rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 28px 20px 60px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 26px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .hidden { display: none !important; }
+
+        .card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.35rem;
+            color: var(--gold-light);
+            margin-bottom: 6px;
+        }
+
+        .card p.lead {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin: 16px 0 6px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        textarea {
+            width: 100%;
+            background: rgba(5, 12, 20, 0.55);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: var(--text-light);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(228, 184, 102, 0.15);
+        }
+
+        textarea {
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        textarea.mono {
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 0.88rem;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .row > * { flex: 1; min-width: 240px; }
+
+        .recipient-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: 1px solid var(--line);
+            background: rgba(228, 184, 102, 0.08);
+        }
+
+        .chip.ok { color: var(--ok); border-color: rgba(99, 209, 158, 0.4); }
+        .chip.bad { color: var(--danger); border-color: rgba(255, 127, 127, 0.4); }
+        .chip.gold { color: var(--gold-light); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-family: inherit;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.2s, opacity 0.2s;
+            text-decoration: none;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold-light), var(--gold));
+            color: #111827;
+            box-shadow: 0 6px 18px rgba(228, 184, 102, 0.35);
+        }
+
+        .btn-line {
+            background: transparent;
+            color: var(--text-light);
+            border-color: var(--line);
+        }
+
+        .btn-sm { padding: 8px 14px; font-size: 0.82rem; border-radius: 8px; }
+
+        .btn-danger { background: rgba(255, 127, 127, 0.14); color: var(--danger); border-color: rgba(255, 127, 127, 0.35); }
+
+        .login-box { text-align: center; padding: 40px 24px; }
+        .login-box img.avatar { width: 72px; height: 72px; border-radius: 12px; margin-bottom: 14px; }
+        .login-box .role-note {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(228, 184, 102, 0.06);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 18px auto 0;
+            max-width: 460px;
+        }
+
+        .account-banner {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .account-banner img {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+        }
+
+        .account-banner .info { flex: 1; min-width: 200px; }
+        .account-banner .info strong { color: var(--text-light); }
+        .account-banner .info div { font-size: 0.78rem; color: var(--text-muted); }
+
+        .status-line {
+            font-size: 0.85rem;
+            margin: 10px 0;
+            min-height: 20px;
+        }
+
+        .status-line.error { color: var(--danger); }
+        .status-line.ok { color: var(--ok); }
+        .status-line.warn { color: var(--warn); }
+
+        .progress-wrap { margin: 14px 0; }
+        .progress-track {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid var(--line);
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-light));
+            border-radius: 999px;
+            transition: width 0.3s ease;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 0.85rem;
+        }
+
+        .result-table th, .result-table td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            vertical-align: top;
+        }
+
+        .result-table th {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .badge.sent { background: rgba(99, 209, 158, 0.15); color: var(--ok); }
+        .badge.error { background: rgba(255, 127, 127, 0.15); color: var(--danger); }
+
+        .summary {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+
+        .stat {
+            flex: 1;
+            min-width: 130px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .stat .num { font-size: 1.7rem; font-weight: 800; line-height: 1.1; }
+        .stat .lab { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .stat.ok .num { color: var(--ok); }
+        .stat.bad .num { color: var(--danger); }
+        .stat.gold .num { color: var(--gold); }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            border-top: 1px solid var(--line);
+            margin-top: 20px;
+        }
+
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            border: 1px solid var(--line);
+            padding: 8px 14px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-link:hover { color: var(--gold-light); border-color: var(--gold); }
+
+        input[type="file"]::file-selector-button {
+            background: rgba(228, 184, 102, 0.12);
+            color: var(--gold-light);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .toggle-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; inset: 0;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            transition: 0.2s;
+        }
+        .slider:before {
+            content: ""; position: absolute; height: 18px; width: 18px;
+            left: 3px; top: 3px; background: #fff;
+            border-radius: 50%; transition: 0.2s;
+        }
+        .switch input:checked + .slider { background: var(--gold); }
+        .switch input:checked + .slider:before { transform: translateX(20px); }
+
+        .preview-box {
+            background: rgba(5, 12, 20, 0.6);
+            border: 1px dashed var(--line);
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            color: #e2e8f0;
+            max-height: 320px;
+            overflow: auto;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 16px 12px 40px; }
+            .card { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="brand">
+            <img src="/Logo/avtar.png" alt="Ý Niệm Điện Ảnh">
+            <div>
+                <h1>Gửi Email Hàng Loạt</h1>
+                <small>Công cụ nội bộ — Ý Niệm Điện Ảnh</small>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a class="back-link" href="/">← Trang chủ</a>
+            <button class="btn btn-line btn-sm hidden" id="logoutBtn" onclick="logout()">Đăng xuất</button>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- LOGIN GATE -->
+        <section id="loginSection" class="card login-box hidden">
+            <img class="avatar" src="/Logo/avtar.png" alt="Ý Niệm Điện Ảnh">
+            <h2>Đăng nhập để gửi email</h2>
+            <p class="lead" style="margin-bottom:4px">Chức năng chỉ dành cho HR, PR, Marketing, Admin và Ban Tổ Chức.</p>
+            <p class="status-line" id="loginStatus"></p>
+            <button class="btn btn-gold" id="loginBtn" onclick="signInWithGoogle()">Đăng nhập bằng Google</button>
+            <div class="role-note">
+                🔒 Mỗi email gửi ra sẽ được kiểm tra quyền ở máy chủ. Tài khoản chưa xác thực email hoặc không thuộc Ban HR/PR/Admin/BTC sẽ không thể gửi.
+            </div>
+        </section>
+
+        <!-- MAIN FORM -->
+        <section id="formSection" class="hidden">
+            <div class="account-banner">
+                <img id="userAvatar" alt="">
+                <div class="info">
+                    <strong id="userName"></strong>
+                    <div id="userEmail"></div>
+                    <div id="userRole"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📬 Soạn email</h2>
+                <p class="lead">Nhập từng địa chỉ email trên một dòng — gửi hàng loạt hoặc chỉ chọn vài người đều được.</p>
+
+                <label for="toEmails">Danh sách người nhận (mỗi dòng một email)</label>
+                <textarea id="toEmails" class="mono" rows="7" placeholder="nguoinhan1@gmail.com&#10;nguoinhan2@gmail.com&#10;nguoinhan3@gmail.com"></textarea>
+                <div class="recipient-bar">
+                    <span class="chip gold" id="recipientCount">0 email</span>
+                    <span class="chip ok" id="validCount" style="display:none">✓ 0 hợp lệ</span>
+                    <span class="chip bad" id="invalidCount" style="display:none">✕ 0 không hợp lệ</span>
+                    <span class="hint" style="flex:1">Phân cách bằng dấu phẩy, dấu chấm phẩy hoặc xuống dòng đều được. Trùng lặp tự loại bỏ.</span>
+                    <button class="btn btn-line btn-sm" type="button" onclick="clearRecipients()">🗑 Xóa</button>
+                </div>
+
+                <label for="subject">Tiêu đề email</label>
+                <input id="subject" type="text" maxlength="200" placeholder="Tiêu đề email...">
+
+                <div class="toggle-row">
+                    <label for="body" style="margin:16px 0 6px;flex:1">Nội dung email</label>
+                    <label class="switch" title="Xem trước nội dung">
+                        <input type="checkbox" id="previewToggle" onchange="togglePreview()">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="font-size:0.78rem;color:var(--text-muted)">Xem trước</span>
+                </div>
+                <textarea id="body" rows="10" placeholder="Viết nội dung ở đây...&#10;&#10;Hỗ trợ Markdown nhẹ: **in đậm**, *in nghiêng*, [nhãn](https://...)."></textarea>
+                <div id="previewBox" class="preview-box hidden"></div>
+                <div class="hint">Nội dung sẽ được bọc trong mẫu thư chính thức của Ý Niệm Điện Ảnh (logo + chân trang).</div>
+
+                <label for="attachment">Tệp đính kèm (PDF, tối đa 2 MB — không bắt buộc)</label>
+                <input id="attachment" type="file" accept=".pdf,application/pdf">
+                <div class="hint" id="attachmentHint"></div>
+
+                <p class="status-line" id="sendStatus"></p>
+
+                <div class="row" style="margin-top:18px">
+                    <button class="btn btn-line" type="button" id="testBtn" onclick="sendOneTest()">🧪 Gửi thử 1 email đầu</button>
+                    <button class="btn btn-gold" type="button" id="sendBtn" onclick="sendBulk()">📤 Gửi email hàng loạt</button>
+                </div>
+            </div>
+
+            <div class="card hidden" id="resultCard">
+                <h2>📊 Kết quả gửi</h2>
+                <div class="summary">
+                    <div class="stat gold"><div class="num" id="statTotal">0</div><div class="lab">Tổng</div></div>
+                    <div class="stat ok"><div class="num" id="statSent">0</div><div class="lab">Đã gửi</div></div>
+                    <div class="stat bad"><div class="num" id="statFailed">0</div><div class="lab">Thất bại</div></div>
+                </div>
+                <div class="progress-wrap">
+                    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+                </div>
+                <table class="result-table" id="resultTable">
+                    <thead>
+                        <tr><th>Người nhận</th><th>Trạng thái</th><th>Chi tiết</th></tr>
+                    </thead>
+                    <tbody id="resultBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">© <span id="year"></span> Ý Niệm Điện Ảnh — Nơi Ý Tưởng Cất Cánh</footer>
+
+    <script>
+        // ================= CONFIG =================
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ",
+            authDomain: "yniemdienanh-fb0b7.firebaseapp.com",
+            databaseURL: "https://yniemdienanh-fb0b7-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "yniemdienanh-fb0b7",
+            storageBucket: "yniemdienanh-fb0b7.firebasestorage.app",
+            messagingSenderId: "69246326577",
+            appId: "1:69246326577:web:50fb1d9cab97e7543fc210",
+            measurementId: "G-YN751MBNH0"
+        };
+        const PROJECT_ADMIN_EMAIL = 'yniemdienanh@gmail.com';
+
+        let authInstance = null;
+        let dbInstance = null;
+        let currentUser = null;
+        let currentProfile = {};
+        let canSend = false;
+
+        // ================= HELPERS =================
+        function esc(value) {
+            return String(value === undefined || value === null ? '' : value)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function normalize(value) {
+            return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        }
+
+        function isScheduleManagerProfile(user) {
+            const email = normalize(user && user.email);
+            if (email === PROJECT_ADMIN_EMAIL) return true;
+            const role = normalize(user && user.role);
+            if (['admin', 'organizer'].includes(role)) return true;
+            const context = [
+                normalize(user && user.dept),
+                normalize(user && user.position),
+                normalize(user && user.title),
+                normalize(user && user.leadershipTitle)
+            ].filter(Boolean).join(' ');
+            return context.includes('nhan su') || context.includes('hr') ||
+                context.includes('truyen thong') || context.includes('pr') ||
+                context.includes('marketing') || context.includes('mkt');
+        }
+
+        function parseRecipients() {
+            const raw = document.getElementById('toEmails').value;
+            const emails = raw.split(/[\n,;]/).map(s => s.trim().toLowerCase()).filter(Boolean);
+            return Array.from(new Set(emails));
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+        }
+
+        function updateRecipientStats() {
+            const emails = parseRecipients();
+            const valid = emails.filter(isValidEmail);
+            const invalid = emails.filter(e => !isValidEmail(e));
+            const countEl = document.getElementById('recipientCount');
+            const validEl = document.getElementById('validCount');
+            const invalidEl = document.getElementById('invalidCount');
+            countEl.textContent = emails.length + ' email' + (emails.length === 1 ? '' : 's') + (emails.length ? '' : ' — nhập ở trên');
+            validEl.style.display = valid.length ? 'inline-flex' : 'none';
+            invalidEl.style.display = invalid.length ? 'inline-flex' : 'none';
+            validEl.textContent = '✓ ' + valid.length + ' hợp lệ';
+            invalidEl.textContent = '✕ ' + invalid.length + ' không hợp lệ';
+            return { emails, valid, invalid };
+        }
+
+        function setStatus(id, message, kind) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = message || '';
+            el.className = 'status-line' + (kind ? ' ' + kind : '');
+        }
+
+        // ================= PREVIEW =================
+        function togglePreview() {
+            const checked = document.getElementById('previewToggle').checked;
+            const box = document.getElementById('previewBox');
+            const body = document.getElementById('body');
+            if (checked) {
+                box.textContent = body.value || '(Trống)';
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        // ================= AUTH =================
+        function signInWithGoogle() {
+            const btn = document.getElementById('loginBtn');
+            const status = document.getElementById('loginStatus');
+            if (!authInstance) {
+                setStatus('loginStatus', 'Chưa kết nối được Google. Vui lòng tải lại trang.', 'error');
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = '⏳ Đang mở cửa sổ đăng nhập...';
+            setStatus('loginStatus', 'Đang mở cửa sổ đăng nhập Google...', '');
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            authInstance.signInWithPopup(provider).catch(err => {
+                if (err && err.code !== 'auth/popup-closed-by-user') {
+                    setStatus('loginStatus', 'Không thể đăng nhập: ' + (err.message || 'Vui lòng thử lại.'), 'error');
+                }
+            }).finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Đăng nhập bằng Google';
+            });
+        }
+
+        function logout() {
+            if (authInstance) authInstance.signOut();
+        }
+
+        async function refreshPermission() {
+            canSend = false;
+            if (currentUser) {
+                const email = String(currentUser.email || '').toLowerCase();
+                canSend = email === PROJECT_ADMIN_EMAIL;
+                currentProfile = {};
+                if (!canSend && dbInstance) {
+                    try {
+                        const doc = await dbInstance.collection('users').doc(currentUser.uid).get();
+                        currentProfile = doc.exists ? doc.data() : {};
+                        canSend = isScheduleManagerProfile({ ...currentProfile, email });
+                    } catch (err) {
+                        console.warn('Không kiểm tra được quyền:', err);
+                    }
+                }
+                canSend = canSend || isScheduleManagerProfile({ ...currentProfile, email });
+            }
+            renderAuthState();
+        }
+
+        function roleLabel() {
+            if (!canSend) return 'Chưa có quyền gửi email';
+            if (normalize(currentUser.email) === PROJECT_ADMIN_EMAIL) return 'Quản trị viên dự án';
+            const role = normalize(currentProfile.role);
+            if (role === 'organizer') return 'Ban Tổ Chức';
+            if (role === 'admin') return 'Quản trị viên';
+            const dept = normalize(currentProfile.dept);
+            if (dept.includes('nhan su') || dept.includes('hr')) return 'Ban Nhân Sự (HR)';
+            if (dept.includes('truyen thong') || dept.includes('pr')) return 'Truyền thông (PR)';
+            if (dept.includes('marketing') || dept.includes('mkt')) return 'Marketing';
+            return (currentProfile.dept || currentProfile.position || 'Thành viên');
+        }
+
+        function renderAuthState() {
+            const loginSection = document.getElementById('loginSection');
+            const formSection = document.getElementById('formSection');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            if (!currentUser) {
+                loginSection.classList.remove('hidden');
+                formSection.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+                return;
+            }
+
+            logoutBtn.classList.remove('hidden');
+            document.getElementById('userAvatar').src = currentUser.photoURL || '/Logo/avtar.png';
+            document.getElementById('userName').textContent = currentUser.displayName || 'Thành viên';
+            document.getElementById('userEmail').textContent = currentUser.email || '';
+            document.getElementById('userRole').textContent = roleLabel();
+
+            if (!canSend) {
+                loginSection.classList.remove('hidden');
+                formSection.classList.add('hidden');
+                document.getElementById('loginBtn').classList.add('hidden');
+                document.getElementById('loginStatus').textContent = '⚠️ Tài khoản này không có quyền gửi email. Vui lòng dùng tài khoản HR/PR/Admin/BTC hoặc liên hệ quản trị viên.';
+                document.getElementById('loginStatus').className = 'status-line error';
+                return;
+            }
+
+            loginSection.classList.add('hidden');
+            formSection.classList.remove('hidden');
+            updateRecipientStats();
+        }
+
+        // ================= FILE =================
+        async function readAttachment() {
+            const input = document.getElementById('attachment');
+            const hint = document.getElementById('attachmentHint');
+            const file = input.files && input.files[0];
+            if (!file) return null;
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                hint.textContent = '⚠️ Chỉ chấp nhận tệp PDF.';
+                input.value = '';
+                throw new Error('Tệp đính kèm phải là PDF.');
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                hint.textContent = '⚠️ PDF phải nhỏ hơn hoặc bằng 2 MB.';
+                input.value = '';
+                throw new Error('PDF phải nhỏ hơn hoặc bằng 2 MB.');
+            }
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('Không đọc được tệp PDF.'));
+                reader.readAsDataURL(file);
+            });
+            hint.textContent = '📎 Đã chọn: ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            return { filename: file.name, base64: String(dataUrl).split(',')[1] };
+        }
+
+        // ================= SEND =================
+        function fillResult(rows, meta) {
+            document.getElementById('resultCard').classList.remove('hidden');
+            document.getElementById('statTotal').textContent = meta.total;
+            document.getElementById('statSent').textContent = meta.sent;
+            document.getElementById('statFailed').textContent = meta.failed;
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('resultBody').innerHTML = rows.map(r => {
+                const ok = r.status === 'sent';
+                return '<tr>' +
+                    '<td>' + esc(r.email) + '</td>' +
+                    '<td><span class="badge ' + (ok ? 'sent' : 'error') + '">' + (ok ? '✓ Đã gửi' : '✕ Thất bại') + '</span></td>' +
+                    '<td style="color:' + (ok ? 'var(--ok)' : 'var(--danger)') + ';font-size:0.78rem">' +
+                    (ok ? ('Qua ' + esc(r.provider || 'SMTP')) : esc(r.error || 'Lỗi không xác định')) + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function animateProgress() {
+            let value = 0;
+            const fill = document.getElementById('progressFill');
+            fill.style.width = '0%';
+            const timer = setInterval(() => {
+                value = Math.min(92, value + Math.random() * 7);
+                fill.style.width = value + '%';
+            }, 220);
+            return () => { clearInterval(timer); fill.style.width = '100%'; };
+        }
+
+        function validateForm() {
+            const { valid, invalid } = updateRecipientStats();
+            const subject = document.getElementById('subject').value.trim();
+            const body = document.getElementById('body').value.trim();
+            if (!valid.length) return setStatus('sendStatus', 'Vui lòng nhập ít nhất một địa chỉ email hợp lệ.', 'error'), null;
+            if (invalid.length) return setStatus('sendStatus', 'Có ' + invalid.length + ' địa chỉ không hợp lệ: ' + invalid.join(', ') + '. Vui lòng sửa lại.', 'error'), null;
+            if (!subject) return setStatus('sendStatus', 'Vui lòng nhập tiêu đề email.', 'error'), null;
+            if (!body) return setStatus('sendStatus', 'Vui lòng nhập nội dung email.', 'error'), null;
+            return { emails: valid, subject, body };
+        }
+
+        async function performSend(recipients, label) {
+            const form = validateForm();
+            if (!form) return;
+            const sendBtn = document.getElementById('sendBtn');
+            const testBtn = document.getElementById('testBtn');
+            sendBtn.disabled = true;
+            testBtn.disabled = true;
+            setStatus('sendStatus', '⏳ Đang gửi ' + recipients.length + ' email...', '');
+            const stopProgress = animateProgress();
+
+            try {
+                const attachment = await readAttachment();
+                const idToken = await authInstance.currentUser.getIdToken();
+                const res = await fetch('/api/email/send-bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: recipients, subject: form.subject, html: form.body, attachment, idToken })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Lỗi gửi email (' + res.status + ')');
+
+                fillResult(data.results || [], {
+                    total: data.total || recipients.length,
+                    sent: data.sent || 0,
+                    failed: data.failed || 0
+                });
+                if (data.failed === 0) {
+                    setStatus('sendStatus', '✅ ' + label + ' — đã gửi thành công ' + data.sent + '/' + data.total + ' email!', 'ok');
+                } else {
+                    setStatus('sendStatus', '⚠️ ' + label + ' — gửi được ' + data.sent + '/' + data.total + '; có ' + data.failed + ' email thất bại. Kiểm tra chi tiết bên dưới.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                setStatus('sendStatus', 'Gửi email thất bại: ' + err.message, 'error');
+            } finally {
+                stopProgress();
+                sendBtn.disabled = false;
+                testBtn.disabled = false;
+            }
+        }
+
+        async function sendBulk() {
+            const form = validateForm();
+            if (!form) return;
+            if (form.emails.length > 200) {
+                return setStatus('sendStatus', 'Mỗi lần gửi tối đa 200 địa chỉ email. Hãy chia nhỏ danh sách.', 'error');
+            }
+            const ok = confirm('Gửi email hàng loạt tới ' + form.emails.length + ' người nhận?\n\nTiêu đề: ' + form.subject + '\n\nBấm OK để gửi.');
+            if (!ok) return;
+            await performSend(form.emails, 'Gửi hàng loạt');
+        }
+
+        async function sendOneTest() {
+            const form = validateForm();
+            if (!form) return;
+            const ok = confirm('Gửi thử email đầu tiên tới ' + form.emails[0] + '?\n\nĐây chỉ là bài kiểm tra cho 1 người.');
+            if (!ok) return;
+            await performSend([form.emails[0]], 'Gửi thử');
+        }
+
+        function clearRecipients() {
+            document.getElementById('toEmails').value = '';
+            updateRecipientStats();
+            setStatus('sendStatus', '', '');
+        }
+
+        // ================= INIT =================
+        document.getElementById('toEmails').addEventListener('input', updateRecipientStats);
+        document.getElementById('subject').addEventListener('input', () => {
+            if (document.getElementById('previewToggle').checked) togglePreview();
+        });
+        document.getElementById('body').addEventListener('input', () => {
+            if (document.getElementById('previewToggle').checked) togglePreview();
+        });
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        (function init() {
+            const isFirebaseConfigured = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.trim() !== '';
+            if (isFirebaseConfigured) {
+                try {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                    authInstance = firebase.auth();
+                    dbInstance = firebase.firestore();
+                    dbInstance.settings({ experimentalForceLongPolling: true });
+                    authInstance.onAuthStateChanged(async user => {
+                        currentUser = user;
+                        await refreshPermission();
+                    });
+                } catch (err) {
+                    console.warn('Firebase init failed:', err);
+                    setStatus('loginStatus', 'Không thể kết nối hệ thống. Vui lòng tải lại trang.', 'error');
+                }
+            } else {
+                setStatus('loginStatus', 'Trang chưa được cấu hình Firebase.', 'error');
+            }
+            updateRecipientStats();
+        })();
+    </script>
+</body>
+</html>

@@ -12,3 +12,5 @@ demo payos/
 .vercel
 .env.local
 .env.*.local
+.env.*.ranking
+.env.prod.*

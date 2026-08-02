@@ -13,6 +13,7 @@ const { normalizePdfAttachment } = require('./lib/pdfAttachment');
 const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('./lib/projectIdentity');
 const { isPeopleManager, isScheduleManager } = require('./lib/schedulePermissions');
 const generateGeminiBulkEmails = require('./api/email/generate-gemini-bulk');
+const sendBulkCustomEmails = require('./api/email/send-bulk');
 require('dotenv').config();
 
 const PAYOS_CLIENT_ID = process.env.PAYOS_CLIENT_ID || "";
@@ -81,6 +82,7 @@ function rateLimit(limit, windowMs) {
 // Apply rate limiting to sensitive endpoints. Bulk sending calls send-custom once
 // per recipient, so keep its authenticated allowance separate from public auth mail.
 app.use('/api/email/send-custom', rateLimit(120, 60000));
+app.use('/api/email/send-bulk', rateLimit(20, 60000));
 app.use('/api/email/generate-', rateLimit(20, 60000));
 app.use('/api/email/send-verification', rateLimit(5, 60000));
 app.use('/api/email/send-password-reset', rateLimit(5, 60000));
@@ -472,6 +474,9 @@ app.post('/api/email/send-custom', requireScheduleManager, async (req, res) => {
     }
 });
 
+// API: Gửi email hàng loạt (nhiều người nhận trong một lần gọi).
+app.post('/api/email/send-bulk', requireScheduleManager, sendBulkCustomEmails);
+
 // API: Gửi thư lịch phỏng vấn cho ứng viên và HR được phân công.
 const sendScheduleInvitations = require('./api/schedule/send-invitations');
 app.post('/api/schedule/send-invitations', sendScheduleInvitations);
@@ -748,6 +753,14 @@ app.get('/schedule', (req, res) => {
     res.sendFile(path.join(__dirname, 'schedule.html'));
 });
 
+app.get('/gui-email', (req, res) => {
+    res.sendFile(path.join(__dirname, 'send-email.html'));
+});
+
+app.get('/send-email', (req, res) => {
+    res.sendFile(path.join(__dirname, 'send-email.html'));
+});
+
 app.get('/bang-xep-hang', (req, res) => {
     res.sendFile(path.join(__dirname, 'bang-xep-hang.html'));
 });
@@ -764,7 +777,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const staticHtmlPages = ['index.html', 'dashboard.html', 'community.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'privacy.html', 'terms.html', 'change-frame.html'];
+const staticHtmlPages = ['index.html', 'dashboard.html', 'community.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'privacy.html', 'terms.html', 'change-frame.html', 'send-email.html'];
 app.get('/:page.html', (req, res, next) => {
     if (staticHtmlPages.includes(req.params.page + '.html')) {
         return res.sendFile(path.join(__dirname, req.params.page + '.html'));

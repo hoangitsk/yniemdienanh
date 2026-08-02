@@ -1449,6 +1449,23 @@
                 return;
             }
 
+            // Làm mới ID token trước khi ghi: token cũ cache trên máy có thể vẫn
+            // báo email_verified=false (dù email đã xác thực), khiến Firestore
+            // rules từ chối với "Missing or insufficient permissions".
+            try {
+                await currentAuthUser.getIdToken(true);
+            } catch (e) {
+                msgEl.textContent = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại rồi thử lại.';
+                return;
+            }
+            if (!currentAuthUser.emailVerified) {
+                msgEl.textContent = 'Email của bạn chưa được xác thực. Vui lòng mở Gmail và bấm link xác thực (hoặc đăng nhập bằng Google) trước khi gửi đơn.';
+                return;
+            }
+            // Đồng bộ session với token vừa làm mới để email gửi lên khớp chính
+            // xác với claim email trong token (rules so khớp chính xác từng ký tự).
+            session = { ...session, id: currentAuthUser.uid, email: currentAuthUser.email };
+
             const nameEl = document.getElementById(prefix + 'Name');
             const emailEl = document.getElementById(prefix + 'Email');
             const phoneEl = document.getElementById(prefix + 'Phone');
@@ -1692,7 +1709,10 @@
             try {
                 const cred = await authInstance.signInWithPopup(provider);
                 const isNewUser = cred.additionalUserInfo?.isNewUser;
-                const email = cred.user.email.toLowerCase();
+                // KHÔNG lowercase email: rules yêu cầu khớp chính xác với
+                // request.auth.token.email (claim từ ID token), lowercase làm
+                // lệch case → Firestore báo "Missing or insufficient permissions".
+                const email = cred.user.email;
                 googleUserTemp = cred.user;
                 
                 // Check if user profile already exists
@@ -1711,7 +1731,7 @@
                         intro: '',
                         role: 'member',
                         createdAt: new Date().toISOString().slice(0, 10),
-                        emailVerified: true,
+                        emailVerified: !!cred.user.emailVerified,
                         profileCompleted: false
                     };
                     await dbInstance.collection('users').doc(cred.user.uid).set(userProfile);
@@ -1726,6 +1746,9 @@
                     }
                 }
             } catch (e) {
+                // Phân biệt lỗi để dễ truy vết: auth vs firestore
+                const code = e && e.code ? e.code : '';
+                console.error("Google login error:", code, e);
                 showToast("Lỗi đăng nhập Google: " + e.message, "error");
             }
         }

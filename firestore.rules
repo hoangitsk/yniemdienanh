@@ -176,7 +176,9 @@ service cloud.firestore {
         && ('userId' in request.resource.data)
         && request.resource.data.userId == request.auth.uid
         && ('email' in request.resource.data)
-        && request.resource.data.email == request.auth.token.email
+        // So khớp không phân biệt hoa/thường vì email từ tài khoản Google có thể
+        // lệch case với email trong ID token → rules từ chối ghi.
+        && request.resource.data.email.lower() == request.auth.token.email.lower()
         && ('status' in request.resource.data)
         && request.resource.data.status == 'pending'
         && request.resource.data.name is string

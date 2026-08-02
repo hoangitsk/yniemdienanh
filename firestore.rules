@@ -1,5 +1,6 @@
 rules_version = '2';
 
+// Được deploy tự động qua GitHub Actions (.github/workflows/firebase-rules.yml)
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {

@@ -4476,17 +4476,10 @@
             linksHtml += `<a href="/">Trang chủ</a>`;
             linksHtml += `<a href="/#events">Sự kiện & Workshop</a>`;
             linksHtml += `<a href="/#voting">Tác phẩm</a>`;
-            linksHtml += `<a href="/community" class="active">Cộng đồng</a>`;
+            linksHtml += `<a href="/#apply">Tuyển dụng</a>`;
             
             if (session) {
                 linksHtml += `<a href="/verify">Chứng nhận</a>`;
-                const isStaff = session.role === 'admin' || session.role === 'organizer' || 
-                                (session.dept && ['Ban Nhân Sự', 'Ban Nhan Su', 'HR', 'PR'].includes(session.dept));
-                if (isStaff) {
-                    linksHtml += `<a href="/schedule">Lịch họp & PV</a>`;
-                }
-            } else {
-                linksHtml += `<a href="/#apply">Tuyển dụng</a>`;
             }
             
             linksHtml += `<span id="navAuth"></span>`;

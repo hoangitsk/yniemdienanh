@@ -742,7 +742,7 @@ app.get('/vinh-danh', (req, res) => {
 });
 
 app.get('/community', (req, res) => {
-    res.sendFile(path.join(__dirname, 'community.html'));
+    res.redirect('/');
 });
 
 app.get('/verify', (req, res) => {
@@ -777,7 +777,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const staticHtmlPages = ['index.html', 'dashboard.html', 'community.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'privacy.html', 'terms.html', 'change-frame.html', 'send-email.html'];
+const staticHtmlPages = ['index.html', 'dashboard.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'privacy.html', 'terms.html', 'change-frame.html', 'send-email.html'];
 app.get('/:page.html', (req, res, next) => {
     if (staticHtmlPages.includes(req.params.page + '.html')) {
         return res.sendFile(path.join(__dirname, req.params.page + '.html'));

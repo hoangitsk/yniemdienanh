@@ -2800,7 +2800,6 @@
                 <a href="/vinh-danh">Vinh danh</a>
                 <a href="/bang-xep-hang">Bảng xếp hạng</a>
                 <a href="/verify">Tra cứu chứng nhận</a>
-                <a href="/schedule">Lịch họp & PV</a>
                 <a href="#" onclick="event.preventDefault();goSection('apply');closeMobileMenu()" role="button">Tuyển dụng</a>
                 <span id="navAuth"></span>
             </div>
@@ -3018,7 +3017,6 @@
                 <a href="/privacy" style="color: var(--text-muted); text-decoration: none;">Chính sách bảo mật</a>
                 <a href="/terms" style="color: var(--text-muted); text-decoration: none;">Điều khoản dịch vụ</a>
                 <a href="/verify" style="color: var(--text-muted); text-decoration: none;">Tra cứu chứng nhận</a>
-                <a href="/schedule" style="color: var(--text-muted); text-decoration: none;">Lịch họp & Phỏng vấn</a>
             </div>
             <p id="footerText">Ý Niệm Điện Ảnh là dự án cộng đồng dành cho thế hệ trẻ. "Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức." ✨</p>
             <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.4; text-align: center;">
@@ -4850,19 +4848,10 @@
             linksHtml += `<a href="#" onclick="event.preventDefault();goSection('about');closeMobileMenu()" role="button">Về dự án</a>`;
             linksHtml += `<a href="#" onclick="event.preventDefault();goSection('events');closeMobileMenu()" role="button">Sự kiện & Workshop</a>`;
             linksHtml += `<a href="#" onclick="event.preventDefault();showPage('voting');closeMobileMenu()" role="button">Bình chọn</a>`;
-            linksHtml += `<a href="/community">Cộng đồng</a>`;
             
             if (session) {
                 // Logged in extra links
                 linksHtml += `<a href="/verify">Chứng nhận</a>`;
-                
-                // Show schedule link only for candidates or coordinators
-                const isStaff = session.role === 'admin' || session.role === 'organizer' || 
-                                (session.dept && ['Ban Nhân Sự', 'Ban Nhan Su', 'HR', 'PR'].includes(session.dept));
-                if (isStaff) {
-                    linksHtml += `<a href="/schedule">Lịch họp & PV</a>`;
-                    linksHtml += `<a href="/gui-email">Gửi email</a>`;
-                }
             } else {
                 // Anonymous links
                 linksHtml += `<a href="#" onclick="event.preventDefault();goSection('apply');closeMobileMenu()" role="button">Tuyển dụng</a>`;

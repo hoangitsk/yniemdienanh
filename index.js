@@ -691,6 +691,9 @@ app.get('/api/sync/status', (req, res) => {
     });
 });
 
+// API: Bảng xếp hạng thành viên & BTC (đọc từ Google Sheet)
+app.get('/api/ranking', require('./api/ranking/leaderboard'));
+
 // Never let the SPA fallback turn a mistyped/removed API into a successful
 // HTML response.  This also makes monitoring and client error handling
 // deterministic.
@@ -745,6 +748,10 @@ app.get('/schedule', (req, res) => {
     res.sendFile(path.join(__dirname, 'schedule.html'));
 });
 
+app.get('/bang-xep-hang', (req, res) => {
+    res.sendFile(path.join(__dirname, 'bang-xep-hang.html'));
+});
+
 app.get('/schedule/:code', (req, res) => {
     res.sendFile(path.join(__dirname, 'schedule.html'));
 });
@@ -757,7 +764,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const staticHtmlPages = ['index.html', 'dashboard.html', 'community.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'privacy.html', 'terms.html', 'change-frame.html'];
+const staticHtmlPages = ['index.html', 'dashboard.html', 'community.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'privacy.html', 'terms.html', 'change-frame.html'];
 app.get('/:page.html', (req, res, next) => {
     if (staticHtmlPages.includes(req.params.page + '.html')) {
         return res.sendFile(path.join(__dirname, req.params.page + '.html'));

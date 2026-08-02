@@ -8,6 +8,7 @@
     { "source": "/schedule/:code", "destination": "/schedule.html" },
     { "source": "/verify", "destination": "/verify.html" },
     { "source": "/vinh-danh", "destination": "/vinh-danh.html" },
+    { "source": "/bang-xep-hang", "destination": "/bang-xep-hang.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/payment-success", "destination": "/index.html" },

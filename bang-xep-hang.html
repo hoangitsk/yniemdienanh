@@ -51,6 +51,11 @@
         .refresh button { padding:8px 18px; border-radius:10px; border:1px solid rgba(228,184,102,.3); background:transparent; color:var(--gold-light); cursor:pointer; font-size:.8rem; font-weight:600; }
         .refresh button:hover { background:rgba(228,184,102,.12); }
         .error { text-align:center; padding:40px 20px; color:var(--danger,#ff7f7f); }
+        .note-box { margin-top:28px; border:1px solid var(--line); border-radius:14px; background:rgba(5,12,20,.4); }
+        .note-box summary { padding:14px 20px; cursor:pointer; font-weight:700; color:var(--gold-light); font-size:.92rem; user-select:none; }
+        .note-box summary:hover { color:var(--gold); }
+        .note-box ul { margin:0; padding:0 20px 16px 44px; color:var(--muted); font-size:.86rem; line-height:1.85; }
+        .note-box li strong { color:var(--gold-light); }
         @media (max-width:720px) {
             nav { padding:12px 20px; }
             main { padding:38px 16px 60px; }
@@ -83,6 +88,21 @@
 
         <div class="refresh">
             <button onclick="loadRanking(true)">🔄 Làm mới</button>
+        </div>
+
+        <div class="note-box">
+            <details>
+                <summary>📌 Cách tính điểm</summary>
+                <ul>
+                    <li>Điểm được cộng dựa trên các nhiệm vụ và hoạt động đã hoàn thành, theo mức điểm được quy định cho từng hoạt động.</li>
+                    <li>Member và Core/Vice có cách tính điểm riêng để đảm bảo công bằng theo vai trò.</li>
+                    <li>Điểm đóng góp được chuẩn hóa về thang 100, sau đó kết hợp với điểm đánh giá định kỳ để tạo thành Overall.</li>
+                    <li>Overall là điểm dùng để xếp hạng chung trên BXH.</li>
+                    <li>🏆 <strong>Top 8 Overall cuối mùa sẽ nhận Certificate Xuất sắc.</strong></li>
+                    <li>Điểm được ghi nhận dựa trên minh chứng/sản phẩm hoàn thành và có thể được kiểm tra, đối soát.</li>
+                    <li>Bảng xếp hạng là công cụ ghi nhận đóng góp, không phải đánh giá giá trị cá nhân.</li>
+                </ul>
+            </details>
         </div>
     </main>
     <footer>Ý Niệm Điện Ảnh · “Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức.”</footer>

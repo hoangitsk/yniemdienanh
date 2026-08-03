@@ -4826,6 +4826,21 @@
             renderTab('profile');
         }
 
+        function isScoreManagerSession() {
+            if (!session) return false;
+            const email = String(session.email || '').toLowerCase();
+            if (email === 'yniemdienanh@gmail.com') return true;
+            const profile = (localDB.users || []).find(u => String(u.id) === String(session.id));
+            const fields = [profile && profile.dept, profile && profile.position, profile && profile.title, profile && profile.leadershipTitle, session.dept];
+            const context = fields.map(v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()).filter(Boolean).join(' ');
+            if (context.includes('nhan su') || context.includes('hr') || context.includes('truyen thong') || context.includes('pr') || context.includes('marketing') || context.includes('mkt')) return true;
+            const role = String(session.role || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            if (['admin', 'organizer', 'president', 'core'].includes(role)) return true;
+            return context.includes('ban dieu hanh') || context.includes('chu tich') ||
+                context.includes('truong') || context.includes('pho') || context.includes('vice') ||
+                context.includes('core') || context.includes('head') || context.includes('lead');
+        }
+
         function renderSideMenu() {
             const role = session?.role || 'member';
             const tabs = Object.entries(TABS).filter(([k]) => canAccessDashboardTab(k));
@@ -4835,7 +4850,8 @@
                 `<a href="/verify" target="_blank" style="font-size:0.9rem;opacity:0.85">🔍 Tra cứu chứng nhận</a>` +
                 `<a href="/schedule" target="_blank" style="font-size:0.9rem;opacity:0.85">📅 Lịch họp & PV</a>` +
                 `<a href="/send-email" target="_blank" style="font-size:0.9rem;opacity:0.85">📧 Gửi email</a>` +
-                `<a href="/bang-xep-hang" target="_blank" style="font-size:0.9rem;opacity:0.85">🏆 Bảng xếp hạng</a>`;
+                `<a href="/bang-xep-hang" target="_blank" style="font-size:0.9rem;opacity:0.85">🏆 Bảng xếp hạng</a>` +
+                (isScoreManagerSession() ? `<a href="/cham-diem" target="_blank" style="font-size:0.9rem;opacity:0.85">📝 Chấm điểm & đánh giá</a>` : '');
         }
 
         function renderTab(tab) {

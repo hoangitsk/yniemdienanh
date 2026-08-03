@@ -13,7 +13,9 @@
 | Tên dự án | Ý Niệm Điện Ảnh (YNĐA) |
 | Bảng xếp hạng | https://yniemdienanh.vercel.app/bang-xep-hang |
 
-Sheet có **đúng 2 tab**, dữ liệu bắt đầu từ dòng 2 (dòng 1 là header, đã đóng băng).
+Sheet có **các tab chính**, dữ liệu bắt đầu từ dòng 2 (dòng 1 là header, đã đóng băng):
+- Tab `Thành viên` + tab `Điểm`: dùng cho bảng xếp hạng.
+- Tab `Đánh giá`: tự tạo khi BTC ghi đánh giá từ công cụ nội bộ (`/cham-diem`); không cần sửa tay.
 
 ---
 

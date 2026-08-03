@@ -11,7 +11,7 @@ const { ensureInterviewScheduleContent, normalizeEmailContent } = require('./lib
 const { normalizeEmailSender, emailSenderPromptContext, applyEmailSenderIdentity } = require('./lib/emailSender');
 const { normalizePdfAttachment } = require('./lib/pdfAttachment');
 const { PROJECT_HANDBOOK_EMAIL_CONTEXT } = require('./lib/projectIdentity');
-const { isPeopleManager, isScheduleManager } = require('./lib/schedulePermissions');
+const { isPeopleManager, isScheduleManager, isScoreManager } = require('./lib/schedulePermissions');
 const generateGeminiBulkEmails = require('./api/email/generate-gemini-bulk');
 const sendBulkCustomEmails = require('./api/email/send-bulk');
 require('dotenv').config();
@@ -699,6 +699,10 @@ app.get('/api/sync/status', (req, res) => {
 // API: Bảng xếp hạng thành viên & BTC (đọc từ Google Sheet)
 app.get('/api/ranking', require('./api/ranking/leaderboard'));
 
+// API: Ghi điểm & đánh giá (BTC/Core/HR/Admin) — ghi vào tab Điểm + Đánh giá của sheet xếp hạng
+const requireScoreManager = requireAuthorizedProfile(isScoreManager);
+app.post('/api/ranking/record', requireScoreManager, require('./api/ranking/record'));
+
 // Never let the SPA fallback turn a mistyped/removed API into a successful
 // HTML response.  This also makes monitoring and client error handling
 // deterministic.
@@ -765,6 +769,10 @@ app.get('/bang-xep-hang', (req, res) => {
     res.sendFile(path.join(__dirname, 'bang-xep-hang.html'));
 });
 
+app.get('/cham-diem', (req, res) => {
+    res.sendFile(path.join(__dirname, 'cham-diem.html'));
+});
+
 app.get('/schedule/:code', (req, res) => {
     res.sendFile(path.join(__dirname, 'schedule.html'));
 });
@@ -777,7 +785,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const staticHtmlPages = ['index.html', 'dashboard.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'privacy.html', 'terms.html', 'change-frame.html', 'send-email.html'];
+const staticHtmlPages = ['index.html', 'dashboard.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'cham-diem.html', 'privacy.html', 'terms.html', 'change-frame.html', 'send-email.html'];
 app.get('/:page.html', (req, res, next) => {
     if (staticHtmlPages.includes(req.params.page + '.html')) {
         return res.sendFile(path.join(__dirname, req.params.page + '.html'));

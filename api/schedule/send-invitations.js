@@ -211,34 +211,8 @@ module.exports = async function sendInterviewInvitations(req, res) {
         var wrap = function(html) {
             return '<div style="max-width:600px;margin:auto;padding:28px;font-family:Arial,sans-serif;line-height:1.65;color:#1f2937">' + html + '<hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0"><small>Ý Niệm Điện Ảnh · Thư mời lịch làm việc</small></div>';
         };
-        var icsDate = function(date) {
-            return new Date(date).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-        };
         var icsText = function(value) {
             return String(value || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
-        };
-        var createIcs = function(attendee) {
-            var end = new Date(start.getTime() + Number(event.duration || 30) * 60000);
-            return [
-                'BEGIN:VCALENDAR',
-                'VERSION:2.0',
-                'PRODID:-//YNDA//Schedule//VI',
-                'METHOD:REQUEST',
-                'BEGIN:VEVENT',
-                'UID:' + body.bookingId + '@yniemdienanh.vn',
-                'DTSTAMP:' + icsDate(new Date()),
-                'DTSTART:' + icsDate(start),
-                'DTEND:' + icsDate(end),
-                'SUMMARY:' + icsText(event.title),
-                'DESCRIPTION:' + icsText((event.notes || '') + '\nGoogle Meet: ' + event.location),
-                'LOCATION:' + icsText(event.location),
-                'URL:' + event.location,
-                'ORGANIZER;CN=Ý Niệm Điện Ảnh:mailto:' + fromEmail,
-                'ATTENDEE;RSVP=TRUE:mailto:' + attendee,
-                'STATUS:CONFIRMED',
-                'END:VEVENT',
-                'END:VCALENDAR'
-            ].join('\r\n');
         };
 
         var candidateEmail = booking.candidateEmail.trim().toLowerCase();
@@ -247,16 +221,14 @@ module.exports = async function sendInterviewInvitations(req, res) {
             sendMailWithFallback({
                 to: candidateEmail,
                 subject: '[Ý Niệm Điện Ảnh] Xác nhận ' + (event.type === 'interview' ? 'phỏng vấn' : 'lịch họp') + ' — ' + event.title,
-                html: wrap(candidateHtml),
-                icalEvent: { method: 'request', content: createIcs(candidateEmail) }
+                html: wrap(candidateHtml)
             }, { fromName:sender.name, preferredProvider:'brevo' })
         ];
         recipients.forEach(function(email) {
             messages.push(sendMailWithFallback({
                 to: email,
                 subject: (event.type === 'interview' ? '[Người phỏng vấn] Lịch phỏng vấn' : '[Lịch họp]') + ' đã xác nhận — ' + event.title,
-                html: wrap(staffHtml),
-                icalEvent: { method: 'request', content: createIcs(email) }
+                html: wrap(staffHtml)
             }, { fromName:sender.name, preferredProvider:'brevo' }));
         });
         var results = await Promise.allSettled(messages);

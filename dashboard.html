@@ -6036,10 +6036,17 @@
                             '<div style="margin-bottom:18px;padding:14px 16px;border:1px solid rgba(228,184,102,.3);border-radius:10px;background:rgba(228,184,102,.05)">',
                                 '<h3 style="margin:0 0 6px;color:var(--gold)">⚙️ Mở/tắt đơn tuyển dụng</h3>',
                                 '<p style="color:var(--text-muted);font-size:.85rem;margin:0 0 12px">Chỉ Admin được chỉnh trạng thái nhận đơn. Khi tắt, form tương ứng sẽ ẩn hoặc báo tạm đóng ở trang đăng ký.</p>',
-                                '<div style="display:flex;flex-wrap:wrap;gap:18px">',
+                                '<div style="display:flex;flex-wrap:wrap;gap:18px;margin-bottom:10px">',
                                     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.presidentOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'president\',this.checked)"> 👑 Nhận đơn President</label>',
                                     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.cofounderOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'cofounder\',this.checked)"> 🤝 Nhận đơn Co-founder</label>',
                                     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.coreOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'core\',this.checked)"> 🔥 Nhận đơn Core / BTC</label>',
+                                '</div>',
+                                '<div style="display:flex;flex-wrap:wrap;gap:18px;padding-top:10px;border-top:1px solid rgba(228,184,102,0.12)">',
+                                    ['media|🎨 Ban Media','duyetBai|⚖️ Ban duyệt bài','noiDung|✍️ Ban Nội Dung','nhanSu|👥 Ban Nhân Sự','truyenThong|📣 Ban Truyền Thông'].map(function(pair) {
+                                        var parts = pair.split('|');
+                                        var key = parts[0], label = parts[1];
+                                        return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment[key + 'Open'] === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'' + key + '\',this.checked)"> ' + label + '</label>';
+                                    }).join(''),
                                 '</div>',
                             '</div>',
                             '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">',
@@ -9742,11 +9749,11 @@
             if (!session || session.role !== 'admin') return showToast('Chỉ Admin mới được chỉnh cài đặt này.', 'error');
             const keyMap = { president: 'presidentOpen', cofounder: 'cofounderOpen', core: 'coreOpen', organizer: 'coreOpen' };
             const key = keyMap[type] || (type + 'Open');
-            const labelMap = { president: 'President', cofounder: 'Co-founder', core: 'Core / BTC', organizer: 'Core / BTC' };
+            const labelMap = { president: 'President', cofounder: 'Co-founder', core: 'Core / BTC', organizer: 'Core / BTC', media: 'Ban Media', duyetBai: 'Ban duyệt bài', noiDung: 'Ban Nội Dung', nhanSu: 'Ban Nhân Sự', truyenThong: 'Ban Truyền Thông' };
             const label = labelMap[type] || type;
 
             if (!localDB.config) localDB.config = {};
-            if (!localDB.config.recruitment) localDB.config.recruitment = { presidentOpen: true, cofounderOpen: true, coreOpen: true };
+            if (!localDB.config.recruitment) localDB.config.recruitment = { presidentOpen: true, cofounderOpen: true, coreOpen: true, mediaOpen: true, duyetBaiOpen: true, noiDungOpen: true, nhanSuOpen: true, truyenThongOpen: true };
             const previous = localDB.config.recruitment[key] !== false;
             localDB.config.recruitment[key] = !!open;
             localStorage.setItem('ynda_db', JSON.stringify(localDB));

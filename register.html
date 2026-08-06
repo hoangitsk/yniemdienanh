@@ -728,7 +728,7 @@
         let session = null;
         let googleUserTemp = null;
         let currentTabId = '';
-        let recruitmentSettings = { presidentOpen:false, cofounderOpen:false, coreOpen:false };
+        let recruitmentSettings = { presidentOpen:false, cofounderOpen:false, coreOpen:false, mediaOpen:true, duyetBaiOpen:true, noiDungOpen:true, nhanSuOpen:true, truyenThongOpen:true };
         let recruitmentFilledByDept = null;
         let recruitmentDataKnown = false;
 
@@ -753,6 +753,24 @@
             if (type === 'cofounder') return recruitmentSettings.cofounderOpen !== false;
             if (type === 'core' || type === 'organizer') return recruitmentSettings.coreOpen !== false;
             return true;
+        }
+
+        // Map a selected department to its per-department recruitment open key.
+        function departmentOpenKeyFor(dept) {
+            const s = String(dept || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            if (s.includes('media') || s.includes('thiet ke') || s.includes('edit')) return 'mediaOpen';
+            if (s.includes('duyet bai')) return 'duyetBaiOpen';
+            if (s.includes('noi dung')) return 'noiDungOpen';
+            if (s.includes('nhan su') || s === 'hr') return 'nhanSuOpen';
+            if (s.includes('truyen thong') || s.includes('marketing')) return 'truyenThongOpen';
+            return null;
+        }
+
+        // Whether a given department accepts BTC applications, honoring per-ban toggles.
+        function isDeptRecruitmentOpen(dept) {
+            const key = departmentOpenKeyFor(dept);
+            if (key) return recruitmentSettings[key] !== false;
+            return recruitmentSettings.coreOpen !== false;
         }
 
         function renderRecruitmentAvailability() {
@@ -1290,9 +1308,15 @@
 
             const submitBtn = document.getElementById('orgSubmitBtn');
             if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Gửi đơn tuyển đợt 2 - BTC";
-                submitBtn.style.opacity = "";
+                const deptClosed = !isDeptRecruitmentOpen(selectedDept);
+                submitBtn.disabled = deptClosed;
+                if (deptClosed) {
+                    submitBtn.innerText = "Phân ban này đang tạm đóng nhận đơn";
+                    submitBtn.style.opacity = "0.6";
+                } else {
+                    submitBtn.innerText = "Gửi đơn tuyển đợt 2 - BTC";
+                    submitBtn.style.opacity = "";
+                }
             }
         }
 
@@ -1483,6 +1507,11 @@
             const vision = (visionEl ? visionEl.value : '').trim();
 
             const phoneRegex = /^0[0-9]{9}$/;
+            if (type === 'organizer' && dept && !isDeptRecruitmentOpen(dept)) {
+                msgEl.className = "form-msg err";
+                msgEl.textContent = "Phân ban này hiện đang tạm đóng nhận đơn. Vui lòng chọn phân ban khác.";
+                return;
+            }
             if (!phone) {
                 msgEl.textContent = "Vui lòng nhập số điện thoại / Zalo!";
                 return;

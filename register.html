@@ -730,8 +730,6 @@
         let currentTabId = '';
         let recruitmentSettings = { presidentOpen:false, cofounderOpen:false, coreOpen:false, mediaOpen:true, duyetBaiOpen:true, noiDungOpen:true, nhanSuOpen:true, truyenThongOpen:true,
                 media_coreOpen:true, media_viceOpen:true, duyetBai_coreOpen:true, duyetBai_viceOpen:true, noiDung_coreOpen:true, noiDung_viceOpen:true, nhanSu_coreOpen:true, nhanSu_viceOpen:true, truyenThong_coreOpen:true, truyenThong_viceOpen:true };
-        let recruitmentFilledByDept = null;
-        let recruitmentDataKnown = false;
 
         function canonDept(value) {
             const s = String(value || '')
@@ -1206,47 +1204,9 @@
 
         let activeBTCUsers = [];
 
+        // Chỉ cần cập nhật trạng thái mở/tắt theo toggle thủ công của admin.
+        // Bỏ hoàn toàn việc tự phát hiện "đã tuyển đủ" theo số người đang có.
         async function fetchBTCUsers() {
-            activeBTCUsers = [];
-            const endpoints = ['/api/recruitment/positions', 'https://yniemdienanh.vercel.app/api/recruitment/positions'];
-            for (const url of endpoints) {
-                try {
-                    const ctrl = new AbortController();
-                    const timer = setTimeout(() => ctrl.abort(), 8000);
-                    const resp = await fetch(url, { signal: ctrl.signal });
-                    clearTimeout(timer);
-                    if (!resp.ok) continue;
-                    const data = await resp.json();
-                    recruitmentFilledByDept = (data && data.filled) || {};
-                    recruitmentDataKnown = true;
-                    break;
-                } catch (err) {
-                    console.warn("Không tải được trạng thái vị trí từ server:", err);
-                }
-            }
-            if (useFirebase && dbInstance) {
-                try {
-                    const snap = await dbInstance.collection('users').get();
-                    snap.forEach(doc => {
-                        const ud = doc.data();
-                        if (ud.role === 'organizer' || ud.role === 'admin') {
-                            activeBTCUsers.push({
-                                id: doc.id,
-                                name: ud.name,
-                                role: ud.role,
-                                dept: ud.dept || '',
-                                position: ud.position || ''
-                            });
-                        }
-                    });
-                    if (activeBTCUsers.length) recruitmentDataKnown = true;
-                } catch (err) {
-                    console.warn("Public read of users failed. Falling back to localDB:", err);
-                    activeBTCUsers = (localDB && localDB.users || []).filter(u => u.role === 'organizer' || u.role === 'admin');
-                }
-            } else {
-                activeBTCUsers = (localDB && localDB.users || []).filter(u => u.role === 'organizer' || u.role === 'admin');
-            }
             updatePositionAvailability();
         }
 
@@ -1260,68 +1220,38 @@
             if (!deptSelect || !posSelect || !optCore || !optViceLead || !optMember) return;
 
             const selectedDept = deptSelect.value;
-            const btcMembers = activeBTCUsers || [];
-            
-            const normDept = (d) => String(d || '').trim().toLowerCase().replace(/^ban\s+/, '');
-            const targetDeptNorm = normDept(selectedDept);
 
-            // Check if vice lead exists in this department
-            const viceLeadUser = btcMembers.find(u => {
-                const uDept = normDept(u.dept || u.projectGroup);
-                const uPos = String(u.position || u.role || '').toLowerCase();
-                return uDept === targetDeptNorm && (uPos.includes('vice') || uPos.includes('phó') || uPos.includes('pho'));
-            });
-
-            // Check if core member exists in this department
-            const coreUser = btcMembers.find(u => {
-                const uDept = normDept(u.dept || u.projectGroup);
-                const uPos = String(u.position || u.role || '').toLowerCase();
-                return uDept === targetDeptNorm && (uPos.includes('core') || uPos.includes('trưởng') || uPos.includes('lead') || u.isCore);
-            });
-
-            const filledConfig = (recruitmentSettings && recruitmentSettings.filledPositions) || {};
-            const deptFilled = filledConfig[selectedDept] || filledConfig[targetDeptNorm] || {};
-
-            const apiFilled = (recruitmentFilledByDept && (recruitmentFilledByDept[canonDept(selectedDept)] || recruitmentFilledByDept[selectedDept] || recruitmentFilledByDept[targetDeptNorm])) || {};
-
+            // Chỉ mở/tắt thủ công theo toggle admin, không tự đoán "đã tuyển đủ".
             const viceToggleOff = recruitmentSettings && departmentKeyFor(selectedDept) && recruitmentSettings[departmentKeyFor(selectedDept) + '_viceOpen'] === false;
             const coreToggleOff = recruitmentSettings && departmentKeyFor(selectedDept) && recruitmentSettings[departmentKeyFor(selectedDept) + '_coreOpen'] === false;
 
-            const isViceLeadFull = !!viceLeadUser || !!apiFilled.vice_lead || !!deptFilled.vice_lead || !!viceToggleOff || !!(recruitmentSettings && recruitmentSettings['vice_full_' + selectedDept]);
-            const isCoreFull = !!coreUser || !!apiFilled.core || !!deptFilled.core || recruitmentSettings.coreOpen === false || !!coreToggleOff || !!(recruitmentSettings && recruitmentSettings['core_full_' + selectedDept]);
+            const isViceLeadFull = !!viceToggleOff;
+            const isCoreFull = recruitmentSettings.coreOpen === false || !!coreToggleOff;
 
             // Update vice lead option
             if (isViceLeadFull) {
                 optViceLead.disabled = true;
-                optViceLead.text = "Phó ban (Đã tuyển - Hết slot)";
+                optViceLead.text = "Phó ban (Tạm đóng nhận đơn)";
                 optViceLead.style.color = "rgba(255,255,255,0.4)";
+                if (posSelect.value === 'vice_lead') posSelect.value = 'member';
             } else {
                 optViceLead.disabled = false;
                 optViceLead.text = "Phó ban";
                 optViceLead.style.color = "";
             }
 
-            // Update core option — mặc định đóng khi chưa xác minh được dữ liệu
-            if (!recruitmentDataKnown) {
+            // Update core option — chỉ phụ thuộc toggle thủ công của admin
+            if (posSelect.value === 'core' && isCoreFull) {
+                posSelect.value = !isViceLeadFull ? 'vice_lead' : 'member';
+            }
+            if (isCoreFull) {
                 optCore.disabled = true;
                 optCore.text = "Core Member (Tạm đóng nhận đơn)";
-                optCore.style.color = "rgba(255,255,255,0.4)";
-            } else if (isCoreFull) {
-                optCore.disabled = true;
-                optCore.text = "Core Member (Đã tuyển - Hết slot)";
                 optCore.style.color = "rgba(255,255,255,0.4)";
             } else {
                 optCore.disabled = false;
                 optCore.text = "Core Member";
                 optCore.style.color = "";
-            }
-
-            // Automatically switch dropdown if selected position is full
-            if (posSelect.value === 'vice_lead' && isViceLeadFull) {
-                posSelect.value = 'member';
-            }
-            if (posSelect.value === 'core' && isCoreFull) {
-                posSelect.value = !isViceLeadFull ? 'vice_lead' : 'member';
             }
 
             const submitBtn = document.getElementById('orgSubmitBtn');

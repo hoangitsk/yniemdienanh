@@ -6519,11 +6519,12 @@
                                             '<td data-label="Xác thực">' + (u.emailVerified ? '<span style="color:var(--ok)">✔ Đã XT</span>' : '<span style="color:var(--danger)">✘ Chưa XT</span>') + '</td>' +
                                             '<td data-label="Trạng thái"><span style="color:' + lockColor + ';font-weight:600">' + locked + '</span></td>' +
                                             '<td data-label="Hoạt động" style="font-size:0.75rem;color:var(--text-muted)">' + lastAct + '</td>' +
-                                            '<td data-label="Ghi chú" style="font-size:0.75rem;max-width:120px;overflow:hidden;text-overflow:ellipsis">' + esc((u.notes || '').slice(0, 50)) + '</td>' +
-                                            '<td data-label="Thao tác">' +
-                                                (String(u.id) !== String(session.id) ?
-                                                    '<div style="display:flex;flex-direction:column;gap:4px">' +
-                                                        '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px" onclick="adminResetPass(\'' + esc(u.email) + '\')">🔄 Reset Pass</button>' +
+'<td data-label="Ghi chú" style="font-size:0.75rem;max-width:120px;overflow:hidden;text-overflow:ellipsis">' + esc((u.notes || '').slice(0, 50)) + '</td>' +
+                                    '<td data-label="Thao tác">' +
+                                        (String(u.id) !== String(session.id) ?
+                                            '<div style="display:flex;flex-direction:column;gap:4px">' +
+                                                (u.role === 'organizer' || u.role === 'admin' ? '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px;color:#f59e0b;border-color:#f59e0b" onclick="adminRemoveFromBTC(\'' + u.id + '\')">👋 Xóa khỏi BTC</button>' : '') +
+                                                '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px" onclick="adminResetPass(\'' + esc(u.email) + '\')">🔄 Reset Pass</button>' +
                                                         '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px;color:var(--ok);border-color:var(--ok)" onclick="adminVerifyUser(\'' + u.id + '\')">✔ Xác thực</button>' +
                                                         '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px;color:' + (u.locked ? '#63d19e' : '#ef4444') + ';border-color:' + (u.locked ? '#63d19e' : '#ef4444') + '" onclick="adminToggleLock(\'' + u.id + '\')">' + (u.locked ? '🔓 Mở khóa' : '🔒 Khóa') + '</button>' +
                                                         '<button class="btn btn-line btn-sm" style="font-size:0.65rem;padding:3px 6px;color:var(--gold-light);border-color:rgba(228,184,102,0.3)" onclick="adminEditNotes(\'' + u.id + '\')">📝 Ghi chú</button>' +
@@ -10661,6 +10662,24 @@
             addAuditLog('admin_change_role', 'Changed role of ' + (u.name || u.email) + ' from ' + oldRole + ' to ' + newRole + ' (ID: ' + id + ')');
             renderTab('accounts');
             showToast('Đã đổi vai trò của ' + esc(u.name) + ' thành ' + newRole + '.', 'success');
+        }
+
+        // Xóa thành viên ra khỏi BTC khi người đó nghỉ dự án (core/phó out).
+        // Chuyển role về member, xóa vị trí & phòng ban để giải phóng suất trong bảng điều phối.
+        async function adminRemoveFromBTC(id) {
+            var u = localDB.users.find(function(x) { return String(x.id) === String(id); });
+            if (!u) return;
+            if (String(u.id) === String(session.id)) return showToast('Bạn không thể tự xóa chính mình khỏi BTC.', 'error');
+            if (!(await showConfirmModal('Xóa ' + esc(u.name || u.email) + ' khỏi BTC? Người này sẽ trở thành Thành viên thường (mất vị trí Core/Phó ban và phòng ban).'))) return;
+            u.role = 'member';
+            u.position = '';
+            u.dept = '';
+            u.projectGroup = '';
+            if (u.isCore !== undefined) delete u.isCore;
+            await saveItem('users', u);
+            addAuditLog('admin_remove_from_btc', 'Removed ' + (u.name || u.email) + ' from BTC (ID: ' + id + ')');
+            renderTab('accounts');
+            showToast('Đã xóa ' + esc(u.name || u.email) + ' khỏi BTC.', 'success');
         }
 
         var _exportUsersCSVDone = false;

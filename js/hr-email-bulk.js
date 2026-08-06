@@ -239,7 +239,7 @@
         try {
             if (app && typeof window.assignApplicationToSelectedSchedule === 'function') {
                 await window.assignApplicationToSelectedSchedule(app, type);
-                if (typeof window.updateEmailScheduleLink === 'function') {
+                if (type === 'interview' && typeof window.updateEmailScheduleLink === 'function') {
                     window.updateEmailScheduleLink(app.activeScheduleCode || '');
                 }
                 subject = document.getElementById('emSubject').value;
@@ -247,7 +247,7 @@
             }
             var sCode = (app && (app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode)) || '';
             var sUrl = window.location.origin + (sCode ? '/schedule/' + encodeURIComponent(sCode) : '/schedule');
-            if (type === 'interview' || sCode) {
+            if (type === 'interview') {
                 if (!html.includes(sUrl) && !/href=["'][^"']*\/(?:schedule|select-time)/i.test(html)) {
                     html += '<p style="margin:20px 0;text-align:center"><a href="' + sUrl + '" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700">Chọn thời gian rảnh phỏng vấn</a></p>';
                 }
@@ -565,7 +565,7 @@
                 var emailBody = String(content.body || '');
                 var bulkSCode = draft.scheduleCode || app.activeScheduleCode || app.nextScheduleCode || app.interviewPollCode || app.meetingPollCode || '';
                 var bulkSUrl = window.location.origin + (bulkSCode ? '/schedule/' + encodeURIComponent(bulkSCode) : '/schedule');
-                if (draft.type === 'interview' || bulkSCode) {
+                if (draft.type === 'interview') {
                     if (!emailBody.includes(bulkSUrl) && !/href=["'][^"']*\/(?:schedule|select-time)/i.test(emailBody)) {
                         emailBody += '<p style="margin:20px 0;text-align:center"><a href="' + bulkSUrl + '" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700">Chọn thời gian rảnh phỏng vấn</a></p>';
                     }

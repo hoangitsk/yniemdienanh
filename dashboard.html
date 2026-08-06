@@ -6041,11 +6041,19 @@
                                     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.cofounderOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'cofounder\',this.checked)"> 🤝 Nhận đơn Co-founder</label>',
                                     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment.coreOpen === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'core\',this.checked)"> 🔥 Nhận đơn Core / BTC</label>',
                                 '</div>',
-                                '<div style="display:flex;flex-wrap:wrap;gap:18px;padding-top:10px;border-top:1px solid rgba(228,184,102,0.12)">',
+                                '<div style="display:flex;flex-wrap:wrap;gap:12px;padding-top:10px;border-top:1px solid rgba(228,184,102,0.12)">',
                                     ['media|🎨 Ban Media','duyetBai|⚖️ Ban duyệt bài','noiDung|✍️ Ban Nội Dung','nhanSu|👥 Ban Nhân Sự','truyenThong|📣 Ban Truyền Thông'].map(function(pair) {
                                         var parts = pair.split('|');
                                         var key = parts[0], label = parts[1];
-                                        return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ' + ((localDB.config && localDB.config.recruitment && localDB.config.recruitment[key + 'Open'] === false) ? '' : 'checked') + ' onchange="toggleRecruitmentSetting(\'' + key + '\',this.checked)"> ' + label + '</label>';
+                                        var banOn = (localDB.config && localDB.config.recruitment && localDB.config.recruitment[key + 'Open'] === false) ? '' : 'checked';
+                                        var coreOn = (localDB.config && localDB.config.recruitment && localDB.config.recruitment[key + '_coreOpen'] === false) ? '' : 'checked';
+                                        var viceOn = (localDB.config && localDB.config.recruitment && localDB.config.recruitment[key + '_viceOpen'] === false) ? '' : 'checked';
+                                        return '<div style="padding:8px 12px;border:1px solid rgba(228,184,102,0.18);border-radius:8px;background:rgba(228,184,102,0.05);min-width:150px">' +
+                                            '<div style="color:var(--gold);font-weight:700;margin-bottom:6px">' + label + '</div>' +
+                                            '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.82rem"><input type="checkbox" ' + banOn + ' onchange="toggleRecruitmentSetting(\'' + key + '\',this.checked)"> Mở tuyển ban</label>' +
+                                            '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.82rem"><input type="checkbox" ' + coreOn + ' onchange="toggleRecruitmentSetting(\'' + key + '_core\',this.checked)"> Nhận Core</label>' +
+                                            '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.82rem"><input type="checkbox" ' + viceOn + ' onchange="toggleRecruitmentSetting(\'' + key + '_vice\',this.checked)"> Nhận Phó ban</label>' +
+                                        '</div>';
                                     }).join(''),
                                 '</div>',
                             '</div>',
@@ -9750,7 +9758,9 @@
             const keyMap = { president: 'presidentOpen', cofounder: 'cofounderOpen', core: 'coreOpen', organizer: 'coreOpen' };
             const key = keyMap[type] || (type + 'Open');
             const labelMap = { president: 'President', cofounder: 'Co-founder', core: 'Core / BTC', organizer: 'Core / BTC', media: 'Ban Media', duyetBai: 'Ban duyệt bài', noiDung: 'Ban Nội Dung', nhanSu: 'Ban Nhân Sự', truyenThong: 'Ban Truyền Thông' };
-            const label = labelMap[type] || type;
+            let label = labelMap[type] || type;
+            if (type.indexOf('_core') !== -1) label = (labelMap[type.replace('_core','')] || type) + ' (Core)';
+            if (type.indexOf('_vice') !== -1) label = (labelMap[type.replace('_vice','')] || type) + ' (Phó ban)';
 
             if (!localDB.config) localDB.config = {};
             if (!localDB.config.recruitment) localDB.config.recruitment = { presidentOpen: true, cofounderOpen: true, coreOpen: true, mediaOpen: true, duyetBaiOpen: true, noiDungOpen: true, nhanSuOpen: true, truyenThongOpen: true };

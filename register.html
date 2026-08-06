@@ -728,7 +728,8 @@
         let session = null;
         let googleUserTemp = null;
         let currentTabId = '';
-        let recruitmentSettings = { presidentOpen:false, cofounderOpen:false, coreOpen:false, mediaOpen:true, duyetBaiOpen:true, noiDungOpen:true, nhanSuOpen:true, truyenThongOpen:true };
+        let recruitmentSettings = { presidentOpen:false, cofounderOpen:false, coreOpen:false, mediaOpen:true, duyetBaiOpen:true, noiDungOpen:true, nhanSuOpen:true, truyenThongOpen:true,
+                media_coreOpen:true, media_viceOpen:true, duyetBai_coreOpen:true, duyetBai_viceOpen:true, noiDung_coreOpen:true, noiDung_viceOpen:true, nhanSu_coreOpen:true, nhanSu_viceOpen:true, truyenThong_coreOpen:true, truyenThong_viceOpen:true };
         let recruitmentFilledByDept = null;
         let recruitmentDataKnown = false;
 
@@ -756,14 +757,19 @@
         }
 
         // Map a selected department to its per-department recruitment open key.
-        function departmentOpenKeyFor(dept) {
+        function departmentKeyFor(dept) {
             const s = String(dept || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            if (s.includes('media') || s.includes('thiet ke') || s.includes('edit')) return 'mediaOpen';
-            if (s.includes('duyet bai')) return 'duyetBaiOpen';
-            if (s.includes('noi dung')) return 'noiDungOpen';
-            if (s.includes('nhan su') || s === 'hr') return 'nhanSuOpen';
-            if (s.includes('truyen thong') || s.includes('marketing')) return 'truyenThongOpen';
+            if (s.includes('media') || s.includes('thiet ke') || s.includes('edit')) return 'media';
+            if (s.includes('duyet bai')) return 'duyetBai';
+            if (s.includes('noi dung')) return 'noiDung';
+            if (s.includes('nhan su') || s === 'hr') return 'nhanSu';
+            if (s.includes('truyen thong') || s.includes('marketing')) return 'truyenThong';
             return null;
+        }
+
+        function departmentOpenKeyFor(dept) {
+            const base = departmentKeyFor(dept);
+            return base ? base + 'Open' : null;
         }
 
         // Whether a given department accepts BTC applications, honoring per-ban toggles.
@@ -771,6 +777,15 @@
             const key = departmentOpenKeyFor(dept);
             if (key) return recruitmentSettings[key] !== false;
             return recruitmentSettings.coreOpen !== false;
+        }
+
+        // Whether a specific position (core / vice_lead) is open for the department.
+        function isDeptPositionOpen(dept, position) {
+            const base = departmentKeyFor(dept);
+            if (!base) return true;
+            if (position === 'core') return recruitmentSettings[base + '_coreOpen'] !== false;
+            if (position === 'vice_lead') return recruitmentSettings[base + '_viceOpen'] !== false;
+            return true;
         }
 
         function renderRecruitmentAvailability() {
@@ -1269,8 +1284,11 @@
 
             const apiFilled = (recruitmentFilledByDept && (recruitmentFilledByDept[canonDept(selectedDept)] || recruitmentFilledByDept[selectedDept] || recruitmentFilledByDept[targetDeptNorm])) || {};
 
-            const isViceLeadFull = !!viceLeadUser || !!apiFilled.vice_lead || !!deptFilled.vice_lead || !!(recruitmentSettings && recruitmentSettings['vice_full_' + selectedDept]);
-            const isCoreFull = !!coreUser || !!apiFilled.core || !!deptFilled.core || recruitmentSettings.coreOpen === false || !!(recruitmentSettings && recruitmentSettings['core_full_' + selectedDept]);
+            const viceToggleOff = recruitmentSettings && departmentKeyFor(selectedDept) && recruitmentSettings[departmentKeyFor(selectedDept) + '_viceOpen'] === false;
+            const coreToggleOff = recruitmentSettings && departmentKeyFor(selectedDept) && recruitmentSettings[departmentKeyFor(selectedDept) + '_coreOpen'] === false;
+
+            const isViceLeadFull = !!viceLeadUser || !!apiFilled.vice_lead || !!deptFilled.vice_lead || !!viceToggleOff || !!(recruitmentSettings && recruitmentSettings['vice_full_' + selectedDept]);
+            const isCoreFull = !!coreUser || !!apiFilled.core || !!deptFilled.core || recruitmentSettings.coreOpen === false || !!coreToggleOff || !!(recruitmentSettings && recruitmentSettings['core_full_' + selectedDept]);
 
             // Update vice lead option
             if (isViceLeadFull) {
@@ -1507,10 +1525,22 @@
             const vision = (visionEl ? visionEl.value : '').trim();
 
             const phoneRegex = /^0[0-9]{9}$/;
-            if (type === 'organizer' && dept && !isDeptRecruitmentOpen(dept)) {
-                msgEl.className = "form-msg err";
-                msgEl.textContent = "Phân ban này hiện đang tạm đóng nhận đơn. Vui lòng chọn phân ban khác.";
-                return;
+            if (type === 'organizer' && dept) {
+                if (!isDeptRecruitmentOpen(dept)) {
+                    msgEl.className = "form-msg err";
+                    msgEl.textContent = "Phân ban này hiện đang tạm đóng nhận đơn. Vui lòng chọn phân ban khác.";
+                    return;
+                }
+                if (position === 'core' && !isDeptPositionOpen(dept, 'core')) {
+                    msgEl.className = "form-msg err";
+                    msgEl.textContent = "Vị trí Core Member của phân ban này đang tạm đóng. Vui lòng chọn vị trí khác.";
+                    return;
+                }
+                if (position === 'vice_lead' && !isDeptPositionOpen(dept, 'vice_lead')) {
+                    msgEl.className = "form-msg err";
+                    msgEl.textContent = "Vị trí Phó ban của phân ban này đang tạm đóng. Vui lòng chọn vị trí khác.";
+                    return;
+                }
             }
             if (!phone) {
                 msgEl.textContent = "Vui lòng nhập số điện thoại / Zalo!";

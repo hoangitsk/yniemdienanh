@@ -9116,7 +9116,7 @@
                 t.qrCode
             );
             
-            const donationLabel = extra?.donationType === 'prize' ? '🏆 Quỹ giải thưởng' : extra?.donationType === 'operation' ? '⚙️ Vận hành dự án' : extra?.donationType === 'sponsor_tier' ? '🤝 Tài trợ dự án' : '💖 Đóng góp chung';
+            const donationLabel = extra?.donationType === 'prize' ? '🏆 Quỹ giải thưởng' : extra?.donationType === 'operation' ? '⚙️ Vận hành dự án' : extra?.sponsorTier ? '🤝 Tài trợ dự án' : '💖 Đóng góp chung';
 
             if (existingTx) {
                 // Tái sử dụng QR và link thanh toán cũ
@@ -9727,7 +9727,7 @@
                 eventId: targetId,
                 eventTitle: eventTitle,
                 customAmount: amount,
-                donationType: _donationState.type === 'sponsor_tier' ? 'sponsor' : _donationState.type,
+                donationType: _donationState.type === 'sponsor_tier' ? 'general' : _donationState.type,
                 sponsorTier: _donationState.sponsorTier,
                 displayName: _donationState.displayName,
                 displayType: _donationState.displayType,

@@ -793,6 +793,14 @@ app.get('/ynda', (req, res) => {
     res.sendFile(path.join(__dirname, 'ynda.html'));
 });
 
+app.get('/ynda-sw.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'ynda-sw.js'));
+});
+
+app.get('/ynda-manifest.json', (req, res) => {
+    res.sendFile(path.join(__dirname, 'ynda-manifest.json'));
+});
+
 app.get('/cham-diem', (req, res) => {
     res.sendFile(path.join(__dirname, 'cham-diem.html'));
 });

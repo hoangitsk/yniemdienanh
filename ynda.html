@@ -86,18 +86,32 @@ if ('serviceWorker' in navigator && location.hostname !== 'localhost' && locatio
 // Không nhúng logic XP nào ở client.
 // =============================================================================
 const BASE = '/api/ynda';
-let S = { token: localStorage.getItem('ynda_t') || '', user: null, cfg: null, tab: 'me', tasks: [], board: [], missions: [], claims: [], assignments: [], submissions: [], reviews: [], ledger: [], users: [], seasons: [], production: [], templates: [], notifications: [], xp: null, leaderboard: null, audit: [], roleReviews: [] };
+let S = { token: '', user: null, cfg: null, tab: 'me', tasks: [], board: [], missions: [], claims: [], assignments: [], submissions: [], reviews: [], ledger: [], users: [], seasons: [], production: [], templates: [], notifications: [], xp: null, leaderboard: null, audit: [], roleReviews: [] };
 const N = name => document.querySelector(name);
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 function toast(msg, ms = 2200) { const t = N('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), ms); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 async function api(method, path, body) {
   const headers = { 'Content-Type': 'application/json' };
+  if (fbAuth && fbAuth.currentUser) {
+    try { S.token = await fbAuth.currentUser.getIdToken(); } catch (e) {}
+  }
   if (S.token) headers['Authorization'] = 'Bearer ' + S.token;
-  const res = await fetch(BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  let res = await fetch(BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  // idToken hết hạn (1h) -> refresh rồi thử lại 1 lần
+  if (res.status === 401 && fbAuth && fbAuth.currentUser) {
+    try {
+      S.token = await fbAuth.currentUser.getIdToken(true);
+      headers['Authorization'] = 'Bearer ' + S.token;
+      res = await fetch(BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    } catch (e) {}
+  }
   let data = null;
   try { data = await res.json(); } catch (e) {}
-  if (res.status === 401) { S.token = ''; localStorage.removeItem('ynda_t'); S.user = null; if (fbAuth) { try { fbAuth.signOut(); } catch (e) {} } render(); toast('Phiên hết hạn, đăng nhập lại'); }
+  if (res.status === 401) {
+    S.token = ''; localStorage.removeItem('ynda_t'); S.user = null; render();
+    toast('Phiên hết hạn, đăng nhập lại');
+  }
   if (!res.ok) throw new Error((data && (data.error || data.message)) || ('HTTP ' + res.status));
   return data;
 }
@@ -186,25 +200,37 @@ const can = action => {
 // ---------------------------------------------------------------- views
 const FIREBASE_CONFIG = { apiKey: "AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ", authDomain: "yniemdienanh-fb0b7.firebaseapp.com", projectId: "yniemdienanh-fb0b7", appId: "1:69246326577:web:50fb1d9cab97e7543fc210" };
 let fbApp = null, fbAuth = null;
+// Dùng DEFAULT app (giống index.html) để chia sẻ phiên đăng nhập cùng origin
 function initFirebase() {
   if (fbAuth || typeof firebase === 'undefined') return;
   try {
-    fbApp = firebase.initializeApp(FIREBASE_CONFIG, 'ynda');
+    fbApp = firebase.initializeApp(FIREBASE_CONFIG);
     fbAuth = firebase.auth(fbApp);
     fbAuth.onAuthStateChanged(u => {
-      if (u && !S.token) restoreSession();
-      if (!u && S.token) { S.token = ''; localStorage.removeItem('ynda_t'); S.user = null; render(); }
+      // u mới (login/logout/xuất hiện phiên) — xử lý tại resolveBoot
+      if (_bootDone) onAuthUserChanged(u);
+      else resolveBoot(u);
     });
   } catch (e) { console.warn('Firebase init fail', e.message); }
 }
 
-// Firebase Auth đã có phiên -> lấy idToken mới rồi login với API YNDA
+// Lấy idToken mới nhất (Firebase tự refresh khi hết hạn) — dùng cho mọi request
+async function refreshToken() {
+  if (!fbAuth || !fbAuth.currentUser) return '';
+  try {
+    const t = await fbAuth.currentUser.getIdToken();
+    if (t) S.token = t;
+    return t;
+  } catch (e) { return ''; }
+}
+
+// Khi chưa có S.user nhưng Firebase còn phiên -> lấy idToken rồi xác lập trên API YNDA
 async function restoreSession() {
   if (!fbAuth || !fbAuth.currentUser) return;
   try {
     const idToken = await fbAuth.currentUser.getIdToken();
     const d = await api('POST', '/auth/login', { idToken });
-    S.user = d.user; S.token = idToken; localStorage.setItem('ynda_t', idToken);
+    S.token = idToken; S.user = d.user;
     await loadBase(); await loadTabData(); render();
   } catch (e) { if (!/401/.test(e.message)) console.warn('session restore', e.message); }
 }
@@ -253,7 +279,7 @@ async function doLogin() {
 }
 
 async function finishLogin(idToken) {
-  S.token = idToken; localStorage.setItem('ynda_t', idToken);
+  S.token = idToken; localStorage.setItem('ynda_t', '1');
   const d = await api('POST', '/auth/login', { idToken });
   S.user = d.user;
   await loadBase(); await loadTabData(); render(); toast('Đã đăng nhập: ' + (d.user && d.user.NAME || ''));
@@ -781,8 +807,8 @@ async function render() {
   const app = N('#app');
   if (!S.token) {
     initFirebase();
-    // Nếu Firebase còn phiên đã lưu nhưng token local mất -> khôi phục
-    if (fbAuth && fbAuth.currentUser) { restoreSession(); return; }
+    // Nếu Firebase còn phiên (mới khôi phục bất đồng bộ) -> chờ restore
+    if (fbAuth && fbAuth.currentUser) { await restoreSession(); return; }
     app.innerHTML = viewAuth();
     return;
   }
@@ -794,9 +820,43 @@ async function render() {
   if (S.tab === 'roleReview') renderRoleReviews();
   if (S._submitRef) { openSubmit(S._submitRef); S._submitRef = null; }
 }
+// Trạng thái boot: chờ Firebase khôi phục phiên (bất đồng bộ) rồi mới render
+let _bootDone = false;
+function resolveBoot(u) {
+  if (_bootDone) { onAuthUserChanged(u); return; }
+  _bootDone = true;
+  if (u) {
+    refreshToken().then(t => { if (t) restoreSession(); else showLogin(); });
+  } else {
+    showLogin();
+  }
+}
+
+// Xử lý thay đổi phiên sau khi đã boot xong (login/logout)
+function onAuthUserChanged(u) {
+  if (u) {
+    refreshToken().then(t => { if (t && !S.user) restoreSession(); });
+  } else {
+    S.token = ''; localStorage.removeItem('ynda_t'); S.user = null;
+    showLogin();
+  }
+}
+
+function showLogin() {
+  S.token = ''; localStorage.removeItem('ynda_t'); S.user = null;
+  navDef(); N('#app').innerHTML = viewAuth();
+}
+
+// S.token chỉ là cache phiên; nếu có user Firebase trước đó, boot qua Firebase
 initFirebase();
-if (S.token) restoreSession().then(() => { if (S.user) render(); });
-else render();
+if (fbAuth) {
+  // Nếu Firebase đã khôi phục xong ngay (bộ nhớ local) — onAuthStateChanged cũng sẽ gọi
+  const cur = fbAuth.currentUser;
+  if (cur) { refreshToken().then(t => { if (t) restoreSession(); else showLogin(); }); }
+  setTimeout(() => { if (!S.user && !_bootDone) { _bootDone = true; showLogin(); } }, 4000);
+} else {
+  showLogin();
+}
 </script>
 </body>
 </html>

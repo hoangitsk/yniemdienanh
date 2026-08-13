@@ -24,6 +24,8 @@ const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY || "";
 
 const PAYOS_ENABLED = !!(PAYOS_CLIENT_ID && PAYOS_API_KEY && PAYOS_CHECKSUM_KEY);
 const payos = PAYOS_ENABLED ? new PayOS(PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY) : null;
+const PORT = process.env.PORT || 3000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 // Initialize Firebase Admin
 let db = null;
@@ -61,6 +63,9 @@ app.disable('x-powered-by');
 var CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
 app.use(express.json({ limit: '3mb' }));
+app.use('/js', express.static(path.join(__dirname, 'js')));
+app.use('/Logo', express.static(path.join(__dirname, 'Logo')));
+app.use('/frame', express.static(path.join(__dirname, 'frame')));
 
 // Simple in-memory rate limiter
 var rateLimitStore = {};

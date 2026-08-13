@@ -816,48 +816,11 @@
             }
         }
 
-        // Star Background Animation
+        // Star Background Animation (Handled by /js/star-particles.js)
         function initStars() {
-            const canvas = document.getElementById('stars');
-            if(!canvas) return;
-            const ctx = canvas.getContext('2d');
-            let width = canvas.width = window.innerWidth;
-            let height = canvas.height = window.innerHeight;
-            
-            const starCount = 60;
-            const starList = [];
-            for (let i = 0; i < starCount; i++) {
-                starList.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    r: Math.random() * 1.5 + 0.5,
-                    alpha: Math.random(),
-                    speed: 0.01 + Math.random() * 0.02
-                });
+            if (typeof window.initInteractiveStars === 'function') {
+                window.initInteractiveStars();
             }
-            
-            function animate() {
-                ctx.clearRect(0, 0, width, height);
-                ctx.fillStyle = "rgba(228, 184, 102, 0.8)";
-                for (let i = 0; i < starCount; i++) {
-                    const s = starList[i];
-                    s.alpha += s.speed;
-                    if (s.alpha > 1 || s.alpha < 0) s.speed = -s.speed;
-                    ctx.save();
-                    ctx.globalAlpha = Math.max(0, s.alpha);
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.restore();
-                }
-                requestAnimationFrame(animate);
-            }
-            animate();
-            
-            window.addEventListener('resize', () => {
-                width = canvas.width = window.innerWidth;
-                height = canvas.height = window.innerHeight;
-            });
         }
 
         // Initialize Firebase Client
@@ -1852,5 +1815,6 @@
             }
         });
     </script>
+    <script src="/js/star-particles.js"></script>
 </body>
 </html>

@@ -10153,8 +10153,10 @@
             }
         }
 
-        // ================= STARS DYNAMIC CANVAS (TWINKLING 4 & 5-POINT STARS) =================
+        // ================= STARS DYNAMIC CANVAS (HANDLED BY /js/star-particles.js) =================
         (function () {
+            // Star animation migrated to /js/star-particles.js
+            return;
             const c = document.getElementById('stars');
             const xCtx = c.getContext('2d');
             let stars = [];
@@ -12039,6 +12041,7 @@ ${senderSignature}`
         function persistDB() { localStorage.setItem('ynda_db', JSON.stringify(localDB)); }
     </script>
     <script src="/js/hr-email-bulk.js"></script>
+    <script src="/js/star-particles.js"></script>
 </body>
 
 </html>

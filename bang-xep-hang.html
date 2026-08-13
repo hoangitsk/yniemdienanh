@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Bảng xếp hạng thành viên và ban tổ chức - Ý Niệm Điện Ảnh. Xem ai đang dẫn đầu về điểm đóng góp.">
+    <meta name="description" content="Bảng xếp hạng thành viên và ban tổ chức - Ý Niệm Điện Ảnh. Xem ai đang dẫn đầu về điểm đóng góp, theo tổng điểm và theo từng tháng.">
     <title>Bảng Xếp Hạng — Ý Niệm Điện Ảnh</title>
     <link rel="icon" type="image/png" href="/Logo/avtar.png">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -25,6 +25,27 @@
         .tab:hover { border-color:var(--gold); color:var(--gold-light); }
         .tab.active { background:linear-gradient(135deg,rgba(228,184,102,.2),rgba(228,184,102,.05)); border-color:var(--gold); color:var(--gold-light); box-shadow:0 0 24px rgba(228,184,102,.12); }
         .tab .count { opacity:.75; font-weight:500; font-size:.8rem; }
+        .month-select { display:none; margin:-10px 0 22px; align-items:center; gap:12px; }
+        .month-select.visible { display:flex; }
+        .month-select label { color:var(--muted); font-size:.86rem; font-weight:600; }
+        .month-select select { padding:9px 14px; border-radius:10px; border:1px solid rgba(228,184,102,.35); background:rgba(5,12,20,.7); color:var(--gold-light); font-size:.9rem; font-weight:600; cursor:pointer; outline:none; }
+        .month-select select:focus { border-color:var(--gold); box-shadow:0 0 12px rgba(228,184,102,.15); }
+        .month-badge { color:var(--gold-light); font-weight:700; font-size:.9rem; }
+        .ban-select { display:none; margin:0 0 22px; align-items:center; gap:12px; }
+        .ban-select.visible { display:flex; }
+        .ban-select label { color:var(--muted); font-size:.86rem; font-weight:600; }
+        .ban-select select { padding:9px 14px; border-radius:10px; border:1px solid rgba(228,184,102,.35); background:rgba(5,12,20,.7); color:var(--gold-light); font-size:.9rem; font-weight:600; cursor:pointer; outline:none; }
+        .ban-select select:focus { border-color:var(--gold); box-shadow:0 0 12px rgba(228,184,102,.15); }
+        .clear-filter { background:none; border:none; color:var(--muted); cursor:pointer; font-size:.8rem; font-weight:600; text-decoration:underline; }
+        .clear-filter:hover { color:var(--gold-light); }
+        .ban-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+        .ban-card { border:1px solid var(--line); border-radius:18px; padding:18px 20px; background:rgba(5,12,20,.5); }
+        .ban-card .ban-name { color:var(--gold); font-weight:800; font-size:.8rem; letter-spacing:.08em; text-transform:uppercase; }
+        .ban-card .ban-champ { margin-top:10px; display:flex; align-items:center; gap:10px; }
+        .ban-card .ban-medal { font-size:1.5rem; }
+        .ban-card .ban-nm { font-weight:700; color:var(--text); }
+        .ban-card .ban-meta { color:var(--muted); font-size:.78rem; margin-top:3px; }
+        .ban-card .ban-pts { margin-top:12px; display:inline-block; padding:4px 12px; border-radius:999px; background:rgba(228,184,102,.15); color:var(--gold-light); font-weight:800; font-size:.95rem; }
         .podium { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px; }
         .pod-card { border:1px solid var(--line); border-radius:18px; padding:22px 16px; text-align:center; background:rgba(5,12,20,.55); }
         .pod-card.p1 { border-color:rgba(228,184,102,.7); box-shadow:0 0 30px rgba(228,184,102,.18); order:2; }
@@ -78,8 +99,24 @@
 
         <div class="tabs">
             <button class="tab active" data-group="all" onclick="switchGroup('all')">🏆 Overall Ranking <span class="count" id="countAll"></span></button>
-            <button class="tab" data-group="mem" onclick="switchGroup('mem')">👥 Thành viên <span class="count" id="countMem"></span></button>
             <button class="tab" data-group="core" onclick="switchGroup('core')">⭐ Core <span class="count" id="countCore"></span></button>
+            <button class="tab" data-group="mem" onclick="switchGroup('mem')">👥 Thành viên <span class="count" id="countMem"></span></button>
+            <button class="tab" data-group="monthly" onclick="switchGroup('monthly')">📅 Theo tháng</button>
+            <button class="tab" data-group="ban" onclick="switchGroup('ban')">🏅 Top mỗi Ban</button>
+        </div>
+
+        <div class="month-select" id="monthSelect">
+            <label for="monthPicker">Xem tháng:</label>
+            <select id="monthPicker" onchange="loadMonthly(this.value)"></select>
+            <span class="month-badge" id="monthBadge"></span>
+        </div>
+
+        <div class="ban-select" id="banSelect">
+            <label for="banPicker">Lọc theo Ban:</label>
+            <select id="banPicker" onchange="applyBan(this.value)">
+                <option value="">Tất cả các Ban</option>
+            </select>
+            <button class="clear-filter" onclick="applyBan('')" style="display:none" id="clearBanBtn">✕ Bỏ lọc</button>
         </div>
 
         <div id="rankContent">
@@ -110,11 +147,21 @@
     <script>
         let currentGroup = 'all';
         let cached = null;
+        let currentMonth = null;
+        let currentBan = '';
 
         function esc(s) {
             return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
                 return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
             });
+        }
+
+        function monthLabel(mk) {
+            if (!mk) return '';
+            const p = mk.split('-');
+            const names = ['', 'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+                'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+            return names[parseInt(p[1], 10)] + ' ' + p[0];
         }
 
         async function loadRanking(force) {
@@ -126,10 +173,82 @@
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || 'Lỗi không xác định');
                 cached = data;
+                if (!currentMonth) currentMonth = data.currentMonth;
+                populateMonths();
+                populateBans(data);
                 render(data);
             } catch (err) {
                 el.innerHTML = '<div class="error">Không thể tải bảng xếp hạng: ' + esc(err.message) + '</div>';
             }
+        }
+
+        function populateMonths() {
+            const sel = document.getElementById('monthPicker');
+            if (!sel || !cached) return;
+            const months = cached.availableMonths && cached.availableMonths.length
+                ? cached.availableMonths
+                : ([cached.currentMonth] || []);
+            if (!months.length) return;
+            const target = currentMonth || months[0];
+            sel.innerHTML = months.map(function(m) {
+                return '<option value="' + esc(m) + '"' + (m === target ? ' selected' : '') + '>' + esc(monthLabel(m)) + '</option>';
+            }).join('');
+            updateMonthBadge(target);
+        }
+
+        function updateMonthBadge(m) {
+            const badge = document.getElementById('monthBadge');
+            if (badge) badge.textContent = m ? 'BXH ' + esc(monthLabel(m)) : '';
+        }
+
+        function allMembers(data) {
+            const src = data.all && data.all.length ? data.all : (data.overall && data.overall.totalMembers ? (data.core || []).concat(data.mem || []) : []);
+            return src;
+        }
+
+        function populateBans(data) {
+            const sel = document.getElementById('banPicker');
+            if (!sel) return;
+            const members = allMembers(data);
+            const banSet = {};
+            members.forEach(function(m) {
+                const d = String(m.dept || '').trim().toUpperCase();
+                if (d) banSet[d] = true;
+            });
+            const bans = Object.keys(banSet).sort(function(a, b) { return a.localeCompare(b, 'vi'); });
+            sel.innerHTML = '<option value="">Tất cả các Ban</option>' +
+                bans.map(function(b) {
+                    return '<option value="' + esc(b) + '"' + (currentBan === b ? ' selected' : '') + '>' + esc(b) + '</option>';
+                }).join('');
+            const clearBtn = document.getElementById('clearBanBtn');
+            if (clearBtn) clearBtn.style.display = currentBan ? 'inline-block' : 'none';
+        }
+
+        function applyBan(ban) {
+            currentBan = ban ? String(ban).trim().toUpperCase() : '';
+            const clearBtn = document.getElementById('clearBanBtn');
+            if (clearBtn) clearBtn.style.display = currentBan ? 'inline-block' : 'none';
+            if (cached) render(cached);
+        }
+
+        async function loadMonthly(month) {
+            currentMonth = month;
+            if (!cached.monthly || cached.monthly.month !== month) {
+                const el = document.getElementById('rankContent');
+                el.innerHTML = '<div class="loading">Đang tải bảng tháng…</div>';
+                try {
+                    const res = await fetch('/api/ranking?month=' + encodeURIComponent(month));
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.error || 'Lỗi không xác định');
+                    cached.monthly = data.monthly;
+                    if (!cached.availableMonths || !cached.availableMonths.length) cached.availableMonths = data.availableMonths;
+                } catch (err) {
+                    el.innerHTML = '<div class="error">Không thể tải bảng tháng: ' + esc(err.message) + '</div>';
+                    return;
+                }
+            }
+            updateMonthBadge(month);
+            render(cached);
         }
 
         function medalFor(rank) {
@@ -172,13 +291,68 @@
                 }).join('') + '</div>';
         }
 
+        function renderBanGrid(data) {
+            const members = allMembers(data);
+            if (!members.length) {
+                return '<div class="empty"><div class="icon">🏅</div><div>Chưa có dữ liệu thành viên.</div></div>';
+            }
+
+            const banMap = {};
+            members.forEach(function(m) {
+                const d = String(m.dept || '').trim();
+                if (!d) return;
+                const key = d.toUpperCase();
+                if (!banMap[key]) banMap[key] = { name: d, members: [] };
+                banMap[key].members.push(m);
+            });
+
+            const cards = [];
+            Object.keys(banMap).sort(function(a, b) {
+                const pa = banMap[a].members.slice().sort(function(x, y) { return y.totalPoints - x.totalPoints; });
+                const pb = banMap[b].members.slice().sort(function(x, y) { return y.totalPoints - x.totalPoints; });
+                return (pb[0] ? pb[0].totalPoints : 0) - (pa[0] ? pa[0].totalPoints : 0) || a.localeCompare(b, 'vi');
+            }).forEach(function(key, idx) {
+                const ban = banMap[key];
+                const top = ban.members.slice().sort(function(x, y) { return y.totalPoints - x.totalPoints || x.name.localeCompare(y.name, 'vi'); })[0];
+                if (!top) return;
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '';
+                cards.push(
+                    '<div class="ban-card">' +
+                    '<div class="ban-name">' + esc(ban.name) + '</div>' +
+                    '<div class="ban-champ"><div class="ban-medal">' + medal + '</div>' +
+                    '<div><div class="ban-nm">' + esc(top.name) + '</div>' +
+                    '<div class="ban-meta">' + esc(top.title || top.role || '') + '</div></div></div>' +
+                    '<div class="ban-pts">Top 1 · ' + top.totalPoints + ' điểm</div>' +
+                    '</div>'
+                );
+            });
+
+            if (!cards.length) {
+                return '<div class="empty"><div class="icon">🏅</div><div>Chưa có Ban nào được gán cho thành viên.</div></div>';
+            }
+            return '<div class="ban-grid">' + cards.join('') + '</div>';
+        }
+
+        function appliesBan(list) {
+            if (!currentBan) return list;
+            return list.filter(function(m) {
+                return String(m.dept || '').trim().toUpperCase() === currentBan;
+            });
+        }
+
         function render(data) {
-            const list = currentGroup === 'core' ? data.core : currentGroup === 'all' ? data.all : data.mem;
+            if (currentGroup === 'ban') { renderTopBanView(data); return; }
+            const list = currentGroup === 'core' ? data.core : currentGroup === 'all' ? data.all : currentGroup === 'monthly' ? (data.monthly ? data.monthly.all : []) : data.mem;
             document.getElementById('countAll').textContent = data.summary ? '(' + data.summary.totalMembers + ')' : '';
             document.getElementById('countMem').textContent = data.summary ? '(' + data.summary.mem + ')' : '';
             document.getElementById('countCore').textContent = data.summary ? '(' + data.summary.core + ')' : '';
+            const filtered = appliesBan(list);
             document.getElementById('rankContent').innerHTML =
-                renderPodium(list) + renderList(list);
+                renderPodium(filtered) + renderList(filtered);
+        }
+
+        function renderTopBanView(data) {
+            document.getElementById('rankContent').innerHTML = renderBanGrid(data);
         }
 
         function switchGroup(g) {
@@ -186,7 +360,24 @@
             document.querySelectorAll('.tab').forEach(function(t) {
                 t.classList.toggle('active', t.dataset.group === g);
             });
-            if (cached) render(cached);
+            const monthSel = document.getElementById('monthSelect');
+            if (monthSel) monthSel.classList.toggle('visible', g === 'monthly');
+            const banSel = document.getElementById('banSelect');
+            if (banSel) banSel.classList.toggle('visible', g !== 'monthly' && g !== 'ban');
+            if (g === 'monthly') {
+                if (!currentMonth && cached) currentMonth = (cached.availableMonths && cached.availableMonths[0]) || cached.currentMonth;
+                if (cached) {
+                    populateMonths();
+                    if (currentMonth && (!cached.monthly || cached.monthly.month !== currentMonth)) {
+                        loadMonthly(currentMonth);
+                        return;
+                    }
+                }
+            }
+            if (cached) {
+                if (g === 'ban') renderTopBanView(cached);
+                else render(cached);
+            }
         }
 
         loadRanking(false);

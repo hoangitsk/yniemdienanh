@@ -1,13 +1,14 @@
 const { getRows, appendRows } = require('../../lib/googleSheets');
 const { ensureSheet } = require('../../lib/googleSheetsFormatter');
 
-const RANKING_SHEET_ID = '1rFuGWw4IZxmROnP7W4k1ntEykstZZu0JP3mKexihR6E';
+const RANKING_SHEET_ID = '1SgbkoiSXP_zNYWN_AC6WKXTGQPbRAHfs2gwv_NOnsJM';
 
 const POINT_HEADER = ['STT', 'Họ và tên', 'Số điểm', 'Lý do', 'Ngày'];
 const EVAL_HEADER = [
   'STT', 'Họ và tên', 'Vai trò', 'Ban', 'Tuần', 'Loại',
   'TC1', 'TC2', 'TC3', 'TC4', 'Tổng', 'Có vấn đề', 'Người đánh giá', 'Ngày', 'Ghi chú'
 ];
+const MONTH_HEADER = ['Tháng', 'Hạng', 'Họ và tên', 'Ban', 'Số điểm', 'Lý do'];
 
 function parseId(val) {
   if (val && typeof val === 'string' && val.includes('/spreadsheets/d/')) {
@@ -53,6 +54,84 @@ function num(v) {
   return isNaN(n) ? 0 : n;
 }
 
+function norm(s) {
+  return String(s || '').toLowerCase().trim();
+}
+
+function parseMonthKey(str) {
+  const s = String(str || '').trim();
+  if (!s) return null;
+  let m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+  if (m) return `${m[3]}-${String(m[2]).padStart(2, '0')}`;
+  m = s.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}`;
+  m = s.match(/^(\d{1,2})[/\-.](\d{4})$/);
+  if (m) return `${m[2]}-${String(m[1]).padStart(2, '0')}`;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return null;
+}
+
+async function archiveMonth(sid, month) {
+  await ensureTab(sid, 'Điểm', POINT_HEADER);
+
+  const raw = await getRows(sid, `${safeTitle('Điểm')}!A1:E3000`).catch(() => []);
+  const points = [];
+  if (raw.length) {
+    const header = raw[0];
+    const iName = header.findIndex(h => norm(h) === 'họ và tên' || norm(h) === 'tên');
+    const iPts = header.findIndex(h => norm(h) === 'số điểm' || norm(h) === 'điểm');
+    const iReason = header.findIndex(h => norm(h) === 'lý do');
+    const iDate = header.findIndex(h => norm(h) === 'ngày');
+    for (let r = 1; r < raw.length; r++) {
+      const row = raw[r];
+      const name = String(row && row[iName] || '').trim();
+      if (!name) continue;
+      const pts = num(row && row[iPts]);
+      if (pts <= 0) continue;
+      const mk = parseMonthKey(row && row[iDate]);
+      if (mk !== month) continue;
+      points.push({
+        name,
+        points: pts,
+        reason: String(row && row[iReason] || '').trim(),
+        date: String(row && row[iDate] || '').trim()
+      });
+    }
+  }
+
+  const totals = {};
+  for (const p of points) {
+    const key = norm(p.name);
+    if (!totals[key]) totals[key] = { name: p.name, total: 0, count: 0, reasons: [] };
+    totals[key].total += p.points;
+    totals[key].count += 1;
+    if (p.reason && totals[key].reasons.length < 3) totals[key].reasons.push(p.reason);
+  }
+
+  const ranked = Object.values(totals)
+    .filter(t => t.total > 0)
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'vi'))
+    .map((t, i) => ({ ...t, rank: i + 1 }));
+
+  await ensureTab(sid, 'Tổng kết tháng', MONTH_HEADER);
+
+  const rows = ranked.map(t => [
+    month,
+    t.rank,
+    t.name,
+    '',
+    Math.round(t.total * 10) / 10,
+    t.reasons.join('; ')
+  ]);
+
+  if (rows.length) {
+    await appendRows(sid, `${safeTitle('Tổng kết tháng')}!A1`, rows);
+  }
+
+  return { month, archived: rows.length, rows };
+}
+
 module.exports = async (req, res) => {
   const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
@@ -76,6 +155,15 @@ module.exports = async (req, res) => {
       const stt = await nextStt(sid, 'Điểm');
       await appendRows(sid, `${safeTitle('Điểm')}!A1`, [[stt, name, points, reason, date]]);
       return res.json({ success: true, action, recorded: [{ stt, name, points, reason, date }] });
+    }
+
+    if (action === 'archive-month') {
+      const month = String((req.body && req.body.month) || '').trim();
+      if (!/^\d{4}-\d{2}$/.test(month)) {
+        return res.status(400).json({ success: false, error: 'Thiếu hoặc sai định dạng tháng (YYYY-MM).' });
+      }
+      const result = await archiveMonth(sid, month);
+      return res.json({ success: true, action, result });
     }
 
     if (action === 'evaluate') {

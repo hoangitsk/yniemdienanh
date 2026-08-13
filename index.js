@@ -703,6 +703,22 @@ app.get('/api/ranking', require('./api/ranking/leaderboard'));
 const requireScoreManager = requireAuthorizedProfile(isScoreManager);
 app.post('/api/ranking/record', requireScoreManager, require('./api/ranking/record'));
 
+// ================= YNDA OPERATIONS SYSTEM =================
+// Hệ thống vận hành YNDA dùng Google Sheets làm database chính (KHÔNG Firebase).
+// Khởi tạo store từ env; nếu chưa có credentials dùng memory adapter (dev/test).
+const yndaStore = require('./lib/ynda/store');
+if (process.env.YNDA_SPREADSHEET_ID || process.env.SPREADSHEET_YNDA) {
+  yndaStore.initStore();
+} else {
+  yndaStore.initStore({ mode: 'memory' });
+}
+app.use('/api/ynda', require('./api/ynda/router'));
+
+// Cron: deadline engine — tự mở task SCHEDULED→OPEN + escalate MANDATORY
+const yndaCron = require('./api/cron/ynda-cron');
+app.get('/api/ynda/cron/tick', yndaCron.tick);
+app.post('/api/ynda/cron/tick', yndaCron.tick);
+
 // Never let the SPA fallback turn a mistyped/removed API into a successful
 // HTML response.  This also makes monitoring and client error handling
 // deterministic.

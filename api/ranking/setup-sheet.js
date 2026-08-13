@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 
-const RANKING_SHEET_ID = '1rFuGWw4IZxmROnP7W4k1ntEykstZZu0JP3mKexihR6E';
+// Database sheet — chứa sẵn tab "DATABASE CORE" + "DATABASE THÀNH VIÊN"
+const RANKING_SHEET_ID = '1SgbkoiSXP_zNYWN_AC6WKXTGQPbRAHfs2gwv_NOnsJM';
 
 async function run() {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -8,13 +9,13 @@ async function run() {
 
   let credentials;
   try {
-    const { parseServiceAccount } = require('../../lib/googleSheetsFormatter');
-    credentials = parseServiceAccount(key);
-  } catch (e) {
     credentials = JSON.parse(key);
-    if (typeof credentials === 'string') credentials = JSON.parse(credentials);
-    if (credentials.private_key) credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+  } catch (e) {
+    let str = String(key).trim().replace(/^"(.*)"$/, '$1');
+    str = str.replace(/(private_key"\s*:\s*")([\s\S]*?)(")/g, (m, p1, p2) => p1 + p2.replace(/\r?\n/g, '\\n') + '"');
+    credentials = JSON.parse(str);
   }
+  if (credentials.private_key) credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
 
   const auth = new google.auth.JWT(
     credentials.client_email, null, credentials.private_key,
@@ -27,11 +28,15 @@ async function run() {
   console.log('Tabs hiện có:', existingTitles.join(', ') || '(trống)');
 
   const tabs = {
-    'Thành viên': [
-      'STT', 'Họ và tên', 'Ban', 'Vai trò', 'Chức danh', 'Email', 'SĐT', 'Ghi chú'
-    ],
     'Điểm': [
       'STT', 'Họ và tên', 'Số điểm', 'Lý do', 'Ngày'
+    ],
+    'Tổng kết tháng': [
+      'Tháng', 'Hạng', 'Họ và tên', 'Ban', 'Số điểm', 'Lý do'
+    ],
+    'Đánh giá': [
+      'STT', 'Họ và tên', 'Vai trò', 'Ban', 'Tuần', 'Loại',
+      'TC1', 'TC2', 'TC3', 'TC4', 'Tổng', 'Có vấn đề', 'Người đánh giá', 'Ngày', 'Ghi chú'
     ]
   };
 
@@ -104,12 +109,17 @@ async function run() {
   }
 
   console.log('');
-  console.log('✅ Xong! Sheet đã sẵn sàng để nhập liệu.');
+  console.log('✅ Xong! Sheet database đã sẵn sàng.');
   console.log(`🔗 https://docs.google.com/spreadsheets/d/${RANKING_SHEET_ID}`);
   console.log('');
-  console.log('Hướng dẫn nhập liệu:');
-  console.log('- Tab "Thành viên": STT | Họ và tên | Ban | Vai trò (Core hoặc Thành viên) | Chức danh (Trưởng ban, Phó ban, Trưởng nhóm...) | Email | SĐT | Ghi chú');
+  console.log('Hướng dẫn bảo mật / phân quyền:');
+  console.log('- Tab "Điểm" / "Tổng kết tháng" / "Đánh giá" MỚI được thêm vào sheet database này.');
+  console.log('- Để GIỚI HẠN quyền chỉnh sửa: Chia sẻ sheet database (Share) với Service Account EMAIL dưới đây ở quyền Editor, các thành viên khác để Viewer (chỉ xem).');
+  console.log(`- Service Account email: ${credentials.client_email}`);
+  console.log('- Mở Settings sheet → Chia sẻ từng tab nếu muốn tinh chỉnh. Chrome extension không được dùng.');
+  console.log('Cách nhập điểm:');
   console.log('- Tab "Điểm": STT | Họ và tên | Số điểm | Lý do | Ngày. Mỗi lần cộng điểm ghi 1 dòng.');
+  console.log('- Bảng tháng: tự tính theo cột Ngày. Tổng kết tháng ghi vào tab "Tổng kết tháng" (gọi POST /api/ranking/record action=archive-month & month=YYYY-MM).');
 }
 
 run().catch(err => { console.error('❌', err.message); process.exit(1); });

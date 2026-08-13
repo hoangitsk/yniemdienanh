@@ -3,6 +3,8 @@
   "rewrites": [
     { "source": "/register", "destination": "/register.html" },
     { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/ops", "destination": "/ynda.html" },
+    { "source": "/ynda", "destination": "/ynda.html" },
     { "source": "/schedule", "destination": "/schedule.html" },
     { "source": "/schedule/:code", "destination": "/schedule.html" },
     { "source": "/verify", "destination": "/verify.html" },
@@ -20,6 +22,10 @@
     {
       "path": "/api/cron/finalize-interviews",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/ynda/cron/tick",
+      "schedule": "*/30 * * * *"
     }
   ],
   "headers": [

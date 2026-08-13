@@ -7,6 +7,8 @@
     "start": "node index.js",
     "dev": "node --watch index.js",
     "test": "node test.js",
+    "ynda:setup": "node scripts/ynda-setup.js",
+    "ynda:test": "node ynda-test.js",
     "sheets:setup": "node api/hr/setup-sheet.js",
     "ranking:setup": "node api/ranking/setup-sheet.js",
     "sheets:sync": "node -e \"require('./api/hr/sync-to-sheets')({ headers: {} }, { json: console.log, status: () => ({ json: console.log }) })\"",

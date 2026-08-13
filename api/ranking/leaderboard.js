@@ -1,14 +1,9 @@
 const { getRows } = require('../../lib/googleSheets');
 
-const RANKING_SHEET_ID = '1rFuGWw4IZxmROnP7W4k1ntEykstZZu0JP3mKexihR6E';
+const RANKING_SHEET_ID = '1SgbkoiSXP_zNYWN_AC6WKXTGQPbRAHfs2gwv_NOnsJM';
 
 function norm(s) {
-  return String(s || '').toLowerCase().trim();
-}
-
-function isCore(role) {
-  const r = norm(role);
-  return r.includes('core') || r.includes('btc') || r.includes('ban tổ chức') || r.includes('trưởng') || r.includes('phó') || r.includes('vice') || r.includes('head') || r.includes('lead');
+  return String(s || '').toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 function colIndex(headerRow, ...aliases) {
@@ -24,35 +19,72 @@ function cell(row, idx) {
   return row && idx >= 0 && idx < row.length ? String(row[idx] || '').trim() : '';
 }
 
-async function readMembers(sid) {
-  const raw = await getRows(sid, "'Thành viên'!A1:H1000").catch(() => []);
-  if (!raw.length) return [];
-  const header = raw[0];
-  const iName = colIndex(header, 'họ và tên', 'tên');
-  if (iName < 0) return [];
-  const iDept = colIndex(header, 'ban');
-  const iRole = colIndex(header, 'vai trò');
-  const iTitle = colIndex(header, 'chức danh', 'chuc danh', 'vị trí');
-  const iEmail = colIndex(header, 'email');
-  const iPhone = colIndex(header, 'sđt', 'sdt', 'số điện thoại', 'điện thoại');
-  const iNote = colIndex(header, 'ghi chú');
-
-  const members = [];
-  for (let r = 1; r < raw.length; r++) {
-    const row = raw[r];
-    const name = cell(row, iName);
-    if (!name || norm(name) === 'stt' || norm(name) === 'tên') continue;
-    members.push({
-      name,
-      dept: cell(row, iDept),
-      role: cell(row, iRole),
-      title: cell(row, iTitle),
-      email: cell(row, iEmail),
-      phone: cell(row, iPhone),
-      note: cell(row, iNote)
-    });
+function findHeaderRow(raw, markers) {
+  const limit = Math.min(raw.length, 8);
+  for (let r = 0; r < limit; r++) {
+    const row = raw[r] || [];
+    if (markers.some(m => row.some(c => norm(c) === m))) return r;
+    // header could be 'họ và tên' with spacing variants already normalized; also match 'họ và tên'
   }
-  return members;
+  return -1;
+}
+
+// Đọc danh sách thành viên từ tab DATABASE CORE (group=core) và DATABASE THÀNH VIÊN (group=mem)
+// Bỏ qua dòng tiêu đề (vd "DATABASE CORE TEAM – Ý NIỆM ĐIỆN ẢNH") bằng cách tìm dòng header.
+async function readMembers(sid) {
+  const tabs = [
+    { title: 'DATABASE CORE', group: 'core' },
+    { title: 'DATABASE THÀNH VIÊN', group: 'mem' }
+  ];
+
+  const all = [];
+  const seen = new Set();
+
+  for (const { title, group } of tabs) {
+    const safeTitle = `'${title.replace(/'/g, "''")}'`;
+    const raw = await getRows(sid, `${safeTitle}!A1:K1000`).catch(() => []);
+    if (!raw.length) continue;
+
+    const h = findHeaderRow(raw, ['họ và tên']);
+    if (h < 0) continue;
+    const header = raw[h];
+
+    const iName = colIndex(header, 'họ và tên', 'tên');
+    const iDept = colIndex(header, 'ban');
+    const iTitle = colIndex(header, 'chức vụ', 'chuc vu', 'vai trò', 'chức danh');
+    const iEmail = colIndex(header, 'email');
+    const iPhone = colIndex(header, 'số điện thoại', 'sđt', 'sdt', 'điện thoại');
+    const iNote = colIndex(header, 'ghi chú');
+
+    if (iName < 0) continue;
+
+    let lastDept = '';
+    for (let r = h + 1; r < raw.length; r++) {
+      const row = raw[r] || [];
+      const deptRaw = cell(row, iDept);
+      if (deptRaw) lastDept = deptRaw;
+
+      const name = cell(row, iName);
+      if (!name) continue;
+
+      const email = cell(row, iEmail);
+      const key = email ? email.toLowerCase() : name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      all.push({
+        name,
+        dept: lastDept,
+        role: group === 'core' ? 'Core' : 'Thành viên',
+        title: cell(row, iTitle),
+        email,
+        phone: cell(row, iPhone),
+        note: cell(row, iNote),
+        group
+      });
+    }
+  }
+  return all;
 }
 
 async function readPoints(sid) {
@@ -83,6 +115,95 @@ async function readPoints(sid) {
   return points;
 }
 
+// Chuyển "02/08/2026", "2026-08-02", ISO... -> "2026-08"
+function parseMonthKey(str) {
+  const s = String(str || '').trim();
+  if (!s) return null;
+  let m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+  if (m) return `${m[3]}-${String(m[2]).padStart(2, '0')}`;
+  m = s.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}`;
+  m = s.match(/^(\d{1,2})[/\-.](\d{4})$/);
+  if (m) return `${m[2]}-${String(m[1]).padStart(2, '0')}`;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return null;
+}
+
+function currentMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function buildRanking(members, pts) {
+  const pointMap = {};
+  for (const p of pts) {
+    const key = p.name.toLowerCase();
+    pointMap[key] = pointMap[key] || { total: 0, count: 0, reasons: [] };
+    pointMap[key].total += p.points;
+    pointMap[key].count += 1;
+    if (p.reason && pointMap[key].reasons.length < 3) pointMap[key].reasons.push(p.reason);
+  }
+
+  const knownNames = new Set(members.map(m => m.name.toLowerCase()));
+
+  const allEntries = [];
+  const seen = new Set();
+  for (const m of members) {
+    const key = m.name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const pt = pointMap[key] || { total: 0, count: 0, reasons: [] };
+    allEntries.push({
+      name: m.name,
+      dept: m.dept,
+      role: m.role,
+      title: m.title,
+      email: m.email,
+      phone: m.phone,
+      note: m.note,
+      totalPoints: Math.round(pt.total * 10) / 10,
+      pointEntries: pt.count,
+      reasons: pt.reasons,
+      group: m.group === 'core' ? 'core' : 'mem'
+    });
+  }
+  for (const p of pts) {
+    const key = p.name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const pt = pointMap[key];
+    allEntries.push({
+      name: p.name,
+      dept: '',
+      role: '',
+      title: '',
+      email: '',
+      phone: '',
+      note: '',
+      totalPoints: Math.round(pt.total * 10) / 10,
+      pointEntries: pt.count,
+      reasons: pt.reasons,
+      group: 'mem'
+    });
+  }
+
+  const rank = (arr) => arr
+    .sort((a, b) => b.totalPoints - a.totalPoints || a.name.localeCompare(b.name, 'vi'))
+    .map((item, i) => ({ ...item, rank: i + 1 }));
+
+  const all = rank(allEntries);
+  const core = rank(allEntries.filter(e => e.group === 'core'));
+  const mem = rank(allEntries.filter(e => e.group === 'mem'));
+
+  return {
+    summary: { totalMembers: allEntries.length, core: core.length, mem: mem.length },
+    all,
+    core,
+    mem
+  };
+}
+
 module.exports = async (req, res) => {
   const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
@@ -107,75 +228,37 @@ module.exports = async (req, res) => {
   try {
     const [members, points] = await Promise.all([readMembers(sid), readPoints(sid)]);
 
-    const pointMap = {};
+    const overall = buildRanking(members, points);
+
+    // ===== BẢNG THEO THÁNG =====
+    const monthToPoints = {};
     for (const p of points) {
-      const key = p.name.toLowerCase();
-      pointMap[key] = pointMap[key] || { total: 0, count: 0, reasons: [] };
-      pointMap[key].total += p.points;
-      pointMap[key].count += 1;
-      if (p.reason && pointMap[key].reasons.length < 3) pointMap[key].reasons.push(p.reason);
+      const mk = parseMonthKey(p.date);
+      if (!mk) continue;
+      if (!monthToPoints[mk]) monthToPoints[mk] = [];
+      monthToPoints[mk].push(p);
     }
+    const availableMonths = Object.keys(monthToPoints).sort().reverse();
 
-    const knownNames = new Set(members.map(m => m.name.toLowerCase()));
+    let targetMonth = String(req.query.month || '').trim();
+    if (!/^\d{4}-\d{2}$/.test(targetMonth)) targetMonth = currentMonthKey();
 
-    // Gộp người có điểm nhưng chưa có trong tab Thành viên
-    const allEntries = [];
-    const seen = new Set();
-    for (const m of members) {
-      const key = m.name.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const pt = pointMap[key] || { total: 0, count: 0, reasons: [] };
-      allEntries.push({
-        name: m.name,
-        dept: m.dept,
-        role: m.role,
-        title: m.title,
-        email: m.email,
-        phone: m.phone,
-        note: m.note,
-        totalPoints: Math.round(pt.total * 10) / 10,
-        pointEntries: pt.count,
-        reasons: pt.reasons,
-        group: isCore(m.role) || isCore(m.title) ? 'core' : 'mem'
-      });
-    }
-    for (const p of points) {
-      const key = p.name.toLowerCase();
-      if (knownNames.has(key) || seen.has(key)) continue;
-      seen.add(key);
-      const pt = pointMap[key];
-      allEntries.push({
-        name: p.name,
-        dept: '',
-        role: '',
-        title: '',
-        email: '',
-        phone: '',
-        note: '',
-        totalPoints: Math.round(pt.total * 10) / 10,
-        pointEntries: pt.count,
-        reasons: pt.reasons,
-        group: 'mem'
-      });
-    }
-
-    const rank = (arr) => arr
-      .sort((a, b) => b.totalPoints - a.totalPoints || a.name.localeCompare(b.name, 'vi'))
-      .map((item, i) => ({ ...item, rank: i + 1 }));
-
-    const all = rank(allEntries);
-    const core = rank(allEntries.filter(e => e.group === 'core'));
-    const mem = rank(allEntries.filter(e => e.group === 'mem'));
+    const monthlyPoints = monthToPoints[targetMonth] || [];
+    const monthly = buildRanking(members, monthlyPoints);
+    monthly.month = targetMonth;
 
     res.json({
       success: true,
       updatedAt: new Date().toISOString(),
       spreadsheetId: sid,
-      summary: { totalMembers: allEntries.length, core: core.length, mem: mem.length },
-      all,
-      core,
-      mem
+      overall: overall.summary,
+      monthly,
+      availableMonths,
+      currentMonth: currentMonthKey(),
+      summary: overall.summary,
+      all: overall.all,
+      core: overall.core,
+      mem: overall.mem
     });
   } catch (err) {
     console.error('[Ranking] Error:', err.message);

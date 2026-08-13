@@ -116,9 +116,13 @@ router.get('/users', auth.requireRole('task', 'view'), async (req, res) => {
   res.json({ users });
 });
 
-// Deprecated: USERS is populated only when a Firebase member signs in.
+// Đồng bộ danh sách thành viên từ sheet ranking (DATABASE CORE / THÀNH VIÊN)
+// vào bảng USERS — ranking là nguồn dữ liệu thành viên chính của YNDA.
 router.post('/users/sync-ranking', auth.requireRole('task', 'create'), async (req, res) => {
-  res.status(410).json({ error: 'Đã tắt đồng bộ ngoài hệ thống. Thành viên được tạo từ Firebase khi đăng nhập.' });
+  try {
+    const result = await auth.syncUsersFromRanking();
+    res.json(result);
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 // -----------------------------------------------------------------------------

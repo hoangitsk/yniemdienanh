@@ -35,6 +35,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.turnstileWidgetReady=function(){window.isTurnstileApiReady=true;if(typeof _renderTurnstileWidgets==='function'){_renderTurnstileWidgets();}};</script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=turnstileWidgetReady" async defer></script>
+    <script src="/js/typewriter.js"></script>
     <script>
         // Core navigation functions – defined early so onclick attributes work
         function showPage(p) {
@@ -617,6 +618,88 @@
             max-width: 600px;
             margin: 0 0 28px;
             line-height: 1.7;
+        }
+
+        /* ===== TYPEWRITER EFFECT (HERO) ===== */
+        .typewriter-cursor-small {
+            display: inline-block;
+            width: 2px;
+            height: 0.9em;
+            background: var(--gold-light);
+            margin-left: 3px;
+            vertical-align: -0.05em;
+            box-shadow: 0 0 8px var(--gold-light);
+            border-radius: 1px;
+            animation: heroCursorBlink 0.75s infinite ease-in-out;
+        }
+
+        .typewriter-cursor-large {
+            display: inline-block;
+            width: clamp(3px, 0.45vw, 5px);
+            height: 0.85em;
+            background: var(--gold) !important;
+            -webkit-text-fill-color: initial !important;
+            margin-left: 5px;
+            vertical-align: -0.02em;
+            box-shadow: 0 0 14px var(--gold), 0 0 28px rgba(228, 184, 102, 0.8);
+            border-radius: 2px;
+            animation: heroCursorBlink 0.75s infinite ease-in-out;
+        }
+
+        .hero-typewriter-box {
+            display: block;
+            margin-bottom: 14px;
+            min-height: 52px;
+        }
+
+        .hero-typewriter {
+            display: inline;
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.08rem, 1.6vw, 1.32rem);
+            font-style: italic;
+            font-weight: 600;
+            color: var(--gold-light);
+            line-height: 1.5;
+            letter-spacing: 0.02em;
+            text-shadow: 0 0 16px rgba(228, 184, 102, 0.4);
+        }
+
+        .hero-quote-mark {
+            color: var(--gold);
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15em;
+            opacity: 0.9;
+            user-select: none;
+        }
+
+        .hero-typewriter-text {
+            color: var(--gold-light);
+            border-bottom: 1.5px dashed rgba(228, 184, 102, 0.35);
+            padding-bottom: 2px;
+        }
+
+        .hero-typewriter-cursor {
+            display: inline-block;
+            width: 2.5px;
+            height: 1.15em;
+            background: var(--gold);
+            margin-left: 3px;
+            vertical-align: -0.14em;
+            box-shadow: 0 0 10px var(--gold), 0 0 20px rgba(228, 184, 102, 0.6);
+            border-radius: 1px;
+            animation: heroCursorBlink 0.9s infinite ease-in-out;
+        }
+
+        @keyframes heroCursorBlink {
+            0%, 100% { opacity: 1; transform: scaleY(1); }
+            50% { opacity: 0; transform: scaleY(0.85); }
+        }
+
+        .hero-sublead {
+            display: block;
+            color: var(--text-muted);
+            font-size: clamp(0.92rem, 1.2vw, 1.02rem);
+            line-height: 1.65;
         }
 
         .hero-actions {
@@ -2812,9 +2895,20 @@
             <div class="hero intro-hero">
                 <div class="hero-grid">
                     <div id="heroContent">
-                        <div class="eyebrow intro-item delay-eyebrow">Dự án cộng đồng về điện ảnh</div>
-                        <h1 class="intro-title delay-title">Ý Niệm<br>Điện Ảnh</h1>
-                        <p class="lead intro-item delay-lead">“Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức.”<br>Ý Niệm Điện Ảnh (YNĐA) là cộng đồng sáng tạo và hệ sinh thái học tập dành cho học sinh, sinh viên yêu thích làm phim, nhiếp ảnh, và phê bình điện ảnh.</p>
+                        <div class="eyebrow intro-item delay-eyebrow" style="min-height: 1.4em;">
+                            <span id="heroTypewriterEyebrow" class="typewriter-eyebrow-text"></span><span id="cursorEyebrow" class="typewriter-cursor-small" aria-hidden="true"></span>
+                        </div>
+                        <h1 class="intro-title delay-title" style="min-height: 2.3em;">
+                            <span id="heroTypewriterTitle" class="typewriter-title-text"></span><span id="cursorTitle" class="typewriter-cursor-large" aria-hidden="true"></span>
+                        </h1>
+                        <div class="lead intro-item delay-lead">
+                            <div class="hero-typewriter-box">
+                                <span class="hero-typewriter" aria-label="Slogan Ý Niệm Điện Ảnh">
+                                    <span class="hero-quote-mark">“</span><span id="heroTypewriterText" class="hero-typewriter-text"></span><span id="cursorSlogan" class="hero-typewriter-cursor" aria-hidden="true"></span><span class="hero-quote-mark">”</span>
+                                </span>
+                            </div>
+                            <span class="hero-sublead">Ý Niệm Điện Ảnh (YNĐA) là cộng đồng sáng tạo và hệ sinh thái học tập dành cho học sinh, sinh viên yêu thích làm phim, nhiếp ảnh, và phê bình điện ảnh.</span>
+                        </div>
                         <div class="hero-actions intro-item delay-actions">
                             <button class="btn btn-gold" onclick="goSection('apply')">✨ Đăng ký tham gia <span class="arrow">→</span></button>
                             <button class="btn btn-line" onclick="goSection('about')">🎬 Tìm hiểu dự án</button>
@@ -4617,19 +4711,37 @@
             }
         }
 
+        let _heroTypewriterStarted = false;
         function renderHeroContent() {
             const c = getContent().hero;
             const heroEl = document.getElementById('heroContent');
             if (heroEl) {
-                heroEl.innerHTML = `
-                    <div class="eyebrow">${c.eyebrow}</div>
-                    <h1>${c.title}</h1>
-                    <p class="lead">${c.lead}</p>
-                    <div class="hero-actions">
-                        <button class="btn btn-gold" onclick="goSection('events')">🎬 Khám phá sự kiện</button>
-                        <button class="btn btn-line" onclick="goSection('apply')">✨ Đăng ký tham gia</button>
-                    </div>
-                `;
+                if (!_heroTypewriterStarted) {
+                    _heroTypewriterStarted = true;
+                    heroEl.innerHTML = `
+                        <div class="eyebrow intro-item delay-eyebrow" style="min-height: 1.4em;">
+                            <span id="heroTypewriterEyebrow" class="typewriter-eyebrow-text"></span><span id="cursorEyebrow" class="typewriter-cursor-small" aria-hidden="true"></span>
+                        </div>
+                        <h1 class="intro-title delay-title" style="min-height: 2.3em;">
+                            <span id="heroTypewriterTitle" class="typewriter-title-text"></span><span id="cursorTitle" class="typewriter-cursor-large" aria-hidden="true"></span>
+                        </h1>
+                        <div class="lead intro-item delay-lead">
+                            <div class="hero-typewriter-box">
+                                <span class="hero-typewriter" aria-label="Slogan Ý Niệm Điện Ảnh">
+                                    <span class="hero-quote-mark">“</span><span id="heroTypewriterText" class="hero-typewriter-text"></span><span id="cursorSlogan" class="hero-typewriter-cursor" aria-hidden="true"></span><span class="hero-quote-mark">”</span>
+                                </span>
+                            </div>
+                            <span class="hero-sublead">Ý Niệm Điện Ảnh (YNĐA) là cộng đồng sáng tạo và hệ sinh thái học tập dành cho học sinh, sinh viên yêu thích làm phim, nhiếp ảnh, và phê bình điện ảnh.</span>
+                        </div>
+                        <div class="hero-actions intro-item delay-actions">
+                            <button class="btn btn-gold" onclick="goSection('events')">🎬 Khám phá sự kiện</button>
+                            <button class="btn btn-line" onclick="goSection('apply')">✨ Đăng ký tham gia</button>
+                        </div>
+                    `;
+                    if (window.startHeroTypewriter) {
+                        window.startHeroTypewriter(c.eyebrow, c.title);
+                    }
+                }
             }
             const targetEl = document.getElementById('heroTarget');
             if (targetEl) targetEl.textContent = c.target;
@@ -12404,6 +12516,7 @@ ${senderSignature}`
     </script>
     <script src="/js/hr-email-bulk.js"></script>
     <script src="/js/star-particles.js"></script>
+    <script src="/js/typewriter.js"></script>
 </body>
 
 </html>

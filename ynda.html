@@ -181,6 +181,20 @@
     .btn.primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
     .btn.ghost { background: transparent; }
     .btn.danger { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+    .btn.google {
+      background: #fff;
+      color: #1f2328;
+      border-color: #e1e4e8;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      padding: 11px 18px;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn.google:hover { background: #f6f8fa; transform: translateY(-1px); }
 
     /* Page Header */
     .page-head {
@@ -571,99 +585,99 @@
 </head>
 <body>
 <div class="shell">
-  <!-- SIDEBAR -->
+  <!-- THANH ĐIỀU HƯỚNG BÊN TRÁI -->
   <aside class="sidebar">
     <div class="brand">
       <i class="brandmark"></i>
       <div>
-        <b>YNDA MISSION</b>
-        <small>SEASON 01 · SYSTEM</small>
+        <b>Ý NIỆM ĐIỆN ẢNH</b>
+        <small>MÙA 01 · NHIỆM VỤ</small>
       </div>
     </div>
 
-    <div class="nav-label">Workspace</div>
-    <button class="nav active" data-page="dashboard"><span class="ico">◈</span>Dashboard</button>
-    <button class="nav" data-page="board"><span class="ico">◉</span>Mission Board</button>
-    <button class="nav" data-page="mine"><span class="ico">◷</span>My Missions <span class="nav-badge" id="myMissionBadge" style="background:#3d2754;color:#dfb8fc">0</span></button>
-    <button class="nav" data-page="leaderboard"><span class="ico">♛</span>Leaderboard</button>
+    <div class="nav-label">Không gian làm việc</div>
+    <button class="nav active" data-page="dashboard"><span class="ico">◈</span>Tổng quan</button>
+    <button class="nav" data-page="board"><span class="ico">◉</span>Bảng nhiệm vụ</button>
+    <button class="nav" data-page="mine"><span class="ico">◷</span>Nhiệm vụ của tôi <span class="nav-badge" id="myMissionBadge" style="background:#3d2754;color:#dfb8fc">0</span></button>
+    <button class="nav" data-page="leaderboard"><span class="ico">♛</span>Bảng vinh danh</button>
 
-    <div class="nav-label">Management</div>
-    <button class="nav" data-page="review"><span class="ico">✓</span>Review Queue <span class="nav-badge" id="reviewBadge" style="background:#523821;color:#f7cb83">0</span></button>
-    <button class="nav" data-page="ledger"><span class="ico">≡</span>XP Ledger</button>
-    <button class="nav" data-page="team"><span class="ico">◎</span>Production Squads</button>
-    <button class="nav" data-page="role-review"><span class="ico">⚑</span>Role Review</button>
-    <button class="nav" data-page="tools"><span class="ico">⚡</span>Social & Bonus</button>
+    <div class="nav-label">Quản trị & Điều hành</div>
+    <button class="nav" data-page="review"><span class="ico">✓</span>Duyệt bằng chứng <span class="nav-badge" id="reviewBadge" style="background:#523821;color:#f7cb83">0</span></button>
+    <button class="nav" data-page="ledger"><span class="ico">≡</span>Sổ cái điểm XP</button>
+    <button class="nav" data-page="team"><span class="ico">◎</span>Đội sản xuất phim</button>
+    <button class="nav" data-page="role-review"><span class="ico">⚑</span>Đánh giá vai trò tuần</button>
+    <button class="nav" data-page="tools"><span class="ico">⚡</span>Tương tác & Thưởng</button>
 
     <div class="user-card" id="userCard">
       <div class="avatar" id="userAvatar">?</div>
       <div style="overflow:hidden">
-        <b id="userName">Chưa đăng nhập</b>
-        <small id="userRole">MEMBER</small>
+        <b id="userName">Khách ghé thăm</b>
+        <small id="userRole">THÀNH VIÊN</small>
       </div>
     </div>
   </aside>
 
-  <!-- MAIN CONTENT -->
+  <!-- NỘI DUNG CHÍNH -->
   <main class="content">
-    <!-- Topbar -->
+    <!-- Thanh tác vụ trên cùng -->
     <header class="topbar">
-      <div class="crumb">YNDA <span>/</span> MISSION SYSTEM <span>/</span> <span id="currentViewTitle">DASHBOARD</span></div>
+      <div class="crumb">Ý NIỆM ĐIỆN ẢNH <span>/</span> HỆ THỐNG NHIỆM VỤ <span>/</span> <span id="currentViewTitle">TỔNG QUAN</span></div>
       <div class="actions">
-        <button class="iconbtn" onclick="openNotifications()" title="Thông báo">🔔 <sup id="notifCount" style="color:var(--gold)">0</sup></button>
-        <button class="btn ghost" id="authBtn" onclick="openLogin()">Đăng nhập</button>
-        <button class="btn primary" onclick="openCreateTask()">+ Tạo nhiệm vụ</button>
+        <button class="iconbtn" onclick="openNotifications()" title="Thông báo hệ thống">🔔 <sup id="notifCount" style="color:var(--gold)">0</sup></button>
+        <button class="btn ghost" id="authBtn" onclick="signInWithGoogle()">Đăng nhập Google</button>
+        <button class="btn primary" onclick="openCreateTask()">+ Tạo nhiệm vụ mới</button>
       </div>
     </header>
 
-    <!-- 1. DASHBOARD -->
+    <!-- 1. BẢNG TỔNG QUAN -->
     <section id="dashboard" class="tab-page active">
       <div class="page-head">
         <div>
-          <div class="eyebrow" id="dashEyebrow">Xin chào thành viên YNDA</div>
-          <h1 id="dashHeadline">Đường đi của sự đóng góp.</h1>
-          <p>Mỗi tác động đều có bằng chứng, chủ sở hữu và lịch sử audit rõ ràng.</p>
+          <div class="eyebrow" id="dashEyebrow">Xin chào thành viên Ý Niệm Điện Ảnh</div>
+          <h1 id="dashHeadline">Hành trình đóng góp & dấu ấn.</h1>
+          <p>Mỗi đóng góp đều có bằng chứng rõ ràng, chủ sở hữu và lịch sử ghi nhận minh bạch.</p>
         </div>
         <div class="season-tag">
-          CURRENT SEASON<br>
-          <b id="activeSeasonTitle">S01 · Genesis</b>
+          MÙA HOẠT ĐỘNG<br>
+          <b id="activeSeasonTitle">Mùa 01 · Khởi nguyên</b>
         </div>
       </div>
 
-      <!-- Stats Grid -->
+      <!-- Khối chỉ số thống kê -->
       <div class="stats" id="statsGrid">
         <article class="stat hero">
-          <div class="label">Overall Contribution</div>
+          <div class="label">Tổng điểm cống hiến</div>
           <strong id="statOverall">0.0 <small>XP</small></strong>
-          <small class="up" id="statRank">#0 overall ranking</small>
+          <small class="up" id="statRank">#1 bảng tổng sắp</small>
         </article>
         <article class="stat">
-          <div class="label">Active Missions</div>
+          <div class="label">Nhiệm vụ đang làm</div>
           <strong id="statActive">0</strong>
-          <small id="statActiveSub">0 nhiệm vụ đang làm</small>
+          <small id="statActiveSub">0 nhiệm vụ đang nhận</small>
         </article>
         <article class="stat">
-          <div class="label">Completed Tasks</div>
+          <div class="label">Nhiệm vụ hoàn thành</div>
           <strong id="statCompleted">0</strong>
-          <small class="up" id="statQuality">95% quality score</small>
+          <small class="up" id="statQuality">95% điểm chất lượng</small>
         </article>
         <article class="stat">
-          <div class="label">Role Point</div>
+          <div class="label">Điểm vai trò (Trách nhiệm)</div>
           <strong id="statRolePoint">0.0</strong>
-          <small id="statRoleContrib">+0.0 overall (60%)</small>
+          <small id="statRoleContrib">+0.0 tổng sắp (Quy đổi 60%)</small>
         </article>
         <article class="stat">
-          <div class="label">Available Missions</div>
+          <div class="label">Nhiệm vụ đang mở</div>
           <strong id="statAvailable">0</strong>
-          <small id="statEndingSoon">0 sắp hết hạn trong 24h</small>
+          <small id="statEndingSoon">0 sắp hết hạn nhận</small>
         </article>
       </div>
 
-      <!-- Dashboard Panels -->
+      <!-- Bảng nhiệm vụ & giao dịch gần đây -->
       <div class="grid dash-grid">
         <article class="panel">
           <div class="panel-title">
-            <h2>MY ACTIVE MISSIONS</h2>
-            <button class="link-btn" onclick="go('mine')">VIEW ALL →</button>
+            <h2>NHIỆM VỤ ĐANG PHỤ TRÁCH</h2>
+            <button class="link-btn" onclick="go('mine')">XEM TẤT CẢ →</button>
           </div>
           <div id="dashMyTasksList">
             <div class="empty-state">Đang tải nhiệm vụ của bạn...</div>
@@ -672,130 +686,130 @@
 
         <article class="panel">
           <div class="panel-title">
-            <h2>RECENT XP TRANSACTIONS</h2>
-            <button class="link-btn" onclick="go('ledger')">LEDGER →</button>
+            <h2>LỊCH SỬ GIAO DỊCH XP GẦN ĐÂY</h2>
+            <button class="link-btn" onclick="go('ledger')">XEM SỔ CÁI →</button>
           </div>
           <div id="dashRecentXpList">
-            <div class="empty-state">Chưa có transaction nào.</div>
+            <div class="empty-state">Chưa có giao dịch nào.</div>
           </div>
         </article>
       </div>
     </section>
 
-    <!-- 2. MISSION BOARD -->
+    <!-- 2. BẢNG NHIỆM VỤ -->
     <section id="board" class="tab-page">
       <div class="page-head">
         <div>
-          <div class="eyebrow">Quest Board · Cơ hội đóng góp</div>
-          <h1>Mission Board</h1>
-          <p>Chọn một nhiệm vụ phù hợp. Nhận quyền sở hữu. Đóng góp và để lại dấu ấn.</p>
+          <div class="eyebrow">Bảng cơ hội đóng góp</div>
+          <h1>Bảng nhiệm vụ (Quest Board)</h1>
+          <p>Chọn nhiệm vụ phù hợp với chuyên môn. Nhận quyền sở hữu. Đóng góp và tích lũy XP.</p>
         </div>
         <div class="season-tag">
-          HỆ THỐNG XP CHUẨN<br>
+          THANG ĐIỂM CHUẨN<br>
           <b>0.25 → 10+ XP</b>
         </div>
       </div>
 
       <div class="board-tools">
-        <button class="filter-btn active" onclick="filterBoard('ALL', this)">All Missions</button>
-        <button class="filter-btn" onclick="filterBoard('GLOBAL_OPEN', this)">Global Open</button>
-        <button class="filter-btn" onclick="filterBoard('DEPARTMENT_OPEN', this)">Department Open</button>
-        <button class="filter-btn" onclick="filterBoard('MANDATORY', this)">Mandatory Task</button>
-        <button class="filter-btn" onclick="filterBoard('MEDIA', this)">Media</button>
-        <button class="filter-btn" onclick="filterBoard('TRUYEN_THONG', this)">Truyền thông</button>
-        <button class="filter-btn" onclick="filterBoard('NOI_DUNG', this)">Nội dung</button>
-        <button class="filter-btn" onclick="filterBoard('NHAN_SU', this)">Nhân sự</button>
+        <button class="filter-btn active" onclick="filterBoard('ALL', this)">Tất cả nhiệm vụ</button>
+        <button class="filter-btn" onclick="filterBoard('GLOBAL_OPEN', this)">Mở toàn dự án</button>
+        <button class="filter-btn" onclick="filterBoard('DEPARTMENT_OPEN', this)">Mở theo Ban</button>
+        <button class="filter-btn" onclick="filterBoard('MANDATORY', this)">Nhiệm vụ bắt buộc</button>
+        <button class="filter-btn" onclick="filterBoard('MEDIA', this)">Ban Media</button>
+        <button class="filter-btn" onclick="filterBoard('TRUYEN_THONG', this)">Ban Truyền thông</button>
+        <button class="filter-btn" onclick="filterBoard('NOI_DUNG', this)">Ban Nội dung</button>
+        <button class="filter-btn" onclick="filterBoard('NHAN_SU', this)">Ban Nhân sự</button>
       </div>
 
       <div class="missions" id="boardCardsGrid">
-        <div class="empty-state" style="grid-column: 1 / -1;">Đang tải danh sách nhiệm vụ từ backend...</div>
+        <div class="empty-state" style="grid-column: 1 / -1;">Đang tải danh sách nhiệm vụ...</div>
       </div>
     </section>
 
-    <!-- 3. MY MISSIONS -->
+    <!-- 3. NHIỆM VỤ CỦA TÔI -->
     <section id="mine" class="tab-page">
       <div class="page-head">
         <div>
-          <div class="eyebrow">Personal Workload</div>
-          <h1>My Missions</h1>
-          <p>Claim không đồng nghĩa task bắt đầu tính penalty. Penalty chỉ áp dụng từ Work Start.</p>
+          <div class="eyebrow">Khối lượng công việc cá nhân</div>
+          <h1>Nhiệm vụ của tôi</h1>
+          <p>Nhận việc không tính phạt ngay. Điểm phạt chỉ bắt đầu tính từ mốc Thời gian bắt đầu làm việc (Work Start).</p>
         </div>
       </div>
       <article class="panel">
-        <div class="panel-title"><h2>NHIỆM VỤ ĐANG PHỤ TRÁCH</h2></div>
+        <div class="panel-title"><h2>DANH SÁCH NHIỆM VỤ ĐANG NHẬN</h2></div>
         <div id="myMissionsFullList">
-          <div class="empty-state">Bạn chưa nhận nhiệm vụ nào. Hãy ghé Mission Board để nhận nhiệm vụ!</div>
+          <div class="empty-state">Bạn chưa nhận nhiệm vụ nào. Hãy ghé Bảng nhiệm vụ để chọn công việc phù hợp!</div>
         </div>
       </article>
     </section>
 
-    <!-- 4. LEADERBOARD -->
+    <!-- 4. BẢNG XẾP HẠNG / VINH DANH -->
     <section id="leaderboard" class="tab-page">
       <div class="page-head">
         <div>
-          <div class="eyebrow">Bảng xếp hạng đóng góp minh bạch</div>
-          <h1>Contribution Leaderboard</h1>
-          <p>Overall = Task XP + Bonus XP − Penalty + Role Contribution (Role Point × 0.6).</p>
+          <div class="eyebrow">Bảng vinh danh thành viên minh bạch</div>
+          <h1>Bảng xếp hạng cống hiến</h1>
+          <p>Điểm tổng sắp = Điểm Task + Điểm Thưởng − Điểm Phạt + Điểm Vai trò quy đổi (Role Point × 60%).</p>
         </div>
       </div>
 
       <div class="board-tools" style="margin-bottom:16px">
-        <button class="filter-btn active" onclick="switchLbTab('all', this)">🏆 Overall</button>
-        <button class="filter-btn" onclick="switchLbTab('core', this)">⭐ Core & Vice</button>
+        <button class="filter-btn active" onclick="switchLbTab('all', this)">🏆 Tổng sắp toàn dự án</button>
+        <button class="filter-btn" onclick="switchLbTab('core', this)">⭐ Ban điều hành & Core</button>
         <button class="filter-btn" onclick="switchLbTab('members', this)">👥 Thành viên</button>
-        <button class="filter-btn" onclick="switchLbTab('monthly', this)">📅 Theo tháng</button>
-        <button class="filter-btn" onclick="switchLbTab('dept_TRUYEN_THONG', this)">🏅 Truyền thông</button>
-        <button class="filter-btn" onclick="switchLbTab('dept_MEDIA', this)">🏅 Media</button>
-        <button class="filter-btn" onclick="switchLbTab('dept_NOI_DUNG', this)">🏅 Nội dung</button>
-        <button class="filter-btn" onclick="switchLbTab('dept_NHAN_SU', this)">🏅 Nhân sự</button>
-        <button class="filter-btn" onclick="switchLbTab('dept_DUYET_BAI', this)">🏅 Duyệt bài</button>
+        <button class="filter-btn" onclick="switchLbTab('monthly', this)">📅 Xếp hạng theo tháng</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_TRUYEN_THONG', this)">🏅 Ban Truyền thông</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_MEDIA', this)">🏅 Ban Media</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_NOI_DUNG', this)">🏅 Ban Nội dung</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_NHAN_SU', this)">🏅 Ban Nhân sự</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_DUYET_BAI', this)">🏅 Ban Duyệt bài</button>
       </div>
 
       <div class="leader-grid">
         <article class="panel">
-          <div class="panel-title"><h2 id="lbTabTitle">🏆 OVERALL RANKING</h2></div>
+          <div class="panel-title"><h2 id="lbTabTitle">🏆 TỔNG SẮP TOÀN DỰ ÁN</h2></div>
           <div id="leaderboardEntries">
-            <div class="empty-state">Đang tính toán bảng xếp hạng...</div>
+            <div class="empty-state">Đang cập nhật dữ liệu bảng xếp hạng...</div>
           </div>
         </article>
         <aside>
           <article class="panel">
-            <div class="panel-title"><h2>QUY TẮC ĐIỂM SỐ</h2></div>
+            <div class="panel-title"><h2>QUY TẮC TÍNH ĐIỂM</h2></div>
             <p style="font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 12px">
-              <b>Member</b> = Task XP + Bonus XP − Penalty<br>
-              <b>Core / Vice</b> = Task XP + Bonus XP − Penalty + (Role Point × 0.6)<br>
-              <i>* Role Point là phần thưởng trách nhiệm hàng tuần (+1 Core, +0.75 Vice), được quy đổi 60% vào Overall score.</i>
+              <b>Thành viên</b> = Điểm Task + Điểm Thưởng − Điểm Phạt<br>
+              <b>Core / Phó ban</b> = Điểm Task + Điểm Thưởng − Điểm Phạt + (Điểm Vai trò × 60%)<br>
+              <i>* Điểm vai trò là phần thưởng trách nhiệm quản lý hàng tuần (+1 Core, +0.75 Phó ban), được quy đổi 60% vào điểm tổng sắp.</i>
             </p>
-            <div class="badge global" style="display:inline-block">AI VERIFICATION + HUMAN REVIEW</div>
+            <div class="badge global" style="display:inline-block">AI KIỂM TRA + DUYỆT THỦ CÔNG</div>
           </article>
         </aside>
       </div>
     </section>
 
-    <!-- 5. REVIEW QUEUE -->
+    <!-- 5. DUYỆT BẰNG CHỨNG -->
     <section id="review" class="tab-page">
       <div class="page-head">
         <div>
-          <div class="eyebrow">Kiểm duyệt & Đánh giá chất lượng</div>
-          <h1>Review Queue</h1>
-          <p>AI xác minh tính hợp lệ của bằng chứng theo checklist; Con người quyết định chất lượng và XP.</p>
+          <div class="eyebrow">Hàng đợi kiểm duyệt & Đánh giá chất lượng</div>
+          <h1>Duyệt bằng chứng hoàn thành</h1>
+          <p>AI kiểm tra tính hợp lệ của bằng chứng theo checklist; Con người quyết định chất lượng và duyệt cộng điểm XP.</p>
         </div>
       </div>
       <article class="panel">
-        <div class="panel-title"><h2>SUBMISSIONS ĐANG CHỜ REVIEW</h2></div>
+        <div class="panel-title"><h2>BẰNG CHỨNG ĐANG CHỜ DUYỆT</h2></div>
         <div id="reviewQueueList">
-          <div class="empty-state">Không có submission nào đang chờ duyệt.</div>
+          <div class="empty-state">Hiện không có bằng chứng nào đang chờ duyệt.</div>
         </div>
       </article>
     </section>
 
-    <!-- 6. XP LEDGER -->
+    <!-- 6. SỔ CÁI ĐIỂM XP -->
     <section id="ledger" class="tab-page">
       <div class="page-head">
         <div>
-          <div class="eyebrow">Nhật ký giao dịch bất biến</div>
-          <h1>XP Ledger</h1>
-          <p>Mọi thay đổi điểm số đều xuất phát từ transaction có người duyệt và nguồn gốc rõ ràng.</p>
+          <div class="eyebrow">Nhật ký giao dịch điểm bất biến</div>
+          <h1>Sổ cái điểm XP</h1>
+          <p>Mọi thay đổi điểm số đều bắt nguồn từ giao dịch có người duyệt và nguồn gốc rõ ràng.</p>
         </div>
       </div>
       <article class="panel">
@@ -803,7 +817,7 @@
           <thead>
             <tr>
               <th>THỜI GIAN</th>
-              <th>LOẠI</th>
+              <th>LOẠI GIAO DỊCH</th>
               <th>NGUỒN / NHIỆM VỤ</th>
               <th>NGƯỜI DUYỆT</th>
               <th>ĐIỂM GỐC</th>
@@ -811,64 +825,64 @@
             </tr>
           </thead>
           <tbody id="ledgerTableBody">
-            <tr><td colspan="6" class="empty-state">Đang tải sổ cái XP...</td></tr>
+            <tr><td colspan="6" class="empty-state">Đang tải sổ cái điểm...</td></tr>
           </tbody>
         </table>
       </article>
     </section>
 
-    <!-- 7. PRODUCTION SQUADS -->
+    <!-- 7. ĐỘI SẢN XUẤT PHIM -->
     <section id="team" class="tab-page">
       <div class="page-head">
         <div>
-          <div class="eyebrow">Đội ngũ sản xuất tạm thời</div>
-          <h1>Production Squads</h1>
-          <p>Production là đội nhóm tạm thời theo từng video/dự án, dùng chung Task XP engine thống nhất.</p>
+          <div class="eyebrow">Đội ngũ sản xuất dự án</div>
+          <h1>Đội sản xuất phim (Production Squads)</h1>
+          <p>Đội sản xuất là nhóm làm việc theo từng dự án video/phim, cùng sử dụng chung hệ thống Task XP chuẩn.</p>
         </div>
-        <button class="btn primary" onclick="openCreateProduction()">+ Tạo Production Squad</button>
+        <button class="btn primary" onclick="openCreateProduction()">+ Tạo Đội sản xuất mới</button>
       </div>
       <div class="missions" id="productionGrid">
-        <div class="empty-state" style="grid-column: 1 / -1;">Đang tải danh sách Production Teams...</div>
+        <div class="empty-state" style="grid-column: 1 / -1;">Đang tải danh sách Đội sản xuất...</div>
       </div>
     </section>
 
-    <!-- 8. WEEKLY ROLE REVIEW -->
+    <!-- 8. ĐÁNH GIÁ VAI TRÒ TUẦN -->
     <section id="role-review" class="tab-page">
       <div class="page-head">
         <div>
           <div class="eyebrow">Trách nhiệm quản lý hàng tuần</div>
-          <h1>Weekly Role Review</h1>
-          <p>AI phân tích hoạt động và đề xuất mức Role Point (+1 / +0.75 / +0.5 / 0); Founder duyệt cuối.</p>
+          <h1>Đánh giá vai trò tuần (Role Review)</h1>
+          <p>AI tự động phân tích mức độ hoàn thành để đề xuất điểm vai trò (+1 / +0.75 / +0.5 / 0); Founder duyệt xác nhận.</p>
         </div>
-        <button class="btn primary" onclick="generateRoleReviews()">Tạo Role Review tuần mới</button>
+        <button class="btn primary" onclick="generateRoleReviews()">Tạo đánh giá tuần mới</button>
       </div>
       <article class="panel">
-        <div class="panel-title"><h2>DANH SÁCH ROLE REVIEW CORE / VICE</h2></div>
+        <div class="panel-title"><h2>DANH SÁCH ĐÁNH GIÁ CORE / PHÓ BAN</h2></div>
         <div id="roleReviewList">
-          <div class="empty-state">Đang tải danh sách Role Review...</div>
+          <div class="empty-state">Đang tải danh sách đánh giá vai trò...</div>
         </div>
       </article>
     </section>
 
-    <!-- 9. SOCIAL & BONUS TOOLS -->
+    <!-- 9. TƯƠNG TÁC & THƯỞNG -->
     <section id="tools" class="tab-page">
       <div class="page-head">
         <div>
-          <div class="eyebrow">Công cụ đóng góp đặc biệt</div>
-          <h1>Social Interaction & Group Bonus</h1>
-          <p>Công cụ ghi nhận tương tác bài viết đa nền tảng và chia sẻ vào các hội nhóm cộng đồng.</p>
+          <div class="eyebrow">Công cụ đóng góp & chia sẻ</div>
+          <h1>Tương tác đa nền tảng & Thưởng chia sẻ</h1>
+          <p>Ghi nhận tương tác bài viết đa nền tảng và phần thưởng chia sẻ vào các hội nhóm điện ảnh.</p>
         </div>
       </div>
       <div class="grid dash-grid">
         <article class="panel">
-          <div class="panel-title"><h2>⚡ SOCIAL INTERACTION / BUMP POST</h2></div>
+          <div class="panel-title"><h2>⚡ TƯƠNG TÁC BÀI VIẾT (BUMP POST)</h2></div>
           <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
-            4 Nền tảng: Facebook, TikTok, Threads, Instagram. Mỗi platform yêu cầu React + Share + Comment.<br>
-            <b>Early Window (≤ 1h)</b>: +0.5 XP / platform (+2 XP cả 4)<br>
-            <b>Late Window (1h - 24h)</b>: +0.25 XP / platform (+1 XP cả 4)
+            4 Nền tảng: Facebook, TikTok, Threads, Instagram. Yêu cầu React + Share + Comment.<br>
+            <b>Khung giờ sớm (≤ 1 giờ đầu)</b>: +0.5 XP / nền tảng (+2.0 XP cả 4)<br>
+            <b>Khung giờ chuẩn (1h - 24h)</b>: +0.25 XP / nền tảng (+1.0 XP cả 4)
           </p>
           <div class="form-grid">
-            <label class="wide">Chọn Platform
+            <label class="wide">Chọn nền tảng
               <select id="toolPlatform">
                 <option value="FACEBOOK">Facebook</option>
                 <option value="TIKTOK">TikTok</option>
@@ -876,10 +890,10 @@
                 <option value="INSTAGRAM">Instagram</option>
               </select>
             </label>
-            <label class="wide">Task ID / Mã nhiệm vụ
+            <label class="wide">Mã nhiệm vụ liên quan
               <input id="toolTaskId" placeholder="Ví dụ: TRU-026">
             </label>
-            <label class="wide">Link bài viết / Post ID
+            <label class="wide">Đường dẫn bài viết (Link Post)
               <input id="toolPostId" placeholder="https://facebook.com/...">
             </label>
           </div>
@@ -887,27 +901,27 @@
         </article>
 
         <article class="panel">
-          <div class="panel-title"><h2>📢 SHARE GROUP BONUS CALCULATOR</h2></div>
+          <div class="panel-title"><h2>📢 TÍNH THƯỞNG CHIA SẺ GROUP</h2></div>
           <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
-            Mốc: 10 groups (+0.25 XP), 20 (+0.5 XP), 40 (+0.75 XP), 80 (+1.0 XP)... Không cộng dồn.<br>
-            <i>Từ 20 groups trở lên bắt buộc quay video proof và HR xác nhận.</i>
+            Các mốc: 10 nhóm (+0.25 XP), 20 nhóm (+0.5 XP), 40 nhóm (+0.75 XP), 80 nhóm (+1.0 XP)... Không cộng dồn.<br>
+            <i>Từ mốc 20 nhóm trở lên bắt buộc quay video màn hình để Ban Nhân sự xác nhận.</i>
           </p>
           <div class="form-grid">
-            <label class="wide">Số lượng Group hợp lệ đã share
+            <label class="wide">Số lượng nhóm hợp lệ đã chia sẻ
               <input id="toolGroupCount" type="number" min="10" placeholder="10, 20, 40, 80...">
             </label>
-            <label class="wide">Link Video Proof (Drive / Loom)
+            <label class="wide">Link Video bằng chứng (Google Drive / Loom)
               <input id="toolVideoProof" placeholder="https://drive.google.com/...">
             </label>
           </div>
-          <button class="btn primary" onclick="submitShareGroupBonus()">Gửi đề xuất Bonus Share</button>
+          <button class="btn primary" onclick="submitShareGroupBonus()">Gửi đề xuất thưởng chia sẻ</button>
         </article>
       </div>
     </section>
   </main>
 </div>
 
-<!-- MODAL SYSTEM -->
+<!-- HỆ THỐNG HỘP THOẠI (MODAL) -->
 <div class="modal" id="modal">
   <div class="dialog" id="dialog"></div>
 </div>
@@ -916,16 +930,15 @@
 
 <script>
 // =============================================================================
-// YNDA CLIENT APP LOGIC
+// YNDA CLIENT APP LOGIC (ĐỒNG BỘ 100% TIẾNG VIỆT & GOOGLE AUTH CHUNG)
 // =============================================================================
 const el = id => document.getElementById(id);
 let currentUser = null;
-let currentRole = 'MEMBER';
 let currentLbTab = 'all';
 let allMissions = [];
 let allLeaderboard = null;
 
-// Firebase Init
+// Firebase Init (dùng chung cấu hình với toàn bộ web chính)
 const firebaseConfig = {
   apiKey: 'AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ',
   authDomain: 'yniemdienanh-fb0b7.firebaseapp.com',
@@ -952,10 +965,23 @@ function closeModal() {
 }
 el('modal').onclick = e => { if (e.target === el('modal')) closeModal(); };
 
-// Navigation
+// Điều hướng trang
 document.querySelectorAll('.nav').forEach(b => {
   b.onclick = () => go(b.dataset.page);
 });
+
+const PAGE_TITLES = {
+  dashboard: 'TỔNG QUAN',
+  board: 'BẢNG NHIỆM VỤ',
+  mine: 'NHIỆM VỤ CỦA TÔI',
+  leaderboard: 'BẢNG VINH DANH',
+  review: 'DUYỆT BẰNG CHỨNG',
+  ledger: 'SỔ CÁI ĐIỂM XP',
+  team: 'ĐỘI SẢN XUẤT PHIM',
+  'role-review': 'ĐÁNH GIÁ VAI TRÒ TUẦN',
+  tools: 'TƯƠNG TÁC & THƯỞNG'
+};
+
 function go(page) {
   document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
@@ -964,10 +990,9 @@ function go(page) {
   const navBtn = document.querySelector(`[data-page="${page}"]`);
   if (navBtn) navBtn.classList.add('active');
   const titleEl = el('currentViewTitle');
-  if (titleEl) titleEl.textContent = page.toUpperCase().replace('-', ' ');
+  if (titleEl) titleEl.textContent = PAGE_TITLES[page] || page.toUpperCase();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Load page-specific data
   if (page === 'dashboard') loadDashboard();
   if (page === 'board') loadBoard();
   if (page === 'mine') loadMyMissions();
@@ -978,7 +1003,7 @@ function go(page) {
   if (page === 'role-review') loadRoleReviews();
 }
 
-// API Helper
+// Gọi API backend với token Firebase tự động
 async function api(path, method = 'GET', body = null) {
   const headers = { 'Content-Type': 'application/json' };
   if (auth.currentUser) {
@@ -998,34 +1023,34 @@ async function api(path, method = 'GET', body = null) {
 }
 
 // -----------------------------------------------------------------------------
-// LOAD DASHBOARD
+// 1. TẢI TỔNG QUAN (DASHBOARD)
 // -----------------------------------------------------------------------------
 async function loadDashboard() {
   try {
     const data = await api('/dashboard');
     const b = data.breakdown || {};
     const mem = data.memberMetrics || {};
-    const core = data.coreMetrics || {};
     const user = data.user || currentUser;
 
     if (user) {
       el('dashEyebrow').textContent = `Xin chào ${user.NAME || user.EMAIL}`;
       el('userName').textContent = user.NAME || user.EMAIL;
-      el('userRole').textContent = `${user.DEPARTMENT || 'YNDA'} · ${user.ROLE || 'MEMBER'}`;
-      el('userAvatar').textContent = (user.NAME || '?').slice(0, 2).toUpperCase();
+      el('userRole').textContent = `${formatDepartment(user.DEPARTMENT)} · ${formatRole(user.ROLE)}`;
+      el('userAvatar').textContent = (user.NAME || user.EMAIL || '?').slice(0, 2).toUpperCase();
     }
 
     el('statOverall').innerHTML = `${Number(b.overall || 0).toFixed(1)} <small>XP</small>`;
-    el('statRank').textContent = `#${mem.overallRank || 1} overall ranking`;
+    el('statRank').textContent = `#${mem.overallRank || 1} bảng tổng sắp`;
     el('statActive').textContent = mem.myActiveTasks || 0;
+    el('statActiveSub').textContent = `${mem.myActiveTasks || 0} nhiệm vụ đang nhận`;
     el('statCompleted').textContent = b.completedTasks || mem.completedTasks || 0;
-    el('statQuality').textContent = `${b.qualityScore || 95}% quality score`;
+    el('statQuality').textContent = `${b.qualityScore || 95}% điểm chất lượng`;
     el('statRolePoint').textContent = `+${Number(b.rolePoint || 0).toFixed(1)}`;
-    el('statRoleContrib').textContent = `+${Number(b.roleContribution || 0).toFixed(1)} overall (60%)`;
+    el('statRoleContrib').textContent = `+${Number(b.roleContribution || 0).toFixed(1)} tổng sắp (60%)`;
     el('statAvailable').textContent = mem.availableMissions || 0;
-    el('statEndingSoon').textContent = `${mem.endingSoon || 0} sắp hết hạn trong 24h`;
+    el('statEndingSoon').textContent = `${mem.endingSoon || 0} sắp hết hạn`;
 
-    // My active tasks preview
+    // Danh sách nhiệm vụ của bạn
     const myTasks = data.myTasks || [];
     el('myMissionBadge').textContent = myTasks.length;
     if (myTasks.length) {
@@ -1034,7 +1059,7 @@ async function loadDashboard() {
           <div class="mid">${(m.task?.CODE || 'TASK').replace('-', '<br>')}</div>
           <div>
             <h3>${m.task?.TITLE || 'Nhiệm vụ'}</h3>
-            <p>${m.task?.SCOPE || 'MISSION'} · ${m.status || ''}</p>
+            <p>${formatScope(m.task?.SCOPE || 'MISSION')} · <b style="color:var(--gold)">${formatStatus(m.status)}</b></p>
           </div>
           <span class="xp-tag">+${m.task?.XP_FINAL || 0} XP</span>
         </div>
@@ -1043,14 +1068,14 @@ async function loadDashboard() {
       el('dashMyTasksList').innerHTML = '<div class="empty-state">Bạn chưa nhận nhiệm vụ nào.</div>';
     }
 
-    // Recent XP transactions
+    // Lịch sử giao dịch điểm
     const txns = data.recentTxns || [];
     if (txns.length) {
       el('dashRecentXpList').innerHTML = txns.slice(0, 4).map(t => `
         <div class="mission-row">
-          <span class="badge ${t.TYPE === 'PENALTY' ? 'mandatory' : 'global'}">${t.TYPE}</span>
+          <span class="badge ${t.TYPE === 'PENALTY' ? 'mandatory' : 'global'}">${formatTxnType(t.TYPE)}</span>
           <div>
-            <h3>${t.SOURCE_NAME || 'Giao dịch XP'}</h3>
+            <h3>${t.SOURCE_NAME || 'Giao dịch điểm'}</h3>
             <p>${new Date(t.TIME || t.CREATED_AT).toLocaleString('vi-VN')}</p>
           </div>
           <span class="xp-tag" style="color:${toNumber(t.APPLIED_POINT) < 0 ? 'var(--red)' : 'var(--green)'}">
@@ -1059,7 +1084,7 @@ async function loadDashboard() {
         </div>
       `).join('');
     } else {
-      el('dashRecentXpList').innerHTML = '<div class="empty-state">Chưa có giao dịch XP nào.</div>';
+      el('dashRecentXpList').innerHTML = '<div class="empty-state">Chưa có giao dịch nào.</div>';
     }
   } catch (e) {
     console.warn('Dashboard load fallback:', e.message);
@@ -1067,7 +1092,7 @@ async function loadDashboard() {
 }
 
 // -----------------------------------------------------------------------------
-// LOAD BOARD
+// 2. TẢI BẢNG NHIỆM VỤ (BOARD)
 // -----------------------------------------------------------------------------
 async function loadBoard() {
   try {
@@ -1078,12 +1103,12 @@ async function loadBoard() {
         {
           TASK_ID: 'TRU-026',
           CODE: 'TRU-026',
-          TITLE: 'Bump Recruitment Post · Đợt tuyển quân tháng 8',
+          TITLE: 'Bump bài viết tuyển thành viên · Đợt tuyển quân tháng 8',
           DESCRIPTION: 'Tương tác 4 nền tảng (Facebook, TikTok, Threads, Instagram). Yêu cầu React + Share + Comment hợp lệ.',
-          EXPECTED_OUTPUT: 'Screenshot bằng chứng 3 hành động trên mỗi nền tảng.',
+          EXPECTED_OUTPUT: 'Ảnh chụp màn hình 3 hành động trên mỗi nền tảng.',
           SCOPE: 'GLOBAL_OPEN',
           DEPARTMENT: 'TRUYEN_THONG',
-          DIFFICULTY: 'Medium',
+          DIFFICULTY: 'Vừa',
           ESTIMATED_TIME_MIN: 45,
           XP_FINAL: 2.0,
           SUBMISSION_DEADLINE: new Date(Date.now() + 86400000 * 2).toISOString(),
@@ -1092,12 +1117,12 @@ async function loadBoard() {
         {
           TASK_ID: 'MED-014',
           CODE: 'MED-014',
-          TITLE: 'Cut workshop recap — video ngắn dọc (Reel/TikTok)',
-          DESCRIPTION: 'Biên tập video recap workshop điện ảnh định dạng 9:16, độ dài 45-60s, chèn subtitle và sound FX theo Brand Kit.',
-          EXPECTED_OUTPUT: 'File MP4 1080x1920 hoặc link Google Drive.',
+          TITLE: 'Dựng video recap workshop — định dạng video ngắn dọc',
+          DESCRIPTION: 'Biên tập video recap workshop điện ảnh định dạng 9:16 (Reel/TikTok), độ dài 45-60s, chèn phụ đề và sound FX theo Brand Kit.',
+          EXPECTED_OUTPUT: 'File MP4 1080x1920 hoặc đường dẫn Google Drive.',
           SCOPE: 'DEPARTMENT_OPEN',
           DEPARTMENT: 'MEDIA',
-          DIFFICULTY: 'Standard',
+          DIFFICULTY: 'Chuẩn',
           ESTIMATED_TIME_MIN: 120,
           XP_FINAL: 3.5,
           SUBMISSION_DEADLINE: new Date(Date.now() + 86400000 * 3).toISOString(),
@@ -1106,30 +1131,30 @@ async function loadBoard() {
         {
           TASK_ID: 'NDT-009',
           CODE: 'NDT-009',
-          TITLE: 'Soạn outline & brief phân tích khung hình phim A24',
-          DESCRIPTION: 'Phân tích cấu trúc ánh sáng, góc máy và bố cục màu sắc trong phim The Lighthouse / Past Lives.',
+          TITLE: 'Soạn dàn ý & phân tích bố cục khung hình phim A24',
+          DESCRIPTION: 'Phân tích cấu trúc ánh sáng, góc máy và bảng màu trong phim The Lighthouse / Past Lives.',
           EXPECTED_OUTPUT: 'Bản docx/notion dàn ý bài phân tích 1.200 chữ.',
           SCOPE: 'DEPARTMENT_OPEN',
           DEPARTMENT: 'NOI_DUNG',
-          DIFFICULTY: 'Medium',
+          DIFFICULTY: 'Vừa',
           ESTIMATED_TIME_MIN: 90,
           XP_FINAL: 2.5,
           SUBMISSION_DEADLINE: new Date(Date.now() + 86400000 * 4).toISOString(),
-          PROOF_REQUIREMENT: 'Google Docs link.'
+          PROOF_REQUIREMENT: 'Đường dẫn Google Docs.'
         },
         {
           TASK_ID: 'HR-008',
           CODE: 'HR-008',
           TITLE: 'Brief diễn giả & hỗ trợ điều phối sự kiện offline',
-          DESCRIPTION: 'Liên hệ xác nhận timeline, chuẩn bị slide thuyết trình và điều phối mic/check-in cho workshop.',
+          DESCRIPTION: 'Liên hệ xác nhận timeline với khách mời, chuẩn bị slide thuyết trình và điều phối mic/check-in cho workshop.',
           EXPECTED_OUTPUT: 'Biên bản xác nhận với khách mời và danh sách check-in.',
           SCOPE: 'MANDATORY',
           DEPARTMENT: 'NHAN_SU',
-          DIFFICULTY: 'Critical',
+          DIFFICULTY: 'Quan trọng',
           ESTIMATED_TIME_MIN: 180,
           XP_FINAL: 4.0,
           SUBMISSION_DEADLINE: new Date(Date.now() + 86400000 * 2).toISOString(),
-          PROOF_REQUIREMENT: 'File checklist và ảnh sự kiện.'
+          PROOF_REQUIREMENT: 'File checklist và ảnh chụp sự kiện.'
         }
       ];
     }
@@ -1149,24 +1174,24 @@ function renderBoardCards(list) {
     const isGlobal = String(t.SCOPE || t.TASK_TYPE || '').toUpperCase() === 'GLOBAL_OPEN';
     const badgeClass = isMandatory ? 'mandatory' : (isGlobal ? 'global' : 'dept');
     const deadline = t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : 'Chưa thiết lập';
-    const diff = t.DIFFICULTY || 'Medium';
+    const diff = t.DIFFICULTY || 'Vừa';
 
     return `
       <article class="mission-card">
         <div class="card-meta">
-          <span class="badge ${badgeClass}">${t.CODE || t.TASK_ID} · ${t.SCOPE || 'MISSION'}</span>
-          <span class="difficulty-tag">◆ ${diff}</span>
+          <span class="badge ${badgeClass}">${t.CODE || t.TASK_ID} · ${formatScope(t.SCOPE)}</span>
+          <span class="difficulty-tag">◆ Độ khó: ${diff}</span>
         </div>
         <h2>${t.TITLE || 'Nhiệm vụ'}</h2>
-        <p>${t.DESCRIPTION || t.EXPECTED_OUTPUT || 'Xem chi tiết để biết yêu cầu proof và các bước thực hiện.'}</p>
+        <p>${t.DESCRIPTION || t.EXPECTED_OUTPUT || 'Xem chi tiết để biết yêu cầu bằng chứng và các bước thực hiện.'}</p>
         <div class="card-bottom">
           <div class="deadline">
-            DEADLINE
+            HẠN CHÓT NỘP BÀI
             <b>${deadline}</b>
           </div>
           <div>
             <div class="xp-tag">+${t.XP_FINAL || t.XP_AI_RECOMMENDED || 0} XP</div>
-            <button class="btn" style="margin-top:8px" onclick="openMissionDetail('${t.TASK_ID || t.CODE}')">Chi tiết & Nhận</button>
+            <button class="btn" style="margin-top:8px" onclick="openMissionDetail('${t.TASK_ID || t.CODE}')">Chi tiết & Nhận việc</button>
           </div>
         </div>
       </article>
@@ -1187,7 +1212,7 @@ function filterBoard(type, btn) {
 }
 
 // -----------------------------------------------------------------------------
-// MISSION DETAIL & CLAIM / START
+// CHI TIẾT NHIỆM VỤ & NHẬN VIỆC
 // -----------------------------------------------------------------------------
 async function openMissionDetail(ref) {
   try {
@@ -1200,22 +1225,22 @@ async function openMissionDetail(ref) {
     const hasClaim = !!rel.claim;
 
     showModal(`
-      <div class="eyebrow">${t.CODE} · ${t.SCOPE}</div>
+      <div class="eyebrow">${t.CODE} · ${formatScope(t.SCOPE)}</div>
       <h2>${t.TITLE}</h2>
       <p>${t.DESCRIPTION || t.EXPECTED_OUTPUT || ''}</p>
       <div class="form-grid">
-        <label>XP Reward<input value="${t.XP_FINAL || 0} XP" disabled></label>
-        <label>Độ khó<input value="${t.DIFFICULTY || 'Medium'} (${t.ESTIMATED_TIME_MIN || 60} phút)" disabled></label>
-        <label>Work Start<input value="${t.WORK_START ? new Date(t.WORK_START).toLocaleString('vi-VN') : 'Không giới hạn'}" disabled></label>
-        <label>Submission Deadline<input value="${t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'Không giới hạn'}" disabled></label>
-        <label class="wide">Proof Requirement<textarea rows="2" disabled>${t.PROOF_REQUIREMENT || 'Screenshot / link / file đính kèm.'}</textarea></label>
+        <label>Phần thưởng XP<input value="${t.XP_FINAL || 0} XP" disabled></label>
+        <label>Độ khó & Thời gian ước tính<input value="${t.DIFFICULTY || 'Vừa'} (${t.ESTIMATED_TIME_MIN || 60} phút)" disabled></label>
+        <label>Thời gian bắt đầu làm (Work Start)<input value="${t.WORK_START ? new Date(t.WORK_START).toLocaleString('vi-VN') : 'Linh hoạt'}" disabled></label>
+        <label>Hạn chót nộp bài (Deadline)<input value="${t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'Không giới hạn'}" disabled></label>
+        <label class="wide">Yêu cầu bằng chứng (Proof Requirement)<textarea rows="2" disabled>${t.PROOF_REQUIREMENT || 'Ảnh chụp màn hình / Đường dẫn Drive / File đính kèm theo tiêu chuẩn.'}</textarea></label>
       </div>
       <div class="dialog-foot">
         <button class="btn" onclick="closeModal()">Đóng</button>
         ${!hasClaim ? `
-          <button class="btn primary" onclick="claimTask('${t.TASK_ID}')">Claim Mission (100% XP)</button>
+          <button class="btn primary" onclick="claimTask('${t.TASK_ID}')">Nhận nhiệm vụ (100% XP)</button>
         ` : `
-          <button class="btn primary" onclick="openSubmitProof('${t.TASK_ID}')">Nộp Proof</button>
+          <button class="btn primary" onclick="openSubmitProof('${t.TASK_ID}')">Nộp bằng chứng</button>
         `}
       </div>
     `);
@@ -1228,7 +1253,7 @@ async function claimTask(taskId) {
   try {
     await api(`/tasks/${encodeURIComponent(taskId)}/claim`, 'POST');
     closeModal();
-    toast('Đã claim nhiệm vụ thành công. Hãy bắt đầu làm!');
+    toast('Đã nhận nhiệm vụ thành công. Hãy bắt đầu làm việc!');
     go('mine');
   } catch (e) {
     toast(e.message);
@@ -1236,20 +1261,20 @@ async function claimTask(taskId) {
 }
 
 // -----------------------------------------------------------------------------
-// SUBMIT PROOF (v1, v2, v3...)
+// NỘP BẰNG CHỨNG HOÀN THÀNH (v1, v2, v3...)
 // -----------------------------------------------------------------------------
 function openSubmitProof(taskId) {
   showModal(`
-    <div class="eyebrow">SUBMIT PROOF · ${taskId}</div>
-    <h2>Nộp bằng chứng hoàn thành</h2>
-    <p>Bản nộp được lưu theo phiên bản (v1, v2, v3...). AI sẽ xác minh hợp lệ trước khi Human Review.</p>
+    <div class="eyebrow">NỘP BẰNG CHỨNG · ${taskId}</div>
+    <h2>Nộp kết quả hoàn thành nhiệm vụ</h2>
+    <p>Bản nộp được lưu theo phiên bản (v1, v2, v3...). AI sẽ tự động kiểm tra trước khi chuyển Ban điều hành duyệt.</p>
     <div class="form-grid">
-      <label class="wide">Link Proof / Google Drive / Ảnh<input id="proofUrlInput" placeholder="https://drive.google.com/..." autofocus></label>
-      <label class="wide">Mô tả chi tiết / Ghi chú cho Reviewer<textarea id="proofDescInput" rows="3" placeholder="Mô tả kết quả đã làm..."></textarea></label>
+      <label class="wide">Đường dẫn bằng chứng (Google Drive / Ảnh / File)<input id="proofUrlInput" placeholder="https://drive.google.com/..." autofocus></label>
+      <label class="wide">Mô tả kết quả & Ghi chú cho Reviewer<textarea id="proofDescInput" rows="3" placeholder="Mô tả tóm tắt những gì bạn đã thực hiện..."></textarea></label>
     </div>
     <div class="dialog-foot">
       <button class="btn" onclick="closeModal()">Hủy</button>
-      <button class="btn primary" onclick="submitTaskProof('${taskId}')">Gửi AI Verification</button>
+      <button class="btn primary" onclick="submitTaskProof('${taskId}')">Gửi AI kiểm tra</button>
     </div>
   `);
 }
@@ -1258,17 +1283,16 @@ async function submitTaskProof(taskId) {
   try {
     const proofUrl = el('proofUrlInput').value.trim();
     const proofDesc = el('proofDescInput').value.trim();
-    if (!proofUrl && !proofDesc) throw new Error('Vui lòng nhập link proof hoặc mô tả.');
+    if (!proofUrl && !proofDesc) throw new Error('Vui lòng nhập đường dẫn bằng chứng hoặc mô tả kết quả.');
 
     const sub = await api(`/tasks/${encodeURIComponent(taskId)}/submit`, 'POST', {
       proof: proofDesc || proofUrl,
       proofFiles: proofUrl ? [proofUrl] : []
     });
-    // Trigger AI verify
     await api(`/submissions/${sub.submission.SUBMISSION_ID}/ai-verify`, 'POST').catch(() => null);
 
     closeModal();
-    toast('Đã nộp proof. AI đang xác minh và chuyển sang Review Queue.');
+    toast('Đã nộp bằng chứng. AI đang xác minh và chuyển sang Hàng đợi duyệt.');
     go('mine');
   } catch (e) {
     toast(e.message);
@@ -1276,7 +1300,7 @@ async function submitTaskProof(taskId) {
 }
 
 // -----------------------------------------------------------------------------
-// MY MISSIONS
+// 3. NHIỆM VỤ CỦA TÔI
 // -----------------------------------------------------------------------------
 async function loadMyMissions() {
   try {
@@ -1291,10 +1315,10 @@ async function loadMyMissions() {
         <div class="mid">${(m.task?.CODE || 'TASK').replace('-', '<br>')}</div>
         <div>
           <h3>${m.task?.TITLE || 'Nhiệm vụ'}</h3>
-          <p>Trạng thái: <b style="color:var(--gold)">${m.status || ''}</b> · Deadline: ${m.task?.SUBMISSION_DEADLINE ? new Date(m.task.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'N/A'}</p>
+          <p>Trạng thái: <b style="color:var(--gold)">${formatStatus(m.status)}</b> · Hạn chót: ${m.task?.SUBMISSION_DEADLINE ? new Date(m.task.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'Linh hoạt'}</p>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn primary" onclick="openSubmitProof('${m.task?.TASK_ID}')">Nộp Proof</button>
+          <button class="btn primary" onclick="openSubmitProof('${m.task?.TASK_ID}')">Nộp bằng chứng</button>
         </div>
       </div>
     `).join('');
@@ -1304,7 +1328,7 @@ async function loadMyMissions() {
 }
 
 // -----------------------------------------------------------------------------
-// LEADERBOARD
+// 4. BẢNG XẾP HẠNG (LEADERBOARD)
 // -----------------------------------------------------------------------------
 async function loadLeaderboard() {
   try {
@@ -1373,7 +1397,7 @@ async function loadLeaderboard() {
     }
     renderLeaderboardTab(currentLbTab);
   } catch (e) {
-    el('leaderboardEntries').innerHTML = `<div class="empty-state">Không thể tải leaderboard: ${e.message}</div>`;
+    el('leaderboardEntries').innerHTML = `<div class="empty-state">Không thể tải bảng xếp hạng: ${e.message}</div>`;
   }
 }
 
@@ -1387,24 +1411,24 @@ function switchLbTab(tab, btn) {
 function renderLeaderboardTab(tab) {
   if (!allLeaderboard) return;
   let list = [];
-  let title = '🏆 OVERALL RANKING';
+  let title = '🏆 TỔNG SẮP TOÀN DỰ ÁN';
 
   if (tab === 'all') {
     list = allLeaderboard.all || [];
-    title = '🏆 OVERALL RANKING';
+    title = '🏆 TỔNG SẮP TOÀN DỰ ÁN';
   } else if (tab === 'core') {
     list = allLeaderboard.core || [];
-    title = '⭐ CORE & VICE RANKING';
+    title = '⭐ BẢNG XẾP HẠNG BAN ĐIỀU HÀNH & CORE';
   } else if (tab === 'members') {
     list = allLeaderboard.members || [];
-    title = '👥 THÀNH VIÊN RANKING';
+    title = '👥 BẢNG XẾP HẠNG THÀNH VIÊN';
   } else if (tab === 'monthly') {
     list = allLeaderboard.monthly || [];
-    title = `📅 RANKING THÁNG ${allLeaderboard.periodMonth || ''}`;
+    title = `📅 BẢNG XẾP HẠNG THÁNG ${allLeaderboard.periodMonth || ''}`;
   } else if (tab.startsWith('dept_')) {
     const dept = tab.replace('dept_', '');
     list = (allLeaderboard.byDept && allLeaderboard.byDept[dept]) || [];
-    title = `🏅 TOP BAN ${dept}`;
+    title = `🏅 TOP THÀNH VIÊN BAN ${formatDepartment(dept).toUpperCase()}`;
   }
 
   el('lbTabTitle').textContent = title;
@@ -1419,18 +1443,18 @@ function renderLeaderboardTab(tab) {
       <div class="avatar">${(e.name || '?').slice(0, 2).toUpperCase()}</div>
       <div class="rank-details">
         <b>${e.name || 'Thành viên'}</b>
-        <small>${e.department || 'YNDA'} · ${e.role || 'MEMBER'} · Tasks: ${e.completedTasks || 0} · Quality: ${e.qualityScore || 95}%</small>
+        <small>${formatDepartment(e.department)} · ${formatRole(e.role)} · Đã xong: ${e.completedTasks || 0} · Chất lượng: ${e.qualityScore || 95}%</small>
       </div>
       <div class="rank-metrics">
         <div class="score">${Number(e.overall || 0).toFixed(1)} XP</div>
-        <div class="breakdown">Task: ${e.taskXp || 0} · Bonus: ${e.bonusXp || 0}${e.rolePoint ? ` · Role: +${e.rolePoint}` : ''}</div>
+        <div class="breakdown">Task: ${e.taskXp || 0} · Thưởng: ${e.bonusXp || 0}${e.rolePoint ? ` · Điểm vai trò: +${e.rolePoint}` : ''}</div>
       </div>
     </div>
   `).join('');
 }
 
 // -----------------------------------------------------------------------------
-// REVIEW QUEUE
+// 5. HÀNG ĐỢI DUYỆT BẰNG CHỨNG
 // -----------------------------------------------------------------------------
 async function loadReviewQueue() {
   try {
@@ -1438,20 +1462,20 @@ async function loadReviewQueue() {
     const subs = data.submissions || [];
     el('reviewBadge').textContent = subs.length;
     if (!subs.length) {
-      el('reviewQueueList').innerHTML = '<div class="empty-state">Không có submission nào đang chờ duyệt.</div>';
+      el('reviewQueueList').innerHTML = '<div class="empty-state">Hiện không có bằng chứng nào đang chờ duyệt.</div>';
       return;
     }
     el('reviewQueueList').innerHTML = subs.map(s => `
       <div class="mission-row">
         <div class="mid">${s.VERSION || 'v1'}</div>
         <div>
-          <h3>Submission ${s.SUBMISSION_ID} · User ${s.USER_ID}</h3>
-          <p>AI Verdict: <b style="color:${s.AI_VERDICT === 'PASS' ? 'var(--green)' : 'var(--gold)'}">${s.AI_VERDICT || 'PASS'}</b> · Proof: <a href="${s.PROOF}" target="_blank">${s.PROOF}</a></p>
+          <h3>Bản nộp ${s.SUBMISSION_ID} · Thành viên ${s.USER_ID}</h3>
+          <p>Kết quả AI: <b style="color:${s.AI_VERDICT === 'PASS' ? 'var(--green)' : 'var(--gold)'}">${formatVerdict(s.AI_VERDICT || 'PASS')}</b> · Bằng chứng: <a href="${s.PROOF}" target="_blank">${s.PROOF}</a></p>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn primary" onclick="humanReviewAction('${s.SUBMISSION_ID}', 'APPROVE')">Approve</button>
-          <button class="btn" onclick="humanReviewAction('${s.SUBMISSION_ID}', 'RETURN')">Return</button>
-          <button class="btn danger" onclick="humanReviewAction('${s.SUBMISSION_ID}', 'REJECT')">Reject</button>
+          <button class="btn primary" onclick="humanReviewAction('${s.SUBMISSION_ID}', 'APPROVE')">Phê duyệt (+XP)</button>
+          <button class="btn" onclick="humanReviewAction('${s.SUBMISSION_ID}', 'RETURN')">Yêu cầu sửa lại</button>
+          <button class="btn danger" onclick="humanReviewAction('${s.SUBMISSION_ID}', 'REJECT')">Từ chối</button>
         </div>
       </div>
     `).join('');
@@ -1464,9 +1488,9 @@ async function humanReviewAction(subId, verdict) {
   try {
     await api(`/submissions/${encodeURIComponent(subId)}/review`, 'POST', {
       verdict,
-      reason: `Human review: ${verdict}`
+      reason: `Đã duyệt thủ công: ${verdict}`
     });
-    toast(`Đã xử lý submission (${verdict}). Điểm đã được cập nhật vào Ledger.`);
+    toast(`Đã xử lý bằng chứng (${formatVerdict(verdict)}). Điểm đã được cập nhật vào Sổ cái.`);
     loadReviewQueue();
   } catch (e) {
     toast(e.message);
@@ -1474,22 +1498,22 @@ async function humanReviewAction(subId, verdict) {
 }
 
 // -----------------------------------------------------------------------------
-// XP LEDGER
+// 6. SỔ CÁI ĐIỂM XP (LEDGER)
 // -----------------------------------------------------------------------------
 async function loadLedger() {
   try {
     const data = await api('/ledger');
     const txns = data.transactions || [];
     if (!txns.length) {
-      el('ledgerTableBody').innerHTML = '<tr><td colspan="6" class="empty-state">Chưa có giao dịch XP nào.</td></tr>';
+      el('ledgerTableBody').innerHTML = '<tr><td colspan="6" class="empty-state">Chưa có giao dịch nào trong sổ cái.</td></tr>';
       return;
     }
     el('ledgerTableBody').innerHTML = txns.map(t => `
       <tr>
         <td>${new Date(t.TIME || t.CREATED_AT).toLocaleString('vi-VN')}</td>
-        <td><span class="badge ${t.TYPE === 'PENALTY' ? 'mandatory' : 'global'}">${t.TYPE}</span></td>
+        <td><span class="badge ${t.TYPE === 'PENALTY' ? 'mandatory' : 'global'}">${formatTxnType(t.TYPE)}</span></td>
         <td><b>${t.SOURCE_NAME || t.SOURCE_ID}</b></td>
-        <td>${t.REVIEWER || 'System'}</td>
+        <td>${t.REVIEWER || 'Hệ thống'}</td>
         <td>${t.RAW_POINT}</td>
         <td style="color:${toNumber(t.APPLIED_POINT) < 0 ? 'var(--red)' : 'var(--green)'};font-weight:700">
           ${toNumber(t.APPLIED_POINT) >= 0 ? '+' : ''}${t.APPLIED_POINT} XP
@@ -1502,26 +1526,26 @@ async function loadLedger() {
 }
 
 // -----------------------------------------------------------------------------
-// PRODUCTION SQUADS
+// 7. ĐỘI SẢN XUẤT PHIM (PRODUCTION SQUADS)
 // -----------------------------------------------------------------------------
 async function loadProduction() {
   try {
     const data = await api('/production');
     const teams = data.teams || [];
     if (!teams.length) {
-      el('productionGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Chưa có Production Squad nào. Bạn có thể tạo squad mới!</div>';
+      el('productionGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Chưa có Đội sản xuất nào. Bạn có thể tạo đội mới!</div>';
       return;
     }
     el('productionGrid').innerHTML = teams.map(t => `
       <article class="mission-card">
         <div class="card-meta">
           <span class="badge global">${t.TEAM_ID}</span>
-          <span class="difficulty-tag">ACTIVE</span>
+          <span class="difficulty-tag">ĐANG HOẠT ĐỘNG</span>
         </div>
         <h2>${t.NAME}</h2>
-        <p>Project link: <a href="${t.PROJECT_LINK || '#'}" target="_blank">${t.PROJECT_LINK || 'Chưa đính kèm'}</a></p>
+        <p>Đường dẫn dự án: <a href="${t.PROJECT_LINK || '#'}" target="_blank">${t.PROJECT_LINK || 'Chưa đính kèm'}</a></p>
         <div class="card-bottom">
-          <span class="deadline">TẠO BỞI<b>${t.CREATED_BY || 'Founder'}</b></span>
+          <span class="deadline">NGƯỜI KHỞI TẠO<b>${t.CREATED_BY || 'Founder'}</b></span>
         </div>
       </article>
     `).join('');
@@ -1532,16 +1556,16 @@ async function loadProduction() {
 
 function openCreateProduction() {
   showModal(`
-    <div class="eyebrow">TEMPORARY PRODUCTION SQUAD</div>
-    <h2>Tạo Production Squad mới</h2>
-    <p>Production squad được lập theo từng video/dự án và sử dụng cùng Task XP engine.</p>
+    <div class="eyebrow">ĐỘI SẢN XUẤT TẠM THỜI</div>
+    <h2>Tạo Đội sản xuất phim mới</h2>
+    <p>Đội sản xuất được thành lập theo từng dự án/video cụ thể và cùng sử dụng chung hệ thống Task XP chuẩn.</p>
     <div class="form-grid">
-      <label class="wide">Tên Squad / Dự án<input id="prodNameInput" placeholder="Ví dụ: Workshop Recap #01"></label>
-      <label class="wide">Project Link / Google Drive<input id="prodLinkInput" placeholder="https://drive.google.com/..."></label>
+      <label class="wide">Tên dự án / Video<input id="prodNameInput" placeholder="Ví dụ: Workshop Recap Phim #01"></label>
+      <label class="wide">Đường dẫn thư mục dự án (Google Drive)<input id="prodLinkInput" placeholder="https://drive.google.com/..."></label>
     </div>
     <div class="dialog-foot">
       <button class="btn" onclick="closeModal()">Hủy</button>
-      <button class="btn primary" onclick="submitCreateProduction()">Tạo Squad</button>
+      <button class="btn primary" onclick="submitCreateProduction()">Tạo Đội sản xuất</button>
     </div>
   `);
 }
@@ -1550,10 +1574,10 @@ async function submitCreateProduction() {
   try {
     const name = el('prodNameInput').value.trim();
     const link = el('prodLinkInput').value.trim();
-    if (!name) throw new Error('Vui lòng nhập tên squad.');
+    if (!name) throw new Error('Vui lòng nhập tên Đội sản xuất.');
     await api('/production', 'POST', { name, projectLink: link });
     closeModal();
-    toast('Đã tạo Production Squad thành công!');
+    toast('Đã tạo Đội sản xuất phim thành công!');
     loadProduction();
   } catch (e) {
     toast(e.message);
@@ -1561,22 +1585,22 @@ async function submitCreateProduction() {
 }
 
 // -----------------------------------------------------------------------------
-// ROLE REVIEWS
+// 8. ĐÁNH GIÁ VAI TRÒ TUẦN (ROLE REVIEWS)
 // -----------------------------------------------------------------------------
 async function loadRoleReviews() {
   try {
     const data = await api('/role-reviews');
     const reviews = data.reviews || [];
     if (!reviews.length) {
-      el('roleReviewList').innerHTML = '<div class="empty-state">Chưa có Role Review nào trong hệ thống.</div>';
+      el('roleReviewList').innerHTML = '<div class="empty-state">Chưa có đánh giá vai trò nào trong hệ thống.</div>';
       return;
     }
     el('roleReviewList').innerHTML = reviews.map(r => `
       <div class="mission-row">
-        <div class="mid">${r.WEEK || 'WEEK'}</div>
+        <div class="mid">${r.WEEK || 'TUẦN'}</div>
         <div>
-          <h3>${r.MEMBER_NAME || r.MEMBER_ID} · ${r.ROLE} (${r.TEAM})</h3>
-          <p>Mặc định: +${r.DEFAULT_ROLE_POINT} · AI Đề xuất: <b style="color:var(--gold)">+${r.AI_RECOMMENDED}</b> · Trạng thái: ${r.STATUS}</p>
+          <h3>${r.MEMBER_NAME || r.MEMBER_ID} · ${formatRole(r.ROLE)} (${formatDepartment(r.TEAM)})</h3>
+          <p>Mặc định: +${r.DEFAULT_ROLE_POINT} · AI Đề xuất: <b style="color:var(--gold)">+${r.AI_RECOMMENDED}</b> · Trạng thái: ${formatStatus(r.STATUS)}</p>
         </div>
         <div>
           ${r.STATUS !== 'APPROVED' ? `
@@ -1593,7 +1617,7 @@ async function loadRoleReviews() {
 async function generateRoleReviews() {
   try {
     await api('/role-reviews/generate', 'POST');
-    toast('Đã tạo đề xuất Role Review cho tuần này!');
+    toast('Đã tạo đề xuất đánh giá vai trò cho tuần mới!');
     loadRoleReviews();
   } catch (e) {
     toast(e.message);
@@ -1603,7 +1627,7 @@ async function generateRoleReviews() {
 async function approveRoleReview(id, point) {
   try {
     await api(`/role-reviews/${encodeURIComponent(id)}/approve`, 'POST', { finalPoint: point });
-    toast(`Đã duyệt Role Point +${point} (quy đổi 60% vào Overall score).`);
+    toast(`Đã duyệt điểm vai trò +${point} (Quy đổi 60% vào điểm tổng sắp).`);
     loadRoleReviews();
   } catch (e) {
     toast(e.message);
@@ -1611,7 +1635,7 @@ async function approveRoleReview(id, point) {
 }
 
 // -----------------------------------------------------------------------------
-// SOCIAL INTERACTION & GROUP BONUS TOOLS
+// 9. CÔNG CỤ TƯƠNG TÁC & THƯỞNG CHIA SẺ
 // -----------------------------------------------------------------------------
 async function submitInteraction() {
   try {
@@ -1624,7 +1648,7 @@ async function submitInteraction() {
       actionsDone: ['REACT', 'SHARE', 'COMMENT'],
       postId
     });
-    toast(`Tương tác thành công (${res.window}): +${res.xp} XP đã được ghi nhận!`);
+    toast(`Tương tác thành công (${res.window === 'EARLY' ? 'Khung giờ sớm' : 'Khung giờ chuẩn'}): +${res.xp} XP đã được ghi nhận!`);
   } catch (e) {
     toast(e.message);
   }
@@ -1634,51 +1658,51 @@ async function submitShareGroupBonus() {
   try {
     const count = parseInt(el('toolGroupCount').value, 10);
     const video = el('toolVideoProof').value.trim();
-    if (!count || count < 10) throw new Error('Số group tối thiểu là 10.');
-    if (count >= 20 && !video) throw new Error('Từ 20 group trở lên bắt buộc có video proof.');
+    if (!count || count < 10) throw new Error('Số nhóm chia sẻ tối thiểu là 10.');
+    if (count >= 20 && !video) throw new Error('Từ 20 nhóm trở lên bắt buộc có video quay màn hình bằng chứng.');
     await api('/bonus/share-group', 'POST', {
       groupCount: count,
       videoProof: video
     });
-    toast('Đã ghi nhận Bonus Share Group thành công!');
+    toast('Đã gửi đề xuất thưởng chia sẻ nhóm thành công!');
   } catch (e) {
     toast(e.message);
   }
 }
 
 // -----------------------------------------------------------------------------
-// TASK CREATION MODAL WITH AI ANALYSIS
+// TẠO NHIỆM VỤ MỚI (AI ANALYSIS)
 // -----------------------------------------------------------------------------
 function openCreateTask() {
   showModal(`
-    <div class="eyebrow">TASK CREATOR · AI POWERED</div>
-    <h2>Tạo một nhiệm vụ mới</h2>
-    <p>AI sẽ phân tích độ khó, thời gian và đề xuất mức XP chuẩn. Override XP cần lý do audit.</p>
+    <div class="eyebrow">TẠO NHIỆM VỤ · TÍCH HỢP AI</div>
+    <h2>Khởi tạo nhiệm vụ mới</h2>
+    <p>AI sẽ phân tích độ khó, thời gian hoàn thành và đề xuất mức XP chuẩn. Thay đổi XP cần có lý do rõ ràng.</p>
     <div class="form-grid">
-      <label class="wide">Tên nhiệm vụ<input id="createTitle" placeholder="Ví dụ: Edit recap video workshop"></label>
-      <label>Ban
+      <label class="wide">Tên nhiệm vụ<input id="createTitle" placeholder="Ví dụ: Biên tập video recap workshop điện ảnh"></label>
+      <label>Ban phụ trách
         <select id="createDept">
-          <option value="MEDIA">Media</option>
-          <option value="TRUYEN_THONG">Truyền thông</option>
-          <option value="NOI_DUNG">Nội dung</option>
-          <option value="NHAN_SU">Nhân sự</option>
-          <option value="DUYET_BAI">Duyệt bài</option>
+          <option value="MEDIA">Ban Media</option>
+          <option value="TRUYEN_THONG">Ban Truyền thông</option>
+          <option value="NOI_DUNG">Ban Nội dung</option>
+          <option value="NHAN_SU">Ban Nhân sự</option>
+          <option value="DUYET_BAI">Ban Duyệt bài</option>
         </select>
       </label>
-      <label>Loại nhiệm vụ
+      <label>Phạm vi nhiệm vụ
         <select id="createScope">
-          <option value="DEPARTMENT_OPEN">Department Open (Cần claim)</option>
-          <option value="GLOBAL_OPEN">Global Open (Không giới hạn slot)</option>
-          <option value="MANDATORY">Mandatory Task (Bắt buộc)</option>
+          <option value="DEPARTMENT_OPEN">Mở theo Ban (Cần nhận việc)</option>
+          <option value="GLOBAL_OPEN">Mở toàn dự án (Không giới hạn slot)</option>
+          <option value="MANDATORY">Nhiệm vụ bắt buộc (Mandatory Task)</option>
         </select>
       </label>
-      <label>Claim Deadline<input id="createClaimDeadline" type="datetime-local"></label>
-      <label>Submission Deadline<input id="createSubmitDeadline" type="datetime-local"></label>
-      <label class="wide">Mô tả & Expected Output<textarea id="createOutput" rows="3" placeholder="Yêu cầu đầu ra, các bước thực hiện và tiêu chuẩn nghiệm thu..."></textarea></label>
+      <label>Hạn chót nhận việc<input id="createClaimDeadline" type="datetime-local"></label>
+      <label>Hạn chót nộp bài<input id="createSubmitDeadline" type="datetime-local"></label>
+      <label class="wide">Mô tả & Tiêu chuẩn đầu ra (Expected Output)<textarea id="createOutput" rows="3" placeholder="Mô tả chi tiết yêu cầu đầu ra, các bước thực hiện và tiêu chuẩn nghiệm thu..."></textarea></label>
     </div>
     <div class="dialog-foot">
       <button class="btn" onclick="closeModal()">Hủy</button>
-      <button class="btn primary" onclick="submitCreateTask()">Tạo & Gửi AI Analysis</button>
+      <button class="btn primary" onclick="submitCreateTask()">Tạo & Phân tích AI</button>
     </div>
   `);
 }
@@ -1687,7 +1711,7 @@ async function submitCreateTask() {
   try {
     const title = el('createTitle').value.trim();
     const output = el('createOutput').value.trim();
-    if (!title || !output) throw new Error('Vui lòng nhập tên nhiệm vụ và mô tả output.');
+    if (!title || !output) throw new Error('Vui lòng nhập tên nhiệm vụ và mô tả tiêu chuẩn đầu ra.');
 
     const res = await api('/tasks', 'POST', {
       title,
@@ -1699,11 +1723,10 @@ async function submitCreateTask() {
       submissionDeadline: el('createSubmitDeadline').value || undefined
     });
 
-    // Auto trigger AI analysis
     await api(`/tasks/${encodeURIComponent(res.task.TASK_ID)}/analyze`, 'POST').catch(() => null);
 
     closeModal();
-    toast(`Đã tạo nhiệm vụ ${res.task.CODE}. AI đã phân tích và lưu vào Task Board.`);
+    toast(`Đã tạo nhiệm vụ ${res.task.CODE}. AI đã phân tích và cập nhật vào Bảng nhiệm vụ.`);
     loadBoard();
   } catch (e) {
     toast(e.message);
@@ -1711,48 +1734,33 @@ async function submitCreateTask() {
 }
 
 // -----------------------------------------------------------------------------
-// AUTH & NOTIFICATIONS
+// ĐĂNG NHẬP 1-CLICK BẰNG GOOGLE (CHUNG HỆ THỐNG VỚI TOÀN BỘ WEB CHÍNH)
 // -----------------------------------------------------------------------------
-function openLogin() {
-  showModal(`
-    <div class="eyebrow">YNDA ACCESS CONTROL</div>
-    <h2>Đăng nhập Mission System</h2>
-    <p>Đăng nhập bằng tài khoản Firebase của bạn. Quyền hạn và ban được đối chiếu tự động.</p>
-    <div class="form-grid">
-      <label class="wide">Email<input id="loginEmail" type="email" placeholder="you@example.com"></label>
-      <label class="wide">Mật khẩu<input id="loginPass" type="password" placeholder="••••••••"></label>
-    </div>
-    <div class="dialog-foot">
-      <button class="btn" onclick="closeModal()">Hủy</button>
-      <button class="btn primary" onclick="doLogin()">Đăng nhập</button>
-    </div>
-  `);
-}
-
-async function doLogin() {
+async function signInWithGoogle() {
   try {
-    const email = el('loginEmail').value.trim();
-    const pass = el('loginPass').value;
-    if (!email || !pass) throw new Error('Vui lòng nhập email và mật khẩu.');
-    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    toast('Đang mở cửa sổ đăng nhập Google...');
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const cred = await auth.signInWithPopup(provider);
     const token = await cred.user.getIdToken();
     const loginRes = await api('/auth/login', 'POST', { idToken: token });
     currentUser = loginRes.user;
-    closeModal();
     toast(`Chào mừng ${currentUser.NAME || currentUser.EMAIL}!`);
     el('authBtn').textContent = 'Đăng xuất';
     el('authBtn').onclick = doLogout;
     loadDashboard();
-  } catch (e) {
-    toast(e.message);
+  } catch (err) {
+    if (err && err.code !== 'auth/popup-closed-by-user') {
+      toast('Không thể đăng nhập: ' + (err.message || 'Vui lòng thử lại.'));
+    }
   }
 }
 
 async function doLogout() {
   await auth.signOut();
   currentUser = null;
-  el('authBtn').textContent = 'Đăng nhập';
-  el('authBtn').onclick = openLogin;
+  el('authBtn').textContent = 'Đăng nhập Google';
+  el('authBtn').onclick = signInWithGoogle;
   toast('Đã đăng xuất.');
   loadDashboard();
 }
@@ -1761,12 +1769,12 @@ function openNotifications() {
   api('/notifications').then(data => {
     const notifs = data.notifications || [];
     showModal(`
-      <div class="eyebrow">NOTIFICATION CENTER</div>
+      <div class="eyebrow">TRUNG TÂM THÔNG BÁO</div>
       <h2>Thông báo hệ thống</h2>
       <div style="max-height:360px;overflow-y:auto;margin:16px 0">
         ${notifs.length ? notifs.map(n => `
           <div class="mission-row" style="padding:10px 0">
-            <span class="badge ${n.STATUS === 'UNREAD' ? 'mandatory' : 'global'}">${n.TYPE}</span>
+            <span class="badge ${n.STATUS === 'UNREAD' ? 'mandatory' : 'global'}">${formatTxnType(n.TYPE)}</span>
             <div>
               <h3>${n.TITLE}</h3>
               <p>${n.BODY}</p>
@@ -1780,10 +1788,84 @@ function openNotifications() {
   }).catch(e => toast(e.message));
 }
 
-// Helpers
+// -----------------------------------------------------------------------------
+// HÀM ĐỊNH DẠNG & VIỆT HÓA CHUẨN
+// -----------------------------------------------------------------------------
+function formatDepartment(d) {
+  const map = {
+    TRUYEN_THONG: 'Ban Truyền thông',
+    MEDIA: 'Ban Media',
+    NOI_DUNG: 'Ban Nội dung',
+    NHAN_SU: 'Ban Nhân sự',
+    DUYET_BAI: 'Ban Duyệt bài',
+    GLOBAL: 'Toàn dự án'
+  };
+  return map[d] || d || 'Ý Niệm Điện Ảnh';
+}
+
+function formatRole(r) {
+  const map = {
+    FOUNDER: 'Sáng lập (Founder)',
+    PRESIDENT: 'Chủ tịch',
+    CO_FOUNDER: 'Đồng sáng lập',
+    CORE: 'Ban điều hành (Core)',
+    VICE: 'Phó ban điều hành',
+    MEMBER: 'Thành viên'
+  };
+  return map[r] || r || 'Thành viên';
+}
+
+function formatScope(s) {
+  const map = {
+    GLOBAL_OPEN: 'Mở toàn dự án',
+    DEPARTMENT_OPEN: 'Mở theo Ban',
+    MANDATORY: 'Nhiệm vụ bắt buộc'
+  };
+  return map[s] || s || 'Nhiệm vụ';
+}
+
+function formatStatus(st) {
+  const map = {
+    OPEN: 'Đang mở',
+    CLAIMED: 'Đã nhận việc',
+    WORKING: 'Đang làm việc',
+    SUBMITTED: 'Đã nộp bài',
+    HUMAN_REVIEW: 'Chờ duyệt',
+    APPROVED: 'Đã phê duyệt',
+    REJECTED: 'Từ chối',
+    NEEDS_REVISION: 'Cần sửa lại',
+    UNREAD: 'Chưa đọc'
+  };
+  return map[st] || st || '';
+}
+
+function formatVerdict(v) {
+  const map = {
+    PASS: 'Hợp lệ (Pass)',
+    NEEDS_REVISION: 'Cần bổ sung',
+    SUSPICIOUS: 'Cần kiểm tra lại',
+    INVALID: 'Không hợp lệ',
+    APPROVE: 'Đã duyệt',
+    RETURN: 'Trả về',
+    REJECT: 'Từ chối'
+  };
+  return map[v] || v || '';
+}
+
+function formatTxnType(t) {
+  const map = {
+    TASK: 'NHIỆM VỤ',
+    ROLE: 'VAI TRÒ',
+    BONUS: 'THƯỞNG',
+    PENALTY: 'PHẠT',
+    INTERACTION: 'TƯƠNG TÁC'
+  };
+  return map[t] || t || '';
+}
+
 function toNumber(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-// Initial boot
+// Dọn dẹp cache Service Worker cũ
 if ('caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
@@ -1792,15 +1874,24 @@ if ('caches' in window) {
   });
 }
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/ynda-sw.js').then(reg => {
-    reg.update();
-  }).catch(() => null);
+  navigator.serviceWorker.register('/ynda-sw.js').then(reg => reg.update()).catch(() => null);
 }
 
-auth.onAuthStateChanged(user => {
+// Tự động nhận diện session Google đã đăng nhập từ web chính
+auth.onAuthStateChanged(async user => {
   if (user) {
     el('authBtn').textContent = 'Đăng xuất';
     el('authBtn').onclick = doLogout;
+    try {
+      const token = await user.getIdToken();
+      const loginRes = await api('/auth/login', 'POST', { idToken: token });
+      currentUser = loginRes.user;
+    } catch (e) {
+      console.warn('Auto auth login error:', e.message);
+    }
+  } else {
+    el('authBtn').textContent = 'Đăng nhập Google';
+    el('authBtn').onclick = signInWithGoogle;
   }
   loadDashboard();
   loadBoard();

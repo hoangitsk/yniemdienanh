@@ -226,13 +226,18 @@ async function refreshToken() {
 
 // Khi chưa có S.user nhưng Firebase còn phiên -> lấy idToken rồi xác lập trên API YNDA
 async function restoreSession() {
-  if (!fbAuth || !fbAuth.currentUser) return;
+  if (!fbAuth || !fbAuth.currentUser) { showLogin(); return; }
   try {
     const idToken = await fbAuth.currentUser.getIdToken();
     const d = await api('POST', '/auth/login', { idToken });
+    if (!d || !d.user) throw new Error('Không có dữ liệu user');
     S.token = idToken; S.user = d.user;
     await loadBase(); await loadTabData(); render();
-  } catch (e) { if (!/401/.test(e.message)) console.warn('session restore', e.message); }
+  } catch (e) {
+    // Login API thất bại -> luôn trả về màn đăng nhập (không bao giờ để màn trống)
+    console.warn('session restore', e.message);
+    showLogin(e.message && !/401/.test(e.message) ? e.message : undefined);
+  }
 }
 
 function viewAuth() {
@@ -842,8 +847,9 @@ function onAuthUserChanged(u) {
   }
 }
 
-function showLogin() {
+function showLogin(msg) {
   S.token = ''; localStorage.removeItem('ynda_t'); S.user = null;
+  if (msg) { try { toast(msg, 5000); } catch (e) {} }
   navDef(); N('#app').innerHTML = viewAuth();
 }
 

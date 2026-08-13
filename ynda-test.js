@@ -189,7 +189,6 @@ async function main() {
   console.log('✅ TEST 7: Leaderboard — Role Point hiển thị gốc, Contribution 60%');
 
   // ------------------------------------------------------------------ Role Review weekly
-  await ynda.bootstrap({ mode: 'memory' });
   const rr = await ynda.roleReview.createReview({ seasonId: 'SEA-1', team: 'TRUYEN_THONG', memberId: core.USER_ID, memberName: core.NAME, role: 'CORE', reviewer: founder.USER_ID, note: '' });
   assert.strictEqual(rr.DEFAULT_ROLE_POINT, 1);
   await ynda.roleReview.aiRecommend(rr.REVIEW_ID, 0.75, '2 deadline bị miss', founder.USER_ID);
@@ -200,6 +199,53 @@ async function main() {
   assert.strictEqual(String(approved.XP_TXN.ROLE_RAW_POINT), '0.75');
   approx(Number(approved.XP_TXN.ROLE_OVERALL_VALUE), 0.45);
   console.log('✅ TEST 8: Weekly Role Review — AI đề xuất 0.75, Founder duyệt, txn 60%');
+
+  // ------------------------------------------------------------------ TEST 9: Leaderboard Multi-tab & Filters
+  const lbFull = await ynda.leaderboard.buildLeaderboard({ department: 'TRUYEN_THONG' });
+  assert.ok(Array.isArray(lbFull.all), 'all is array');
+  assert.ok(Array.isArray(lbFull.core), 'core is array');
+  assert.ok(Array.isArray(lbFull.members), 'members is array');
+  assert.ok(Array.isArray(lbFull.monthly), 'monthly is array');
+  assert.ok(lbFull.byDept.TRUYEN_THONG, 'byDept TRUYEN_THONG exists');
+  assert.ok(lbFull.filtered.length > 0, 'filtered department works');
+  const sampleCard = lbFull.all[0];
+  assert.ok(sampleCard.completedTasks !== undefined, 'completedTasks exists on card');
+  assert.ok(sampleCard.qualityScore !== undefined, 'qualityScore exists on card');
+  console.log('✅ TEST 9: Leaderboard multi-tab (Overall, Core, Member, Monthly, Top Ban) & filter đúng');
+
+  // ------------------------------------------------------------------ TEST 10: Dashboard Aggregator API
+  const dash = await ynda.getDashboard(member.USER_ID);
+  assert.ok(dash.user, 'dash has user');
+  assert.ok(dash.memberMetrics, 'dash has memberMetrics');
+  assert.ok(dash.coreMetrics, 'dash has coreMetrics');
+  assert.ok(dash.founderOverview, 'dash has founderOverview');
+  assert.ok(Array.isArray(dash.recentTxns), 'dash has recentTxns');
+  console.log('✅ TEST 10: Dashboard API aggregated đầy đủ metrics cho Member, Core và Founder');
+
+  // ------------------------------------------------------------------ TEST 11: Production Squads & Breakdown
+  const team = await ynda.production.createTeam({
+    name: 'Workshop Film Recap #01',
+    projectLink: 'https://drive.google.com/test',
+    members: [{ userId: member.USER_ID, role: 'EDITOR' }, { userId: core.USER_ID, role: 'PRODUCER' }],
+    createdBy: founder.USER_ID
+  });
+  assert.strictEqual(team.NAME, 'Workshop Film Recap #01');
+  const equalBreakdown = await ynda.production.proposeBreakdown({
+    totalXp: 30,
+    members: [member.USER_ID, core.USER_ID]
+  });
+  assert.strictEqual(equalBreakdown.method, 'equal');
+  assert.strictEqual(equalBreakdown.breakdown[member.USER_ID], 15);
+  assert.strictEqual(equalBreakdown.breakdown[core.USER_ID], 15);
+  console.log('✅ TEST 11: Production Squad breakdown (chia đều & theo vai trò) đúng');
+
+  // ------------------------------------------------------------------ TEST 12: Season Lock & Archive
+  const s1 = await ynda.season.createSeason({ name: 'Season 01 · Genesis', createdBy: founder.USER_ID });
+  assert.strictEqual(s1.STATUS, config.SEASON_STATUS.ACTIVE);
+  const s1Locked = await ynda.season.lockSeason(s1.SEASON_ID, founder.USER_ID);
+  assert.strictEqual(s1Locked.STATUS, config.SEASON_STATUS.LOCKED);
+  assert.ok(s1Locked.LOCKED_AT, 'has lockedAt');
+  console.log('✅ TEST 12: Season Lock & Archive điểm thành công');
 
   console.log('\n🎉 ALL YNDA TESTS PASSED');
 }

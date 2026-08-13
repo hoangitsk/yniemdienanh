@@ -361,10 +361,21 @@ router.get('/xp', auth.requireRole('task', 'view'), async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// LEADERBOARD
+// LEADERBOARD (Overall, Core, Member, Monthly, Top Mỗi Ban + Filters)
 // -----------------------------------------------------------------------------
 router.get('/leaderboard', async (req, res) => {
-  res.status(410).json({ error: 'Leaderboard đã được gỡ khỏi Ops.' });
+  try {
+    const { seasonId, month, department, role } = req.query || {};
+    const data = await ynda.leaderboard.buildLeaderboard({
+      seasonId,
+      periodMonth: month,
+      department,
+      role
+    });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // -----------------------------------------------------------------------------

@@ -1,55 +1,1675 @@
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#0a0c12"><title>YNDA Mission System</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#08090e">
+  <meta name="description" content="YNDA Mission System — Hệ thống quản trị nhiệm vụ, đóng góp và bảng vinh danh dự án Ý Niệm Điện Ảnh.">
+  <title>YNDA Mission System · Ý Niệm Điện Ảnh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <style>
-    :root{--bg:#090a0f;--surface:#11131b;--surface2:#181b25;--line:#292d3a;--text:#f3f0e9;--muted:#9699a7;--gold:#e6b96a;--violet:#a686f5;--green:#6fd1a7;--red:#f18383;--blue:#83b6ef}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 72% -10%,#302344 0%,transparent 33%),var(--bg);color:var(--text);font:14px Manrope,Arial,sans-serif;min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}.sidebar{border-right:1px solid var(--line);padding:28px 16px;position:sticky;top:0;height:100vh;background:#0b0c12dd;backdrop-filter:blur(16px)}.brand{padding:5px 12px 29px;display:flex;align-items:center;gap:10px}.brandmark{width:29px;height:29px;background:linear-gradient(135deg,var(--gold),#8f6532);clip-path:polygon(50% 0,100% 26%,82% 100%,18% 100%,0 26%)}.brand b{font-size:12px;letter-spacing:1.5px}.brand small{display:block;color:var(--muted);font:10px 'DM Mono';letter-spacing:1.2px;margin-top:3px}.nav-label{color:#5d6070;font:10px 'DM Mono';letter-spacing:1.2px;padding:10px 12px}.nav{width:100%;display:flex;gap:11px;align-items:center;border:0;color:#9d9fac;background:transparent;padding:11px 12px;border-radius:9px;text-align:left;margin:2px 0}.nav:hover{background:#181a23;color:#fff}.nav.active{background:#26212d;color:#f5e5bc}.ico{width:18px;text-align:center;font-size:16px}.user{position:absolute;bottom:20px;left:16px;right:16px;border:1px solid var(--line);background:#13151e;border-radius:12px;padding:11px;display:flex;gap:10px;align-items:center}.avatar{width:31px;height:31px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#d79983,#5d446b);font-weight:800;font-size:11px}.user b{font-size:11px;display:block}.user small{color:var(--muted);font-size:10px}.content{max-width:1500px;width:100%;margin:auto;padding:27px 42px 50px}.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:31px}.crumb{color:var(--muted);font-size:11px;letter-spacing:.6px}.crumb span{color:var(--gold)}.actions{display:flex;gap:11px;align-items:center}.iconbtn,.btn{border:1px solid var(--line);background:var(--surface);color:#d9d8de;border-radius:8px;padding:10px 13px}.btn.primary{background:var(--gold);border-color:var(--gold);color:#17130d;font-weight:800}.btn.ghost{background:transparent}.page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px}.eyebrow{font:10px 'DM Mono';letter-spacing:1.4px;color:var(--gold);text-transform:uppercase}.page-head h1{font:600 34px 'Playfair Display';margin:6px 0 0}.page-head p{color:var(--muted);margin:7px 0 0}.season{font:11px 'DM Mono';color:var(--muted);border:1px solid var(--line);padding:8px 11px;border-radius:7px}.season b{color:#ece7db}.stats{display:grid;grid-template-columns:1.45fr repeat(4,1fr);gap:12px}.stat{border:1px solid var(--line);background:linear-gradient(145deg,#161722,#11131a);border-radius:12px;padding:15px}.stat .label{color:var(--muted);font-size:10px;letter-spacing:.5px}.stat strong{font:700 24px 'Playfair Display';display:block;margin:6px 0 3px}.stat small{color:#797e8e;font-size:10px}.stat.hero{background:linear-gradient(135deg,#2e2634,#1a1923);border-color:#5b485c}.stat.hero strong{color:#f3d496;font-size:28px}.up{color:var(--green)}.grid{display:grid;gap:17px;margin-top:24px}.dash-grid{grid-template-columns:1.6fr 1fr}.panel{border:1px solid var(--line);background:#10121a;border-radius:13px;padding:18px}.panel-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.panel-title h2{font-size:13px;margin:0}.link{border:0;background:none;color:var(--gold);font-size:11px;padding:0}.mission{display:grid;grid-template-columns:72px 1fr auto;gap:14px;align-items:center;border-top:1px solid #242733;padding:13px 0}.mission:first-of-type{border-top:0;padding-top:0}.mid{font:10px 'DM Mono';color:var(--gold);border:1px solid #6a5635;border-radius:5px;padding:6px 5px;text-align:center}.mission h3{margin:0 0 4px;font-size:12px}.mission p{margin:0;color:var(--muted);font-size:10px}.status{font:10px 'DM Mono';padding:5px 7px;border-radius:4px;background:#18342d;color:var(--green)}.status.open{background:#28243e;color:#bdadf6}.status.review{background:#382d17;color:#e6b96a}.xp{color:var(--gold);font:600 13px 'DM Mono';white-space:nowrap}.bar{height:5px;background:#242631;border-radius:5px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#b58cf1,#e3b767);border-radius:5px}.alert{border-left:2px solid var(--gold);background:#191610;padding:11px 12px;margin:9px 0;font-size:11px}.alert b{display:block;margin-bottom:3px}.alert span{color:var(--muted)}.xp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid #242733;font-size:11px}.xp-row:first-of-type{border-top:0}.xp-row small{color:var(--muted);display:block;margin-top:2px}.xp-row .plus{color:var(--green);font-family:'DM Mono'}.board-tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 17px}.filter{background:#13151e;color:#bfc1cc;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:11px}.filter.active{border-color:#aa8b55;color:#f1d79a}.missions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.mission-card{border:1px solid var(--line);background:linear-gradient(145deg,#151722,#10121a);padding:17px;border-radius:12px;min-height:240px;display:flex;flex-direction:column}.mission-card:hover{border-color:#655b7f;transform:translateY(-2px);transition:.2s}.card-meta{display:flex;justify-content:space-between;align-items:center}.badge{font:10px 'DM Mono';padding:5px 6px;border-radius:4px;background:#292b35;color:#c6c9d1}.badge.global{background:#18302b;color:#7ad3ae}.badge.mandatory{background:#3c2021;color:#f09b9b}.difficulty{font-size:10px;color:#dba96b}.mission-card h2{font-size:15px;line-height:1.45;margin:16px 0 7px}.mission-card p{font-size:11px;color:var(--muted);line-height:1.55;margin:0}.card-bottom{margin-top:auto;padding-top:18px;display:flex;align-items:end;justify-content:space-between}.deadline{font:10px 'DM Mono';color:#9a9da9}.deadline b{display:block;color:#dedde0;font-size:11px;margin-top:4px}.tab-page{display:none}.tab-page.active{display:block}.rank{display:grid;grid-template-columns:34px 36px 1fr auto;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #242733}.rank:first-of-type{border:0}.rank-num{font:600 13px 'DM Mono';color:#777b88}.rank-name b{font-size:11px;display:block}.rank-name small{font-size:9px;color:var(--muted)}.rank-xp{font:11px 'DM Mono';color:var(--gold)}.leader-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:17px}.ledger-table{width:100%;border-collapse:collapse;font-size:11px}.ledger-table th{text-align:left;color:#777b88;font:10px 'DM Mono';letter-spacing:.6px;padding:0 0 10px}.ledger-table td{border-top:1px solid #262935;padding:11px 3px}.type{font:9px 'DM Mono';padding:4px 5px;border-radius:3px;background:#18342d;color:#80d8b2}.type.role{background:#29243d;color:#c3b5f8}.type.penalty{background:#3a2224;color:#f19595}.modal{position:fixed;z-index:10;inset:0;background:#05060bbd;display:none;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}.dialog{width:min(580px,100%);background:#141620;border:1px solid #484554;border-radius:14px;padding:23px;box-shadow:0 30px 100px #000}.dialog h2{font:600 25px 'Playfair Display';margin:5px 0}.dialog p{color:var(--muted);font-size:12px;line-height:1.6}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}.form-grid label{font-size:10px;color:#999ca9}.form-grid input,.form-grid textarea,.form-grid select{display:block;width:100%;margin-top:5px;background:#0d0f16;border:1px solid #353846;color:#eee;border-radius:6px;padding:9px}.form-grid .wide{grid-column:span 2}.dialog-foot{display:flex;justify-content:flex-end;gap:8px}.toast{position:fixed;right:25px;bottom:25px;padding:12px 15px;border-radius:8px;background:#214436;color:#d0f2e0;border:1px solid #43825f;font-size:12px;display:none}@media(max-width:1050px){.missions{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(3,1fr)}.stat.hero{grid-column:span 2}}@media(max-width:720px){.shell{grid-template-columns:1fr}.sidebar{height:auto;position:static;padding:13px;display:flex;overflow:auto;align-items:center}.brand{padding:3px 10px;min-width:170px}.nav-label,.user{display:none}.nav{width:auto;white-space:nowrap;padding:9px}.content{padding:20px}.stats,.dash-grid,.leader-grid{grid-template-columns:1fr}.stat.hero{grid-column:auto}.missions{grid-template-columns:1fr}.topbar{margin-bottom:20px}.page-head h1{font-size:28px}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}}
+    :root {
+      --bg: #08090e;
+      --surface: #10121a;
+      --surface-card: #151824;
+      --surface-hover: #1c2030;
+      --line: #242838;
+      --line-light: #343a4e;
+      --text: #f4f2eb;
+      --muted: #9598a8;
+      --gold: #e6b96a;
+      --gold-light: #f5d697;
+      --gold-dark: #8f6a31;
+      --violet: #a686f5;
+      --violet-bg: #272138;
+      --green: #6fd1a7;
+      --green-bg: #153228;
+      --red: #f18383;
+      --red-bg: #381f23;
+      --blue: #83b6ef;
+      --blue-bg: #19273c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(ellipse at 80% -15%, #382452 0%, transparent 40%),
+                  radial-gradient(ellipse at 15% 100%, #17243b 0%, transparent 45%),
+                  var(--bg);
+      color: var(--text);
+      font: 14px/1.6 'Manrope', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; border: none; background: none; }
+    a { color: var(--gold); text-decoration: none; }
+
+    /* Shell Layout */
+    .shell {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      border-right: 1px solid var(--line);
+      padding: 24px 16px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: rgba(10, 11, 17, 0.94);
+      backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 20;
+    }
+    .brand {
+      padding: 6px 12px 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 10px;
+    }
+    .brandmark {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--gold), #7a5022);
+      clip-path: polygon(50% 0, 100% 26%, 82% 100%, 18% 100%, 0 26%);
+      box-shadow: 0 0 16px rgba(230, 185, 106, 0.35);
+      flex-shrink: 0;
+    }
+    .brand b { font-size: 13px; letter-spacing: 1.6px; color: #fff; }
+    .brand small { display: block; color: var(--muted); font: 10px 'DM Mono', monospace; letter-spacing: 1.2px; margin-top: 2px; }
+
+    .nav-label {
+      color: #606478;
+      font: 600 10px 'DM Mono', monospace;
+      letter-spacing: 1.4px;
+      padding: 12px 12px 4px;
+      text-transform: uppercase;
+    }
+    .nav {
+      width: 100%;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: #9ea2b5;
+      padding: 10px 12px;
+      border-radius: 9px;
+      text-align: left;
+      font-weight: 500;
+      transition: all 0.18s ease;
+    }
+    .nav:hover { background: var(--surface-card); color: #fff; }
+    .nav.active { background: #262133; color: var(--gold-light); font-weight: 700; box-shadow: inset 0 0 0 1px #594734; }
+    .nav-badge { margin-left: auto; font: 600 10px 'DM Mono'; padding: 2px 7px; border-radius: 10px; }
+    .ico { width: 18px; text-align: center; font-size: 15px; opacity: 0.9; }
+
+    .user-card {
+      margin-top: auto;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #d79983, #5d446b);
+      font-weight: 800;
+      font-size: 12px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .user-card b { font-size: 12px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-card small { color: var(--gold); font: 10px 'DM Mono'; letter-spacing: 0.5px; }
+
+    /* Main Content */
+    .content {
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 40px 60px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .crumb {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 1px;
+      font-family: 'DM Mono', monospace;
+    }
+    .crumb span { color: var(--gold); }
+    .actions { display: flex; gap: 10px; align-items: center; }
+
+    .btn, .iconbtn {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: #d8dbe6;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.18s ease;
+    }
+    .btn:hover, .iconbtn:hover { background: var(--surface-card); border-color: var(--line-light); color: #fff; }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--gold), #b8863c);
+      border-color: var(--gold);
+      color: #120e06;
+      font-weight: 800;
+      box-shadow: 0 4px 16px rgba(230, 185, 106, 0.25);
+    }
+    .btn.primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn.ghost { background: transparent; }
+    .btn.danger { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+
+    /* Page Header */
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .eyebrow {
+      font: 600 11px 'DM Mono', monospace;
+      letter-spacing: 1.5px;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .page-head h1 {
+      font: 600 32px 'Playfair Display', Georgia, serif;
+      margin: 0;
+      letter-spacing: -0.3px;
+      color: #fff;
+    }
+    .page-head p { color: var(--muted); margin: 6px 0 0; font-size: 13px; }
+    .season-tag {
+      font: 11px 'DM Mono', monospace;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-align: right;
+    }
+    .season-tag b { color: #fff; display: block; font-size: 12px; }
+
+    /* Stats Grid */
+    .stats {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 26px;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, #151722, #0f1118);
+      border-radius: 14px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat .label {
+      color: var(--muted);
+      font: 600 10px 'DM Mono', monospace;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .stat strong {
+      font: 700 26px 'Playfair Display', Georgia, serif;
+      display: block;
+      margin: 8px 0 4px;
+      color: #fff;
+    }
+    .stat small { color: #7f8396; font-size: 11px; }
+    .stat.hero {
+      background: linear-gradient(135deg, #2b2038, #151620);
+      border-color: #5c4769;
+    }
+    .stat.hero strong { color: var(--gold-light); font-size: 30px; }
+    .up { color: var(--green); font-weight: 600; }
+    .down { color: var(--red); font-weight: 600; }
+
+    /* Grid & Panels */
+    .grid { display: grid; gap: 18px; }
+    .dash-grid { grid-template-columns: 1.6fr 1fr; }
+    .leader-grid { grid-template-columns: 1.3fr 0.7fr; }
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .panel-title h2 {
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.8px;
+      margin: 0;
+      color: #dedede;
+      text-transform: uppercase;
+    }
+    .link-btn {
+      color: var(--gold);
+      font: 600 11px 'DM Mono';
+      letter-spacing: 0.6px;
+      padding: 0;
+    }
+    .link-btn:hover { text-decoration: underline; }
+
+    /* Quest / Mission Cards */
+    .missions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .mission-card {
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, #151824, #0f1118);
+      padding: 20px;
+      border-radius: 14px;
+      min-height: 250px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.22s ease;
+      position: relative;
+    }
+    .mission-card:hover {
+      border-color: #6a5785;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .badge {
+      font: 600 10px 'DM Mono', monospace;
+      padding: 4px 7px;
+      border-radius: 5px;
+      background: #252836;
+      color: #c9ccd6;
+      letter-spacing: 0.5px;
+    }
+    .badge.global { background: var(--green-bg); color: var(--green); border: 1px solid #205c45; }
+    .badge.mandatory { background: var(--red-bg); color: var(--red); border: 1px solid #6b2f35; }
+    .badge.dept { background: var(--violet-bg); color: var(--violet); border: 1px solid #543f77; }
+    .badge.status-open { background: #1f273d; color: var(--blue); }
+    .badge.status-claimed { background: #2f2518; color: var(--gold); }
+    .badge.status-active { background: #1a332a; color: var(--green); }
+    .badge.status-review { background: #3b281f; color: #f5b082; }
+
+    .difficulty-tag { font: 600 11px 'DM Mono'; color: var(--gold); }
+    .mission-card h2 {
+      font-size: 15px;
+      line-height: 1.45;
+      margin: 0 0 8px;
+      color: #fff;
+      font-weight: 700;
+    }
+    .mission-card p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-bottom {
+      margin-top: auto;
+      padding-top: 18px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      border-top: 1px solid #1f2333;
+    }
+    .deadline { font: 10px 'DM Mono'; color: #8a8d9e; }
+    .deadline b { display: block; color: #dedede; font-size: 11px; margin-top: 3px; }
+    .xp-tag {
+      color: var(--gold-light);
+      font: 700 14px 'DM Mono';
+      white-space: nowrap;
+      text-shadow: 0 0 10px rgba(230, 185, 106, 0.3);
+    }
+
+    /* List Row Missions */
+    .mission-row {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 16px;
+      align-items: center;
+      border-top: 1px solid #202434;
+      padding: 14px 0;
+    }
+    .mission-row:first-of-type { border-top: 0; padding-top: 0; }
+    .mid {
+      font: 600 11px 'DM Mono';
+      color: var(--gold);
+      border: 1px solid #5a4628;
+      border-radius: 6px;
+      padding: 6px 8px;
+      text-align: center;
+      line-height: 1.2;
+      background: #14131b;
+    }
+    .mission-row h3 { margin: 0 0 4px; font-size: 13px; color: #fff; }
+    .mission-row p { margin: 0; color: var(--muted); font-size: 11px; }
+
+    /* Progress bar */
+    .bar {
+      height: 6px;
+      background: #232738;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .bar i {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--violet), var(--gold));
+      border-radius: 6px;
+    }
+
+    /* Board Tools / Filter Bar */
+    .board-tools {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .filter-btn {
+      background: var(--surface);
+      color: #9ea2b5;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px 12px;
+      font: 600 11px 'DM Mono';
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: var(--line-light); color: #fff; }
+    .filter-btn.active {
+      background: #24202d;
+      border-color: #8f6c34;
+      color: var(--gold-light);
+    }
+
+    /* Leaderboard Cards & Table */
+    .rank-card {
+      display: grid;
+      grid-template-columns: 36px 42px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface-card);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      transition: transform 0.15s;
+    }
+    .rank-card:hover { transform: translateX(3px); border-color: #554868; }
+    .rank-card.top1 { border-color: #8c6a2e; background: linear-gradient(145deg, #241d28, #13141f); }
+    .rank-num { font: 700 16px 'DM Mono'; color: #72768a; }
+    .rank-card.top1 .rank-num { color: var(--gold); }
+    .rank-details b { font-size: 13px; color: #fff; display: block; }
+    .rank-details small { font-size: 10px; color: var(--muted); font-family: 'DM Mono'; }
+    .rank-metrics { text-align: right; }
+    .rank-metrics .score { font: 700 15px 'DM Mono'; color: var(--gold-light); }
+    .rank-metrics .breakdown { font: 10px 'DM Mono'; color: #7f8396; }
+
+    /* Tables */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .data-table th {
+      text-align: left;
+      color: #72768a;
+      font: 600 10px 'DM Mono', monospace;
+      letter-spacing: 0.8px;
+      padding: 0 8px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .data-table td {
+      padding: 12px 8px;
+      border-bottom: 1px solid #1c2030;
+    }
+
+    /* Modal Dialog */
+    .modal {
+      position: fixed;
+      z-index: 100;
+      inset: 0;
+      background: rgba(4, 5, 8, 0.85);
+      backdrop-filter: blur(12px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal.show { display: flex; }
+    .dialog {
+      width: min(640px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #12141e;
+      border: 1px solid #443e57;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 30px 100px rgba(0,0,0,0.8);
+    }
+    .dialog h2 { font: 600 24px 'Playfair Display', Georgia, serif; margin: 4px 0 10px; color: #fff; }
+    .dialog p { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 0 0 18px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .form-grid label { font: 600 11px 'DM Mono'; color: #9da0b3; }
+    .form-grid input, .form-grid textarea, .form-grid select {
+      display: block;
+      width: 100%;
+      margin-top: 6px;
+      background: #090a10;
+      border: 1px solid #2c3042;
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+    .form-grid input:focus, .form-grid textarea:focus, .form-grid select:focus {
+      border-color: var(--gold);
+      outline: none;
+    }
+    .form-grid .wide { grid-column: span 2; }
+    .dialog-foot {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .toast {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      background: #163629;
+      color: #d1f3e2;
+      border: 1px solid #3d795b;
+      font: 500 13px Manrope;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      display: none;
+      z-index: 200;
+    }
+
+    .tab-page { display: none; }
+    .tab-page.active { display: block; }
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1080px) {
+      .missions { grid-template-columns: repeat(2, 1fr); }
+      .stats { grid-template-columns: repeat(3, 1fr); }
+      .stat.hero { grid-column: span 3; }
+    }
+    @media (max-width: 768px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { height: auto; position: static; padding: 12px; flex-direction: row; overflow-x: auto; align-items: center; }
+      .brand { padding: 0 10px 0 0; border: none; margin: 0; min-width: 170px; }
+      .nav-label, .user-card { display: none; }
+      .nav { width: auto; white-space: nowrap; padding: 8px 12px; }
+      .content { padding: 18px; }
+      .stats, .dash-grid, .leader-grid { grid-template-columns: 1fr; }
+      .missions { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .wide { grid-column: auto; }
+    }
   </style>
-</head><body>
-<div class="shell"><aside class="sidebar"><div class="brand"><i class="brandmark"></i><div><b>YNDA / MISSION</b><small>SEASON 01 · CONTROL</small></div></div><div class="nav-label">WORKSPACE</div>
-  <button class="nav active" data-page="dashboard"><span class="ico">◈</span>Dashboard</button><button class="nav" data-page="board"><span class="ico">◉</span>Mission Board</button><button class="nav" data-page="mine"><span class="ico">◷</span>My Missions <em style="margin-left:auto;background:#40314e;color:#e5c2fb;font-style:normal;border-radius:10px;padding:1px 6px">3</em></button><button class="nav" data-page="leaderboard"><span class="ico">♛</span>Leaderboard</button>
-  <div class="nav-label">MANAGEMENT</div><button class="nav" data-page="review"><span class="ico">✓</span>Review Queue <em style="margin-left:auto;background:#52392b;color:#f7c477;font-style:normal;border-radius:10px;padding:1px 6px">6</em></button><button class="nav" data-page="ledger"><span class="ico">≡</span>XP Ledger</button><button class="nav" data-page="team"><span class="ico">◎</span>Team & Production</button>
-  <div class="user"><div class="avatar">HN</div><div><b>Hoàng Ngân</b><small>TRUYỀN THÔNG · CORE</small></div></div></aside>
-<main class="content"><header class="topbar"><div class="crumb">YNDA <span>/</span> MISSION SYSTEM</div><div class="actions"><button class="iconbtn" title="Notifications">◌ <sup style="color:var(--gold)">3</sup></button><button class="btn ghost" id="authButton" onclick="openLogin()">Đăng nhập</button><button class="btn primary" onclick="openCreate()">+ Tạo nhiệm vụ</button></div></header>
-<section id="dashboard" class="tab-page active"><div class="page-head"><div><div class="eyebrow">Good evening, Hoàng Ngân</div><h1>Đường đi của sự đóng góp.</h1><p>Mỗi tác động đều có bằng chứng, chủ sở hữu và lịch sử rõ ràng.</p></div><div class="season">CURRENT SEASON<br><b>S01 · Genesis</b></div></div>
-<div class="stats"><article class="stat hero"><div class="label">OVERALL CONTRIBUTION</div><strong>95.5 <small>XP</small></strong><small class="up">↑ 12.4 XP tuần này · #04 overall</small></article><article class="stat"><div class="label">ACTIVE MISSIONS</div><strong>03</strong><small>01 cần bắt đầu hôm nay</small></article><article class="stat"><div class="label">COMPLETED</div><strong>24</strong><small class="up">94% quality score</small></article><article class="stat"><div class="label">ROLE POINT</div><strong>+8.0</strong><small>+4.8 overall contribution</small></article><article class="stat"><div class="label">CURRENT STREAK</div><strong>06 <small>days</small></strong><small>Best: 12 days</small></article></div>
-<div class="grid dash-grid"><article class="panel"><div class="panel-title"><h2>MY ACTIVE MISSIONS</h2><button class="link" onclick="go('mine')">VIEW ALL →</button></div><div class="mission"><div class="mid">TRU<br>026</div><div><h3>Bump Recruitment Post · August wave</h3><p>Social interaction · 4 nền tảng · Unlimited participants</p><div class="bar"><i style="width:72%"></i></div></div><div><span class="status">IN PROGRESS</span><div class="xp" style="margin-top:10px">+2.0 XP</div></div></div><div class="mission"><div class="mid">MED<br>014</div><div><h3>Cut workshop recap — vertical reel</h3><p>Media · Deadline 15 Aug, 22:00</p><div class="bar"><i style="width:38%"></i></div></div><div><span class="status open">CLAIMED</span><div class="xp" style="margin-top:10px">+1.5 XP</div></div></div><div class="mission"><div class="mid">HR<br>009</div><div><h3>Review onboarding feedback</h3><p>Nhân sự · Forced assignment</p><div class="bar"><i style="width:16%"></i></div></div><div><span class="status review">STARTS TODAY</span><div class="xp" style="margin-top:10px">+1.0 XP</div></div></div></article><article class="panel"><div class="panel-title"><h2>ATTENTION REQUIRED</h2><button class="link">7 ITEMS</button></div><div class="alert"><b>Mandatory task cần người nhận</b><span>“Brief guest speaker” hết thời gian claim sau 1h 42m.</span></div><div class="alert" style="border-color:var(--red)"><b>Proof needs revision</b><span>MED-010 · Ảnh proof chưa thể hiện thời gian đăng.</span></div><div class="alert" style="border-color:var(--violet)"><b>Weekly role review</b><span>Tuần 02 đang chờ BĐH xác nhận.</span></div><div class="panel-title" style="margin:20px 0 8px"><h2>RECENT XP</h2><button class="link" onclick="go('ledger')">LEDGER →</button></div><div class="xp-row"><div><b>Workshop visual kit</b><small>TASK · Today, 14:28</small></div><span class="plus">+1.5</span></div><div class="xp-row"><div><b>Core role review · W02</b><small>ROLE · Yesterday</small></div><span class="plus">+0.6</span></div><div class="xp-row"><div><b>Share group bonus</b><small>BONUS · 12 Aug</small></div><span class="plus">+0.5</span></div></article></div></section>
-<section id="board" class="tab-page"><div class="page-head"><div><div class="eyebrow">Open opportunities</div><h1>Mission Board</h1><p>Chọn một nhiệm vụ. Nhận quyền sở hữu. Để lại dấu vết.</p></div><div class="season">36 OPEN<br><b>08 ENDING SOON</b></div></div><div class="board-tools"><button class="filter active">All missions · 36</button><button class="filter">Global · 12</button><button class="filter">Truyền thông</button><button class="filter">Media</button><button class="filter">Mandatory · 4</button><button class="filter">⌕ Tìm nhiệm vụ</button></div><div class="missions" id="missionCards"></div></section>
-<section id="mine" class="tab-page"><div class="page-head"><div><div class="eyebrow">Personal workload</div><h1>My Missions</h1><p>Claim không đồng nghĩa task bắt đầu. Penalty chỉ áp dụng từ Work Start.</p></div></div><div class="panel"><div class="panel-title"><h2>IN PROGRESS · 01</h2><span class="status">WORKING</span></div><div class="mission"><div class="mid">TRU<br>026</div><div><h3>Bump Recruitment Post · August wave</h3><p>Early window ends in 28 min · Proof: screenshot × 3/platform</p><div class="bar"><i style="width:72%"></i></div></div><button class="btn primary" onclick="openProof('TRU-026')">Nộp proof</button></div></div><div class="panel" style="margin-top:16px"><div class="panel-title"><h2>CLAIMED · 02</h2><span class="status open">NOT STARTED</span></div><div class="mission"><div class="mid">MED<br>014</div><div><h3>Cut workshop recap — vertical reel</h3><p>Work start: 14 Aug, 09:00 · Submission: 15 Aug, 22:00</p></div><button class="btn" onclick="toast('Nhiệm vụ đã được bắt đầu. Timeline đã được ghi nhận.')">Bắt đầu</button></div></div></section>
-<section id="leaderboard" class="tab-page"><div class="page-head"><div><div class="eyebrow">Live ranking · Google Sheet</div><h1>Contribution Leaderboard</h1><p>Overall = Task XP + Bonus XP − Penalty + Role Contribution.</p></div><div class="season">FILTER: <b>ALL DEPARTMENTS</b></div></div><div class="leader-grid"><article class="panel"><div class="panel-title"><h2>🏆 OVERALL RANKING</h2><button class="link">THIS MONTH</button></div><div id="rankings"></div></article><aside><article class="panel"><div class="panel-title"><h2>YOUR POSITION</h2><span class="rank-xp">AUTH REQUIRED</span></div><div class="empty">Đăng nhập để backend truy xuất XP ledger và vị trí cá nhân của bạn.</div></article><article class="panel" style="margin-top:16px"><div class="panel-title"><h2>TOP DEPARTMENT</h2><button class="link">LIVE FILTER</button></div><p style="font-size:11px;color:var(--muted);line-height:1.7">Dữ liệu ranking bên trái lấy trực tiếp từ Google Sheet. Filter theo Season, tháng, Ban và role sẽ được lưu theo transaction khi Mission có dữ liệu.</p></article></aside></div></section>
-<section id="review" class="tab-page"><div class="page-head"><div><div class="eyebrow">Human decision required</div><h1>Review Queue</h1><p>AI xác minh bằng chứng; con người quyết định chất lượng và XP.</p></div><div class="season">06 WAITING<br><b>02 SUSPICIOUS</b></div></div><article class="panel"><div class="mission"><div class="mid">MED<br>010</div><div><h3>Workshop visual kit · submission_v2</h3><p>AI: <span style="color:var(--green)">PASS</span> · 3/3 required files · Similarity check clear</p></div><div><button class="btn primary" onclick="toast('Đã duyệt. XP transaction được tạo trong ledger.')">Approve +1.5</button> <button class="btn" onclick="toast('Đã trả proof về người thực hiện.')">Return</button></div></div><div class="mission"><div class="mid">TRU<br>021</div><div><h3>Share post to community groups · submission_v1</h3><p>AI: <span style="color:var(--gold)">SUSPICIOUS</span> · 27 groups detected · video proof required from 20 groups</p></div><div><button class="btn">Review proof</button></div></div></article></section>
-<section id="ledger" class="tab-page"><div class="page-head"><div><div class="eyebrow">Immutable contribution history</div><h1>XP Ledger</h1><p>Không có tổng điểm hard-code. Mọi thay đổi đều đến từ transaction có nguồn.</p></div><div class="season">S01 · <b>95.5 OVERALL</b></div></div><article class="panel"><table class="ledger-table"><thead><tr><th>TIME</th><th>TYPE</th><th>SOURCE</th><th>REVIEWER</th><th>XP</th></tr></thead><tbody><tr><td>13 Aug · 14:28</td><td><span class="type">TASK</span></td><td><b>Workshop visual kit</b><br><small style="color:var(--muted)">MED-010 · submission_v2</small></td><td>Quỳnh Giang</td><td class="plus">+1.5</td></tr><tr><td>13 Aug · 09:00</td><td><span class="type role">ROLE</span></td><td><b>Core weekly review · Week 02</b></td><td>Founder</td><td class="plus">+0.6</td></tr><tr><td>12 Aug · 21:11</td><td><span class="type">BONUS</span></td><td><b>Share group bonus · 20 groups</b></td><td>HR Team</td><td class="plus">+0.5</td></tr><tr><td>10 Aug · 23:00</td><td><span class="type penalty">PENALTY</span></td><td><b>Late hand-off · NDT-008</b></td><td>System</td><td style="color:var(--red)">−0.5</td></tr></tbody></table></article></section>
-<section id="team" class="tab-page"><div class="page-head"><div><div class="eyebrow">People & temporary squads</div><h1>Team & Production</h1><p>Production là squad tạm thời, dùng cùng Task XP engine.</p></div><button class="btn primary" onclick="toast('Production Squad mới đã sẵn sàng để cấu hình.')">+ Production Squad</button></div><div class="missions"><article class="mission-card"><div class="card-meta"><span class="badge global">PRODUCTION #01</span><span class="difficulty">ACTIVE</span></div><h2>Workshop Film · Recap</h2><p>Producer, Director, Cinematographer, Editor và 3 supporting roles.</p><div class="card-bottom"><span class="deadline">06 MEMBERS<b>82 / 120 XP planned</b></span><button class="btn">Open squad</button></div></article><article class="mission-card"><div class="card-meta"><span class="badge">TRUYỀN THÔNG</span><span class="difficulty">9 members</span></div><h2>Truyền thông</h2><p>Team XP 214.5 · Completion 87% · 2 missions pending review.</p><div class="card-bottom"><span class="deadline">LEAD<b>Quỳnh Giang</b></span><button class="btn">View team</button></div></article></div></section>
-</main></div>
-<div class="modal" id="modal"><div class="dialog" id="dialog"></div></div><div class="toast" id="toast"></div>
+</head>
+<body>
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <i class="brandmark"></i>
+      <div>
+        <b>YNDA MISSION</b>
+        <small>SEASON 01 · SYSTEM</small>
+      </div>
+    </div>
+
+    <div class="nav-label">Workspace</div>
+    <button class="nav active" data-page="dashboard"><span class="ico">◈</span>Dashboard</button>
+    <button class="nav" data-page="board"><span class="ico">◉</span>Mission Board</button>
+    <button class="nav" data-page="mine"><span class="ico">◷</span>My Missions <span class="nav-badge" id="myMissionBadge" style="background:#3d2754;color:#dfb8fc">0</span></button>
+    <button class="nav" data-page="leaderboard"><span class="ico">♛</span>Leaderboard</button>
+
+    <div class="nav-label">Management</div>
+    <button class="nav" data-page="review"><span class="ico">✓</span>Review Queue <span class="nav-badge" id="reviewBadge" style="background:#523821;color:#f7cb83">0</span></button>
+    <button class="nav" data-page="ledger"><span class="ico">≡</span>XP Ledger</button>
+    <button class="nav" data-page="team"><span class="ico">◎</span>Production Squads</button>
+    <button class="nav" data-page="role-review"><span class="ico">⚑</span>Role Review</button>
+    <button class="nav" data-page="tools"><span class="ico">⚡</span>Social & Bonus</button>
+
+    <div class="user-card" id="userCard">
+      <div class="avatar" id="userAvatar">?</div>
+      <div style="overflow:hidden">
+        <b id="userName">Chưa đăng nhập</b>
+        <small id="userRole">MEMBER</small>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="crumb">YNDA <span>/</span> MISSION SYSTEM <span>/</span> <span id="currentViewTitle">DASHBOARD</span></div>
+      <div class="actions">
+        <button class="iconbtn" onclick="openNotifications()" title="Thông báo">🔔 <sup id="notifCount" style="color:var(--gold)">0</sup></button>
+        <button class="btn ghost" id="authBtn" onclick="openLogin()">Đăng nhập</button>
+        <button class="btn primary" onclick="openCreateTask()">+ Tạo nhiệm vụ</button>
+      </div>
+    </header>
+
+    <!-- 1. DASHBOARD -->
+    <section id="dashboard" class="tab-page active">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow" id="dashEyebrow">Xin chào thành viên YNDA</div>
+          <h1 id="dashHeadline">Đường đi của sự đóng góp.</h1>
+          <p>Mỗi tác động đều có bằng chứng, chủ sở hữu và lịch sử audit rõ ràng.</p>
+        </div>
+        <div class="season-tag">
+          CURRENT SEASON<br>
+          <b id="activeSeasonTitle">S01 · Genesis</b>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats" id="statsGrid">
+        <article class="stat hero">
+          <div class="label">Overall Contribution</div>
+          <strong id="statOverall">0.0 <small>XP</small></strong>
+          <small class="up" id="statRank">#0 overall ranking</small>
+        </article>
+        <article class="stat">
+          <div class="label">Active Missions</div>
+          <strong id="statActive">0</strong>
+          <small id="statActiveSub">0 nhiệm vụ đang làm</small>
+        </article>
+        <article class="stat">
+          <div class="label">Completed Tasks</div>
+          <strong id="statCompleted">0</strong>
+          <small class="up" id="statQuality">95% quality score</small>
+        </article>
+        <article class="stat">
+          <div class="label">Role Point</div>
+          <strong id="statRolePoint">0.0</strong>
+          <small id="statRoleContrib">+0.0 overall (60%)</small>
+        </article>
+        <article class="stat">
+          <div class="label">Available Missions</div>
+          <strong id="statAvailable">0</strong>
+          <small id="statEndingSoon">0 sắp hết hạn trong 24h</small>
+        </article>
+      </div>
+
+      <!-- Dashboard Panels -->
+      <div class="grid dash-grid">
+        <article class="panel">
+          <div class="panel-title">
+            <h2>MY ACTIVE MISSIONS</h2>
+            <button class="link-btn" onclick="go('mine')">VIEW ALL →</button>
+          </div>
+          <div id="dashMyTasksList">
+            <div class="empty-state">Đang tải nhiệm vụ của bạn...</div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <h2>RECENT XP TRANSACTIONS</h2>
+            <button class="link-btn" onclick="go('ledger')">LEDGER →</button>
+          </div>
+          <div id="dashRecentXpList">
+            <div class="empty-state">Chưa có transaction nào.</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 2. MISSION BOARD -->
+    <section id="board" class="tab-page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Quest Board · Cơ hội đóng góp</div>
+          <h1>Mission Board</h1>
+          <p>Chọn một nhiệm vụ phù hợp. Nhận quyền sở hữu. Đóng góp và để lại dấu ấn.</p>
+        </div>
+        <div class="season-tag">
+          HỆ THỐNG XP CHUẨN<br>
+          <b>0.25 → 10+ XP</b>
+        </div>
+      </div>
+
+      <div class="board-tools">
+        <button class="filter-btn active" onclick="filterBoard('ALL', this)">All Missions</button>
+        <button class="filter-btn" onclick="filterBoard('GLOBAL_OPEN', this)">Global Open</button>
+        <button class="filter-btn" onclick="filterBoard('DEPARTMENT_OPEN', this)">Department Open</button>
+        <button class="filter-btn" onclick="filterBoard('MANDATORY', this)">Mandatory Task</button>
+        <button class="filter-btn" onclick="filterBoard('MEDIA', this)">Media</button>
+        <button class="filter-btn" onclick="filterBoard('TRUYEN_THONG', this)">Truyền thông</button>
+        <button class="filter-btn" onclick="filterBoard('NOI_DUNG', this)">Nội dung</button>
+        <button class="filter-btn" onclick="filterBoard('NHAN_SU', this)">Nhân sự</button>
+      </div>
+
+      <div class="missions" id="boardCardsGrid">
+        <div class="empty-state" style="grid-column: 1 / -1;">Đang tải danh sách nhiệm vụ từ backend...</div>
+      </div>
+    </section>
+
+    <!-- 3. MY MISSIONS -->
+    <section id="mine" class="tab-page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Personal Workload</div>
+          <h1>My Missions</h1>
+          <p>Claim không đồng nghĩa task bắt đầu tính penalty. Penalty chỉ áp dụng từ Work Start.</p>
+        </div>
+      </div>
+      <article class="panel">
+        <div class="panel-title"><h2>NHIỆM VỤ ĐANG PHỤ TRÁCH</h2></div>
+        <div id="myMissionsFullList">
+          <div class="empty-state">Bạn chưa nhận nhiệm vụ nào. Hãy ghé Mission Board để nhận nhiệm vụ!</div>
+        </div>
+      </article>
+    </section>
+
+    <!-- 4. LEADERBOARD -->
+    <section id="leaderboard" class="tab-page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Bảng xếp hạng đóng góp minh bạch</div>
+          <h1>Contribution Leaderboard</h1>
+          <p>Overall = Task XP + Bonus XP − Penalty + Role Contribution (Role Point × 0.6).</p>
+        </div>
+      </div>
+
+      <div class="board-tools" style="margin-bottom:16px">
+        <button class="filter-btn active" onclick="switchLbTab('all', this)">🏆 Overall</button>
+        <button class="filter-btn" onclick="switchLbTab('core', this)">⭐ Core & Vice</button>
+        <button class="filter-btn" onclick="switchLbTab('members', this)">👥 Thành viên</button>
+        <button class="filter-btn" onclick="switchLbTab('monthly', this)">📅 Theo tháng</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_TRUYEN_THONG', this)">🏅 Truyền thông</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_MEDIA', this)">🏅 Media</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_NOI_DUNG', this)">🏅 Nội dung</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_NHAN_SU', this)">🏅 Nhân sự</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_DUYET_BAI', this)">🏅 Duyệt bài</button>
+      </div>
+
+      <div class="leader-grid">
+        <article class="panel">
+          <div class="panel-title"><h2 id="lbTabTitle">🏆 OVERALL RANKING</h2></div>
+          <div id="leaderboardEntries">
+            <div class="empty-state">Đang tính toán bảng xếp hạng...</div>
+          </div>
+        </article>
+        <aside>
+          <article class="panel">
+            <div class="panel-title"><h2>QUY TẮC ĐIỂM SỐ</h2></div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 12px">
+              <b>Member</b> = Task XP + Bonus XP − Penalty<br>
+              <b>Core / Vice</b> = Task XP + Bonus XP − Penalty + (Role Point × 0.6)<br>
+              <i>* Role Point là phần thưởng trách nhiệm hàng tuần (+1 Core, +0.75 Vice), được quy đổi 60% vào Overall score.</i>
+            </p>
+            <div class="badge global" style="display:inline-block">AI VERIFICATION + HUMAN REVIEW</div>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 5. REVIEW QUEUE -->
+    <section id="review" class="tab-page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Kiểm duyệt & Đánh giá chất lượng</div>
+          <h1>Review Queue</h1>
+          <p>AI xác minh tính hợp lệ của bằng chứng theo checklist; Con người quyết định chất lượng và XP.</p>
+        </div>
+      </div>
+      <article class="panel">
+        <div class="panel-title"><h2>SUBMISSIONS ĐANG CHỜ REVIEW</h2></div>
+        <div id="reviewQueueList">
+          <div class="empty-state">Không có submission nào đang chờ duyệt.</div>
+        </div>
+      </article>
+    </section>
+
+    <!-- 6. XP LEDGER -->
+    <section id="ledger" class="tab-page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Nhật ký giao dịch bất biến</div>
+          <h1>XP Ledger</h1>
+          <p>Mọi thay đổi điểm số đều xuất phát từ transaction có người duyệt và nguồn gốc rõ ràng.</p>
+        </div>
+      </div>
+      <article class="panel">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>THỜI GIAN</th>
+              <th>LOẠI</th>
+              <th>NGUỒN / NHIỆM VỤ</th>
+              <th>NGƯỜI DUYỆT</th>
+              <th>ĐIỂM GỐC</th>
+              <th>ĐIỂM ÁP DỤNG</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerTableBody">
+            <tr><td colspan="6" class="empty-state">Đang tải sổ cái XP...</td></tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <!-- 7. PRODUCTION SQUADS -->
+    <section id="team" class="tab-page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Đội ngũ sản xuất tạm thời</div>
+          <h1>Production Squads</h1>
+          <p>Production là đội nhóm tạm thời theo từng video/dự án, dùng chung Task XP engine thống nhất.</p>
+        </div>
+        <button class="btn primary" onclick="openCreateProduction()">+ Tạo Production Squad</button>
+      </div>
+      <div class="missions" id="productionGrid">
+        <div class="empty-state" style="grid-column: 1 / -1;">Đang tải danh sách Production Teams...</div>
+      </div>
+    </section>
+
+    <!-- 8. WEEKLY ROLE REVIEW -->
+    <section id="role-review" class="tab-page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Trách nhiệm quản lý hàng tuần</div>
+          <h1>Weekly Role Review</h1>
+          <p>AI phân tích hoạt động và đề xuất mức Role Point (+1 / +0.75 / +0.5 / 0); Founder duyệt cuối.</p>
+        </div>
+        <button class="btn primary" onclick="generateRoleReviews()">Tạo Role Review tuần mới</button>
+      </div>
+      <article class="panel">
+        <div class="panel-title"><h2>DANH SÁCH ROLE REVIEW CORE / VICE</h2></div>
+        <div id="roleReviewList">
+          <div class="empty-state">Đang tải danh sách Role Review...</div>
+        </div>
+      </article>
+    </section>
+
+    <!-- 9. SOCIAL & BONUS TOOLS -->
+    <section id="tools" class="tab-page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Công cụ đóng góp đặc biệt</div>
+          <h1>Social Interaction & Group Bonus</h1>
+          <p>Công cụ ghi nhận tương tác bài viết đa nền tảng và chia sẻ vào các hội nhóm cộng đồng.</p>
+        </div>
+      </div>
+      <div class="grid dash-grid">
+        <article class="panel">
+          <div class="panel-title"><h2>⚡ SOCIAL INTERACTION / BUMP POST</h2></div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+            4 Nền tảng: Facebook, TikTok, Threads, Instagram. Mỗi platform yêu cầu React + Share + Comment.<br>
+            <b>Early Window (≤ 1h)</b>: +0.5 XP / platform (+2 XP cả 4)<br>
+            <b>Late Window (1h - 24h)</b>: +0.25 XP / platform (+1 XP cả 4)
+          </p>
+          <div class="form-grid">
+            <label class="wide">Chọn Platform
+              <select id="toolPlatform">
+                <option value="FACEBOOK">Facebook</option>
+                <option value="TIKTOK">TikTok</option>
+                <option value="THREADS">Threads</option>
+                <option value="INSTAGRAM">Instagram</option>
+              </select>
+            </label>
+            <label class="wide">Task ID / Mã nhiệm vụ
+              <input id="toolTaskId" placeholder="Ví dụ: TRU-026">
+            </label>
+            <label class="wide">Link bài viết / Post ID
+              <input id="toolPostId" placeholder="https://facebook.com/...">
+            </label>
+          </div>
+          <button class="btn primary" onclick="submitInteraction()">Ghi nhận tương tác (+0.5 / +0.25 XP)</button>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title"><h2>📢 SHARE GROUP BONUS CALCULATOR</h2></div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+            Mốc: 10 groups (+0.25 XP), 20 (+0.5 XP), 40 (+0.75 XP), 80 (+1.0 XP)... Không cộng dồn.<br>
+            <i>Từ 20 groups trở lên bắt buộc quay video proof và HR xác nhận.</i>
+          </p>
+          <div class="form-grid">
+            <label class="wide">Số lượng Group hợp lệ đã share
+              <input id="toolGroupCount" type="number" min="10" placeholder="10, 20, 40, 80...">
+            </label>
+            <label class="wide">Link Video Proof (Drive / Loom)
+              <input id="toolVideoProof" placeholder="https://drive.google.com/...">
+            </label>
+          </div>
+          <button class="btn primary" onclick="submitShareGroupBonus()">Gửi đề xuất Bonus Share</button>
+        </article>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL SYSTEM -->
+<div class="modal" id="modal">
+  <div class="dialog" id="dialog"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-let missions=[];
-const el=id=>document.getElementById(id);function cards(){el('missionCards').innerHTML=missions.length?missions.map((m,i)=>`<article class="mission-card"><div class="card-meta"><span class="badge ${m[6]}">${m[1]}</span><span class="difficulty">◆ ${i===2?'CRITICAL':'MEDIUM'}</span></div><h2>${m[2]}</h2><p>${m[3]}</p><div class="card-bottom"><span class="deadline">SUBMISSION DEADLINE<b>${m[5]}</b></span><div><div class="xp">+${m[4]} XP</div><button class="btn" style="margin-top:9px" onclick="openMission(${i})">Xem nhiệm vụ</button></div></div></article>`).join(''):'<div class="empty" style="grid-column:1/-1">Chưa có mission mở. Core có thể tạo nhiệm vụ đầu tiên.</div>'};cards();
-// Board remains useful as a polished empty/demo state, but promotes live backend tasks whenever the API is available.
-fetch('/api/ynda/board').then(r=>r.ok?r.json():Promise.reject()).then(({board})=>{if(!Array.isArray(board))throw Error('Mission API returned an invalid response.');missions=board.map(t=>[t.TASK_ID||t.CODE,' '+(t.TASK_TYPE||t.SCOPE||'MISSION'),t.TITLE||'Untitled mission',t.DESCRIPTION||t.EXPECTED_OUTPUT||'Xem chi tiết nhiệm vụ để biết yêu cầu proof.',String(t.XP_FINAL||t.XP_AI_RECOMMENDED||0),t.SUBMISSION_DEADLINE?new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN'):'Chưa thiết lập',String(t.TASK_TYPE||t.SCOPE||'').toLowerCase().includes('mandatory')?'mandatory':'']);cards()}).catch(()=>{el('missionCards').innerHTML='<div class="empty" style="grid-column:1/-1">Mission backend chưa sẵn sàng. Hãy thử tải lại.</div>'});
-document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.page));function go(page){document.querySelectorAll('.tab-page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));el(page).classList.add('active');document.querySelector(`[data-page="${page}"]`)?.classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
-function openMission(i){let m=missions[i];el('dialog').innerHTML=`<div class="eyebrow">${m[0]} · ${m[1]}</div><h2>${m[2]}</h2><p>${m[3]}</p><div class="form-grid"><label>XP reward<input value="${m[4]} XP" disabled></label><label>Submission deadline<input value="${m[5]}" disabled></label><label class="wide">Proof requirement<textarea rows="2" disabled>Screenshot / link hoặc project file. AI sẽ kiểm tra format, số lượng và dấu hiệu trùng lặp trước Human Review.</textarea></label></div><div class="dialog-foot"><button class="btn" onclick="closeModal()">Đóng</button><button class="btn primary" onclick="claimMission('${m[0]}')">Claim mission</button></div>`;showModal()}
-function openProof(id){el('dialog').innerHTML=`<div class="eyebrow">SUBMIT PROOF · ${id}</div><h2>Nộp bằng chứng</h2><p>Bản nộp được lưu theo phiên bản. Chỉ bản Human Approved mới tạo XP transaction.</p><div class="form-grid"><label class="wide">Link proof / Google Drive<input id="proofUrl" placeholder="https://drive.google.com/..." autofocus></label><label class="wide">Ghi chú cho reviewer<textarea id="proofNote" rows="3" placeholder="Mô tả ngắn những gì bạn đã hoàn thành..."></textarea></label></div><div class="dialog-foot"><button class="btn" onclick="closeModal()">Hủy</button><button class="btn primary" onclick="submitLiveProof('${id}')">Gửi AI kiểm tra</button></div>`;showModal()}
-function openCreate(){el('dialog').innerHTML=`<div class="eyebrow">TASK CREATOR</div><h2>Tạo một mission mới</h2><p>AI sẽ phân tích độ khó, effort và XP đề xuất. Override XP cần lý do audit.</p><div class="form-grid"><label class="wide">Tên nhiệm vụ<input id="taskTitle" placeholder="Ví dụ: Edit workshop recap"></label><label>Ban<select id="taskDepartment"><option value="MEDIA">Media</option><option value="TRUYEN_THONG">Truyền thông</option><option value="NOI_DUNG">Nội dung</option><option value="NHAN_SU">Nhân sự</option></select></label><label>Task type<select id="taskScope"><option value="DEPARTMENT_OPEN">Department Open</option><option value="GLOBAL_OPEN">Global Open</option><option value="MANDATORY">Mandatory</option></select></label><label>Claim deadline<input id="taskClaim" type="datetime-local"></label><label>Submission deadline<input id="taskSubmit" type="datetime-local"></label><label class="wide">Expected output<textarea id="taskOutput" rows="2" placeholder="Output, scope, steps và proof requirement..."></textarea></label></div><div class="dialog-foot"><button class="btn" onclick="closeModal()">Hủy</button><button class="btn primary" onclick="createLiveTask()">Tạo & AI analysis</button></div>`;showModal()}
-function showModal(){el('modal').classList.add('show')}function closeModal(){el('modal').classList.remove('show')}el('modal').onclick=e=>{if(e.target===el('modal'))closeModal()};function toast(s){let t=el('toast');t.textContent=s;t.style.display='block';clearTimeout(window.T);window.T=setTimeout(()=>t.style.display='none',3600)}
-let people=[];
-function initials(name){return String(name||'?').split(/\s+/).filter(Boolean).slice(-2).map(x=>x[0]).join('').toUpperCase()}function drawRankings(){el('rankings').innerHTML=people.length?people.map(p=>`<div class="rank"><span class="rank-num">${p[0]}</span><div class="avatar">${p[4]}</div><div class="rank-name"><b>${p[1]}</b><small>${p[2]}</small></div><div class="rank-xp">${p[3]} XP</div></div>`).join(''):'<div class="empty">Đang tải Ranking từ Google Sheet…</div>'}drawRankings();
-// Exact live source: DATABASE CORE + DATABASE THÀNH VIÊN + Điểm in the approved Ranking spreadsheet.
-fetch('/api/ranking').then(r=>r.ok?r.json():Promise.reject()).then(data=>{if(!Array.isArray(data.all))throw Error('Ranking API returned an invalid response.');people=data.all.map(x=>[x.rank,x.name,`${x.dept||'YNDA'} · ${x.title||x.role||'MEMBER'}`,Number(x.totalPoints||0).toFixed(1),initials(x.name)]);drawRankings();const count=document.querySelector('#leaderboard .eyebrow');if(count)count.textContent=`LIVE · ${data.summary.totalMembers} MEMBERS FROM RANKING SHEET`}).catch(()=>{el('rankings').innerHTML='<div class="empty">Không thể tải Ranking từ backend. Hãy thử lại.</div>'});
-// Protected mutations go through the actual backend. Firebase proves identity;
-// Google Sheets remains the source of truth for members, tasks and XP ledgers.
-const firebaseConfig={apiKey:'AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ',authDomain:'yniemdienanh-fb0b7.firebaseapp.com',projectId:'yniemdienanh-fb0b7',appId:'1:69246326577:web:50fb1d9cab97e7543fc210'};
-if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);const auth=firebase.auth();
-function openLogin(){el('dialog').innerHTML=`<div class="eyebrow">YNDA MEMBER ACCESS</div><h2>Đăng nhập Mission System</h2><p>Đăng nhập xác thực bằng Firebase; quyền, ban và ranking được đối chiếu với Google Sheet.</p><div class="form-grid"><label class="wide">Email<input id="loginEmail" type="email" placeholder="you@example.com"></label><label class="wide">Mật khẩu<input id="loginPassword" type="password" placeholder="••••••••"></label></div><div class="dialog-foot"><button class="btn" onclick="closeModal()">Hủy</button><button class="btn primary" onclick="loginBackend()">Đăng nhập</button></div>`;showModal()}
-async function loginBackend(){try{const email=el('loginEmail').value.trim(),password=el('loginPassword').value;if(!email||!password)throw Error('Nhập email và mật khẩu.');await auth.signInWithEmailAndPassword(email,password);const result=await backend('/auth/login','POST',{idToken:await auth.currentUser.getIdToken()});closeModal();el('authButton').textContent=result.user?.NAME||auth.currentUser.email;toast('Đã đăng nhập. Quyền được lấy từ backend YNDA.')}catch(e){showBackendError(e)}}
-function renderSignedOutDashboard(){el('dashboard').innerHTML='<div class="page-head"><div><div class="eyebrow">YNDA MISSION SYSTEM</div><h1>Đăng nhập để bắt đầu.</h1><p>Dashboard cá nhân chỉ hiển thị từ XP ledger, task claims và submissions thực tế.</p></div></div><article class="panel" style="max-width:620px"><div class="panel-title"><h2>PRIVATE CONTRIBUTION DATA</h2></div><p style="color:var(--muted);line-height:1.7">Không có số liệu mẫu. Đăng nhập để xem Current XP, active missions, quality và role point của đúng tài khoản.</p><button class="btn primary" onclick="openLogin()">Đăng nhập YNDA</button></article>'}
-auth.onAuthStateChanged(user=>{if(!user){renderSignedOutDashboard();return}el('authButton').textContent=user.email;backend('/dashboard').then(data=>{const b=data.breakdown||{},tasks=(data.myTasks||[]);el('dashboard').innerHTML=`<div class="page-head"><div><div class="eyebrow">LIVE PERSONAL DASHBOARD</div><h1>${data.user?.NAME||user.email}</h1><p>Dữ liệu lấy từ XP ledger và task relations trên backend.</p></div></div><div class="stats"><article class="stat hero"><div class="label">OVERALL CONTRIBUTION</div><strong>${Number(b.overall||0).toFixed(2)} <small>XP</small></strong></article><article class="stat"><div class="label">ACTIVE MISSIONS</div><strong>${tasks.length}</strong></article><article class="stat"><div class="label">TASK XP</div><strong>${Number(b.taskXp||0).toFixed(2)}</strong></article><article class="stat"><div class="label">BONUS XP</div><strong>${Number(b.bonusXp||0).toFixed(2)}</strong></article><article class="stat"><div class="label">ROLE POINT</div><strong>${Number(b.rolePoint||0).toFixed(2)}</strong></article></div><article class="panel" style="margin-top:24px"><div class="panel-title"><h2>MY MISSIONS</h2></div>${tasks.length?tasks.map(x=>`<div class="mission"><div class="mid">${x.task?.CODE||'TASK'}</div><div><h3>${x.task?.TITLE||''}</h3><p>${x.status||''}</p></div><span class="xp">${x.task?.XP_FINAL||0} XP</span></div>`).join(''):'<div class="empty">Chưa có nhiệm vụ được claim hoặc giao cho bạn.</div>'}</article>`}).catch(e=>{el('dashboard').innerHTML='<div class="empty">Không thể tải dashboard từ backend.</div>'})});
-async function backend(path,method='GET',body){const user=auth.currentUser;if(!user)throw Error('Vui lòng đăng nhập YNDA trước khi thực hiện thao tác.');const token=await user.getIdToken();const res=await fetch('/api/ynda'+path,{method,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:body?JSON.stringify(body):undefined});const data=await res.json().catch(()=>({}));if(!res.ok)throw Error(data.error||'Không thể kết nối Mission backend.');return data}
-function showBackendError(e){toast(e.message||'Có lỗi hệ thống.')}async function claimMission(code){try{await backend('/tasks/'+encodeURIComponent(code)+'/claim','POST',{});closeModal();toast('Đã claim nhiệm vụ. Backend đã ghi event vào TASK_CLAIMS.');go('mine')}catch(e){showBackendError(e)}}
-async function submitLiveProof(code){try{const proof=el('proofUrl').value.trim();if(!proof)throw Error('Hãy thêm link proof trước khi gửi.');await backend('/tasks/'+encodeURIComponent(code)+'/submit','POST',{proof,proofFiles:[proof],note:el('proofNote').value.trim()});closeModal();toast('Đã lưu submission và chuyển sang AI Verification.') }catch(e){showBackendError(e)}}
-async function createLiveTask(){try{const title=el('taskTitle').value.trim(),expectedOutput=el('taskOutput').value.trim();if(!title||!expectedOutput)throw Error('Tên nhiệm vụ và expected output là bắt buộc.');const task=await backend('/tasks','POST',{title,expectedOutput,description:expectedOutput,department:el('taskDepartment').value,scope:el('taskScope').value,claimDeadline:el('taskClaim').value||undefined,submissionDeadline:el('taskSubmit').value||undefined,aiVerify:true,proofRequirement:'Link, screenshot hoặc file theo mô tả task'});await backend('/tasks/'+encodeURIComponent(task.task.TASK_ID)+'/analyze','POST',{}).catch(()=>null);closeModal();toast('Task đã được lưu vào TASKS và gửi AI Analysis.');fetch('/api/ynda/board').then(r=>r.json()).then(({board})=>{if(board?.length){missions=board.map(t=>[t.TASK_ID||t.CODE,t.TASK_TYPE||t.SCOPE||'MISSION',t.TITLE,t.DESCRIPTION||t.EXPECTED_OUTPUT||'',String(t.XP_FINAL||t.XP_AI_RECOMMENDED||0),t.SUBMISSION_DEADLINE?new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN'):'Chưa thiết lập','']);cards()}})}catch(e){showBackendError(e)}}
-</script></body></html>
+// =============================================================================
+// YNDA CLIENT APP LOGIC
+// =============================================================================
+const el = id => document.getElementById(id);
+let currentUser = null;
+let currentRole = 'MEMBER';
+let currentLbTab = 'all';
+let allMissions = [];
+let allLeaderboard = null;
+
+// Firebase Init
+const firebaseConfig = {
+  apiKey: 'AIzaSyBCDm2B4jkFJ-B62aOpVar9uxXlVxT3QDQ',
+  authDomain: 'yniemdienanh-fb0b7.firebaseapp.com',
+  projectId: 'yniemdienanh-fb0b7',
+  appId: '1:69246326577:web:50fb1d9cab97e7543fc210'
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+function toast(msg) {
+  const t = el('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(() => t.style.display = 'none', 3800);
+}
+
+function showModal(content) {
+  el('dialog').innerHTML = content;
+  el('modal').classList.add('show');
+}
+function closeModal() {
+  el('modal').classList.remove('show');
+}
+el('modal').onclick = e => { if (e.target === el('modal')) closeModal(); };
+
+// Navigation
+document.querySelectorAll('.nav').forEach(b => {
+  b.onclick = () => go(b.dataset.page);
+});
+function go(page) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
+  const target = el(page);
+  if (target) target.classList.add('active');
+  const navBtn = document.querySelector(`[data-page="${page}"]`);
+  if (navBtn) navBtn.classList.add('active');
+  const titleEl = el('currentViewTitle');
+  if (titleEl) titleEl.textContent = page.toUpperCase().replace('-', ' ');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Load page-specific data
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'board') loadBoard();
+  if (page === 'mine') loadMyMissions();
+  if (page === 'leaderboard') loadLeaderboard();
+  if (page === 'review') loadReviewQueue();
+  if (page === 'ledger') loadLedger();
+  if (page === 'team') loadProduction();
+  if (page === 'role-review') loadRoleReviews();
+}
+
+// API Helper
+async function api(path, method = 'GET', body = null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth.currentUser) {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      headers['Authorization'] = `Bearer ${token}`;
+    } catch (e) {}
+  }
+  const res = await fetch('/api/ynda' + path, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Lỗi hệ thống (${res.status})`);
+  return data;
+}
+
+// -----------------------------------------------------------------------------
+// LOAD DASHBOARD
+// -----------------------------------------------------------------------------
+async function loadDashboard() {
+  try {
+    const data = await api('/dashboard');
+    const b = data.breakdown || {};
+    const mem = data.memberMetrics || {};
+    const core = data.coreMetrics || {};
+    const user = data.user || currentUser;
+
+    if (user) {
+      el('dashEyebrow').textContent = `Xin chào ${user.NAME || user.EMAIL}`;
+      el('userName').textContent = user.NAME || user.EMAIL;
+      el('userRole').textContent = `${user.DEPARTMENT || 'YNDA'} · ${user.ROLE || 'MEMBER'}`;
+      el('userAvatar').textContent = (user.NAME || '?').slice(0, 2).toUpperCase();
+    }
+
+    el('statOverall').innerHTML = `${Number(b.overall || 0).toFixed(1)} <small>XP</small>`;
+    el('statRank').textContent = `#${mem.overallRank || 1} overall ranking`;
+    el('statActive').textContent = mem.myActiveTasks || 0;
+    el('statCompleted').textContent = b.completedTasks || mem.completedTasks || 0;
+    el('statQuality').textContent = `${b.qualityScore || 95}% quality score`;
+    el('statRolePoint').textContent = `+${Number(b.rolePoint || 0).toFixed(1)}`;
+    el('statRoleContrib').textContent = `+${Number(b.roleContribution || 0).toFixed(1)} overall (60%)`;
+    el('statAvailable').textContent = mem.availableMissions || 0;
+    el('statEndingSoon').textContent = `${mem.endingSoon || 0} sắp hết hạn trong 24h`;
+
+    // My active tasks preview
+    const myTasks = data.myTasks || [];
+    el('myMissionBadge').textContent = myTasks.length;
+    if (myTasks.length) {
+      el('dashMyTasksList').innerHTML = myTasks.slice(0, 4).map(m => `
+        <div class="mission-row">
+          <div class="mid">${(m.task?.CODE || 'TASK').replace('-', '<br>')}</div>
+          <div>
+            <h3>${m.task?.TITLE || 'Nhiệm vụ'}</h3>
+            <p>${m.task?.SCOPE || 'MISSION'} · ${m.status || ''}</p>
+          </div>
+          <span class="xp-tag">+${m.task?.XP_FINAL || 0} XP</span>
+        </div>
+      `).join('');
+    } else {
+      el('dashMyTasksList').innerHTML = '<div class="empty-state">Bạn chưa nhận nhiệm vụ nào.</div>';
+    }
+
+    // Recent XP transactions
+    const txns = data.recentTxns || [];
+    if (txns.length) {
+      el('dashRecentXpList').innerHTML = txns.slice(0, 4).map(t => `
+        <div class="mission-row">
+          <span class="badge ${t.TYPE === 'PENALTY' ? 'mandatory' : 'global'}">${t.TYPE}</span>
+          <div>
+            <h3>${t.SOURCE_NAME || 'Giao dịch XP'}</h3>
+            <p>${new Date(t.TIME || t.CREATED_AT).toLocaleString('vi-VN')}</p>
+          </div>
+          <span class="xp-tag" style="color:${toNumber(t.APPLIED_POINT) < 0 ? 'var(--red)' : 'var(--green)'}">
+            ${toNumber(t.APPLIED_POINT) >= 0 ? '+' : ''}${t.APPLIED_POINT} XP
+          </span>
+        </div>
+      `).join('');
+    } else {
+      el('dashRecentXpList').innerHTML = '<div class="empty-state">Chưa có giao dịch XP nào.</div>';
+    }
+  } catch (e) {
+    console.warn('Dashboard load fallback:', e.message);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// LOAD BOARD
+// -----------------------------------------------------------------------------
+async function loadBoard() {
+  try {
+    const data = await api('/board');
+    allMissions = data.board || [];
+    renderBoardCards(allMissions);
+  } catch (e) {
+    el('boardCardsGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1">Không thể tải nhiệm vụ: ${e.message}</div>`;
+  }
+}
+
+function renderBoardCards(list) {
+  if (!list.length) {
+    el('boardCardsGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Không có nhiệm vụ nào trong mục này.</div>';
+    return;
+  }
+  el('boardCardsGrid').innerHTML = list.map(t => {
+    const isMandatory = String(t.SCOPE || t.TASK_TYPE || '').toUpperCase() === 'MANDATORY';
+    const isGlobal = String(t.SCOPE || t.TASK_TYPE || '').toUpperCase() === 'GLOBAL_OPEN';
+    const badgeClass = isMandatory ? 'mandatory' : (isGlobal ? 'global' : 'dept');
+    const deadline = t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : 'Chưa thiết lập';
+    const diff = t.DIFFICULTY || 'Medium';
+
+    return `
+      <article class="mission-card">
+        <div class="card-meta">
+          <span class="badge ${badgeClass}">${t.CODE || t.TASK_ID} · ${t.SCOPE || 'MISSION'}</span>
+          <span class="difficulty-tag">◆ ${diff}</span>
+        </div>
+        <h2>${t.TITLE || 'Nhiệm vụ'}</h2>
+        <p>${t.DESCRIPTION || t.EXPECTED_OUTPUT || 'Xem chi tiết để biết yêu cầu proof và các bước thực hiện.'}</p>
+        <div class="card-bottom">
+          <div class="deadline">
+            DEADLINE
+            <b>${deadline}</b>
+          </div>
+          <div>
+            <div class="xp-tag">+${t.XP_FINAL || t.XP_AI_RECOMMENDED || 0} XP</div>
+            <button class="btn" style="margin-top:8px" onclick="openMissionDetail('${t.TASK_ID || t.CODE}')">Chi tiết & Nhận</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+function filterBoard(type, btn) {
+  document.querySelectorAll('#board .filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (type === 'ALL') {
+    renderBoardCards(allMissions);
+  } else if (['GLOBAL_OPEN', 'DEPARTMENT_OPEN', 'MANDATORY'].includes(type)) {
+    renderBoardCards(allMissions.filter(t => (t.SCOPE || t.TASK_TYPE) === type));
+  } else {
+    renderBoardCards(allMissions.filter(t => t.DEPARTMENT === type));
+  }
+}
+
+// -----------------------------------------------------------------------------
+// MISSION DETAIL & CLAIM / START
+// -----------------------------------------------------------------------------
+async function openMissionDetail(ref) {
+  try {
+    const data = await api(`/tasks/${encodeURIComponent(ref)}/detail`).catch(async () => {
+      const single = await api(`/tasks/${encodeURIComponent(ref)}`);
+      return { task: single.task, relation: null, submissions: [] };
+    });
+    const t = data.task;
+    const rel = data.relation || {};
+    const hasClaim = !!rel.claim;
+
+    showModal(`
+      <div class="eyebrow">${t.CODE} · ${t.SCOPE}</div>
+      <h2>${t.TITLE}</h2>
+      <p>${t.DESCRIPTION || t.EXPECTED_OUTPUT || ''}</p>
+      <div class="form-grid">
+        <label>XP Reward<input value="${t.XP_FINAL || 0} XP" disabled></label>
+        <label>Độ khó<input value="${t.DIFFICULTY || 'Medium'} (${t.ESTIMATED_TIME_MIN || 60} phút)" disabled></label>
+        <label>Work Start<input value="${t.WORK_START ? new Date(t.WORK_START).toLocaleString('vi-VN') : 'Không giới hạn'}" disabled></label>
+        <label>Submission Deadline<input value="${t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'Không giới hạn'}" disabled></label>
+        <label class="wide">Proof Requirement<textarea rows="2" disabled>${t.PROOF_REQUIREMENT || 'Screenshot / link / file đính kèm.'}</textarea></label>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn" onclick="closeModal()">Đóng</button>
+        ${!hasClaim ? `
+          <button class="btn primary" onclick="claimTask('${t.TASK_ID}')">Claim Mission (100% XP)</button>
+        ` : `
+          <button class="btn primary" onclick="openSubmitProof('${t.TASK_ID}')">Nộp Proof</button>
+        `}
+      </div>
+    `);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function claimTask(taskId) {
+  try {
+    await api(`/tasks/${encodeURIComponent(taskId)}/claim`, 'POST');
+    closeModal();
+    toast('Đã claim nhiệm vụ thành công. Hãy bắt đầu làm!');
+    go('mine');
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// SUBMIT PROOF (v1, v2, v3...)
+// -----------------------------------------------------------------------------
+function openSubmitProof(taskId) {
+  showModal(`
+    <div class="eyebrow">SUBMIT PROOF · ${taskId}</div>
+    <h2>Nộp bằng chứng hoàn thành</h2>
+    <p>Bản nộp được lưu theo phiên bản (v1, v2, v3...). AI sẽ xác minh hợp lệ trước khi Human Review.</p>
+    <div class="form-grid">
+      <label class="wide">Link Proof / Google Drive / Ảnh<input id="proofUrlInput" placeholder="https://drive.google.com/..." autofocus></label>
+      <label class="wide">Mô tả chi tiết / Ghi chú cho Reviewer<textarea id="proofDescInput" rows="3" placeholder="Mô tả kết quả đã làm..."></textarea></label>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" onclick="closeModal()">Hủy</button>
+      <button class="btn primary" onclick="submitTaskProof('${taskId}')">Gửi AI Verification</button>
+    </div>
+  `);
+}
+
+async function submitTaskProof(taskId) {
+  try {
+    const proofUrl = el('proofUrlInput').value.trim();
+    const proofDesc = el('proofDescInput').value.trim();
+    if (!proofUrl && !proofDesc) throw new Error('Vui lòng nhập link proof hoặc mô tả.');
+
+    const sub = await api(`/tasks/${encodeURIComponent(taskId)}/submit`, 'POST', {
+      proof: proofDesc || proofUrl,
+      proofFiles: proofUrl ? [proofUrl] : []
+    });
+    // Trigger AI verify
+    await api(`/submissions/${sub.submission.SUBMISSION_ID}/ai-verify`, 'POST').catch(() => null);
+
+    closeModal();
+    toast('Đã nộp proof. AI đang xác minh và chuyển sang Review Queue.');
+    go('mine');
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// MY MISSIONS
+// -----------------------------------------------------------------------------
+async function loadMyMissions() {
+  try {
+    const data = await api('/dashboard');
+    const tasks = data.myTasks || [];
+    if (!tasks.length) {
+      el('myMissionsFullList').innerHTML = '<div class="empty-state">Bạn chưa nhận nhiệm vụ nào.</div>';
+      return;
+    }
+    el('myMissionsFullList').innerHTML = tasks.map(m => `
+      <div class="mission-row">
+        <div class="mid">${(m.task?.CODE || 'TASK').replace('-', '<br>')}</div>
+        <div>
+          <h3>${m.task?.TITLE || 'Nhiệm vụ'}</h3>
+          <p>Trạng thái: <b style="color:var(--gold)">${m.status || ''}</b> · Deadline: ${m.task?.SUBMISSION_DEADLINE ? new Date(m.task.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'N/A'}</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" onclick="openSubmitProof('${m.task?.TASK_ID}')">Nộp Proof</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el('myMissionsFullList').innerHTML = `<div class="empty-state">Lỗi: ${e.message}</div>`;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// LEADERBOARD
+// -----------------------------------------------------------------------------
+async function loadLeaderboard() {
+  try {
+    allLeaderboard = await api('/leaderboard');
+    renderLeaderboardTab(currentLbTab);
+  } catch (e) {
+    el('leaderboardEntries').innerHTML = `<div class="empty-state">Không thể tải leaderboard: ${e.message}</div>`;
+  }
+}
+
+function switchLbTab(tab, btn) {
+  currentLbTab = tab;
+  document.querySelectorAll('#leaderboard .filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderLeaderboardTab(tab);
+}
+
+function renderLeaderboardTab(tab) {
+  if (!allLeaderboard) return;
+  let list = [];
+  let title = '🏆 OVERALL RANKING';
+
+  if (tab === 'all') {
+    list = allLeaderboard.all || [];
+    title = '🏆 OVERALL RANKING';
+  } else if (tab === 'core') {
+    list = allLeaderboard.core || [];
+    title = '⭐ CORE & VICE RANKING';
+  } else if (tab === 'members') {
+    list = allLeaderboard.members || [];
+    title = '👥 THÀNH VIÊN RANKING';
+  } else if (tab === 'monthly') {
+    list = allLeaderboard.monthly || [];
+    title = `📅 RANKING THÁNG ${allLeaderboard.periodMonth || ''}`;
+  } else if (tab.startsWith('dept_')) {
+    const dept = tab.replace('dept_', '');
+    list = (allLeaderboard.byDept && allLeaderboard.byDept[dept]) || [];
+    title = `🏅 TOP BAN ${dept}`;
+  }
+
+  el('lbTabTitle').textContent = title;
+  if (!list.length) {
+    el('leaderboardEntries').innerHTML = '<div class="empty-state">Chưa có thành viên nào trong danh mục này.</div>';
+    return;
+  }
+
+  el('leaderboardEntries').innerHTML = list.map((e, idx) => `
+    <div class="rank-card ${idx === 0 ? 'top1' : ''}">
+      <span class="rank-num">#${e.rank || (idx + 1)}</span>
+      <div class="avatar">${(e.name || '?').slice(0, 2).toUpperCase()}</div>
+      <div class="rank-details">
+        <b>${e.name || 'Thành viên'}</b>
+        <small>${e.department || 'YNDA'} · ${e.role || 'MEMBER'} · Tasks: ${e.completedTasks || 0} · Quality: ${e.qualityScore || 95}%</small>
+      </div>
+      <div class="rank-metrics">
+        <div class="score">${Number(e.overall || 0).toFixed(1)} XP</div>
+        <div class="breakdown">Task: ${e.taskXp || 0} · Bonus: ${e.bonusXp || 0}${e.rolePoint ? ` · Role: +${e.rolePoint}` : ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// -----------------------------------------------------------------------------
+// REVIEW QUEUE
+// -----------------------------------------------------------------------------
+async function loadReviewQueue() {
+  try {
+    const data = await api('/reviews/pending');
+    const subs = data.submissions || [];
+    el('reviewBadge').textContent = subs.length;
+    if (!subs.length) {
+      el('reviewQueueList').innerHTML = '<div class="empty-state">Không có submission nào đang chờ duyệt.</div>';
+      return;
+    }
+    el('reviewQueueList').innerHTML = subs.map(s => `
+      <div class="mission-row">
+        <div class="mid">${s.VERSION || 'v1'}</div>
+        <div>
+          <h3>Submission ${s.SUBMISSION_ID} · User ${s.USER_ID}</h3>
+          <p>AI Verdict: <b style="color:${s.AI_VERDICT === 'PASS' ? 'var(--green)' : 'var(--gold)'}">${s.AI_VERDICT || 'PASS'}</b> · Proof: <a href="${s.PROOF}" target="_blank">${s.PROOF}</a></p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" onclick="humanReviewAction('${s.SUBMISSION_ID}', 'APPROVE')">Approve</button>
+          <button class="btn" onclick="humanReviewAction('${s.SUBMISSION_ID}', 'RETURN')">Return</button>
+          <button class="btn danger" onclick="humanReviewAction('${s.SUBMISSION_ID}', 'REJECT')">Reject</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el('reviewQueueList').innerHTML = `<div class="empty-state">Lỗi: ${e.message}</div>`;
+  }
+}
+
+async function humanReviewAction(subId, verdict) {
+  try {
+    await api(`/submissions/${encodeURIComponent(subId)}/review`, 'POST', {
+      verdict,
+      reason: `Human review: ${verdict}`
+    });
+    toast(`Đã xử lý submission (${verdict}). Điểm đã được cập nhật vào Ledger.`);
+    loadReviewQueue();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// XP LEDGER
+// -----------------------------------------------------------------------------
+async function loadLedger() {
+  try {
+    const data = await api('/ledger');
+    const txns = data.transactions || [];
+    if (!txns.length) {
+      el('ledgerTableBody').innerHTML = '<tr><td colspan="6" class="empty-state">Chưa có giao dịch XP nào.</td></tr>';
+      return;
+    }
+    el('ledgerTableBody').innerHTML = txns.map(t => `
+      <tr>
+        <td>${new Date(t.TIME || t.CREATED_AT).toLocaleString('vi-VN')}</td>
+        <td><span class="badge ${t.TYPE === 'PENALTY' ? 'mandatory' : 'global'}">${t.TYPE}</span></td>
+        <td><b>${t.SOURCE_NAME || t.SOURCE_ID}</b></td>
+        <td>${t.REVIEWER || 'System'}</td>
+        <td>${t.RAW_POINT}</td>
+        <td style="color:${toNumber(t.APPLIED_POINT) < 0 ? 'var(--red)' : 'var(--green)'};font-weight:700">
+          ${toNumber(t.APPLIED_POINT) >= 0 ? '+' : ''}${t.APPLIED_POINT} XP
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    el('ledgerTableBody').innerHTML = `<tr><td colspan="6" class="empty-state">Lỗi: ${e.message}</td></tr>`;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// PRODUCTION SQUADS
+// -----------------------------------------------------------------------------
+async function loadProduction() {
+  try {
+    const data = await api('/production');
+    const teams = data.teams || [];
+    if (!teams.length) {
+      el('productionGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Chưa có Production Squad nào. Bạn có thể tạo squad mới!</div>';
+      return;
+    }
+    el('productionGrid').innerHTML = teams.map(t => `
+      <article class="mission-card">
+        <div class="card-meta">
+          <span class="badge global">${t.TEAM_ID}</span>
+          <span class="difficulty-tag">ACTIVE</span>
+        </div>
+        <h2>${t.NAME}</h2>
+        <p>Project link: <a href="${t.PROJECT_LINK || '#'}" target="_blank">${t.PROJECT_LINK || 'Chưa đính kèm'}</a></p>
+        <div class="card-bottom">
+          <span class="deadline">TẠO BỞI<b>${t.CREATED_BY || 'Founder'}</b></span>
+        </div>
+      </article>
+    `).join('');
+  } catch (e) {
+    el('productionGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1">Lỗi: ${e.message}</div>`;
+  }
+}
+
+function openCreateProduction() {
+  showModal(`
+    <div class="eyebrow">TEMPORARY PRODUCTION SQUAD</div>
+    <h2>Tạo Production Squad mới</h2>
+    <p>Production squad được lập theo từng video/dự án và sử dụng cùng Task XP engine.</p>
+    <div class="form-grid">
+      <label class="wide">Tên Squad / Dự án<input id="prodNameInput" placeholder="Ví dụ: Workshop Recap #01"></label>
+      <label class="wide">Project Link / Google Drive<input id="prodLinkInput" placeholder="https://drive.google.com/..."></label>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" onclick="closeModal()">Hủy</button>
+      <button class="btn primary" onclick="submitCreateProduction()">Tạo Squad</button>
+    </div>
+  `);
+}
+
+async function submitCreateProduction() {
+  try {
+    const name = el('prodNameInput').value.trim();
+    const link = el('prodLinkInput').value.trim();
+    if (!name) throw new Error('Vui lòng nhập tên squad.');
+    await api('/production', 'POST', { name, projectLink: link });
+    closeModal();
+    toast('Đã tạo Production Squad thành công!');
+    loadProduction();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ROLE REVIEWS
+// -----------------------------------------------------------------------------
+async function loadRoleReviews() {
+  try {
+    const data = await api('/role-reviews');
+    const reviews = data.reviews || [];
+    if (!reviews.length) {
+      el('roleReviewList').innerHTML = '<div class="empty-state">Chưa có Role Review nào trong hệ thống.</div>';
+      return;
+    }
+    el('roleReviewList').innerHTML = reviews.map(r => `
+      <div class="mission-row">
+        <div class="mid">${r.WEEK || 'WEEK'}</div>
+        <div>
+          <h3>${r.MEMBER_NAME || r.MEMBER_ID} · ${r.ROLE} (${r.TEAM})</h3>
+          <p>Mặc định: +${r.DEFAULT_ROLE_POINT} · AI Đề xuất: <b style="color:var(--gold)">+${r.AI_RECOMMENDED}</b> · Trạng thái: ${r.STATUS}</p>
+        </div>
+        <div>
+          ${r.STATUS !== 'APPROVED' ? `
+            <button class="btn primary" onclick="approveRoleReview('${r.REVIEW_ID}', ${r.AI_RECOMMENDED})">Duyệt (+${r.AI_RECOMMENDED})</button>
+          ` : `<span class="badge global">ĐÃ DUYỆT</span>`}
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el('roleReviewList').innerHTML = `<div class="empty-state">Lỗi: ${e.message}</div>`;
+  }
+}
+
+async function generateRoleReviews() {
+  try {
+    await api('/role-reviews/generate', 'POST');
+    toast('Đã tạo đề xuất Role Review cho tuần này!');
+    loadRoleReviews();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function approveRoleReview(id, point) {
+  try {
+    await api(`/role-reviews/${encodeURIComponent(id)}/approve`, 'POST', { finalPoint: point });
+    toast(`Đã duyệt Role Point +${point} (quy đổi 60% vào Overall score).`);
+    loadRoleReviews();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// SOCIAL INTERACTION & GROUP BONUS TOOLS
+// -----------------------------------------------------------------------------
+async function submitInteraction() {
+  try {
+    const platform = el('toolPlatform').value;
+    const taskId = el('toolTaskId').value.trim() || 'GLOBAL-INTERACTION';
+    const postId = el('toolPostId').value.trim() || 'post-1';
+    const res = await api('/interaction', 'POST', {
+      taskId,
+      platform,
+      actionsDone: ['REACT', 'SHARE', 'COMMENT'],
+      postId
+    });
+    toast(`Tương tác thành công (${res.window}): +${res.xp} XP đã được ghi nhận!`);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function submitShareGroupBonus() {
+  try {
+    const count = parseInt(el('toolGroupCount').value, 10);
+    const video = el('toolVideoProof').value.trim();
+    if (!count || count < 10) throw new Error('Số group tối thiểu là 10.');
+    if (count >= 20 && !video) throw new Error('Từ 20 group trở lên bắt buộc có video proof.');
+    await api('/bonus/share-group', 'POST', {
+      groupCount: count,
+      videoProof: video
+    });
+    toast('Đã ghi nhận Bonus Share Group thành công!');
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// TASK CREATION MODAL WITH AI ANALYSIS
+// -----------------------------------------------------------------------------
+function openCreateTask() {
+  showModal(`
+    <div class="eyebrow">TASK CREATOR · AI POWERED</div>
+    <h2>Tạo một nhiệm vụ mới</h2>
+    <p>AI sẽ phân tích độ khó, thời gian và đề xuất mức XP chuẩn. Override XP cần lý do audit.</p>
+    <div class="form-grid">
+      <label class="wide">Tên nhiệm vụ<input id="createTitle" placeholder="Ví dụ: Edit recap video workshop"></label>
+      <label>Ban
+        <select id="createDept">
+          <option value="MEDIA">Media</option>
+          <option value="TRUYEN_THONG">Truyền thông</option>
+          <option value="NOI_DUNG">Nội dung</option>
+          <option value="NHAN_SU">Nhân sự</option>
+          <option value="DUYET_BAI">Duyệt bài</option>
+        </select>
+      </label>
+      <label>Loại nhiệm vụ
+        <select id="createScope">
+          <option value="DEPARTMENT_OPEN">Department Open (Cần claim)</option>
+          <option value="GLOBAL_OPEN">Global Open (Không giới hạn slot)</option>
+          <option value="MANDATORY">Mandatory Task (Bắt buộc)</option>
+        </select>
+      </label>
+      <label>Claim Deadline<input id="createClaimDeadline" type="datetime-local"></label>
+      <label>Submission Deadline<input id="createSubmitDeadline" type="datetime-local"></label>
+      <label class="wide">Mô tả & Expected Output<textarea id="createOutput" rows="3" placeholder="Yêu cầu đầu ra, các bước thực hiện và tiêu chuẩn nghiệm thu..."></textarea></label>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" onclick="closeModal()">Hủy</button>
+      <button class="btn primary" onclick="submitCreateTask()">Tạo & Gửi AI Analysis</button>
+    </div>
+  `);
+}
+
+async function submitCreateTask() {
+  try {
+    const title = el('createTitle').value.trim();
+    const output = el('createOutput').value.trim();
+    if (!title || !output) throw new Error('Vui lòng nhập tên nhiệm vụ và mô tả output.');
+
+    const res = await api('/tasks', 'POST', {
+      title,
+      description: output,
+      expectedOutput: output,
+      department: el('createDept').value,
+      scope: el('createScope').value,
+      claimDeadline: el('createClaimDeadline').value || undefined,
+      submissionDeadline: el('createSubmitDeadline').value || undefined
+    });
+
+    // Auto trigger AI analysis
+    await api(`/tasks/${encodeURIComponent(res.task.TASK_ID)}/analyze`, 'POST').catch(() => null);
+
+    closeModal();
+    toast(`Đã tạo nhiệm vụ ${res.task.CODE}. AI đã phân tích và lưu vào Task Board.`);
+    loadBoard();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// AUTH & NOTIFICATIONS
+// -----------------------------------------------------------------------------
+function openLogin() {
+  showModal(`
+    <div class="eyebrow">YNDA ACCESS CONTROL</div>
+    <h2>Đăng nhập Mission System</h2>
+    <p>Đăng nhập bằng tài khoản Firebase của bạn. Quyền hạn và ban được đối chiếu tự động.</p>
+    <div class="form-grid">
+      <label class="wide">Email<input id="loginEmail" type="email" placeholder="you@example.com"></label>
+      <label class="wide">Mật khẩu<input id="loginPass" type="password" placeholder="••••••••"></label>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" onclick="closeModal()">Hủy</button>
+      <button class="btn primary" onclick="doLogin()">Đăng nhập</button>
+    </div>
+  `);
+}
+
+async function doLogin() {
+  try {
+    const email = el('loginEmail').value.trim();
+    const pass = el('loginPass').value;
+    if (!email || !pass) throw new Error('Vui lòng nhập email và mật khẩu.');
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    const token = await cred.user.getIdToken();
+    const loginRes = await api('/auth/login', 'POST', { idToken: token });
+    currentUser = loginRes.user;
+    closeModal();
+    toast(`Chào mừng ${currentUser.NAME || currentUser.EMAIL}!`);
+    el('authBtn').textContent = 'Đăng xuất';
+    el('authBtn').onclick = doLogout;
+    loadDashboard();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function doLogout() {
+  await auth.signOut();
+  currentUser = null;
+  el('authBtn').textContent = 'Đăng nhập';
+  el('authBtn').onclick = openLogin;
+  toast('Đã đăng xuất.');
+  loadDashboard();
+}
+
+function openNotifications() {
+  api('/notifications').then(data => {
+    const notifs = data.notifications || [];
+    showModal(`
+      <div class="eyebrow">NOTIFICATION CENTER</div>
+      <h2>Thông báo hệ thống</h2>
+      <div style="max-height:360px;overflow-y:auto;margin:16px 0">
+        ${notifs.length ? notifs.map(n => `
+          <div class="mission-row" style="padding:10px 0">
+            <span class="badge ${n.STATUS === 'UNREAD' ? 'mandatory' : 'global'}">${n.TYPE}</span>
+            <div>
+              <h3>${n.TITLE}</h3>
+              <p>${n.BODY}</p>
+            </div>
+            <small style="color:var(--muted)">${new Date(n.CREATED_AT).toLocaleTimeString('vi-VN')}</small>
+          </div>
+        `).join('') : '<div class="empty-state">Không có thông báo mới.</div>'}
+      </div>
+      <div class="dialog-foot"><button class="btn primary" onclick="closeModal()">Đóng</button></div>
+    `);
+  }).catch(e => toast(e.message));
+}
+
+// Helpers
+function toNumber(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+// Initial boot
+auth.onAuthStateChanged(user => {
+  if (user) {
+    el('authBtn').textContent = 'Đăng xuất';
+    el('authBtn').onclick = doLogout;
+  }
+  loadDashboard();
+  loadBoard();
+});
+</script>
+</body>
+</html>

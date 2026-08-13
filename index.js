@@ -95,6 +95,15 @@ app.use('/api/verify-turnstile', rateLimit(20, 60000)); // 20 per minute for tur
 app.use('/api/admin/', rateLimit(10, 60000));       // 10 per minute for admin APIs
 app.use('/api/schedule/', rateLimit(60, 60000));    // Autosave lịch có thể tạo nhiều yêu cầu liên tiếp
 
+// YNDA Mission System Engine & APIs
+try {
+    const { store } = require('./lib/ynda');
+    store.initStore();
+} catch (e) {
+    console.warn('[YNDA] Store init warning:', e.message);
+}
+app.use('/api/ynda', require('./api/ynda/router'));
+
 function requireAuthorizedProfile(permissionCheck) {
     return async function(req, res, next) {
         try {
@@ -116,10 +125,6 @@ function requireAuthorizedProfile(permissionCheck) {
 
 const requirePeopleManager = requireAuthorizedProfile(isPeopleManager);
 const requireScheduleManager = requireAuthorizedProfile(isScheduleManager);
-
-const PORT = process.env.PORT || 24687;
-const PYTHON_PORT = process.env.PYTHON_PORT || 8000;
-const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 // Brevo SMTP transporter
 const transporter = nodemailer.createTransport({

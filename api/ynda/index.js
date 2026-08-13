@@ -19,15 +19,30 @@ const cron = require('../cron/ynda-cron');
 
 function buildApp() {
   const app = express();
+  app.disable('x-powered-by');
   app.use(express.json({ limit: '3mb' }));
+
+  // CORS for web client access
   app.use((req, res, next) => {
-    const slug = (req.path || '').replace(/^\/+/, '');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    next();
+  });
+
+  // Handle cron requests
+  app.use((req, res, next) => {
+    const slug = (req.path || '').replace(/^\/api\/ynda\/?/i, '').replace(/^\/+/, '');
     if (/^cron\//i.test(slug)) {
       return cron.tick(req, res);
     }
     next();
   });
-  app.use(router);
+
+  // Mount router on BOTH /api/ynda and / for Vercel Serverless routing compatibility
+  app.use('/api/ynda', router);
+  app.use('/', router);
   return app;
 }
 

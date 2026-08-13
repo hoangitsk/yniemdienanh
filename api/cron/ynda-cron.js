@@ -18,17 +18,13 @@ const { nowIso, toNumber } = require('../../lib/ynda/utils');
 async function tick(req, res) {
   try {
     // nếu chưa có store, init memory (tránh crash nếu thiếu env trong cron)
-    if (!ynda.store.store().tables && process.env.YNDA_SPREADSHEET_ID) {
+    if (!ynda.store.store().tables && (process.env.SPREADSHEET_RANKING || process.env.YNDA_SPREADSHEET_ID || process.env.SPREADSHEET_YNDA)) {
       ynda.store.initStore();
     }
-    const results = { opened: [], escalated: [], endingSoon: [], penaltyWindows: [], usersSynced: null, errors: [] };
+    const results = { opened: [], escalated: [], endingSoon: [], penaltyWindows: [], errors: [] };
 
-    // 0) Đồng bộ danh sách thành viên từ sheet ranking -> USERS
-    try {
-      if (process.env.GOOGLE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT) {
-        results.usersSynced = await ynda.auth.syncUsersFromRanking();
-      }
-    } catch (e) { results.errors.push('userSync: ' + e.message); }
+    // USERS is deliberately not synced by cron.  A profile is created only
+    // after its owner signs in through Firebase Auth.
 
     // 1) Mở task scheduled
     try {

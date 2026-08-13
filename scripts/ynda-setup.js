@@ -19,7 +19,8 @@ async function setupSpreadsheet(google, credentials) {
   );
   const sheets = google.sheets({ version: 'v4', auth });
 
-  let sid = process.env.YNDA_SPREADSHEET_ID || process.env.SPREADSHEET_YNDA;
+  // Keep operations data in the same spreadsheet used by Ranking.
+  let sid = process.env.SPREADSHEET_RANKING || process.env.YNDA_SPREADSHEET_ID || process.env.SPREADSHEET_YNDA;
   if (!sid) {
     // Tạo spreadsheet mới
     const created = await sheets.spreadsheets.create({
@@ -61,7 +62,7 @@ async function setupSpreadsheet(google, credentials) {
       // ghi header
       await sheets.spreadsheets.values.update({
         spreadsheetId: sid,
-        range: `'${tabName}'!A1:${String.fromCharCode(64 + headers.length)}1`,
+        range: `'${tabName}'!A1:${columnLetter(headers.length)}1`,
         valueInputOption: 'RAW',
         requestBody: { values: [headers] },
       });
@@ -82,6 +83,16 @@ async function setupSpreadsheet(google, credentials) {
     ? `✅ Đã tạo ${missing.length} tab: ${missing.join(', ')}`
     : 'ℹ️  Tất cả tab đã tồn tại.');
   return sid;
+}
+
+function columnLetter(n) {
+  let out = '';
+  while (n > 0) {
+    n -= 1;
+    out = String.fromCharCode(65 + (n % 26)) + out;
+    n = Math.floor(n / 26);
+  }
+  return out;
 }
 
 async function setupDrive(google, credentials) {

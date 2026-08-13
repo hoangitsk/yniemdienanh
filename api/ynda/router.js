@@ -116,12 +116,9 @@ router.get('/users', auth.requireRole('task', 'view'), async (req, res) => {
   res.json({ users });
 });
 
-// Đồng bộ danh sách thành viên từ sheet ranking (DATABASE CORE / THÀNH VIÊN)
+// Deprecated: USERS is populated only when a Firebase member signs in.
 router.post('/users/sync-ranking', auth.requireRole('task', 'create'), async (req, res) => {
-  try {
-    const result = await auth.syncUsersFromRanking();
-    res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  res.status(410).json({ error: 'Đã tắt đồng bộ ngoài hệ thống. Thành viên được tạo từ Firebase khi đăng nhập.' });
 });
 
 // -----------------------------------------------------------------------------
@@ -363,10 +360,7 @@ router.get('/xp', auth.requireRole('task', 'view'), async (req, res) => {
 // LEADERBOARD
 // -----------------------------------------------------------------------------
 router.get('/leaderboard', async (req, res) => {
-  const lb = await ynda.leaderboard.buildLeaderboard({
-    seasonId: req.query.seasonId, periodMonth: req.query.month
-  });
-  res.json({ ...lb, updatedAt: nowIso() });
+  res.status(410).json({ error: 'Leaderboard đã được gỡ khỏi Ops.' });
 });
 
 // -----------------------------------------------------------------------------

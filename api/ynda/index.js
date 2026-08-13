@@ -10,11 +10,9 @@
 const express = require('express');
 const { store } = require('../../lib/ynda');
 
-if (process.env.YNDA_SPREADSHEET_ID || process.env.SPREADSHEET_YNDA) {
-  store.initStore();
-} else {
-  store.initStore({ mode: 'memory' });
-}
+// initStore prioritizes SPREADSHEET_RANKING. Without credentials it safely
+// selects the in-memory adapter for local development and tests.
+store.initStore();
 
 const router = require('./router');
 const cron = require('../cron/ynda-cron');

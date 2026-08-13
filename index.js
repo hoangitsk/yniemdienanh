@@ -707,11 +707,9 @@ app.post('/api/ranking/record', requireScoreManager, require('./api/ranking/reco
 // Hệ thống vận hành YNDA dùng Google Sheets làm database chính (KHÔNG Firebase).
 // Khởi tạo store từ env; nếu chưa có credentials dùng memory adapter (dev/test).
 const yndaStore = require('./lib/ynda/store');
-if (process.env.YNDA_SPREADSHEET_ID || process.env.SPREADSHEET_YNDA) {
-  yndaStore.initStore();
-} else {
-  yndaStore.initStore({ mode: 'memory' });
-}
+// Mission System and leaderboard use the same Ranking spreadsheet. Firebase
+// remains authentication-only for this module.
+yndaStore.initStore();
 app.use('/api/ynda', require('./api/ynda/router'));
 
 // Cron: deadline engine — tự mở task SCHEDULED→OPEN + escalate MANDATORY

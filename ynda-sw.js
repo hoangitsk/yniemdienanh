@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ynda-ops-v3';
+const CACHE = 'ynda-mission-control-v1';
 const STATIC = ['/ynda.html', '/ynda-manifest.json'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)).then(() => self.skipWaiting()));

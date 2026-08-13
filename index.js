@@ -785,6 +785,14 @@ app.get('/bang-xep-hang', (req, res) => {
     res.sendFile(path.join(__dirname, 'bang-xep-hang.html'));
 });
 
+app.get('/ops', (req, res) => {
+    res.sendFile(path.join(__dirname, 'ynda.html'));
+});
+
+app.get('/ynda', (req, res) => {
+    res.sendFile(path.join(__dirname, 'ynda.html'));
+});
+
 app.get('/cham-diem', (req, res) => {
     res.sendFile(path.join(__dirname, 'cham-diem.html'));
 });
@@ -801,7 +809,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const staticHtmlPages = ['index.html', 'dashboard.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'cham-diem.html', 'privacy.html', 'terms.html', 'change-frame.html', 'send-email.html'];
+const staticHtmlPages = ['index.html', 'dashboard.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'cham-diem.html', 'privacy.html', 'terms.html', 'change-frame.html', 'send-email.html', 'ynda.html'];
 app.get('/:page.html', (req, res, next) => {
     if (staticHtmlPages.includes(req.params.page + '.html')) {
         return res.sendFile(path.join(__dirname, req.params.page + '.html'));

@@ -21,7 +21,14 @@ async function tick(req, res) {
     if (!ynda.store.store().tables && process.env.YNDA_SPREADSHEET_ID) {
       ynda.store.initStore();
     }
-    const results = { opened: [], escalated: [], endingSoon: [], penaltyWindows: [], errors: [] };
+    const results = { opened: [], escalated: [], endingSoon: [], penaltyWindows: [], usersSynced: null, errors: [] };
+
+    // 0) Đồng bộ danh sách thành viên từ sheet ranking -> USERS
+    try {
+      if (process.env.GOOGLE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT) {
+        results.usersSynced = await ynda.auth.syncUsersFromRanking();
+      }
+    } catch (e) { results.errors.push('userSync: ' + e.message); }
 
     // 1) Mở task scheduled
     try {

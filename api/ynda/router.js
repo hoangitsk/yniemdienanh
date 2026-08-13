@@ -116,6 +116,14 @@ router.get('/users', auth.requireRole('task', 'view'), async (req, res) => {
   res.json({ users });
 });
 
+// Đồng bộ danh sách thành viên từ sheet ranking (DATABASE CORE / THÀNH VIÊN)
+router.post('/users/sync-ranking', auth.requireRole('task', 'create'), async (req, res) => {
+  try {
+    const result = await auth.syncUsersFromRanking();
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // -----------------------------------------------------------------------------
 // TASKS — CRUD + lifecycle
 // -----------------------------------------------------------------------------

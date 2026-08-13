@@ -572,9 +572,24 @@ function renderLeaderboard() {
 
 function viewUsers() {
   const list = S.users || [];
-  return `<div style="overflow-x:auto"><table><tr><th>Tên</th><th>Role</th><th>Ban</th><th>Email</th><th>Tham gia</th></tr>
+  return `<div class="row" style="align-items:center;margin-bottom:8px">
+    <h2 style="flex:1">Thành viên (${list.length})</h2>
+    <button class="btn ghost sm" onclick="syncUsers()">Đồng bộ từ Bảng xếp hạng</button>
+  </div>
+  <div style="overflow-x:auto"><table><tr><th>Tên</th><th>Role</th><th>Ban</th><th>Email</th><th>Tham gia</th></tr>
   ${list.map(u => `<tr><td><b>${esc(u.NAME || '')}</b></td><td>${pillFor(u.ROLE)}</td><td>${esc(u.DEPARTMENT || '')}</td><td>${esc(u.EMAIL || '')}</td><td>${fmtD(u.CREATED_AT)}</td></tr>`).join('')}
   </table></div>`;
+}
+
+async function syncUsers() {
+  try {
+    toast('Đang đồng bộ từ Bảng xếp hạng...', 4000);
+    const r = await api('POST', '/users/sync-ranking');
+    toast(`Đã đồng bộ: ${r.created} mới, ${r.updated} cập nhật (${r.total} trong bảng xếp hạng)`, 4000);
+    await loadBase();
+    await loadTabData();
+    render();
+  } catch (e) { toast(e.message, 5000); }
 }
 
 function viewBonus() {

@@ -1745,10 +1745,16 @@ async function signInWithGoogle() {
     const token = await cred.user.getIdToken();
     const loginRes = await api('/auth/login', 'POST', { idToken: token });
     currentUser = loginRes.user;
-    toast(`Chào mừng ${currentUser.NAME || currentUser.EMAIL}!`);
+    if (currentUser) {
+      el('userName').textContent = currentUser.NAME || currentUser.EMAIL;
+      el('userRole').textContent = `${formatDepartment(currentUser.DEPARTMENT)} · ${formatRole(currentUser.ROLE)}`;
+      el('userAvatar').textContent = (currentUser.NAME || currentUser.EMAIL || '?').slice(0, 2).toUpperCase();
+      el('dashEyebrow').textContent = `Xin chào ${currentUser.NAME || currentUser.EMAIL}`;
+    }
+    toast(`Chào mừng ${currentUser ? (currentUser.NAME || currentUser.EMAIL) : 'bạn'}!`);
     el('authBtn').textContent = 'Đăng xuất';
     el('authBtn').onclick = doLogout;
-    loadDashboard();
+    await loadDashboard();
   } catch (err) {
     if (err && err.code !== 'auth/popup-closed-by-user') {
       toast('Không thể đăng nhập: ' + (err.message || 'Vui lòng thử lại.'));
@@ -1759,6 +1765,10 @@ async function signInWithGoogle() {
 async function doLogout() {
   await auth.signOut();
   currentUser = null;
+  el('userName').textContent = 'Khách ghé thăm';
+  el('userRole').textContent = 'THÀNH VIÊN';
+  el('userAvatar').textContent = '?';
+  el('dashEyebrow').textContent = 'Xin chào thành viên Ý Niệm Điện Ảnh';
   el('authBtn').textContent = 'Đăng nhập Google';
   el('authBtn').onclick = signInWithGoogle;
   toast('Đã đăng xuất.');
@@ -1886,14 +1896,24 @@ auth.onAuthStateChanged(async user => {
       const token = await user.getIdToken();
       const loginRes = await api('/auth/login', 'POST', { idToken: token });
       currentUser = loginRes.user;
+      if (currentUser) {
+        el('userName').textContent = currentUser.NAME || currentUser.EMAIL;
+        el('userRole').textContent = `${formatDepartment(currentUser.DEPARTMENT)} · ${formatRole(currentUser.ROLE)}`;
+        el('userAvatar').textContent = (currentUser.NAME || currentUser.EMAIL || '?').slice(0, 2).toUpperCase();
+        el('dashEyebrow').textContent = `Xin chào ${currentUser.NAME || currentUser.EMAIL}`;
+      }
     } catch (e) {
       console.warn('Auto auth login error:', e.message);
     }
   } else {
+    currentUser = null;
+    el('userName').textContent = 'Khách ghé thăm';
+    el('userRole').textContent = 'THÀNH VIÊN';
+    el('userAvatar').textContent = '?';
     el('authBtn').textContent = 'Đăng nhập Google';
     el('authBtn').onclick = signInWithGoogle;
   }
-  loadDashboard();
+  await loadDashboard();
   loadBoard();
 });
 </script>

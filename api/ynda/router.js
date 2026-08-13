@@ -344,13 +344,10 @@ router.get('/submissions', auth.requireRole('task', 'view'), async (req, res) =>
 // Danh sách submission cần review (task thuộc ban / task được giao)
 router.get('/reviews/pending', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    if (authHeader.startsWith('Bearer ')) {
-      const user = await auth.userFromToken(authHeader.slice(7)).catch(() => null);
-      if (user && auth.hasRole(user, 'task', 'reviewProof')) {
-        const subs = await ynda.submissions.listSubmissions({ status: config.SUBMISSION_STATUS.HUMAN_REVIEW });
-        return res.json({ submissions: subs });
-      }
+    const ctx = await auth.resolveFirebaseUser(req).catch(() => null);
+    if (ctx && ctx.user && auth.hasRole(ctx.user, 'task', 'reviewProof')) {
+      const subs = await ynda.submissions.listSubmissions({ status: config.SUBMISSION_STATUS.HUMAN_REVIEW });
+      return res.json({ submissions: subs });
     }
     const subs = await ynda.submissions.listSubmissions({ status: config.SUBMISSION_STATUS.HUMAN_REVIEW }).catch(() => []);
     res.json({ submissions: subs });
@@ -364,13 +361,10 @@ router.get('/reviews/pending', async (req, res) => {
 // -----------------------------------------------------------------------------
 router.get('/ledger', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    if (authHeader.startsWith('Bearer ')) {
-      const user = await auth.userFromToken(authHeader.slice(7)).catch(() => null);
-      if (user) {
-        const txns = await ynda.xp.listUserTxns(user.USER_ID, { seasonId: req.query.seasonId });
-        return res.json({ transactions: txns });
-      }
+    const ctx = await auth.resolveFirebaseUser(req).catch(() => null);
+    if (ctx && ctx.user) {
+      const txns = await ynda.xp.listUserTxns(ctx.user.USER_ID, { seasonId: req.query.seasonId });
+      return res.json({ transactions: txns });
     }
     const txns = await ynda.xp.listAppliedTxns({ limit: 50, seasonId: req.query.seasonId }).catch(() => []);
     res.json({ transactions: txns });
@@ -381,13 +375,10 @@ router.get('/ledger', async (req, res) => {
 
 router.get('/xp', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    if (authHeader.startsWith('Bearer ')) {
-      const user = await auth.userFromToken(authHeader.slice(7)).catch(() => null);
-      if (user) {
-        const breakdown = await ynda.xp.computeBreakdown(user.USER_ID, { seasonId: req.query.seasonId });
-        return res.json(breakdown);
-      }
+    const ctx = await auth.resolveFirebaseUser(req).catch(() => null);
+    if (ctx && ctx.user) {
+      const breakdown = await ynda.xp.computeBreakdown(ctx.user.USER_ID, { seasonId: req.query.seasonId });
+      return res.json(breakdown);
     }
     res.json({ overall: 0, taskXp: 0, bonusXp: 0, penalty: 0, rolePoint: 0, roleContribution: 0 });
   } catch (e) {
@@ -594,13 +585,10 @@ router.post('/notifications/:id/read', auth.requireRole('task', 'view'), async (
 // -----------------------------------------------------------------------------
 router.get('/dashboard', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    if (authHeader.startsWith('Bearer ')) {
-      const user = await auth.userFromToken(authHeader.slice(7)).catch(() => null);
-      if (user) {
-        const d = await ynda.getDashboard(user.USER_ID);
-        return res.json(d);
-      }
+    const ctx = await auth.resolveFirebaseUser(req).catch(() => null);
+    if (ctx && ctx.user) {
+      const d = await ynda.getDashboard(ctx.user.USER_ID);
+      return res.json(d);
     }
     // Public guest dashboard
     const board = await ynda.tasks.listBoard(new Date()).catch(() => []);

@@ -16,10 +16,22 @@ function normalizeText(s) {
     .replace(/\s+/g, ' ');
 }
 
+function canonicalDept(dept, title, role) {
+  const t = (String(dept || '') + ' ' + String(title || '') + ' ' + String(role || '')).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd');
+  if (/ban dieu hanh|bdh|dieu hanh|founder|president|chu tich|sang lap|admin|global/.test(t)) return 'Ban Điều Hành';
+  if (/nhan su|hr/.test(t)) return 'Ban Nhân Sự';
+  if (/truyen thong|comms|mkt|marketing|pr/.test(t)) return 'Ban Truyền Thông';
+  if (/media|hau ky|san xuat|video|design/.test(t)) return 'Ban Media / Hậu Kỳ';
+  if (/noi dung/.test(t)) return 'Ban Nội Dung';
+  if (/duyet|kiem duyet/.test(t)) return 'Ban Duyệt Bài';
+  return 'Ban Khác';
+}
+
 function formatProperTitle(role, rawRole, ban) {
   const r = String(role || '').toUpperCase();
   const raw = String(rawRole || '').trim();
-  const b = String(ban || '').trim();
+  const b = String(ban || '').replace(/^Ban\s+/i, '').trim();
 
   if (r === 'FOUNDER') return raw || 'Sáng lập / Founder';
   if (r === 'CO_FOUNDER') return raw || 'Đồng sáng lập / Co-founder';
@@ -36,6 +48,15 @@ function formatProperTitle(role, rawRole, ban) {
     return b ? `Thành viên Ban ${b}` : (raw || 'Thành viên');
   }
   return raw || (b ? `Thành viên Ban ${b}` : 'Thành viên');
+}
+
+function sanitizeFbUrl(fb, name) {
+  if (!fb || typeof fb !== 'string') return '';
+  const trimmed = fb.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/facebook\.com/i.test(trimmed)) return 'https://' + trimmed.replace(/^https?:\/\//i, '');
+  return `https://www.facebook.com/search/top?q=${encodeURIComponent(trimmed || name || '')}`;
 }
 
 module.exports = async function getBtcList(req, res) {
@@ -120,6 +141,11 @@ module.exports = async function getBtcList(req, res) {
       }
     }
 
+    // Remove any placeholder/unwanted generic account if real accounts are present
+    if (rawMembers.length > 1) {
+      rawMembers = rawMembers.filter(m => m.email !== 'yniemdienanh@gmail.com' || (m.name && m.name !== 'yniemdienanh' && m.name !== 'Ban Tổ Chức · Ý Niệm Điện Ảnh'));
+    }
+
     // Process & classify all members
     const executives = [];
     const leads = [];
@@ -128,16 +154,16 @@ module.exports = async function getBtcList(req, res) {
     const formattedMembers = rawMembers.map(m => {
       const roleUpper = String(m.role || '').toUpperCase();
       const rawRoleNorm = normalizeText(m.rawRole || '');
-      const banName = m.ban || m.department || (roleUpper === 'FOUNDER' || roleUpper === 'PRESIDENT' || roleUpper === 'CO_FOUNDER' ? 'Ban Điều Hành' : 'Thành viên');
-      
-      const isExec = m.email === 'yniemdienanh@gmail.com' ||
-        roleUpper === 'FOUNDER' || roleUpper === 'PRESIDENT' || roleUpper === 'CO_FOUNDER' ||
+      const deptCanonical = canonicalDept(m.ban, m.rawRole, m.role);
+
+      const isExec = roleUpper === 'FOUNDER' || roleUpper === 'PRESIDENT' || roleUpper === 'CO_FOUNDER' ||
         /founder|president|chu tich|sang lap|dong sang lap/.test(rawRoleNorm);
 
       const isLead = !isExec && (roleUpper === 'CORE' || roleUpper === 'VICE' || /truong|pho|head|lead|core|vice/.test(rawRoleNorm));
       const isBtc = isExec || isLead;
 
-      const title = formatProperTitle(roleUpper, m.rawRole, banName);
+      const title = formatProperTitle(roleUpper, m.rawRole, deptCanonical);
+      const fbUrl = sanitizeFbUrl(m.facebook, m.name);
 
       const memberObj = {
         name: m.name,
@@ -145,8 +171,9 @@ module.exports = async function getBtcList(req, res) {
         role: roleUpper,
         rawRole: m.rawRole || '',
         title: title,
-        dept: banName,
-        facebook: m.facebook || '',
+        dept: deptCanonical,
+        facebook: fbUrl,
+        rawFacebook: m.facebook || '',
         phone: m.phone || '',
         notes: m.notes || '',
         school: m.school || '',
@@ -166,20 +193,19 @@ module.exports = async function getBtcList(req, res) {
         leads.push(memberObj);
       }
 
-      const dKey = banName || 'Khác';
-      if (!departments[dKey]) {
-        departments[dKey] = {
-          name: dKey,
+      if (!departments[deptCanonical]) {
+        departments[deptCanonical] = {
+          name: deptCanonical,
           leads: [],
           members: [],
           all: []
         };
       }
-      departments[dKey].all.push(memberObj);
+      departments[deptCanonical].all.push(memberObj);
       if (isLead || isExec) {
-        departments[dKey].leads.push(memberObj);
+        departments[deptCanonical].leads.push(memberObj);
       } else {
-        departments[dKey].members.push(memberObj);
+        departments[deptCanonical].members.push(memberObj);
       }
 
       return memberObj;

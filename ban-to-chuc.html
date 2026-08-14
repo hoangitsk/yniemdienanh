@@ -579,13 +579,13 @@
             <!-- FILTER PILLS -->
             <div class="filter-pills" id="filterPills">
                 <button class="pill active" onclick="setDepartmentFilter('ALL')">🌟 Tất cả</button>
-                <button class="pill" onclick="setDepartmentFilter('BAN_DIEU_HANH')">👑 Ban Điều Hành</button>
+                <button class="pill" onclick="setDepartmentFilter('Ban Điều Hành')">👑 Ban Điều Hành</button>
                 <button class="pill" onclick="setDepartmentFilter('LEADS_ONLY')">⭐ Trưởng & Phó Ban</button>
-                <button class="pill" onclick="setDepartmentFilter('NHAN_SU')">👥 Ban Nhân Sự</button>
-                <button class="pill" onclick="setDepartmentFilter('TRUYEN_THONG')">📢 Ban Truyền Thông</button>
-                <button class="pill" onclick="setDepartmentFilter('MEDIA')">🎬 Ban Media / Hậu Kỳ</button>
-                <button class="pill" onclick="setDepartmentFilter('NOI_DUNG')">✍️ Ban Nội Dung</button>
-                <button class="pill" onclick="setDepartmentFilter('DUYET_BAI')">⚖️ Ban Duyệt Bài</button>
+                <button class="pill" onclick="setDepartmentFilter('Ban Nhân Sự')">👥 Ban Nhân Sự</button>
+                <button class="pill" onclick="setDepartmentFilter('Ban Truyền Thông')">📢 Ban Truyền Thông</button>
+                <button class="pill" onclick="setDepartmentFilter('Ban Media / Hậu Kỳ')">🎬 Ban Media / Hậu Kỳ</button>
+                <button class="pill" onclick="setDepartmentFilter('Ban Nội Dung')">✍️ Ban Nội Dung</button>
+                <button class="pill" onclick="setDepartmentFilter('Ban Duyệt Bài')">⚖️ Ban Duyệt Bài</button>
                 <button class="pill" onclick="setDepartmentFilter('MEMBERS_ONLY')">👥 Thành Viên Các Ban</button>
             </div>
 
@@ -657,17 +657,6 @@
             return '<span class="role-tag member">👥 Thành Viên Ban</span>';
         }
 
-        function categorizeDept(dept, title) {
-            const t = normText(dept + ' ' + title);
-            if (/ban dieu hanh|bdh|dieu hanh|founder|president|chu tich|sang lap|giam doc/.test(t)) return 'BAN_DIEU_HANH';
-            if (/noi dung/.test(t)) return 'NOI_DUNG';
-            if (/truyen thong|comms|mkt|marketing|pr/.test(t)) return 'TRUYEN_THONG';
-            if (/media|hau ky|san xuat|video|design/.test(t)) return 'MEDIA';
-            if (/nhan su|hr/.test(t)) return 'NHAN_SU';
-            if (/duyet|kiem duyet/.test(t)) return 'DUYET_BAI';
-            return 'KHAC';
-        }
-
         function setDepartmentFilter(deptKey) {
             currentFilter = deptKey;
             document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
@@ -695,7 +684,7 @@
                 if (currentFilter === 'ALL') return true;
                 if (currentFilter === 'LEADS_ONLY') return m.isLead;
                 if (currentFilter === 'MEMBERS_ONLY') return !m.isBtc;
-                return categorizeDept(m.dept, m.title) === currentFilter;
+                return m.dept === currentFilter;
             });
 
             const totalExec = allMembers.filter(m => m.isExecutive).length;
@@ -723,6 +712,7 @@
             const execs = filtered.filter(m => m.isExecutive);
             const nonExecs = filtered.filter(m => !m.isExecutive);
 
+            // Group non-execs by department
             const deptGroups = {};
             nonExecs.forEach(m => {
                 const d = m.dept || 'Ban Khác';
@@ -737,7 +727,7 @@
             let html = '';
 
             // 1. Render Executives (VIP)
-            if (execs.length && (currentFilter === 'ALL' || currentFilter === 'BAN_DIEU_HANH')) {
+            if (execs.length && (currentFilter === 'ALL' || currentFilter === 'Ban Điều Hành')) {
                 html += `
                     <div class="section-header">
                         <div class="section-title">👑 Ban Điều Hành Cấp Cao</div>
@@ -773,15 +763,19 @@
                 html += `</div>`;
             }
 
-            // 2. Render by Department
-            Object.keys(deptGroups).forEach(deptName => {
+            // 2. Render each Department (Trưởng Ban on top + Thành Viên below)
+            const orderedDepts = ['Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
+            const allDeptKeys = Array.from(new Set([...orderedDepts, ...Object.keys(deptGroups)]));
+
+            allDeptKeys.forEach(deptName => {
                 const group = deptGroups[deptName];
+                if (!group) return;
                 const totalInDept = group.leads.length + group.members.length;
                 if (!totalInDept) return;
 
                 html += `
                     <div class="section-header">
-                        <div class="section-title">🏢 Ban ${deptName.replace(/^ban\s+/i, '')}</div>
+                        <div class="section-title">🏢 ${deptName}</div>
                         <div class="section-line"></div>
                         <span class="section-badge">${totalInDept} Nhân sự (${group.leads.length} Lãnh đạo, ${group.members.length} Thành viên)</span>
                     </div>
@@ -829,7 +823,6 @@
             `;
 
             try {
-                // Fetch from BTC endpoint (which contains all 19 members from both tabs)
                 let res = await fetch('/api/ranking/btc-list').catch(() => null);
                 if (res && res.ok) {
                     const data = await res.json();
@@ -837,32 +830,6 @@
                         allMembers = data.members;
                         executives = data.executives || [];
                         leads = data.leads || [];
-                        renderBtc();
-                        return;
-                    }
-                }
-
-                // Fallback to leaderboard endpoint
-                res = await fetch('/api/ranking/leaderboard').catch(() => null);
-                if (res && res.ok) {
-                    const data = await res.json();
-                    if (data.all && data.all.length) {
-                        allMembers = data.all.map(c => {
-                            const isExec = c.role === 'Lãnh đạo' || /founder|president/i.test(c.title || '');
-                            const isLead = !isExec && (c.group === 'core' || /vice|phó|trưởng|head|lead/i.test(c.title || ''));
-                            return {
-                                name: c.name,
-                                role: isExec ? 'FOUNDER' : isLead ? 'CORE' : 'MEMBER',
-                                title: c.title || (isLead ? 'Trưởng Ban' : 'Thành viên'),
-                                dept: c.dept || 'Chung',
-                                facebook: c.facebook || '',
-                                email: c.email || '',
-                                notes: c.note || '',
-                                isExecutive: isExec,
-                                isLead: isLead,
-                                isBtc: isExec || isLead
-                            };
-                        });
                         renderBtc();
                         return;
                     }

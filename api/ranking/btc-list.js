@@ -16,15 +16,20 @@ function normalizeText(s) {
     .replace(/\s+/g, ' ');
 }
 
-function canonicalDept(dept, title, role) {
-  const t = (String(dept || '') + ' ' + String(title || '') + ' ' + String(role || '')).toLowerCase()
+function canonicalDept(dept, rawRole, role, name) {
+  const t = (String(dept || '') + ' ' + String(rawRole || '') + ' ' + String(role || '') + ' ' + String(name || '')).toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd');
-  if (/ban dieu hanh|bdh|dieu hanh|founder|president|chu tich|sang lap|admin|global/.test(t)) return 'Ban Điều Hành';
-  if (/nhan su|hr/.test(t)) return 'Ban Nhân Sự';
-  if (/truyen thong|comms|mkt|marketing|pr/.test(t)) return 'Ban Truyền Thông';
-  if (/media|hau ky|san xuat|video|design/.test(t)) return 'Ban Media / Hậu Kỳ';
-  if (/noi dung/.test(t)) return 'Ban Nội Dung';
-  if (/duyet|kiem duyet/.test(t)) return 'Ban Duyệt Bài';
+  
+  if (/founder|president|chu tich|sang lap|co founder|dong sang lap|ban dieu hanh|bdh|dieu hanh|global/.test(t) ||
+      /minh hoang|thanh nga|minh anh/.test(t)) {
+    return 'Ban Điều Hành';
+  }
+  if (/nhan su|hr|anh thu|thao vy|my nga/.test(t)) return 'Ban Nhân Sự';
+  if (/truyen thong|comms|mkt|marketing|pr|quynh giang|ngoc ha|ngoc phung|hoang ngan|thanh truc/.test(t)) return 'Ban Truyền Thông';
+  if (/media|hau ky|san xuat|video|design|thanh thao/.test(t) || (name && name.includes('Yến Nhi') && (!dept || dept.toLowerCase().includes('media') || /media/i.test(rawRole)))) return 'Ban Media / Hậu Kỳ';
+  if (/noi dung|content|huu binh|phuong thao|thai anh|aris/.test(t)) return 'Ban Nội Dung';
+  if (/duyet|kiem duyet|ngoc diep|phuong linh/.test(t) || (name && name.includes('Yến Nhi') && (!dept || dept.toLowerCase().includes('duyệt') || /duyet/i.test(rawRole)))) return 'Ban Duyệt Bài';
+  
   return 'Ban Khác';
 }
 
@@ -154,7 +159,7 @@ module.exports = async function getBtcList(req, res) {
     const formattedMembers = rawMembers.map(m => {
       const roleUpper = String(m.role || '').toUpperCase();
       const rawRoleNorm = normalizeText(m.rawRole || '');
-      const deptCanonical = canonicalDept(m.ban, m.rawRole, m.role);
+      const deptCanonical = canonicalDept(m.ban, m.rawRole, m.role, m.name);
 
       const isExec = roleUpper === 'FOUNDER' || roleUpper === 'PRESIDENT' || roleUpper === 'CO_FOUNDER' ||
         /founder|president|chu tich|sang lap|dong sang lap/.test(rawRoleNorm);

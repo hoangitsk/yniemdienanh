@@ -612,6 +612,13 @@ app.get('/api/config', (req, res) => {
 // Trạng thái vị trí Core/Phó ban theo ban — public, phục vụ trang đăng ký.
 app.get('/api/recruitment/positions', require('./api/recruitment/positions'));
 
+// Ranking and BTC routes
+app.get('/api/ranking/btc-list', require('./api/ranking/btc-list'));
+app.get('/api/ranking/leaderboard', require('./api/ranking/leaderboard'));
+const rankingRecordHandler = require('./api/ranking/record');
+app.post('/api/ranking/record', rankingRecordHandler);
+app.all('/api/admin/sync-sheet-roles', require('./api/admin/sync-sheet-roles'));
+
 // Homepage content API — single source of truth for AI + manual edits
 const CONTENT_FILE = path.join(__dirname, 'homepage-content.json');
 

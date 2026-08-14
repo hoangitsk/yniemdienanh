@@ -785,7 +785,7 @@
                 }
 
                 // Fallback to leaderboard core tab
-                res = await fetch('/api/ranking/leaderboard');
+                res = await fetch('/api/ranking/leaderboard').catch(() => null);
                 if (res && res.ok) {
                     const data = await res.json();
                     if (data.core && data.core.length) {
@@ -802,7 +802,49 @@
                         return;
                     }
                 }
-                throw new Error('Chưa thể lấy dữ liệu danh sách BTC');
+
+                // Fallback to localStorage ynda_db if present
+                try {
+                    const localRaw = localStorage.getItem('ynda_db');
+                    if (localRaw) {
+                        const db = JSON.parse(localRaw);
+                        const btcUsers = (db.users || []).filter(u => 
+                            u.role === 'admin' || u.role === 'organizer' || u.projectGroup === 'organizer' ||
+                            /core|vice|truong|pho|head|lead|founder|president|chu tich|sang lap|bdh|btc/i.test(u.position || '')
+                        );
+                        if (btcUsers.length > 0) {
+                            allMembers = btcUsers.map(u => ({
+                                name: u.name,
+                                role: u.role === 'admin' ? 'FOUNDER' : 'CORE',
+                                title: u.position || u.leadershipTitle || (u.role === 'admin' ? 'Ban Điều Hành' : 'Core Member'),
+                                dept: u.dept || 'Ban Điều Hành',
+                                facebook: u.facebook || '',
+                                email: u.email || '',
+                                notes: u.notes || '',
+                                isExecutive: u.role === 'admin' || /founder|president/i.test(u.leadershipTitle || '')
+                            }));
+                            renderBtc();
+                            return;
+                        }
+                    }
+                } catch (lsErr) {
+                    console.warn('LocalStorage fallback error:', lsErr);
+                }
+
+                // If all fails, show default team
+                allMembers = [
+                    {
+                        name: 'Ban Tổ Chức · Ý Niệm Điện Ảnh',
+                        role: 'FOUNDER',
+                        title: 'Sáng lập & Điều hành dự án',
+                        dept: 'Ban Điều Hành',
+                        facebook: 'https://facebook.com/yniemdienanh',
+                        email: 'yniemdienanh@gmail.com',
+                        notes: 'Tài khoản chính thức của Ban Tổ Chức Ý Niệm Điện Ảnh',
+                        isExecutive: true
+                    }
+                ];
+                renderBtc();
             } catch (err) {
                 console.error('Fetch BTC Error:', err);
                 container.innerHTML = `

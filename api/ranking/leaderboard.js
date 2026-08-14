@@ -30,11 +30,14 @@ function findHeaderRow(raw, markers) {
 }
 
 // Đọc danh sách thành viên từ tab DATABASE CORE (group=core) và DATABASE THÀNH VIÊN (group=mem)
-// Bỏ qua dòng tiêu đề (vd "DATABASE CORE TEAM – Ý NIỆM ĐIỆN ẢNH") bằng cách tìm dòng header.
+// Bỏ qua dòng tiêu đề bằng cách tìm dòng header động.
 async function readMembers(sid) {
   const tabs = [
     { title: 'DATABASE CORE', group: 'core' },
-    { title: 'DATABASE THÀNH VIÊN', group: 'mem' }
+    { title: 'DATABASE THÀNH VIÊN', group: 'mem' },
+    { title: 'Thành viên', group: 'mem' },
+    { title: 'Ban điều hành', group: 'core' },
+    { title: 'Core', group: 'core' }
   ];
 
   const all = [];
@@ -42,19 +45,20 @@ async function readMembers(sid) {
 
   for (const { title, group } of tabs) {
     const safeTitle = `'${title.replace(/'/g, "''")}'`;
-    const raw = await getRows(sid, `${safeTitle}!A1:K1000`).catch(() => []);
+    const raw = await getRows(sid, `${safeTitle}!A1:N1000`).catch(() => []);
     if (!raw.length) continue;
 
-    const h = findHeaderRow(raw, ['họ và tên']);
+    const h = findHeaderRow(raw, ['họ và tên', 'ho va ten', 'tên', 'ten']);
     if (h < 0) continue;
     const header = raw[h];
 
-    const iName = colIndex(header, 'họ và tên', 'tên');
-    const iDept = colIndex(header, 'ban');
-    const iTitle = colIndex(header, 'chức vụ', 'chuc vu', 'vai trò', 'chức danh');
-    const iEmail = colIndex(header, 'email');
-    const iPhone = colIndex(header, 'số điện thoại', 'sđt', 'sdt', 'điện thoại');
-    const iNote = colIndex(header, 'ghi chú');
+    const iName = colIndex(header, 'họ và tên', 'ho va ten', 'tên', 'ten', 'name');
+    const iDept = colIndex(header, 'ban', 'phòng ban', 'bộ phận', 'department');
+    const iTitle = colIndex(header, 'chức vụ', 'chuc vu', 'vai trò', 'vai tro', 'chức danh', 'chuc danh', 'vị trí', 'role');
+    const iEmail = colIndex(header, 'email', 'mail', 'thư điện tử');
+    const iPhone = colIndex(header, 'số điện thoại', 'so dien thoai', 'sđt', 'sdt', 'điện thoại', 'phone');
+    const iFb = colIndex(header, 'link facebook', 'facebook', 'fb');
+    const iNote = colIndex(header, 'ghi chú', 'ghi chu', 'note');
 
     if (iName < 0) continue;
 
@@ -72,15 +76,21 @@ async function readMembers(sid) {
       if (seen.has(key)) continue;
       seen.add(key);
 
+      const titleVal = cell(row, iTitle);
+      const titleLower = norm(titleVal);
+      const isExec = /founder|sáng lập|president|chủ tịch|admin|quản trị/.test(titleLower);
+      const isCore = group === 'core' || isExec || /vice|phó|trưởng|head|lead|core|bđh|btc|điều hành/.test(titleLower);
+
       all.push({
         name,
-        dept: lastDept,
-        role: group === 'core' ? 'Core' : 'Thành viên',
-        title: cell(row, iTitle),
+        dept: lastDept || (isExec ? 'Ban Điều Hành' : ''),
+        role: isExec ? 'Lãnh đạo' : (isCore ? 'Core' : 'Thành viên'),
+        title: titleVal || (isExec ? 'Lãnh đạo' : (group === 'core' ? 'Core Member' : 'Thành viên')),
         email,
         phone: cell(row, iPhone),
+        facebook: cell(row, iFb),
         note: cell(row, iNote),
-        group
+        group: isCore ? 'core' : 'mem'
       });
     }
   }

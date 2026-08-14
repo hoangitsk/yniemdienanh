@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Danh sách Ban Tổ Chức, Ban Điều Hành và Đội ngũ Core Team của Dự án Ý Niệm Điện Ảnh.">
+    <title>Ban Tổ Chức — Ý Niệm Điện Ảnh</title>
+    <link rel="icon" type="image/png" href="/Logo/avtar.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #07111d;
+            --navy-light: #0d1e30;
+            --card: rgba(13, 30, 48, 0.7);
+            --card-hover: rgba(20, 44, 70, 0.85);
+            --gold: #e4b866;
+            --gold-light: #f3dba3;
+            --gold-glow: rgba(228, 184, 102, 0.25);
+            --text: #f8fafc;
+            --muted: #aab6c5;
+            --line: rgba(228, 184, 102, 0.2);
+            --line-strong: rgba(228, 184, 102, 0.45);
+            --success: #63d19e;
+            --cyan: #38bdf8;
+            --purple: #c084fc;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            color: var(--text);
+            background: radial-gradient(circle at 80% 0%, rgba(84, 132, 170, 0.18), transparent 30rem),
+                        radial-gradient(circle at 10% 40%, rgba(228, 184, 102, 0.08), transparent 25rem),
+                        linear-gradient(135deg, #050d17 0%, #0d2238 50%, #040910 100%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        /* NAVIGATION */
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 14px 6%;
+            border-bottom: 1px solid var(--line);
+            background: rgba(5, 13, 23, 0.85);
+            backdrop-filter: blur(14px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text);
+            text-decoration: none;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.15rem;
+            letter-spacing: 0.02em;
+        }
+        .brand img {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid var(--line);
+            box-shadow: 0 0 15px rgba(228, 184, 102, 0.2);
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+        .nav-links a {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--gold-light);
+        }
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1px solid var(--gold);
+            background: linear-gradient(135deg, rgba(228, 184, 102, 0.15), rgba(228, 184, 102, 0.05));
+            color: var(--gold-light) !important;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: all 0.25s ease;
+        }
+        .nav-btn:hover {
+            box-shadow: 0 0 20px var(--gold-glow);
+            transform: translateY(-1px);
+        }
+
+        /* MAIN WRAPPER */
+        main {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 56px 24px 90px;
+        }
+
+        /* HERO HEADER */
+        .hero {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 50px;
+        }
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--gold);
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(228, 184, 102, 0.06);
+            margin-bottom: 16px;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.4rem, 5.5vw, 4rem);
+            color: var(--gold-light);
+            line-height: 1.15;
+            margin-bottom: 16px;
+            text-shadow: 0 4px 25px rgba(0, 0, 0, 0.6);
+        }
+        .hero-desc {
+            color: var(--muted);
+            font-size: 1.05rem;
+            line-height: 1.75;
+            max-width: 660px;
+            margin: 0 auto 28px;
+        }
+
+        /* CONTROLS (SEARCH + FILTER) */
+        .controls-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin-bottom: 40px;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .search-row {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 260px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(5, 13, 23, 0.7);
+            color: var(--text);
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-box input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 16px var(--gold-glow);
+        }
+        .search-box .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+        .refresh-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(228, 184, 102, 0.08);
+            color: var(--gold-light);
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .refresh-btn:hover {
+            background: rgba(228, 184, 102, 0.18);
+            border-color: var(--gold);
+        }
+
+        /* FILTER PILLS */
+        .filter-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .pill {
+            padding: 7px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(5, 13, 23, 0.5);
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .pill:hover {
+            border-color: var(--gold);
+            color: var(--gold-light);
+        }
+        .pill.active {
+            background: linear-gradient(135deg, rgba(228, 184, 102, 0.25), rgba(228, 184, 102, 0.08));
+            border-color: var(--gold);
+            color: var(--gold-light);
+            box-shadow: 0 0 16px rgba(228, 184, 102, 0.15);
+        }
+
+        /* STATS COUNTERS */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.86rem;
+            color: var(--muted);
+            padding-top: 6px;
+            border-top: 1px solid rgba(228, 184, 102, 0.1);
+        }
+        .stats-bar strong {
+            color: var(--gold-light);
+        }
+
+        /* SECTION STYLING */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 44px 0 22px;
+        }
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            color: var(--gold-light);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .section-line {
+            height: 1px;
+            flex: 1;
+            background: linear-gradient(to right, var(--line-strong), transparent);
+        }
+        .section-badge {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(228, 184, 102, 0.12);
+            color: var(--gold);
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* EXECUTIVE / LEADERSHIP CARDS */
+        .exec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 22px;
+            margin-bottom: 20px;
+        }
+        .exec-card {
+            background: linear-gradient(135deg, rgba(228, 184, 102, 0.12) 0%, rgba(13, 30, 48, 0.85) 60%);
+            border: 1px solid rgba(228, 184, 102, 0.45);
+            border-radius: 22px;
+            padding: 26px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .exec-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .exec-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--gold);
+            box-shadow: 0 20px 48px rgba(228, 184, 102, 0.2);
+        }
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .avatar-circle {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(228, 184, 102, 0.3), rgba(228, 184, 102, 0.05));
+            border: 1.5px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: var(--gold-light);
+            font-weight: 800;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(228, 184, 102, 0.2);
+        }
+        .exec-info h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.35rem;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .role-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .role-tag.admin {
+            background: rgba(228, 184, 102, 0.2);
+            color: var(--gold-light);
+            border: 1px solid rgba(228, 184, 102, 0.4);
+        }
+        .role-tag.president {
+            background: rgba(192, 132, 252, 0.2);
+            color: #e9d5ff;
+            border: 1px solid rgba(192, 132, 252, 0.4);
+        }
+        .role-tag.core {
+            background: rgba(99, 209, 158, 0.18);
+            color: var(--success);
+            border: 1px solid rgba(99, 209, 158, 0.35);
+        }
+        .role-tag.vice {
+            background: rgba(56, 189, 248, 0.18);
+            color: var(--cyan);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+        }
+
+        .card-body {
+            font-size: 0.88rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+        .card-dept {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--gold-light);
+            font-weight: 600;
+        }
+        .card-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 14px;
+            border-top: 1px solid rgba(228, 184, 102, 0.12);
+        }
+        .btn-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-link.fb {
+            background: rgba(24, 119, 242, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(24, 119, 242, 0.3);
+        }
+        .btn-link.fb:hover {
+            background: rgba(24, 119, 242, 0.3);
+            color: #93c5fd;
+        }
+        .btn-link.mail {
+            background: rgba(228, 184, 102, 0.12);
+            color: var(--gold-light);
+            border: 1px solid rgba(228, 184, 102, 0.25);
+        }
+        .btn-link.mail:hover {
+            background: rgba(228, 184, 102, 0.25);
+        }
+
+        /* MEMBER GRID */
+        .member-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 18px;
+        }
+        .member-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transition: all 0.25s ease;
+        }
+        .member-card:hover {
+            transform: translateY(-3px);
+            background: var(--card-hover);
+            border-color: var(--gold);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.3);
+        }
+        .mem-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .mem-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: rgba(228, 184, 102, 0.1);
+            border: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            color: var(--gold-light);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .mem-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        /* EMPTY STATE / LOADING */
+        .loading-state, .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+        .spinner {
+            width: 38px;
+            height: 38px;
+            border: 3px solid rgba(228, 184, 102, 0.15);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* FOOTER */
+        footer {
+            padding: 34px 20px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 0.88rem;
+            text-align: center;
+            background: rgba(4, 9, 16, 0.9);
+        }
+
+        @media (max-width: 768px) {
+            nav { padding: 12px 18px; }
+            .nav-links a:not(.nav-btn) { display: none; }
+            main { padding: 36px 16px 60px; }
+            .exec-grid { grid-template-columns: 1fr; }
+            .member-grid { grid-template-columns: 1fr; }
+            .search-row { flex-direction: column; }
+            .search-box { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVIGATION -->
+    <nav>
+        <a class="brand" href="/">
+            <img src="/Logo/avtar.png" alt="Ý Niệm Điện Ảnh">
+            Ý Niệm Điện Ảnh
+        </a>
+        <div class="nav-links">
+            <a href="/">Trang chủ</a>
+            <a href="/bang-xep-hang">Bảng xếp hạng</a>
+            <a href="/ban-to-chuc" class="active">Ban Tổ Chức</a>
+            <a href="/vinh-danh">Vinh danh</a>
+            <a href="/dashboard" class="nav-btn">⚙️ Dashboard</a>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main>
+        <!-- HERO -->
+        <div class="hero">
+            <span class="eyebrow">✨ Đội ngũ phát triển · Ý Niệm Điện Ảnh</span>
+            <h1>Ban Tổ Chức</h1>
+            <p class="hero-desc">
+                Những con người tâm huyết gìn giữ ngọn lửa điện ảnh, xây dựng cộng đồng và chắp cánh cho những ý niệm nghệ thuật bay xa.
+            </p>
+        </div>
+
+        <!-- CONTROLS -->
+        <div class="controls-card">
+            <div class="search-row">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Tìm theo tên thành viên, ban, chức vụ..." oninput="handleSearch()">
+                </div>
+                <button class="refresh-btn" onclick="fetchBtcData(true)">
+                    🔄 Làm mới từ Sheet
+                </button>
+            </div>
+
+            <!-- FILTER PILLS -->
+            <div class="filter-pills" id="filterPills">
+                <button class="pill active" onclick="setDepartmentFilter('ALL')">🌟 Tất cả</button>
+                <button class="pill" onclick="setDepartmentFilter('BAN_DIEU_HANH')">👑 Ban Điều Hành</button>
+                <button class="pill" onclick="setDepartmentFilter('NOI_DUNG')">✍️ Ban Nội Dung</button>
+                <button class="pill" onclick="setDepartmentFilter('TRUYEN_THONG')">📢 Ban Truyền Thông</button>
+                <button class="pill" onclick="setDepartmentFilter('MEDIA')">🎬 Ban Media / Hậu Kỳ</button>
+                <button class="pill" onclick="setDepartmentFilter('NHAN_SU')">👥 Ban Nhân Sự</button>
+                <button class="pill" onclick="setDepartmentFilter('DUYET_BAI')">⚖️ Ban Duyệt Bài</button>
+            </div>
+
+            <div class="stats-bar">
+                <div>Tổng số thành viên BTC: <strong id="totalCount">...</strong></div>
+                <div id="filterStatus">Đang hiển thị toàn bộ</div>
+            </div>
+        </div>
+
+        <!-- CONTAINER FOR SECTIONS -->
+        <div id="contentContainer">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Đang tải dữ liệu Ban Tổ Chức từ Google Sheet...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        Ý Niệm Điện Ảnh · “Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức.”
+    </footer>
+
+    <script>
+        let allMembers = [];
+        let currentFilter = 'ALL';
+        let searchQuery = '';
+
+        function normText(str) {
+            return String(str || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+
+        function getInitials(name) {
+            const parts = String(name || '').trim().split(/\s+/);
+            if (!parts.length || !parts[0]) return 'YN';
+            if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+            return (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+
+        function getRoleBadge(role, title) {
+            const t = normText(title + ' ' + role);
+            if (/founder|sang lap|admin/.test(t)) {
+                return '<span class="role-tag admin">👑 Sáng Lập</span>';
+            }
+            if (/president|chu tich|project lead|truong du an/.test(t)) {
+                return '<span class="role-tag president">🌟 Chủ Tịch</span>';
+            }
+            if (/vice|pho ban|pho lead/.test(t)) {
+                return '<span class="role-tag vice">⚡ Phó Ban</span>';
+            }
+            if (/truong ban|truong lead|head|lead/.test(t)) {
+                return '<span class="role-tag core">💼 Trưởng Ban</span>';
+            }
+            return '<span class="role-tag core">🎯 Core Member</span>';
+        }
+
+        function categorizeDept(dept, title) {
+            const t = normText(dept + ' ' + title);
+            if (/ban dieu hanh|bdh|dieu hanh|founder|president|chu tich|sang lap|giam doc/.test(t)) return 'BAN_DIEU_HANH';
+            if (/noi dung/.test(t)) return 'NOI_DUNG';
+            if (/truyen thong|comms|mkt|marketing|pr/.test(t)) return 'TRUYEN_THONG';
+            if (/media|hau ky|san xuat|video|design/.test(t)) return 'MEDIA';
+            if (/nhan su|hr/.test(t)) return 'NHAN_SU';
+            if (/duyet|kiem duyet/.test(t)) return 'DUYET_BAI';
+            return 'KHAC';
+        }
+
+        function setDepartmentFilter(deptKey) {
+            currentFilter = deptKey;
+            document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+            const targetBtn = Array.from(document.querySelectorAll('.filter-pills .pill')).find(p => {
+                const clickAttr = p.getAttribute('onclick') || '';
+                return clickAttr.includes(`'${deptKey}'`);
+            });
+            if (targetBtn) targetBtn.classList.add('active');
+            renderBtc();
+        }
+
+        function handleSearch() {
+            searchQuery = document.getElementById('searchInput').value.trim();
+            renderBtc();
+        }
+
+        function renderBtc() {
+            const container = document.getElementById('contentContainer');
+            const q = normText(searchQuery);
+
+            let filtered = allMembers.filter(m => {
+                const matchSearch = !q || normText(m.name).includes(q) || normText(m.title).includes(q) || normText(m.dept).includes(q);
+                if (!matchSearch) return false;
+                if (currentFilter === 'ALL') return true;
+                return categorizeDept(m.dept, m.title) === currentFilter;
+            });
+
+            document.getElementById('totalCount').textContent = allMembers.length;
+            document.getElementById('filterStatus').textContent = `Hiển thị ${filtered.length}/${allMembers.length} thành viên`;
+
+            if (!filtered.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size:3rem;margin-bottom:10px;">🔍</div>
+                        <h3>Không tìm thấy thành viên phù hợp</h3>
+                        <p style="margin-top:6px;font-size:0.9rem;">Thử thay đổi từ khóa tìm kiếm hoặc chọn bộ lọc khác.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Separate executives from general dept members
+            const execs = filtered.filter(m => {
+                const t = normText(m.title + ' ' + m.role + ' ' + m.dept);
+                return /founder|president|chu tich|sang lap|admin|co founder|dong sang lap/.test(t);
+            });
+
+            const deptGroups = {};
+            filtered.forEach(m => {
+                const d = m.dept || 'Ban Khác';
+                if (!deptGroups[d]) deptGroups[d] = [];
+                deptGroups[d].push(m);
+            });
+
+            let html = '';
+
+            // Render Executives first if matching
+            if (execs.length && (currentFilter === 'ALL' || currentFilter === 'BAN_DIEU_HANH')) {
+                html += `
+                    <div class="section-header">
+                        <div class="section-title">👑 Ban Điều Hành Cấp Cao</div>
+                        <div class="section-line"></div>
+                        <span class="section-badge">${execs.length} Thành viên</span>
+                    </div>
+                    <div class="exec-grid">
+                `;
+                execs.forEach(m => {
+                    const initials = getInitials(m.name);
+                    const badge = getRoleBadge(m.role, m.title);
+                    html += `
+                        <div class="exec-card">
+                            <div class="card-top">
+                                <div class="avatar-circle">${initials}</div>
+                                <div class="exec-info">
+                                    <h3>${m.name}</h3>
+                                    ${badge}
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="card-dept">🏢 ${m.dept || 'Ban Điều Hành'}</div>
+                                <div style="margin-top:4px;color:var(--text);font-weight:600;">${m.title || 'Lãnh đạo dự án'}</div>
+                                ${m.notes ? `<div style="margin-top:6px;font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
+                            </div>
+                            <div class="card-actions">
+                                ${m.facebook ? `<a href="${m.facebook}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
+                                ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // Render by Department
+            Object.keys(deptGroups).forEach(deptName => {
+                const membersInDept = deptGroups[deptName];
+                html += `
+                    <div class="section-header">
+                        <div class="section-title">🏢 ${deptName}</div>
+                        <div class="section-line"></div>
+                        <span class="section-badge">${membersInDept.length} Thành viên</span>
+                    </div>
+                    <div class="member-grid">
+                `;
+                membersInDept.forEach(m => {
+                    const initials = getInitials(m.name);
+                    const badge = getRoleBadge(m.role, m.title);
+                    html += `
+                        <div class="member-card">
+                            <div class="mem-top">
+                                <div class="mem-avatar">${initials}</div>
+                                <div>
+                                    <div class="mem-name">${m.name}</div>
+                                    ${badge}
+                                </div>
+                            </div>
+                            <div style="font-size:0.85rem;color:var(--gold-light);font-weight:600;">
+                                ${m.title || 'Core Member'}
+                            </div>
+                            ${m.notes ? `<div style="font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
+                            <div class="card-actions" style="margin-top:auto;padding-top:10px;">
+                                ${m.facebook ? `<a href="${m.facebook}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
+                                ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function fetchBtcData(force = false) {
+            const container = document.getElementById('contentContainer');
+            container.innerHTML = `
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>${force ? 'Đang làm mới dữ liệu từ Google Sheet...' : 'Đang tải danh sách Ban Tổ Chức...'}</p>
+                </div>
+            `;
+
+            try {
+                // Fetch from BTC endpoint or leaderboard
+                let res = await fetch('/api/ranking/btc-list').catch(() => null);
+                if (res && res.ok) {
+                    const data = await res.json();
+                    if (data.members && data.members.length) {
+                        allMembers = data.members;
+                        renderBtc();
+                        return;
+                    }
+                }
+
+                // Fallback to leaderboard core tab
+                res = await fetch('/api/ranking/leaderboard');
+                if (res && res.ok) {
+                    const data = await res.json();
+                    if (data.core && data.core.length) {
+                        allMembers = data.core.map(c => ({
+                            name: c.name,
+                            role: 'CORE',
+                            title: c.title || 'Core Member',
+                            dept: c.dept || 'Ban Tổ Chức',
+                            facebook: c.facebook || '',
+                            email: c.email || '',
+                            notes: c.note || ''
+                        }));
+                        renderBtc();
+                        return;
+                    }
+                }
+                throw new Error('Chưa thể lấy dữ liệu danh sách BTC');
+            } catch (err) {
+                console.error('Fetch BTC Error:', err);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size:3rem;margin-bottom:12px;">⚠️</div>
+                        <h3>Không thể tải dữ liệu Ban Tổ Chức</h3>
+                        <p style="margin-top:6px;font-size:0.9rem;">${err.message || 'Vui lòng kiểm tra lại kết nối mạng.'}</p>
+                        <button class="refresh-btn" style="margin-top:16px;" onclick="fetchBtcData(true)">🔄 Thử lại</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Init on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchBtcData();
+        });
+    </script>
+</body>
+</html>

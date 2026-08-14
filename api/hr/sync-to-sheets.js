@@ -579,51 +579,81 @@ async function syncCoreTeam(db, sid) {
 }
 
 async function pullFromSheets(db, sid) {
-  const { getRows } = require('../../lib/googleSheets');
   try {
-    const coreRows = await getRows(sid, 'DATABASE CORE!A2:K500');
+    const authHelper = require('../../lib/ynda/auth');
+    const { google } = require('googleapis');
+    const { parseServiceAccount } = require('../../lib/googleSheets');
+    const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountKey) throw new Error('Service account chưa được cấu hình');
+    const credentials = parseServiceAccount(serviceAccountKey);
+    const authClient = new google.auth.JWT(
+      credentials.client_email,
+      null,
+      credentials.private_key,
+      ['https://www.googleapis.com/auth/spreadsheets.readonly']
+    );
+    const sheetsApi = google.sheets({ version: 'v4', auth: authClient });
+    const members = await authHelper.readRankingMembers(sheetsApi);
+
     let importedUsers = 0;
-    for (const r of coreRows) {
-      if (!r[7] || !r[7].includes('@')) continue;
-      const email = r[7].trim().toLowerCase();
+    let adminCount = 0;
+    let btcCount = 0;
+    let memberCount = 0;
+
+    for (const m of members) {
+      if (!m.email || !m.email.includes('@')) continue;
+      const email = m.email.trim().toLowerCase();
       const userSnap = await db.collection('users').where('email', '==', email).limit(1).get();
       const existingUser = userSnap.empty ? null : { id: userSnap.docs[0].id, ...userSnap.docs[0].data() };
-      const posLower = (r[2] || '').toLowerCase();
-      const isBtc = posLower.includes('vice') || posLower.includes('trưởng') || posLower.includes('phó') || posLower.includes('head') || posLower.includes('lead') || posLower.includes('bđh') || (posLower.includes('core') && !posLower.includes('member'));
-      const role = isBtc ? 'organizer' : 'member';
+
+      const isFounderOrAdmin = email === 'yniemdienanh@gmail.com' ||
+        m.role === 'FOUNDER' || m.role === 'PRESIDENT' || m.role === 'CO_FOUNDER' ||
+        /founder|sang lap|president|chu tich|admin|quan tri|giam doc/i.test(m.rawRole || '');
+
+      const isBtcOrCore = isFounderOrAdmin ||
+        m.role === 'CORE' || m.role === 'VICE' ||
+        /core|vice|pho ban|truong ban|head|lead|leader|bdh|btc|dieu hanh/i.test(m.rawRole || '') ||
+        /core|bdh|btc|dieu hanh/i.test(m.tab || '');
+
+      const finalRole = isFounderOrAdmin ? 'admin' : (isBtcOrCore ? 'organizer' : 'member');
+      const projectGroup = (isFounderOrAdmin || isBtcOrCore) ? 'organizer' : 'community';
+      const leadershipTitle = isFounderOrAdmin ? (m.role === 'PRESIDENT' ? 'president' : 'founder') : (isBtcOrCore ? (m.role === 'VICE' ? 'vice' : 'core') : '');
+
+      if (finalRole === 'admin') adminCount++;
+      else if (finalRole === 'organizer') btcCount++;
+      else memberCount++;
+
       const userData = {
-        dept: r[0] || '',
-        name: r[1] || '',
-        position: r[2] || '',
-        gender: r[3] || '',
-        dob: r[4] || '',
-        address: r[5] || '',
-        school: r[6] || '',
+        dept: m.ban || m.department || '',
+        name: m.name || '',
+        position: m.rawRole || (finalRole === 'admin' ? 'Quản trị viên' : (finalRole === 'organizer' ? 'Ban Tổ Chức' : 'Thành viên')),
+        gender: m.gender || '',
+        dob: m.dob || '',
+        address: m.address || '',
+        school: m.school || '',
         email: email,
-        phone: r[8] || '',
-        facebook: r[9] || '',
-        notes: r[10] || '',
+        phone: m.phone || '',
+        facebook: m.facebook || '',
+        notes: m.notes || '',
+        role: finalRole,
+        projectGroup,
+        leadershipTitle,
         updatedAt: new Date().toISOString()
       };
+
       if (existingUser) {
-        if (existingUser.role === 'admin') {
+        if (existingUser.role === 'admin' && finalRole !== 'admin' && email !== 'yniemdienanh@gmail.com') {
+          // Preserve existing admin if not specifically demoted
           userData.role = 'admin';
-        } else if (existingUser.role === 'organizer' && role === 'member') {
-          const existingPos = (existingUser.position || '').toLowerCase();
-          if (existingPos.includes('vice') || existingPos.includes('trưởng') || existingPos.includes('phó') || existingPos.includes('head') || existingPos.includes('lead') || existingPos.includes('core')) {
-            userData.role = 'organizer';
-          }
-        } else {
-          userData.role = role;
         }
-        userData.createdAt = existingUser.createdAt;
-        await db.collection('users').doc(existingUser.id).update(userData);
+        userData.createdAt = existingUser.createdAt || new Date().toISOString();
+        await db.collection('users').doc(existingUser.id).set(userData, { merge: true });
       } else {
-        await db.collection('users').add({ ...userData, role, createdAt: new Date().toISOString() });
+        await db.collection('users').add({ ...userData, createdAt: new Date().toISOString() });
       }
       importedUsers++;
     }
-    return { importedUsers };
+    return { importedUsers, adminCount, btcCount, memberCount, total: members.length };
   } catch (err) {
     console.warn('[SheetPull] Error:', err.message);
     return { error: err.message };

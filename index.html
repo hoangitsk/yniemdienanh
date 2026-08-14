@@ -4958,6 +4958,8 @@
             // Standard public links
             linksHtml += `<a href="#" onclick="event.preventDefault();showPage('home');scrollTo(0,0);closeMobileMenu()" role="button">Trang chủ</a>`;
             linksHtml += `<a href="#" onclick="event.preventDefault();goSection('about');closeMobileMenu()" role="button">Về dự án</a>`;
+            linksHtml += `<a href="/ban-to-chuc">Ban Tổ Chức</a>`;
+            linksHtml += `<a href="/bang-xep-hang">Bảng xếp hạng</a>`;
             linksHtml += `<a href="#" onclick="event.preventDefault();goSection('events');closeMobileMenu()" role="button">Sự kiện & Workshop</a>`;
             linksHtml += `<a href="#" onclick="event.preventDefault();showPage('voting');closeMobileMenu()" role="button">Bình chọn</a>`;
             
@@ -6604,7 +6606,9 @@
                                 '<span style="color:var(--text-muted)">→</span>',
                                 '<input type="date" id="acctDateTo" value="', esc(dateTo), '" onchange="window._acctDateTo=this.value;renderTab(\'accounts\')" style="padding:6px;border-radius:6px;background:rgba(255,255,255,0.04);color:#e2e8f0;border:1px solid rgba(255,255,255,0.1)">',
                                 '<button class="btn btn-line btn-sm" onclick="window._acctSearch=\'\';window._acctDateFrom=\'\';window._acctDateTo=\'\';document.getElementById(\'acctSearchInput\').value=\'\';document.getElementById(\'acctDateFrom\').value=\'\';document.getElementById(\'acctDateTo\').value=\'\';renderTab(\'accounts\')">Xóa lọc</button>',
-                                '<button class="btn btn-gold btn-sm" onclick="exportUsersCSV()" style="margin-left:auto">📥 Xuất CSV</button>',
+                                '<button class="btn btn-gold btn-sm" onclick="syncSheetRolesFromDash()" style="margin-left:auto;background:linear-gradient(135deg,rgba(228,184,102,0.3),rgba(228,184,102,0.1));border-color:var(--gold);color:var(--gold-light)" title="Đồng bộ phân quyền Admin và BTC từ Google Sheet Database">🔄 Đồng bộ từ Google Sheet</button>',
+                                '<a href="/ban-to-chuc" target="_blank" class="btn btn-line btn-sm" style="color:var(--gold-light);border-color:var(--gold);text-decoration:none">👥 Trang BTC</a>',
+                                '<button class="btn btn-gold btn-sm" onclick="exportUsersCSV()">📥 Xuất CSV</button>',
                                 '<button class="btn btn-danger btn-sm" onclick="cleanupBdh()" style="background:#dc2626;color:#fff">🧹 Xóa BĐH sai</button>',
                             '</div>',
                             '<div class="table-wrap">',
@@ -12509,7 +12513,37 @@ ${senderSignature}`
             renderTab('production');showToast('Đã cập nhật tiến độ!','success');
         }
 
-        // ================================================
+        async function syncSheetRolesFromDash() {
+            showToast('⏳ Đang đồng bộ danh sách Admin & BTC từ Google Sheet...', 'info', 4000);
+            try {
+                let token = '';
+                if (authInstance && authInstance.currentUser) {
+                    token = await authInstance.currentUser.getIdToken();
+                }
+                const res = await fetch('/api/admin/sync-sheet-roles', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+                    },
+                    body: JSON.stringify({ idToken: token })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ Đồng bộ thành công ${data.importedUsers} thành viên!\n👑 ${data.adminCount} Admin | 💼 ${data.btcCount} BTC | 🍿 ${data.memberCount} Thành viên`, 'success', 6000);
+                    if (useFirebase && typeof loadPublicUsersFromFirestore === 'function') {
+                        await loadPublicUsersFromFirestore();
+                    }
+                    if (typeof renderTab === 'function') {
+                        renderTab('accounts');
+                    }
+                } else {
+                    showToast('Lỗi đồng bộ: ' + (data.error || 'Không xác định'), 'error');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối khi đồng bộ: ' + err.message, 'error');
+            }
+        }
 
         // Helper: save entire collection to localStorage
         function persistDB() { localStorage.setItem('ynda_db', JSON.stringify(localDB)); }

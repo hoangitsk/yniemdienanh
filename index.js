@@ -813,6 +813,18 @@ app.get('/cham-diem', (req, res) => {
     res.sendFile(path.join(__dirname, 'cham-diem.html'));
 });
 
+app.get(['/ban-to-chuc', '/btc'], (req, res) => {
+    res.sendFile(path.join(__dirname, 'ban-to-chuc.html'));
+});
+
+app.get('/bang-xep-hang', (req, res) => {
+    res.sendFile(path.join(__dirname, 'bang-xep-hang.html'));
+});
+
+app.get('/vinh-danh', (req, res) => {
+    res.sendFile(path.join(__dirname, 'vinh-danh.html'));
+});
+
 app.get('/schedule/:code', (req, res) => {
     res.sendFile(path.join(__dirname, 'schedule.html'));
 });
@@ -825,7 +837,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const staticHtmlPages = ['index.html', 'dashboard.html', 'register.html', 'vinh-danh.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'cham-diem.html', 'privacy.html', 'terms.html', 'change-frame.html', 'send-email.html', 'ynda.html'];
+const staticHtmlPages = ['index.html', 'dashboard.html', 'register.html', 'vinh-danh.html', 'ban-to-chuc.html', 'verify.html', 'schedule.html', 'bang-xep-hang.html', 'cham-diem.html', 'privacy.html', 'terms.html', 'change-frame.html', 'send-email.html', 'ynda.html'];
 app.get('/:page.html', (req, res, next) => {
     if (staticHtmlPages.includes(req.params.page + '.html')) {
         return res.sendFile(path.join(__dirname, req.params.page + '.html'));

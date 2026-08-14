@@ -11,6 +11,8 @@
     { "source": "/gui-email", "destination": "/send-email.html" },
     { "source": "/send-email", "destination": "/send-email.html" },
     { "source": "/vinh-danh", "destination": "/vinh-danh.html" },
+    { "source": "/ban-to-chuc", "destination": "/ban-to-chuc.html" },
+    { "source": "/btc", "destination": "/ban-to-chuc.html" },
     { "source": "/bang-xep-hang", "destination": "/bang-xep-hang.html" },
     { "source": "/cham-diem", "destination": "/cham-diem.html" },
     { "source": "/privacy", "destination": "/privacy.html" },

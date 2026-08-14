@@ -1098,66 +1098,6 @@ async function loadBoard() {
   try {
     const data = await api('/board');
     allMissions = data.board || [];
-    if (!allMissions.length) {
-      allMissions = [
-        {
-          TASK_ID: 'TRU-026',
-          CODE: 'TRU-026',
-          TITLE: 'Bump bài viết tuyển thành viên · Đợt tuyển quân tháng 8',
-          DESCRIPTION: 'Tương tác 4 nền tảng (Facebook, TikTok, Threads, Instagram). Yêu cầu React + Share + Comment hợp lệ.',
-          EXPECTED_OUTPUT: 'Ảnh chụp màn hình 3 hành động trên mỗi nền tảng.',
-          SCOPE: 'GLOBAL_OPEN',
-          DEPARTMENT: 'TRUYEN_THONG',
-          DIFFICULTY: 'Vừa',
-          ESTIMATED_TIME_MIN: 45,
-          XP_FINAL: 2.0,
-          SUBMISSION_DEADLINE: new Date(Date.now() + 86400000 * 2).toISOString(),
-          PROOF_REQUIREMENT: 'Link bài viết hoặc ảnh screenshot rõ thời gian đăng.'
-        },
-        {
-          TASK_ID: 'MED-014',
-          CODE: 'MED-014',
-          TITLE: 'Dựng video recap workshop — định dạng video ngắn dọc',
-          DESCRIPTION: 'Biên tập video recap workshop điện ảnh định dạng 9:16 (Reel/TikTok), độ dài 45-60s, chèn phụ đề và sound FX theo Brand Kit.',
-          EXPECTED_OUTPUT: 'File MP4 1080x1920 hoặc đường dẫn Google Drive.',
-          SCOPE: 'DEPARTMENT_OPEN',
-          DEPARTMENT: 'MEDIA',
-          DIFFICULTY: 'Chuẩn',
-          ESTIMATED_TIME_MIN: 120,
-          XP_FINAL: 3.5,
-          SUBMISSION_DEADLINE: new Date(Date.now() + 86400000 * 3).toISOString(),
-          PROOF_REQUIREMENT: 'Link Google Drive chứa file video xuất chuẩn.'
-        },
-        {
-          TASK_ID: 'NDT-009',
-          CODE: 'NDT-009',
-          TITLE: 'Soạn dàn ý & phân tích bố cục khung hình phim A24',
-          DESCRIPTION: 'Phân tích cấu trúc ánh sáng, góc máy và bảng màu trong phim The Lighthouse / Past Lives.',
-          EXPECTED_OUTPUT: 'Bản docx/notion dàn ý bài phân tích 1.200 chữ.',
-          SCOPE: 'DEPARTMENT_OPEN',
-          DEPARTMENT: 'NOI_DUNG',
-          DIFFICULTY: 'Vừa',
-          ESTIMATED_TIME_MIN: 90,
-          XP_FINAL: 2.5,
-          SUBMISSION_DEADLINE: new Date(Date.now() + 86400000 * 4).toISOString(),
-          PROOF_REQUIREMENT: 'Đường dẫn Google Docs.'
-        },
-        {
-          TASK_ID: 'HR-008',
-          CODE: 'HR-008',
-          TITLE: 'Brief diễn giả & hỗ trợ điều phối sự kiện offline',
-          DESCRIPTION: 'Liên hệ xác nhận timeline với khách mời, chuẩn bị slide thuyết trình và điều phối mic/check-in cho workshop.',
-          EXPECTED_OUTPUT: 'Biên bản xác nhận với khách mời và danh sách check-in.',
-          SCOPE: 'MANDATORY',
-          DEPARTMENT: 'NHAN_SU',
-          DIFFICULTY: 'Quan trọng',
-          ESTIMATED_TIME_MIN: 180,
-          XP_FINAL: 4.0,
-          SUBMISSION_DEADLINE: new Date(Date.now() + 86400000 * 2).toISOString(),
-          PROOF_REQUIREMENT: 'File checklist và ảnh chụp sự kiện.'
-        }
-      ];
-    }
     renderBoardCards(allMissions);
   } catch (e) {
     el('boardCardsGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1">Không thể tải nhiệm vụ: ${e.message}</div>`;

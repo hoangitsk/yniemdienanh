@@ -204,10 +204,13 @@ function buildRanking(members, pts) {
   };
 }
 
+const CACHE = {};
+const CACHE_TTL = 3 * 60 * 1000; // 3 minutes
+
 module.exports = async (req, res) => {
   const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
-  res.setHeader('Cache-Control', 'public, max-age=120');
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -226,7 +229,15 @@ module.exports = async (req, res) => {
   const sid = parseId(req.query.sid) || process.env.SPREADSHEET_RANKING || RANKING_SHEET_ID;
 
   try {
-    const [members, points] = await Promise.all([readMembers(sid), readPoints(sid)]);
+    let members, points;
+    const cacheKey = `data_${sid}`;
+    if (CACHE[cacheKey] && Date.now() - CACHE[cacheKey].time < CACHE_TTL) {
+      members = CACHE[cacheKey].members;
+      points = CACHE[cacheKey].points;
+    } else {
+      [members, points] = await Promise.all([readMembers(sid), readPoints(sid)]);
+      CACHE[cacheKey] = { time: Date.now(), members, points };
+    }
 
     const overall = buildRanking(members, points);
 

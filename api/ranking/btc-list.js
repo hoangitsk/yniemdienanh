@@ -16,6 +16,28 @@ function normalizeText(s) {
     .replace(/\s+/g, ' ');
 }
 
+function formatProperTitle(role, rawRole, ban) {
+  const r = String(role || '').toUpperCase();
+  const raw = String(rawRole || '').trim();
+  const b = String(ban || '').trim();
+
+  if (r === 'FOUNDER') return raw || 'Sáng lập / Founder';
+  if (r === 'CO_FOUNDER') return raw || 'Đồng sáng lập / Co-founder';
+  if (r === 'PRESIDENT') return raw || 'Chủ tịch / President';
+  if (r === 'CORE') {
+    if (raw && !/member|thanh vien/i.test(raw)) return raw;
+    return b ? `Trưởng Ban ${b}` : 'Trưởng Ban';
+  }
+  if (r === 'VICE') {
+    if (raw && !/member|thanh vien/i.test(raw)) return raw;
+    return b ? `Phó Ban ${b}` : 'Phó Ban';
+  }
+  if (r === 'MEMBER') {
+    return b ? `Thành viên Ban ${b}` : (raw || 'Thành viên');
+  }
+  return raw || (b ? `Thành viên Ban ${b}` : 'Thành viên');
+}
+
 module.exports = async function getBtcList(req, res) {
   const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://yniemdienanh.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
@@ -71,24 +93,25 @@ module.exports = async function getBtcList(req, res) {
             snap.forEach(doc => {
               const d = doc.data();
               const r = String(d.role || '').toLowerCase();
-              const pg = String(d.projectGroup || '').toLowerCase();
-              const isBtc = r === 'admin' || r === 'organizer' || pg === 'organizer' ||
-                /core|vice|truong|pho|head|lead|founder|president|chu tich|sang lap|bdh|btc/i.test(d.position || '') ||
-                d.email === 'yniemdienanh@gmail.com';
-              if (isBtc) {
-                rawMembers.push({
-                  name: d.name || 'Thành viên BTC',
-                  email: d.email || '',
-                  role: r === 'admin' ? 'FOUNDER' : 'CORE',
-                  rawRole: d.position || d.leadershipTitle || (r === 'admin' ? 'Quản trị viên' : 'Core Member'),
-                  ban: d.dept || 'Ban Điều Hành',
-                  department: d.dept || 'Ban Điều Hành',
-                  phone: d.phone || '',
-                  facebook: d.facebook || '',
-                  notes: d.notes || '',
-                  tab: 'DATABASE CORE'
-                });
+              const lt = String(d.leadershipTitle || '').toLowerCase();
+              let mappedRole = 'MEMBER';
+              if (r === 'admin' || lt === 'founder' || lt === 'president' || lt === 'cofounder') {
+                mappedRole = lt === 'founder' ? 'FOUNDER' : lt === 'cofounder' ? 'CO_FOUNDER' : 'PRESIDENT';
+              } else if (r === 'organizer' || lt === 'core' || lt === 'vice') {
+                mappedRole = lt === 'vice' ? 'VICE' : 'CORE';
               }
+              rawMembers.push({
+                name: d.name || 'Thành viên',
+                email: d.email || '',
+                role: mappedRole,
+                rawRole: d.position || d.leadershipTitle || '',
+                ban: d.dept || '',
+                department: d.dept || '',
+                phone: d.phone || '',
+                facebook: d.facebook || '',
+                notes: d.notes || '',
+                tab: mappedRole === 'MEMBER' ? 'DATABASE THÀNH VIÊN' : 'DATABASE CORE'
+              });
             });
           }
         }
@@ -97,118 +120,85 @@ module.exports = async function getBtcList(req, res) {
       }
     }
 
-    // 3. Third attempt: Fallback to YNDA Store if still empty
-    if (!rawMembers || rawMembers.length === 0) {
-      try {
-        const ynda = require('../../lib/ynda');
-        const users = await ynda.auth.listUsers();
-        if (users && users.length) {
-          users.forEach(u => {
-            const role = String(u.ROLE || '').toUpperCase();
-            if (role === 'FOUNDER' || role === 'PRESIDENT' || role === 'CO_FOUNDER' || role === 'CORE' || role === 'VICE') {
-              rawMembers.push({
-                name: u.NAME,
-                email: u.EMAIL,
-                role: u.ROLE,
-                rawRole: u.ROLE,
-                ban: u.DEPARTMENT,
-                department: u.DEPARTMENT,
-                phone: u.PHONE,
-                facebook: '',
-                notes: '',
-                tab: 'DATABASE CORE'
-              });
-            }
-          });
-        }
-      } catch (yndaErr) {
-        console.warn('[BTC List] YNDA store fallback warning:', yndaErr.message);
-      }
-    }
-
-    // 4. Guaranteed fallback for standard Admin & Board if no DB is connected
-    if (!rawMembers || rawMembers.length === 0) {
-      rawMembers = [
-        {
-          name: 'Ban Tổ Chức · Ý Niệm Điện Ảnh',
-          email: 'yniemdienanh@gmail.com',
-          role: 'FOUNDER',
-          rawRole: 'Sáng lập & Điều hành dự án',
-          ban: 'Ban Điều Hành',
-          department: 'GLOBAL',
-          facebook: 'https://facebook.com/yniemdienanh',
-          notes: 'Tài khoản chính thức của Ban Tổ Chức Ý Niệm Điện Ảnh'
-        }
-      ];
-    }
-
-    // Filter BTC & Core members
-    const btcMembers = rawMembers.filter(m => {
-      const role = String(m.role || '').toUpperCase();
-      const rawRole = normalizeText(m.rawRole || '');
-      const tab = normalizeText(m.tab || '');
-      const email = String(m.email || '').toLowerCase().trim();
-      return email === 'yniemdienanh@gmail.com' ||
-        role === 'FOUNDER' || role === 'PRESIDENT' || role === 'CO_FOUNDER' || role === 'CORE' || role === 'VICE' ||
-        /core|vice|truong|pho|head|lead|founder|president|chu tich|sang lap|bdh|btc|dieu hanh/.test(rawRole) ||
-        /core|bdh|btc|dieu hanh/.test(tab);
-    });
-
-    // Group members by department
-    const departments = {};
+    // Process & classify all members
     const executives = [];
+    const leads = [];
+    const departments = {};
 
-    btcMembers.forEach(m => {
-      const role = String(m.role || '').toUpperCase();
-      const rawRole = normalizeText(m.rawRole || '');
+    const formattedMembers = rawMembers.map(m => {
+      const roleUpper = String(m.role || '').toUpperCase();
+      const rawRoleNorm = normalizeText(m.rawRole || '');
+      const banName = m.ban || m.department || (roleUpper === 'FOUNDER' || roleUpper === 'PRESIDENT' || roleUpper === 'CO_FOUNDER' ? 'Ban Điều Hành' : 'Thành viên');
+      
       const isExec = m.email === 'yniemdienanh@gmail.com' ||
-        role === 'FOUNDER' || role === 'PRESIDENT' || role === 'CO_FOUNDER' ||
-        /founder|president|chu tich|sang lap|dong sang lap|admin|giam doc/.test(rawRole);
+        roleUpper === 'FOUNDER' || roleUpper === 'PRESIDENT' || roleUpper === 'CO_FOUNDER' ||
+        /founder|president|chu tich|sang lap|dong sang lap/.test(rawRoleNorm);
 
-      const safeMember = {
+      const isLead = !isExec && (roleUpper === 'CORE' || roleUpper === 'VICE' || /truong|pho|head|lead|core|vice/.test(rawRoleNorm));
+      const isBtc = isExec || isLead;
+
+      const title = formatProperTitle(roleUpper, m.rawRole, banName);
+
+      const memberObj = {
         name: m.name,
         email: m.email || '',
-        role: m.role,
-        title: m.rawRole || (isExec ? 'Ban Điều Hành' : 'Core Member'),
-        dept: m.ban || m.department || (isExec ? 'Ban Điều Hành' : 'Chung'),
+        role: roleUpper,
+        rawRole: m.rawRole || '',
+        title: title,
+        dept: banName,
         facebook: m.facebook || '',
+        phone: m.phone || '',
         notes: m.notes || '',
-        isExecutive: isExec
+        school: m.school || '',
+        address: m.address || '',
+        gender: m.gender || '',
+        dob: m.dob || '',
+        isExecutive: isExec,
+        isLead: isLead,
+        isBtc: isBtc,
+        category: isExec ? 'exec' : isLead ? 'lead' : 'member',
+        tab: m.tab || ''
       };
 
       if (isExec) {
-        executives.push(safeMember);
+        executives.push(memberObj);
+      } else if (isLead) {
+        leads.push(memberObj);
       }
 
-      const deptName = safeMember.dept || 'Chung';
-      if (!departments[deptName]) departments[deptName] = [];
-      departments[deptName].push(safeMember);
+      const dKey = banName || 'Khác';
+      if (!departments[dKey]) {
+        departments[dKey] = {
+          name: dKey,
+          leads: [],
+          members: [],
+          all: []
+        };
+      }
+      departments[dKey].all.push(memberObj);
+      if (isLead || isExec) {
+        departments[dKey].leads.push(memberObj);
+      } else {
+        departments[dKey].members.push(memberObj);
+      }
+
+      return memberObj;
     });
+
+    const btcCount = formattedMembers.filter(m => m.isBtc).length;
+    const memberCount = formattedMembers.filter(m => !m.isBtc).length;
 
     const responseData = {
       success: true,
       spreadsheetId: sid,
       updatedAt: new Date().toISOString(),
-      totalBtc: btcMembers.length,
+      totalMembers: formattedMembers.length,
+      totalBtc: btcCount,
+      totalCommunityMembers: memberCount,
       executives,
+      leads,
       departments,
-      members: btcMembers.map(m => {
-        const role = String(m.role || '').toUpperCase();
-        const rawRole = normalizeText(m.rawRole || '');
-        const isExec = m.email === 'yniemdienanh@gmail.com' ||
-          role === 'FOUNDER' || role === 'PRESIDENT' || role === 'CO_FOUNDER' ||
-          /founder|president|chu tich|sang lap|dong sang lap|admin|giam doc/.test(rawRole);
-        return {
-          name: m.name,
-          email: m.email || '',
-          role: m.role,
-          title: m.rawRole || '',
-          dept: m.ban || m.department || '',
-          facebook: m.facebook || '',
-          notes: m.notes || '',
-          isExecutive: isExec
-        };
-      })
+      members: formattedMembers
     };
 
     CACHE = { sid, time: Date.now(), data: responseData };

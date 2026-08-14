@@ -3,180 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Danh sách Ban Tổ Chức, Ban Điều Hành và Đội ngũ Core Team của Dự án Ý Niệm Điện Ảnh.">
-    <title>Ban Tổ Chức — Ý Niệm Điện Ảnh</title>
-    <link rel="icon" type="image/png" href="/Logo/avtar.png">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Ban Tổ Chức & Đội Ngũ Nhân Sự · Ý Niệm Điện Ảnh</title>
+    <meta name="description" content="Danh sách Ban Tổ Chức, Ban Điều Hành và các Ban Chuyên Môn dự án Ý Niệm Điện Ảnh.">
+    <link rel="icon" href="/Logo/avtar.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --navy: #07111d;
-            --navy-light: #0d1e30;
-            --card: rgba(13, 30, 48, 0.7);
-            --card-hover: rgba(20, 44, 70, 0.85);
+            --bg: #04070d;
+            --card-bg: rgba(13, 20, 36, 0.7);
+            --card-border: rgba(228, 184, 102, 0.16);
+            --card-hover: rgba(228, 184, 102, 0.35);
             --gold: #e4b866;
-            --gold-light: #f3dba3;
-            --gold-glow: rgba(228, 184, 102, 0.25);
-            --text: #f8fafc;
-            --muted: #aab6c5;
-            --line: rgba(228, 184, 102, 0.2);
-            --line-strong: rgba(228, 184, 102, 0.45);
-            --success: #63d19e;
+            --gold-light: #f7d58b;
+            --gold-dark: #b88628;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --navy: #0b1329;
+            --glow: rgba(228, 184, 102, 0.25);
+            --success: #34d399;
             --cyan: #38bdf8;
             --purple: #c084fc;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            min-height: 100vh;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            color: var(--text);
-            background: radial-gradient(circle at 80% 0%, rgba(84, 132, 170, 0.18), transparent 30rem),
-                        radial-gradient(circle at 10% 40%, rgba(228, 184, 102, 0.08), transparent 25rem),
-                        linear-gradient(135deg, #050d17 0%, #0d2238 50%, #040910 100%);
-            background-attachment: fixed;
-            overflow-x: hidden;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* NAVIGATION */
+        body {
+            font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(228, 184, 102, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 70%, rgba(56, 189, 248, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 50% 10%, rgba(192, 132, 252, 0.04) 0%, transparent 60%);
+            background-attachment: fixed;
+        }
+
+        /* HEADER NAV */
         nav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            padding: 14px 6%;
-            border-bottom: 1px solid var(--line);
-            background: rgba(5, 13, 23, 0.85);
-            backdrop-filter: blur(14px);
             position: sticky;
             top: 0;
             z-index: 100;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            background: rgba(4, 7, 13, 0.85);
+            border-bottom: 1px solid rgba(228, 184, 102, 0.15);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         .brand {
             display: flex;
             align-items: center;
             gap: 12px;
-            color: var(--text);
             text-decoration: none;
-            font-family: 'Playfair Display', serif;
+            color: var(--text);
             font-weight: 700;
             font-size: 1.15rem;
             letter-spacing: 0.02em;
         }
         .brand img {
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid var(--gold);
             object-fit: cover;
-            border: 1px solid var(--line);
-            box-shadow: 0 0 15px rgba(228, 184, 102, 0.2);
         }
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 22px;
+            gap: 20px;
         }
         .nav-links a {
             color: var(--muted);
-            font-weight: 600;
-            font-size: 0.9rem;
             text-decoration: none;
-            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
         }
         .nav-links a:hover, .nav-links a.active {
             color: var(--gold-light);
         }
         .nav-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border-radius: 999px;
-            border: 1px solid var(--gold);
-            background: linear-gradient(135deg, rgba(228, 184, 102, 0.15), rgba(228, 184, 102, 0.05));
-            color: var(--gold-light) !important;
-            font-weight: 700;
-            font-size: 0.85rem;
-            transition: all 0.25s ease;
+            background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+            color: #04070d !important;
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-weight: 700 !important;
+            transition: transform 0.2s, box-shadow 0.2s !important;
         }
         .nav-btn:hover {
-            box-shadow: 0 0 20px var(--gold-glow);
             transform: translateY(-1px);
+            box-shadow: 0 4px 15px var(--glow);
         }
 
-        /* MAIN WRAPPER */
+        /* CONTAINER */
         main {
             max-width: 1240px;
             margin: 0 auto;
-            padding: 56px 24px 90px;
+            padding: 48px 24px 80px;
         }
 
-        /* HERO HEADER */
+        /* HERO SECTION */
         .hero {
             text-align: center;
-            max-width: 800px;
-            margin: 0 auto 50px;
+            margin-bottom: 48px;
         }
         .eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--gold);
+            display: inline-block;
             font-size: 0.8rem;
-            font-weight: 800;
-            letter-spacing: 0.18em;
             text-transform: uppercase;
-            padding: 6px 14px;
+            letter-spacing: 0.15em;
+            color: var(--gold);
+            margin-bottom: 12px;
+            font-weight: 700;
+            background: rgba(228, 184, 102, 0.1);
+            padding: 4px 14px;
             border-radius: 999px;
-            border: 1px solid var(--line);
-            background: rgba(228, 184, 102, 0.06);
-            margin-bottom: 16px;
+            border: 1px solid rgba(228, 184, 102, 0.25);
         }
         h1 {
             font-family: 'Playfair Display', serif;
-            font-size: clamp(2.4rem, 5.5vw, 4rem);
-            color: var(--gold-light);
-            line-height: 1.15;
+            font-size: clamp(2.2rem, 5vw, 3.4rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, var(--gold-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 16px;
-            text-shadow: 0 4px 25px rgba(0, 0, 0, 0.6);
+            letter-spacing: -0.01em;
         }
         .hero-desc {
+            max-width: 680px;
+            margin: 0 auto;
             color: var(--muted);
             font-size: 1.05rem;
-            line-height: 1.75;
-            max-width: 660px;
-            margin: 0 auto 28px;
+            line-height: 1.7;
         }
 
-        /* CONTROLS (SEARCH + FILTER) */
+        /* CONTROLS (SEARCH & FILTERS) */
         .controls-card {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: 20px;
-            padding: 20px 24px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
             margin-bottom: 40px;
-            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
             backdrop-filter: blur(12px);
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
         .search-row {
             display: flex;
-            gap: 14px;
-            align-items: center;
-            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
         }
         .search-box {
-            flex: 1;
-            min-width: 260px;
             position: relative;
+            flex: 1;
         }
         .search-box input {
             width: 100%;
             padding: 12px 16px 12px 42px;
-            border-radius: 12px;
-            border: 1px solid var(--line);
-            background: rgba(5, 13, 23, 0.7);
-            color: var(--text);
+            background: rgba(4, 7, 13, 0.6);
+            border: 1px solid rgba(228, 184, 102, 0.2);
+            border-radius: 10px;
+            color: #fff;
             font-size: 0.95rem;
             font-family: inherit;
             outline: none;
@@ -184,163 +181,175 @@
         }
         .search-box input:focus {
             border-color: var(--gold);
-            box-shadow: 0 0 16px var(--gold-glow);
+            box-shadow: 0 0 0 3px rgba(228, 184, 102, 0.15);
         }
-        .search-box .search-icon {
+        .search-icon {
             position: absolute;
             left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--muted);
-            font-size: 1.1rem;
+            color: var(--gold);
             pointer-events: none;
         }
         .refresh-btn {
-            display: inline-flex;
+            background: rgba(228, 184, 102, 0.12);
+            color: var(--gold-light);
+            border: 1px solid rgba(228, 184, 102, 0.3);
+            border-radius: 10px;
+            padding: 0 18px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
             align-items: center;
             gap: 8px;
-            padding: 12px 20px;
-            border-radius: 12px;
-            border: 1px solid var(--line);
-            background: rgba(228, 184, 102, 0.08);
-            color: var(--gold-light);
-            font-weight: 700;
-            font-size: 0.88rem;
-            cursor: pointer;
             transition: all 0.2s;
             white-space: nowrap;
         }
         .refresh-btn:hover {
-            background: rgba(228, 184, 102, 0.18);
+            background: rgba(228, 184, 102, 0.22);
             border-color: var(--gold);
+            transform: scale(1.02);
         }
 
         /* FILTER PILLS */
         .filter-pills {
             display: flex;
-            gap: 8px;
             flex-wrap: wrap;
+            gap: 8px;
         }
         .pill {
-            padding: 7px 14px;
-            border-radius: 999px;
-            border: 1px solid var(--line);
-            background: rgba(5, 13, 23, 0.5);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: var(--muted);
+            padding: 7px 14px;
+            border-radius: 8px;
             font-size: 0.82rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         .pill:hover {
-            border-color: var(--gold);
-            color: var(--gold-light);
+            background: rgba(228, 184, 102, 0.12);
+            color: var(--text);
+            border-color: rgba(228, 184, 102, 0.3);
         }
         .pill.active {
-            background: linear-gradient(135deg, rgba(228, 184, 102, 0.25), rgba(228, 184, 102, 0.08));
+            background: linear-gradient(135deg, rgba(228, 184, 102, 0.25), rgba(184, 134, 40, 0.15));
             border-color: var(--gold);
             color: var(--gold-light);
-            box-shadow: 0 0 16px rgba(228, 184, 102, 0.15);
+            box-shadow: 0 0 12px rgba(228, 184, 102, 0.18);
         }
 
-        /* STATS COUNTERS */
+        /* STATS BAR */
         .stats-bar {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            font-size: 0.86rem;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 0.85rem;
             color: var(--muted);
-            padding-top: 6px;
-            border-top: 1px solid rgba(228, 184, 102, 0.1);
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .stats-bar strong {
             color: var(--gold-light);
         }
 
-        /* SECTION STYLING */
+        /* SECTION TITLES */
         .section-header {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 44px 0 22px;
+            margin: 40px 0 20px;
         }
         .section-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1.6rem;
-            color: var(--gold-light);
+            font-size: 1.45rem;
             font-weight: 700;
-            white-space: nowrap;
+            color: var(--gold-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .section-line {
-            height: 1px;
             flex: 1;
-            background: linear-gradient(to right, var(--line-strong), transparent);
+            height: 1px;
+            background: linear-gradient(90deg, rgba(228, 184, 102, 0.3), transparent);
         }
         .section-badge {
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: rgba(228, 184, 102, 0.12);
-            color: var(--gold);
             font-size: 0.75rem;
             font-weight: 700;
+            padding: 3px 10px;
+            background: rgba(228, 184, 102, 0.1);
+            color: var(--gold);
+            border-radius: 999px;
+            border: 1px solid rgba(228, 184, 102, 0.25);
         }
 
-        /* EXECUTIVE / LEADERSHIP CARDS */
+        /* EXECUTIVE GRID (VIP) */
         .exec-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 22px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         .exec-card {
-            background: linear-gradient(135deg, rgba(228, 184, 102, 0.12) 0%, rgba(13, 30, 48, 0.85) 60%);
-            border: 1px solid rgba(228, 184, 102, 0.45);
-            border-radius: 22px;
-            padding: 26px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            background: linear-gradient(145deg, rgba(20, 29, 54, 0.9), rgba(11, 19, 41, 0.8));
+            border: 1.5px solid rgba(228, 184, 102, 0.4);
+            border-radius: 16px;
+            padding: 24px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(228, 184, 102, 0.05);
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
         .exec-card::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold-dark));
         }
         .exec-card:hover {
             transform: translateY(-4px);
             border-color: var(--gold);
-            box-shadow: 0 20px 48px rgba(228, 184, 102, 0.2);
+            box-shadow: 0 15px 35px rgba(228, 184, 102, 0.2), inset 0 0 25px rgba(228, 184, 102, 0.1);
         }
         .card-top {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
         }
         .avatar-circle {
             width: 58px;
             height: 58px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, rgba(228, 184, 102, 0.3), rgba(228, 184, 102, 0.05));
-            border: 1.5px solid var(--gold);
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(228, 184, 102, 0.3), rgba(11, 19, 41, 0.9));
+            border: 2px solid var(--gold);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            color: var(--gold-light);
+            font-size: 1.3rem;
             font-weight: 800;
+            color: var(--gold-light);
+            box-shadow: 0 0 15px rgba(228, 184, 102, 0.25);
             flex-shrink: 0;
-            box-shadow: 0 0 20px rgba(228, 184, 102, 0.2);
         }
         .exec-info h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.35rem;
-            color: var(--text);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
             margin-bottom: 4px;
         }
         .role-tag {
@@ -357,22 +366,27 @@
         .role-tag.admin {
             background: rgba(228, 184, 102, 0.2);
             color: var(--gold-light);
-            border: 1px solid rgba(228, 184, 102, 0.4);
+            border: 1px solid rgba(228, 184, 102, 0.45);
         }
         .role-tag.president {
             background: rgba(192, 132, 252, 0.2);
             color: #e9d5ff;
-            border: 1px solid rgba(192, 132, 252, 0.4);
+            border: 1px solid rgba(192, 132, 252, 0.45);
         }
         .role-tag.core {
-            background: rgba(99, 209, 158, 0.18);
+            background: rgba(52, 211, 153, 0.18);
             color: var(--success);
-            border: 1px solid rgba(99, 209, 158, 0.35);
+            border: 1px solid rgba(52, 211, 153, 0.4);
         }
         .role-tag.vice {
             background: rgba(56, 189, 248, 0.18);
             color: var(--cyan);
-            border: 1px solid rgba(56, 189, 248, 0.35);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+        }
+        .role-tag.member {
+            background: rgba(148, 163, 184, 0.15);
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.3);
         }
 
         .card-body {
@@ -429,74 +443,85 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 18px;
+            margin-bottom: 30px;
         }
         .member-card {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 18px;
+            transition: all 0.25s ease;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            transition: all 0.25s ease;
+            gap: 10px;
+            backdrop-filter: blur(8px);
+        }
+        .member-card.is-lead {
+            border-color: rgba(52, 211, 153, 0.4);
+            background: linear-gradient(145deg, rgba(16, 24, 45, 0.85), rgba(10, 16, 32, 0.8));
+            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.08);
         }
         .member-card:hover {
             transform: translateY(-3px);
-            background: var(--card-hover);
-            border-color: var(--gold);
-            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.3);
+            border-color: var(--card-hover);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
         }
         .mem-top {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
         .mem-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            background: rgba(228, 184, 102, 0.1);
-            border: 1px solid var(--line);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(228, 184, 102, 0.15);
+            border: 1.5px solid rgba(228, 184, 102, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.15rem;
-            color: var(--gold-light);
             font-weight: 700;
+            font-size: 1rem;
+            color: var(--gold-light);
             flex-shrink: 0;
         }
+        .member-card.is-lead .mem-avatar {
+            border-color: var(--success);
+            color: var(--success);
+            background: rgba(52, 211, 153, 0.15);
+        }
         .mem-name {
-            font-size: 1.05rem;
             font-weight: 700;
-            color: var(--text);
-            margin-bottom: 4px;
+            font-size: 1.02rem;
+            color: #fff;
         }
 
-        /* EMPTY STATE / LOADING */
+        /* EMPTY & LOADING STATE */
         .loading-state, .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: var(--muted);
         }
         .spinner {
-            width: 38px;
-            height: 38px;
-            border: 3px solid rgba(228, 184, 102, 0.15);
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(228, 184, 102, 0.2);
             border-top-color: var(--gold);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin: 0 auto 16px;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 
         /* FOOTER */
         footer {
-            padding: 34px 20px;
-            border-top: 1px solid var(--line);
-            color: var(--muted);
-            font-size: 0.88rem;
+            border-top: 1px solid rgba(228, 184, 102, 0.15);
+            padding: 30px 24px;
             text-align: center;
+            color: var(--muted);
+            font-size: 0.85rem;
             background: rgba(4, 9, 16, 0.9);
         }
 
@@ -533,7 +558,7 @@
         <!-- HERO -->
         <div class="hero">
             <span class="eyebrow">✨ Đội ngũ phát triển · Ý Niệm Điện Ảnh</span>
-            <h1>Ban Tổ Chức</h1>
+            <h1>Ban Tổ Chức & Nhân Sự</h1>
             <p class="hero-desc">
                 Những con người tâm huyết gìn giữ ngọn lửa điện ảnh, xây dựng cộng đồng và chắp cánh cho những ý niệm nghệ thuật bay xa.
             </p>
@@ -555,24 +580,31 @@
             <div class="filter-pills" id="filterPills">
                 <button class="pill active" onclick="setDepartmentFilter('ALL')">🌟 Tất cả</button>
                 <button class="pill" onclick="setDepartmentFilter('BAN_DIEU_HANH')">👑 Ban Điều Hành</button>
-                <button class="pill" onclick="setDepartmentFilter('NOI_DUNG')">✍️ Ban Nội Dung</button>
+                <button class="pill" onclick="setDepartmentFilter('LEADS_ONLY')">⭐ Trưởng & Phó Ban</button>
+                <button class="pill" onclick="setDepartmentFilter('NHAN_SU')">👥 Ban Nhân Sự</button>
                 <button class="pill" onclick="setDepartmentFilter('TRUYEN_THONG')">📢 Ban Truyền Thông</button>
                 <button class="pill" onclick="setDepartmentFilter('MEDIA')">🎬 Ban Media / Hậu Kỳ</button>
-                <button class="pill" onclick="setDepartmentFilter('NHAN_SU')">👥 Ban Nhân Sự</button>
+                <button class="pill" onclick="setDepartmentFilter('NOI_DUNG')">✍️ Ban Nội Dung</button>
                 <button class="pill" onclick="setDepartmentFilter('DUYET_BAI')">⚖️ Ban Duyệt Bài</button>
+                <button class="pill" onclick="setDepartmentFilter('MEMBERS_ONLY')">👥 Thành Viên Các Ban</button>
             </div>
 
             <div class="stats-bar">
-                <div>Tổng số thành viên BTC: <strong id="totalCount">...</strong></div>
+                <div>
+                    👑 Ban Điều Hành: <strong id="execCount">0</strong> · 
+                    ⭐ Trưởng & Phó Ban: <strong id="leadCount">0</strong> · 
+                    👥 Thành Viên: <strong id="memberCount">0</strong> · 
+                    Tổng cộng: <strong id="totalCount">0</strong>
+                </div>
                 <div id="filterStatus">Đang hiển thị toàn bộ</div>
             </div>
         </div>
 
-        <!-- CONTAINER FOR SECTIONS -->
+        <!-- MAIN CONTENT CONTAINER -->
         <div id="contentContainer">
             <div class="loading-state">
                 <div class="spinner"></div>
-                <p>Đang tải dữ liệu Ban Tổ Chức từ Google Sheet...</p>
+                <p>Đang tải danh sách Ban Tổ Chức & Thành Viên từ Google Sheet...</p>
             </div>
         </div>
     </main>
@@ -584,6 +616,8 @@
 
     <script>
         let allMembers = [];
+        let executives = [];
+        let leads = [];
         let currentFilter = 'ALL';
         let searchQuery = '';
 
@@ -591,6 +625,7 @@
             return String(str || '')
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[đĐ]/g, 'd')
                 .toLowerCase()
                 .trim();
         }
@@ -603,20 +638,23 @@
         }
 
         function getRoleBadge(role, title) {
-            const t = normText(title + ' ' + role);
+            const t = normText((title || '') + ' ' + (role || ''));
+            if (/co founder|dong sang lap/.test(t)) {
+                return '<span class="role-tag admin">🤝 Đồng Sáng Lập</span>';
+            }
             if (/founder|sang lap|admin/.test(t)) {
                 return '<span class="role-tag admin">👑 Sáng Lập</span>';
             }
             if (/president|chu tich|project lead|truong du an/.test(t)) {
                 return '<span class="role-tag president">🌟 Chủ Tịch</span>';
             }
-            if (/vice|pho ban|pho lead/.test(t)) {
-                return '<span class="role-tag vice">⚡ Phó Ban</span>';
+            if (/vice|pho ban|pho lead|pho/.test(t)) {
+                return '<span class="role-tag vice">🔷 Phó Ban</span>';
             }
-            if (/truong ban|truong lead|head|lead/.test(t)) {
-                return '<span class="role-tag core">💼 Trưởng Ban</span>';
+            if (/core|truong ban|truong lead|head|lead/.test(t)) {
+                return '<span class="role-tag core">⭐ Trưởng Ban</span>';
             }
-            return '<span class="role-tag core">🎯 Core Member</span>';
+            return '<span class="role-tag member">👥 Thành Viên Ban</span>';
         }
 
         function categorizeDept(dept, title) {
@@ -651,20 +689,30 @@
             const q = normText(searchQuery);
 
             let filtered = allMembers.filter(m => {
-                const matchSearch = !q || normText(m.name).includes(q) || normText(m.title).includes(q) || normText(m.dept).includes(q);
+                const matchSearch = !q || normText(m.name).includes(q) || normText(m.title).includes(q) || normText(m.dept).includes(q) || normText(m.rawRole).includes(q);
                 if (!matchSearch) return false;
+                
                 if (currentFilter === 'ALL') return true;
+                if (currentFilter === 'LEADS_ONLY') return m.isLead;
+                if (currentFilter === 'MEMBERS_ONLY') return !m.isBtc;
                 return categorizeDept(m.dept, m.title) === currentFilter;
             });
 
+            const totalExec = allMembers.filter(m => m.isExecutive).length;
+            const totalLead = allMembers.filter(m => m.isLead).length;
+            const totalMem = allMembers.filter(m => !m.isBtc).length;
+
+            document.getElementById('execCount').textContent = totalExec;
+            document.getElementById('leadCount').textContent = totalLead;
+            document.getElementById('memberCount').textContent = totalMem;
             document.getElementById('totalCount').textContent = allMembers.length;
-            document.getElementById('filterStatus').textContent = `Hiển thị ${filtered.length}/${allMembers.length} thành viên`;
+            document.getElementById('filterStatus').textContent = `Hiển thị ${filtered.length}/${allMembers.length} nhân sự`;
 
             if (!filtered.length) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div style="font-size:3rem;margin-bottom:10px;">🔍</div>
-                        <h3>Không tìm thấy thành viên phù hợp</h3>
+                        <h3>Không tìm thấy nhân sự phù hợp</h3>
                         <p style="margin-top:6px;font-size:0.9rem;">Thử thay đổi từ khóa tìm kiếm hoặc chọn bộ lọc khác.</p>
                     </div>
                 `;
@@ -672,27 +720,29 @@
             }
 
             // Separate executives from general dept members
-            const execs = filtered.filter(m => {
-                const t = normText(m.title + ' ' + m.role + ' ' + m.dept);
-                return /founder|president|chu tich|sang lap|admin|co founder|dong sang lap/.test(t);
-            });
+            const execs = filtered.filter(m => m.isExecutive);
+            const nonExecs = filtered.filter(m => !m.isExecutive);
 
             const deptGroups = {};
-            filtered.forEach(m => {
+            nonExecs.forEach(m => {
                 const d = m.dept || 'Ban Khác';
-                if (!deptGroups[d]) deptGroups[d] = [];
-                deptGroups[d].push(m);
+                if (!deptGroups[d]) deptGroups[d] = { leads: [], members: [] };
+                if (m.isLead) {
+                    deptGroups[d].leads.push(m);
+                } else {
+                    deptGroups[d].members.push(m);
+                }
             });
 
             let html = '';
 
-            // Render Executives first if matching
+            // 1. Render Executives (VIP)
             if (execs.length && (currentFilter === 'ALL' || currentFilter === 'BAN_DIEU_HANH')) {
                 html += `
                     <div class="section-header">
                         <div class="section-title">👑 Ban Điều Hành Cấp Cao</div>
                         <div class="section-line"></div>
-                        <span class="section-badge">${execs.length} Thành viên</span>
+                        <span class="section-badge">${execs.length} Lãnh đạo</span>
                     </div>
                     <div class="exec-grid">
                 `;
@@ -723,22 +773,28 @@
                 html += `</div>`;
             }
 
-            // Render by Department
+            // 2. Render by Department
             Object.keys(deptGroups).forEach(deptName => {
-                const membersInDept = deptGroups[deptName];
+                const group = deptGroups[deptName];
+                const totalInDept = group.leads.length + group.members.length;
+                if (!totalInDept) return;
+
                 html += `
                     <div class="section-header">
-                        <div class="section-title">🏢 ${deptName}</div>
+                        <div class="section-title">🏢 Ban ${deptName.replace(/^ban\s+/i, '')}</div>
                         <div class="section-line"></div>
-                        <span class="section-badge">${membersInDept.length} Thành viên</span>
+                        <span class="section-badge">${totalInDept} Nhân sự (${group.leads.length} Lãnh đạo, ${group.members.length} Thành viên)</span>
                     </div>
                     <div class="member-grid">
                 `;
-                membersInDept.forEach(m => {
+
+                // Render Leads first, then Members
+                const sortedDeptMembers = [...group.leads, ...group.members];
+                sortedDeptMembers.forEach(m => {
                     const initials = getInitials(m.name);
                     const badge = getRoleBadge(m.role, m.title);
                     html += `
-                        <div class="member-card">
+                        <div class="member-card ${m.isLead ? 'is-lead' : ''}">
                             <div class="mem-top">
                                 <div class="mem-avatar">${initials}</div>
                                 <div>
@@ -746,8 +802,8 @@
                                     ${badge}
                                 </div>
                             </div>
-                            <div style="font-size:0.85rem;color:var(--gold-light);font-weight:600;">
-                                ${m.title || 'Core Member'}
+                            <div style="font-size:0.88rem;color:${m.isLead ? 'var(--success)' : 'var(--gold-light)'};font-weight:600;margin-top:2px;">
+                                ${m.title || (m.isLead ? 'Trưởng Ban' : 'Thành viên')}
                             </div>
                             ${m.notes ? `<div style="font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
                             <div class="card-actions" style="margin-top:auto;padding-top:10px;">
@@ -768,89 +824,57 @@
             container.innerHTML = `
                 <div class="loading-state">
                     <div class="spinner"></div>
-                    <p>${force ? 'Đang làm mới dữ liệu từ Google Sheet...' : 'Đang tải danh sách Ban Tổ Chức...'}</p>
+                    <p>${force ? 'Đang làm mới dữ liệu từ Google Sheet...' : 'Đang tải danh sách Ban Tổ Chức & Thành Viên...'}</p>
                 </div>
             `;
 
             try {
-                // Fetch from BTC endpoint or leaderboard
+                // Fetch from BTC endpoint (which contains all 19 members from both tabs)
                 let res = await fetch('/api/ranking/btc-list').catch(() => null);
                 if (res && res.ok) {
                     const data = await res.json();
                     if (data.members && data.members.length) {
                         allMembers = data.members;
+                        executives = data.executives || [];
+                        leads = data.leads || [];
                         renderBtc();
                         return;
                     }
                 }
 
-                // Fallback to leaderboard core tab
+                // Fallback to leaderboard endpoint
                 res = await fetch('/api/ranking/leaderboard').catch(() => null);
                 if (res && res.ok) {
                     const data = await res.json();
-                    if (data.core && data.core.length) {
-                        allMembers = data.core.map(c => ({
-                            name: c.name,
-                            role: 'CORE',
-                            title: c.title || 'Core Member',
-                            dept: c.dept || 'Ban Tổ Chức',
-                            facebook: c.facebook || '',
-                            email: c.email || '',
-                            notes: c.note || ''
-                        }));
+                    if (data.all && data.all.length) {
+                        allMembers = data.all.map(c => {
+                            const isExec = c.role === 'Lãnh đạo' || /founder|president/i.test(c.title || '');
+                            const isLead = !isExec && (c.group === 'core' || /vice|phó|trưởng|head|lead/i.test(c.title || ''));
+                            return {
+                                name: c.name,
+                                role: isExec ? 'FOUNDER' : isLead ? 'CORE' : 'MEMBER',
+                                title: c.title || (isLead ? 'Trưởng Ban' : 'Thành viên'),
+                                dept: c.dept || 'Chung',
+                                facebook: c.facebook || '',
+                                email: c.email || '',
+                                notes: c.note || '',
+                                isExecutive: isExec,
+                                isLead: isLead,
+                                isBtc: isExec || isLead
+                            };
+                        });
                         renderBtc();
                         return;
                     }
                 }
 
-                // Fallback to localStorage ynda_db if present
-                try {
-                    const localRaw = localStorage.getItem('ynda_db');
-                    if (localRaw) {
-                        const db = JSON.parse(localRaw);
-                        const btcUsers = (db.users || []).filter(u => 
-                            u.role === 'admin' || u.role === 'organizer' || u.projectGroup === 'organizer' ||
-                            /core|vice|truong|pho|head|lead|founder|president|chu tich|sang lap|bdh|btc/i.test(u.position || '')
-                        );
-                        if (btcUsers.length > 0) {
-                            allMembers = btcUsers.map(u => ({
-                                name: u.name,
-                                role: u.role === 'admin' ? 'FOUNDER' : 'CORE',
-                                title: u.position || u.leadershipTitle || (u.role === 'admin' ? 'Ban Điều Hành' : 'Core Member'),
-                                dept: u.dept || 'Ban Điều Hành',
-                                facebook: u.facebook || '',
-                                email: u.email || '',
-                                notes: u.notes || '',
-                                isExecutive: u.role === 'admin' || /founder|president/i.test(u.leadershipTitle || '')
-                            }));
-                            renderBtc();
-                            return;
-                        }
-                    }
-                } catch (lsErr) {
-                    console.warn('LocalStorage fallback error:', lsErr);
-                }
-
-                // If all fails, show default team
-                allMembers = [
-                    {
-                        name: 'Ban Tổ Chức · Ý Niệm Điện Ảnh',
-                        role: 'FOUNDER',
-                        title: 'Sáng lập & Điều hành dự án',
-                        dept: 'Ban Điều Hành',
-                        facebook: 'https://facebook.com/yniemdienanh',
-                        email: 'yniemdienanh@gmail.com',
-                        notes: 'Tài khoản chính thức của Ban Tổ Chức Ý Niệm Điện Ảnh',
-                        isExecutive: true
-                    }
-                ];
-                renderBtc();
+                throw new Error('Chưa thể kết nối tới Google Sheet.');
             } catch (err) {
                 console.error('Fetch BTC Error:', err);
                 container.innerHTML = `
                     <div class="empty-state">
                         <div style="font-size:3rem;margin-bottom:12px;">⚠️</div>
-                        <h3>Không thể tải dữ liệu Ban Tổ Chức</h3>
+                        <h3>Không thể tải dữ liệu Ban Tổ Chức & Thành Viên</h3>
                         <p style="margin-top:6px;font-size:0.9rem;">${err.message || 'Vui lòng kiểm tra lại kết nối mạng.'}</p>
                         <button class="refresh-btn" style="margin-top:16px;" onclick="fetchBtcData(true)">🔄 Thử lại</button>
                     </div>

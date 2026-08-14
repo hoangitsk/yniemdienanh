@@ -621,6 +621,44 @@
         let currentFilter = 'ALL';
         let searchQuery = '';
 
+        const KNOWN_DEPTS = {
+            'hoangngminh3@gmail.com': 'Ban Điều Hành',
+            'dongthithanhngaxg@gmail.com': 'Ban Điều Hành',
+            'minhanhbinhduong@gmail.com': 'Ban Điều Hành',
+            'chocopiecuahaanh@gmail.com': 'Ban Nhân Sự',
+            'vivianqnam@gmail.com': 'Ban Nhân Sự',
+            'nga517923@gmail.com': 'Ban Nhân Sự',
+            'quynhgiang101517@gmail.com': 'Ban Truyền Thông',
+            'ngocha2008th@gmail.com': 'Ban Truyền Thông',
+            'phanhongocphung209@gmail.com': 'Ban Truyền Thông',
+            'nganfth30011@gmail.com': 'Ban Truyền Thông',
+            'trucntt8210@gmail.com': 'Ban Truyền Thông',
+            'nguyentranyennhi04062009@gmail.com': 'Ban Media / Hậu Kỳ',
+            'thaomam0305@gmail.com': 'Ban Media / Hậu Kỳ',
+            'binhdinh081206@gmail.com': 'Ban Nội Dung',
+            'nqothao2409@gmail.com': 'Ban Nội Dung',
+            'ninhthaianh31@gmail.com': 'Ban Nội Dung',
+            'ngocdiep200310@gmail.com': 'Ban Duyệt Bài',
+            'lle383668@gmail.com': 'Ban Duyệt Bài',
+            'vuthiyennhi160910@gmail.com': 'Ban Duyệt Bài'
+        };
+
+        const KNOWN_FB = {
+            'hoangngminh3@gmail.com': 'https://www.facebook.com/Harlanitskt',
+            'dongthithanhngaxg@gmail.com': 'https://www.facebook.com/profile.php?id=61580310922568',
+            'minhanhbinhduong@gmail.com': 'https://www.facebook.com/share/1JESFwpoLm/?mibextid=wwXIfr',
+            'chocopiecuahaanh@gmail.com': 'https://www.facebook.com/share/1DEsMBmVFe/?mibextid=wwXIfr',
+            'quynhgiang101517@gmail.com': 'https://www.facebook.com/search/top?q=Qu%E1%BB%B3nhh%20Giang',
+            'ngocha2008th@gmail.com': 'https://www.facebook.com/ngocha.Joli/',
+            'nguyentranyennhi04062009@gmail.com': 'https://www.facebook.com/share/1BTn6csj9C/',
+            'thaomam0305@gmail.com': 'https://www.facebook.com/share/1BhbFe4gRA/?mibextid=wwXIfr',
+            'binhdinh081206@gmail.com': 'https://www.facebook.com/share/14hzEJdYN8s/?mibextid=wwXIfr',
+            'ngocdiep200310@gmail.com': 'https://www.facebook.com/share/14tiYkWeDom/?mibextid=wwXIfr',
+            'nga517923@gmail.com': 'https://www.facebook.com/share/1JdTgBBj3h/?mibextid=wwXIfr',
+            'lle383668@gmail.com': 'https://www.facebook.com/share/1JiPkuNW8i/',
+            'vuthiyennhi160910@gmail.com': 'https://web.facebook.com/profile.php?id=61587711513477'
+        };
+
         function normText(str) {
             return String(str || '')
                 .normalize('NFD')
@@ -628,6 +666,31 @@
                 .replace(/[đĐ]/g, 'd')
                 .toLowerCase()
                 .trim();
+        }
+
+        function resolveDept(m) {
+            const email = String(m.email || '').toLowerCase().trim();
+            if (KNOWN_DEPTS[email]) return KNOWN_DEPTS[email];
+
+            const t = normText((m.dept || '') + ' ' + (m.rawRole || '') + ' ' + (m.title || '') + ' ' + (m.role || '') + ' ' + (m.name || ''));
+            if (/founder|president|chu tich|sang lap|co founder|dong sang lap|ban dieu hanh|bdh|dieu hanh|global|minh hoang|thanh nga|minh anh/.test(t)) return 'Ban Điều Hành';
+            if (/nhan su|hr|anh thu|thao vy|my nga/.test(t)) return 'Ban Nhân Sự';
+            if (/truyen thong|comms|mkt|marketing|pr|quynh giang|ngoc ha|ngoc phung|hoang ngan|thanh truc/.test(t)) return 'Ban Truyền Thông';
+            if (/media|hau ky|san xuat|video|design|thanh thao/.test(t) || (normText(m.name).includes('yen nhi') && (/media/i.test(m.dept || '') || /media/i.test(m.rawRole || '')))) return 'Ban Media / Hậu Kỳ';
+            if (/noi dung|content|huu binh|phuong thao|thai anh|aris/.test(t)) return 'Ban Nội Dung';
+            if (/duyet|kiem duyet|ngoc diep|phuong linh/.test(t) || (normText(m.name).includes('yen nhi') && (/duyet/i.test(m.dept || '') || /duyet/i.test(m.rawRole || '')))) return 'Ban Duyệt Bài';
+            return 'Ban Khác';
+        }
+
+        function resolveFbLink(m) {
+            const email = String(m.email || '').toLowerCase().trim();
+            if (KNOWN_FB[email]) return KNOWN_FB[email];
+
+            const fb = String(m.facebook || '').trim();
+            if (!fb) return '';
+            if (/^https?:\/\//i.test(fb)) return fb;
+            if (/facebook\.com/i.test(fb)) return 'https://' + fb.replace(/^https?:\/\//i, '');
+            return `https://www.facebook.com/search/top?q=${encodeURIComponent(fb || m.name || '')}`;
         }
 
         function getInitials(name) {
@@ -739,6 +802,7 @@
                 execs.forEach(m => {
                     const initials = getInitials(m.name);
                     const badge = getRoleBadge(m.role, m.title);
+                    const fb = resolveFbLink(m);
                     html += `
                         <div class="exec-card">
                             <div class="card-top">
@@ -754,7 +818,7 @@
                                 ${m.notes ? `<div style="margin-top:6px;font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
                             </div>
                             <div class="card-actions">
-                                ${m.facebook ? `<a href="${m.facebook}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
+                                ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
                                 ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
                             </div>
                         </div>
@@ -768,6 +832,7 @@
             const allDeptKeys = Array.from(new Set([...orderedDepts, ...Object.keys(deptGroups)]));
 
             allDeptKeys.forEach(deptName => {
+                if (deptName === 'Ban Khác' && (!deptGroups[deptName] || !deptGroups[deptName].leads.length && !deptGroups[deptName].members.length)) return;
                 const group = deptGroups[deptName];
                 if (!group) return;
                 const totalInDept = group.leads.length + group.members.length;
@@ -787,6 +852,7 @@
                 sortedDeptMembers.forEach(m => {
                     const initials = getInitials(m.name);
                     const badge = getRoleBadge(m.role, m.title);
+                    const fb = resolveFbLink(m);
                     html += `
                         <div class="member-card ${m.isLead ? 'is-lead' : ''}">
                             <div class="mem-top">
@@ -801,7 +867,7 @@
                             </div>
                             ${m.notes ? `<div style="font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
                             <div class="card-actions" style="margin-top:auto;padding-top:10px;">
-                                ${m.facebook ? `<a href="${m.facebook}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
+                                ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
                                 ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
                             </div>
                         </div>
@@ -827,9 +893,16 @@
                 if (res && res.ok) {
                     const data = await res.json();
                     if (data.members && data.members.length) {
-                        allMembers = data.members;
-                        executives = data.executives || [];
-                        leads = data.leads || [];
+                        allMembers = data.members.map(m => {
+                            const canonical = resolveDept(m);
+                            return {
+                                ...m,
+                                dept: canonical,
+                                facebook: resolveFbLink(m)
+                            };
+                        });
+                        executives = allMembers.filter(m => m.isExecutive);
+                        leads = allMembers.filter(m => m.isLead);
                         renderBtc();
                         return;
                     }

@@ -668,11 +668,27 @@
                 .trim();
         }
 
+        const VALID_DEPTS = ['Ban Điều Hành', 'Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
+
         function resolveDept(m) {
+            // 1. Nếu API đã trả về dept chính xác → dùng luôn
+            if (m.dept && VALID_DEPTS.includes(m.dept)) return m.dept;
+
+            // 2. Tra bằng email
             const email = String(m.email || '').toLowerCase().trim();
             if (KNOWN_DEPTS[email]) return KNOWN_DEPTS[email];
 
-            const t = normText((m.dept || '') + ' ' + (m.rawRole || '') + ' ' + (m.title || '') + ' ' + (m.role || '') + ' ' + (m.name || ''));
+            // 3. Tra bằng cột BAN từ sheet (ví dụ: "NHÂN SỰ", "TRUYỀN THÔNG", "MEDIA"...)
+            const banNorm = normText(m.ban || m.dept || '');
+            if (/bdh|dieu hanh|global/.test(banNorm)) return 'Ban Điều Hành';
+            if (/nhan su|hr/.test(banNorm)) return 'Ban Nhân Sự';
+            if (/truyen thong|comms/.test(banNorm)) return 'Ban Truyền Thông';
+            if (/media|hau ky/.test(banNorm)) return 'Ban Media / Hậu Kỳ';
+            if (/noi dung|content/.test(banNorm)) return 'Ban Nội Dung';
+            if (/duyet/.test(banNorm)) return 'Ban Duyệt Bài';
+
+            // 4. Fallback: regex trên rawRole + name
+            const t = normText((m.rawRole || '') + ' ' + (m.title || '') + ' ' + (m.role || '') + ' ' + (m.name || ''));
             if (/founder|president|chu tich|sang lap|co founder|dong sang lap|ban dieu hanh|bdh|dieu hanh|global|minh hoang|thanh nga|minh anh/.test(t)) return 'Ban Điều Hành';
             if (/nhan su|hr|anh thu|thao vy|my nga/.test(t)) return 'Ban Nhân Sự';
             if (/truyen thong|comms|mkt|marketing|pr|quynh giang|ngoc ha|ngoc phung|hoang ngan|thanh truc/.test(t)) return 'Ban Truyền Thông';

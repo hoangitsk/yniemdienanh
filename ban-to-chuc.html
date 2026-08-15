@@ -383,6 +383,46 @@
             color: var(--cyan);
             border: 1px solid rgba(56, 189, 248, 0.4);
         }
+        /* ADVISOR VIP CARD */
+        .advisor-card {
+            background: linear-gradient(145deg, rgba(32, 26, 48, 0.95), rgba(16, 22, 40, 0.9));
+            border: 1.5px solid rgba(245, 158, 11, 0.5);
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 25px rgba(245, 158, 11, 0.12), inset 0 0 25px rgba(245, 158, 11, 0.06);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .advisor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #b45309, #f59e0b, #fef3c7, #f59e0b, #b45309);
+        }
+        .advisor-card:hover {
+            transform: translateY(-4px);
+            border-color: #fbbf24;
+            box-shadow: 0 18px 45px rgba(245, 158, 11, 0.25), 0 0 35px rgba(245, 158, 11, 0.2), inset 0 0 30px rgba(245, 158, 11, 0.1);
+        }
+        .avatar-circle.advisor-avatar {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(20, 15, 35, 0.95));
+            border: 2px solid #f59e0b;
+            color: #fef08a;
+            box-shadow: 0 0 18px rgba(245, 158, 11, 0.35);
+        }
+        .role-tag.advisor {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(180, 83, 9, 0.3));
+            color: #fef08a;
+            border: 1px solid rgba(245, 158, 11, 0.55);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.18);
+        }
         .role-tag.member {
             background: rgba(148, 163, 184, 0.15);
             color: #cbd5e1;
@@ -633,7 +673,7 @@
             'hoangngminh3@gmail.com': 'Ban Điều Hành',
             'dongthithanhngaxg@gmail.com': 'Ban Điều Hành',
             'minhanhbinhduong@gmail.com': 'Ban Điều Hành',
-            'hannahpham283.work@gmail.com': 'Ban Cố Vấn Chuyên Môn',
+            'hannahpham283.work@gmail.com': 'Ban Cố Vấn',
             'chocopiecuahaanh@gmail.com': 'Ban Nhân Sự',
             'vivianqnam@gmail.com': 'Ban Nhân Sự',
             'nga517923@gmail.com': 'Ban Nhân Sự',
@@ -679,19 +719,20 @@
                 .trim();
         }
 
-        const VALID_DEPTS = ['Ban Điều Hành', 'Ban Cố Vấn Chuyên Môn', 'Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
+        const VALID_DEPTS = ['Ban Điều Hành', 'Ban Cố Vấn', 'Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
 
         function resolveDept(m) {
             // 1. Nếu API đã trả về dept chính xác → dùng luôn
             if (m.dept && VALID_DEPTS.includes(m.dept)) return m.dept;
+            if (m.dept && /co van|advisor/i.test(m.dept)) return 'Ban Cố Vấn';
 
             // 2. Tra bằng email
             const email = String(m.email || '').toLowerCase().trim();
             if (KNOWN_DEPTS[email]) return KNOWN_DEPTS[email];
 
-            // 3. Tra bằng cột BAN từ sheet (ví dụ: "CỐ VẤN CHUYÊN MÔN", "NHÂN SỰ", "TRUYỀN THÔNG", "MEDIA"...)
+            // 3. Tra bằng cột BAN từ sheet (ví dụ: "CỐ VẤN", "NHÂN SỰ", "TRUYỀN THÔNG", "MEDIA"...)
             const banNorm = normText(m.ban || m.dept || '');
-            if (/co van|advisor|chuyen mon|tham van/.test(banNorm)) return 'Ban Cố Vấn Chuyên Môn';
+            if (/co van|advisor|chuyen mon|tham van/.test(banNorm)) return 'Ban Cố Vấn';
             if (/bdh|dieu hanh|global/.test(banNorm)) return 'Ban Điều Hành';
             if (/nhan su|hr/.test(banNorm)) return 'Ban Nhân Sự';
             if (/truyen thong|comms/.test(banNorm)) return 'Ban Truyền Thông';
@@ -701,7 +742,7 @@
 
             // 4. Fallback: regex trên rawRole + name
             const t = normText((m.rawRole || '') + ' ' + (m.title || '') + ' ' + (m.role || '') + ' ' + (m.name || ''));
-            if (/co van|advisor|chuyen mon|tham van|to uyen/.test(t)) return 'Ban Cố Vấn Chuyên Môn';
+            if (/co van|advisor|chuyen mon|tham van|to uyen/.test(t)) return 'Ban Cố Vấn';
             if (/founder|president|chu tich|sang lap|co founder|dong sang lap|ban dieu hanh|bdh|dieu hanh|global|minh hoang|thanh nga|minh anh/.test(t)) return 'Ban Điều Hành';
             if (/nhan su|hr|anh thu|thao vy|my nga/.test(t)) return 'Ban Nhân Sự';
             if (/truyen thong|comms|mkt|marketing|pr|quynh giang|ngoc ha|ngoc phung|hoang ngan/.test(t)) return 'Ban Truyền Thông';
@@ -732,7 +773,7 @@
         function getRoleBadge(role, title) {
             const t = normText((title || '') + ' ' + (role || ''));
             if (/co van|advisor|tham van|chuyen mon/.test(t)) {
-                return '<span class="role-tag advisor" style="background:rgba(228,184,102,0.18);color:#f59e0b;border:1px solid rgba(245,158,11,0.35);font-weight:700;">🎓 Cố Vấn Chuyên Môn</span>';
+                return '<span class="role-tag advisor">🎓 Cố Vấn Chuyên Môn</span>';
             }
             if (/co founder|dong sang lap/.test(t)) {
                 return '<span class="role-tag admin">🤝 Đồng Sáng Lập</span>';
@@ -860,7 +901,7 @@
             }
 
             // 2. Render each Department (Trưởng Ban on top + Thành Viên below)
-            const orderedDepts = ['Ban Cố Vấn Chuyên Môn', 'Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
+            const orderedDepts = ['Ban Cố Vấn', 'Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
             const allDeptKeys = Array.from(new Set([...orderedDepts, ...Object.keys(deptGroups)]));
 
             allDeptKeys.forEach(deptName => {
@@ -869,6 +910,47 @@
                 if (!group) return;
                 const totalInDept = group.leads.length + group.members.length;
                 if (!totalInDept) return;
+
+                const isAdvisorDept = deptName === 'Ban Cố Vấn' || deptName === 'Ban Cố Vấn Chuyên Môn';
+
+                if (isAdvisorDept) {
+                    html += `
+                        <div class="section-header">
+                            <div class="section-title" style="color:#fbbf24">🎓 Ban Cố Vấn</div>
+                            <div class="section-line" style="background:linear-gradient(90deg, rgba(245,158,11,0.5), transparent)"></div>
+                            <span class="section-badge" style="background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);color:#fef08a">${totalInDept} Cố Vấn Cấp Cao</span>
+                        </div>
+                        <div class="exec-grid" style="margin-bottom:30px;">
+                    `;
+                    const allAdvisors = [...group.leads, ...group.members];
+                    allAdvisors.forEach(m => {
+                        const initials = getInitials(m.name);
+                        const badge = getRoleBadge(m.role, m.title);
+                        const fb = resolveFbLink(m);
+                        html += `
+                            <div class="advisor-card">
+                                <div class="card-top">
+                                    <div class="avatar-circle advisor-avatar">${initials}</div>
+                                    <div class="exec-info">
+                                        <h3 style="color:#fff;font-size:1.25rem;">${m.name}</h3>
+                                        ${badge}
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="card-dept" style="color:#f59e0b">🎓 Ban Cố Vấn</div>
+                                    <div style="margin-top:4px;color:#fef08a;font-weight:700;font-size:0.95rem;">${m.title || 'Cố vấn chuyên môn'}</div>
+                                    ${m.notes ? `<div style="margin-top:6px;font-size:0.82rem;color:var(--muted);">${m.notes}</div>` : ''}
+                                </div>
+                                <div class="card-actions">
+                                    ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
+                                    ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                    return;
+                }
 
                 html += `
                     <div class="section-header">

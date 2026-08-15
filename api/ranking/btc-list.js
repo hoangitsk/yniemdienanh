@@ -21,6 +21,7 @@ function canonicalDept(dept, rawRole, role, name) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').trim();
   
   if (d) {
+    if (/co van|advisor|tham van|chuyen mon/.test(d)) return 'Ban Cố Vấn';
     if (/media|hau ky|video|design|edit|san xuat/.test(d)) return 'Ban Media / Hậu Kỳ';
     if (/truyen thong|comms|pr|mkt|marketing/.test(d)) return 'Ban Truyền Thông';
     if (/noi dung|content/.test(d)) return 'Ban Nội Dung';
@@ -32,6 +33,7 @@ function canonicalDept(dept, rawRole, role, name) {
   const r = (String(rawRole || '') + ' ' + String(role || '')).toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').trim();
   if (r && !/^(member|thanh vien|ctv)$/.test(r)) {
+    if (/co van|advisor|tham van|chuyen mon/.test(r)) return 'Ban Cố Vấn';
     if (/media|hau ky|video|design|edit|san xuat/.test(r)) return 'Ban Media / Hậu Kỳ';
     if (/truyen thong|comms|pr|mkt|marketing/.test(r)) return 'Ban Truyền Thông';
     if (/noi dung|content/.test(r)) return 'Ban Nội Dung';
@@ -44,6 +46,7 @@ function canonicalDept(dept, rawRole, role, name) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').trim();
   if (n) {
     if (/minh hoang|thanh nga|minh anh/.test(n)) return 'Ban Điều Hành';
+    if (/to uyen/.test(n)) return 'Ban Cố Vấn';
     if (/thanh thao|thanh truc/.test(n)) return 'Ban Media / Hậu Kỳ';
     if (/anh thu|thao vy|my nga/.test(n)) return 'Ban Nhân Sự';
     if (/quynh giang|ngoc ha|ngoc phung|hoang ngan/.test(n)) return 'Ban Truyền Thông';

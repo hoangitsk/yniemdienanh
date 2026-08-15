@@ -893,7 +893,78 @@
     ['Nhập vai trò khác...', 'Enter another role...'],
     ['Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?', 'What do you love about cinema? How would you like to join the project?'],
     ['Tên trường học của bạn', 'Your school name'],
-    ['Giới thiệu bản thân...', 'Introduce yourself...']
+    ['Giới thiệu bản thân...', 'Introduce yourself...'],
+    // ============ FAQ (Trang chủ) ============
+    ['💬 Câu Hỏi Thường Gặp (FAQ)', '💬 Frequently Asked Questions (FAQ)'],
+    ['Giải đáp thắc mắc về hoạt động, phí tham gia và quyền lợi thành viên.', 'Answers to questions about activities, participation fees and member benefits.'],
+    ['1. Ý Niệm Điện Ảnh (YNĐA) là gì?', '1. What is Ý Niệm Điện Ảnh (YNĐA)?'],
+    ['2. Dự án có thu phí không? Phí tham gia được dùng làm gì?', '2. Does the project charge fees? What is the participation fee used for?'],
+    ['3. Quyền lợi khi nhận Chứng nhận (Certificate) của YNĐA?', '3. What benefits come with receiving a YNĐA Certificate?'],
+    ['Ý Niệm Điện Ảnh (YNĐA) là một dự án cộng đồng sáng tạo và hệ sinh thái học tập kéo dài 6 tháng dành cho học sinh, sinh viên yêu thích điện ảnh, nhiếp ảnh và phê bình nghệ thuật tại Việt Nam. Dự án tạo sân chơi công bằng để các bạn kể câu chuyện của mình qua lăng kính máy ảnh và những thước phim.', 'Ý Niệm Điện Ảnh (YNĐA) is a creative community project and a 6-month learning ecosystem for Vietnamese students who love cinema, photography and art criticism. The project creates a fair playground for you to tell your own stories through the camera lens and your films.'],
+    ['Dự án cam kết minh bạch tài chính. Các sự kiện cơ bản và nộp bài dự thi thông thường đều miễn phí. Một số hoạt động đặc biệt hoặc đăng ký đội thi có thể có mức phí nhỏ (từ 5.000đ đến 20.000đ). Phí tham gia được tái đầu tư vào hoạt động của sự kiện, bao gồm giải thưởng, chứng nhận và chi phí vận hành theo kế hoạch công khai.', 'The project is committed to financial transparency. Basic events and regular contest submissions are free. Some special activities or team registration may carry a small fee (from 5,000đ to 20,000đ). Participation fees are reinvested into event activities, including prizes, certificates and operating costs under a public plan.'],
+    ['Người tham gia hoàn thành các workshop chuyên đề hoặc nộp bài dự thi hợp lệ sẽ nhận được Chứng nhận tham gia (Certificate). Mỗi chứng chỉ cấp ra đều đi kèm mã số độc bản (Unique Certificate ID) giúp các bạn dễ dàng tra cứu, xác thực năng lực trực tiếp trên hệ thống Website công khai của dự án để làm đẹp hồ sơ cá nhân.', 'Participants who complete themed workshops or submit valid entries will receive a Certificate of Participation. Every certificate issued comes with a unique Certificate ID so you can easily look it up and verify your achievement directly on the project\u2019s public website to strengthen your personal profile.'],
+    // ============ Footer (Trang chủ) ============
+    ['Chính sách bảo mật', 'Privacy Policy'],
+    ['Điều khoản dịch vụ', 'Terms of Service'],
+    ['Tra cứu chứng nhận', 'Verify a Certificate'],
+    ['Ý Niệm Điện Ảnh là dự án cộng đồng dành cho thế hệ trẻ. "Ghi lại những khoảnh khắc trước khi chúng trở thành ký ức." ✨', 'Ý Niệm Điện Ảnh is a community project for the younger generation. "Capturing moments before they become memories." ✨'],
+    ['Phí tham gia được tái đầu tư vào hoạt động của sự kiện, bao gồm giải thưởng, chứng nhận và chi phí vận hành theo kế hoạch công khai.', 'Participation fees are reinvested into event activities, including prizes, certificates and operating costs under a public plan.'],
+    // ============ Auth / Navbar (login/logout) ============
+    ['Hồ sơ', 'Profile'],
+    ['🔐 Khu vực nội bộ', '🔐 Private Area'],
+    ['Thoát', 'Log Out'],
+    // ============ Minh bạch tài chính (finance transparency) ============
+    ['📊 MINH BẠCH TÀI CHÍNH', '📊 FINANCIAL TRANSPARENCY'],
+    ['🏆 Quỹ giải thưởng', '🏆 Prize Fund'],
+    ['⚙️ Quỹ vận hành', '⚙️ Operating Fund'],
+    ['💖 Đóng góp chung', '💖 General Contribution'],
+    ['Mỗi khoản đóng góp được ghi nhận theo đúng mục đích mà người đóng góp lựa chọn.', 'Every contribution is recorded to the exact purpose chosen by the donor.'],
+    ['☕ Bạn muốn đồng hành cùng chúng tôi?', '☕ Want to support us?'],
+    ['Đồng hành & Ủng hộ dự án', 'Support & Partner with the Project'],
+    // ============ Donate modal ============
+    ['💖 ĐỒNG HÀNH CÙNG YNĐA', '💖 SUPPORT YNĐA'],
+    ['Ý Niệm Điện Ảnh là một dự án cộng đồng và không bắt buộc người tham gia đóng phí. Mọi đóng góp đều hoàn toàn tự nguyện và được sử dụng theo mục đích mà bạn lựa chọn.', 'Ý Niệm Điện Ảnh is a community project and participants are never required to pay fees. All contributions are completely voluntary and used for the purpose you choose.'],
+    ['Bạn muốn đóng góp cho:', 'What would you like to contribute to:'],
+    ['Khoản đóng góp được đưa trực tiếp vào Quỹ giải thưởng, dành cho các thí sinh và thành viên có thành tích nổi bật.', 'Your contribution goes directly into the Prize Fund, for contestants and members with outstanding achievements.'],
+    ['⚙️ Vận hành dự án', '⚙️ Operating the Project'],
+    ['Hỗ trợ chi phí duy trì website, máy chủ, công cụ, workshop và các chi phí cần thiết để YNĐA tiếp tục hoạt động.', 'Supports the cost of maintaining the website, servers, tools, workshops and the expenses needed to keep YNĐA running.'],
+    ['💖 Tùy BTC phân bổ', '💖 At BTC\u2019s Discretion'],
+    ['Cho phép BTC chủ động sử dụng khoản đóng góp cho nhu cầu phù hợp của dự án.', 'Allows the organizing committee to use your contribution for the project\u2019s needs as they see fit.'],
+    ['🤝 TÀI TRỢ DỰ ÁN', '🤝 PROJECT SPONSORSHIP'],
+    ['Dành cho cá nhân, tổ chức, thương hiệu muốn đồng hành ở quy mô lớn hơn.', 'For individuals, organizations and brands that want to partner on a larger scale.'],
+    ['🥉 BẠC — 500.000đ', '🥉 SILVER — 500,000đ'],
+    ['🥇 VÀNG — 1.000.000đ', '🥇 GOLD — 1,000,000đ'],
+    ['💎 BẠCH KIM — 2.000.000đ', '💎 PLATINUM — 2,000,000đ'],
+    ['👑 KIM CƯƠNG — 3.000.000đ', '👑 DIAMOND — 3,000,000đ'],
+    ['✨ TÀI TRỢ ĐẶC BIỆT — Trên 3.000.000đ', '✨ SPECIAL SPONSORSHIP — Above 3,000,000đ'],
+    ['BTC sẽ liên hệ trực tiếp để trao đổi về hình thức hỗ trợ và quyền lợi phù hợp.', 'The organizing committee will contact you directly to discuss the support format and suitable benefits.'],
+    ['📧 Liên hệ BTC', '📧 Contact BTC'],
+    ['← Quay lại', '← Go Back'],
+    ['Bước 2: Số tiền đóng góp', 'Step 2: Contribution Amount'],
+    ['Mục đích:', 'Purpose:'],
+    ['Số tiền tài trợ:', 'Sponsorship Amount:'],
+    ['Quyền lợi', 'Benefits'],
+    ['Tài trợ', 'Sponsor'],
+    ['🥉 BẠC', '🥉 SILVER'],
+    ['🥇 VÀNG', '🥇 GOLD'],
+    ['💎 BẠCH KIM', '💎 PLATINUM'],
+    ['👑 KIM CƯƠNG', '👑 DIAMOND'],
+    ['Vinh danh trên Website', 'Honored on the Website'],
+    ['Ghi tên/nickname trên Bảng vàng', 'Name/nickname on the Hall of Fame'],
+    ['Thư/giấy tri ân nhà tài trợ', 'Sponsor thank-you letter'],
+    ['Tất cả quyền lợi Bạc', 'All Silver benefits'],
+    ['Logo/tên hiển thị nổi bật trên Website', 'Prominent logo/name display on the Website'],
+    ['Vinh danh trong nội dung tri ân', 'Honored in thank-you content'],
+    ['Tất cả quyền lợi Vàng', 'All Gold benefits'],
+    ['Logo/tên trên Banner Nhà đồng hành', 'Logo/name on the Partner Banner'],
+    ['Vị trí hiển thị nổi bật hơn', 'More prominent display position'],
+    ['Vinh danh trong tổng kết mùa', 'Honored in the season wrap-up'],
+    ['Tất cả quyền lợi Bạch kim', 'All Platinum benefits'],
+    ['Vị trí nổi bật trên Banner Nhà đồng hành', 'Prominent spot on the Partner Banner'],
+    ['Tên/nickname/logo/avatar theo lựa chọn', 'Name/nickname/logo/avatar of your choice'],
+    ['Vinh danh nổi bật trong tổng kết', 'Prominently honored in the wrap-up'],
+    ['Thư/giấy tri ân đặc biệt', 'Special thank-you letter'],
+    ['🤝 Tài trợ dự án', '🤝 Sponsor the Project']
   ];
 
   // ---------------------------------------------------------------------------
@@ -1304,6 +1375,10 @@ function translateTextNodes() {
       // Debounce: batch translate after mutations settle
       if (_mutationTimer) clearTimeout(_mutationTimer);
       _mutationTimer = setTimeout(() => {
+        // Re-inject the switcher if a nav re-render (e.g. login/logout) wiped it.
+        // Guarded internally so it never duplicates.
+        injectGlobalLangSwitchers();
+
         mutations.forEach(mutation => {
           mutation.addedNodes.forEach(node => {
             if (node.nodeType === 1) {

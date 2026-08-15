@@ -567,12 +567,22 @@
             background: rgba(56, 189, 248, 0.2);
             box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
         }
-        .member-card.is-advisor .mem-avatar {
-            border-color: #f59e0b;
-            color: #fef08a;
-            background: rgba(245, 158, 11, 0.2);
-            box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+        .member-card.is-exec {
+            border: 1.5px solid rgba(228, 184, 102, 0.5);
+            background: linear-gradient(145deg, rgba(28, 24, 16, 0.88), rgba(14, 12, 8, 0.82));
+            box-shadow: 0 6px 20px rgba(228, 184, 102, 0.1);
         }
+        .member-card.is-exec:hover {
+            border-color: var(--gold);
+            box-shadow: 0 12px 30px rgba(228, 184, 102, 0.2);
+        }
+        .member-card.is-exec .mem-avatar {
+            border-color: var(--gold);
+            color: var(--gold-light);
+            background: rgba(228, 184, 102, 0.2);
+            box-shadow: 0 0 12px rgba(228, 184, 102, 0.25);
+        }
+
         .mem-name {
             font-weight: 700;
             font-size: 1.02rem;
@@ -905,35 +915,34 @@
 
             let html = '';
 
-            // 1. Render Executives (VIP)
+            // 1. Render Ban Điều Hành
             if (execs.length && (currentFilter === 'ALL' || currentFilter === 'Ban Điều Hành')) {
                 html += `
                     <div class="section-header">
-                        <div class="section-title">👑 Ban Điều Hành Cấp Cao</div>
+                        <div class="section-title">👑 Ban Điều Hành</div>
                         <div class="section-line"></div>
                         <span class="section-badge">${execs.length} Lãnh đạo</span>
                     </div>
-                    <div class="exec-grid">
+                    <div class="member-grid">
                 `;
                 execs.forEach(m => {
                     const initials = getInitials(m.name);
                     const badge = getRoleBadge(m.role, m.title);
                     const fb = resolveFbLink(m);
                     html += `
-                        <div class="exec-card">
-                            <div class="card-top">
-                                <div class="avatar-circle">${initials}</div>
-                                <div class="exec-info">
-                                    <h3>${m.name}</h3>
+                        <div class="member-card is-exec">
+                            <div class="mem-top">
+                                <div class="mem-avatar">${initials}</div>
+                                <div>
+                                    <div class="mem-name">${m.name}</div>
                                     ${badge}
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <div class="card-dept">🏢 ${m.dept || 'Ban Điều Hành'}</div>
-                                <div style="margin-top:4px;color:var(--text);font-weight:600;">${m.title || 'Lãnh đạo dự án'}</div>
-                                ${m.notes ? `<div style="margin-top:6px;font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
+                            <div style="font-size:0.88rem;color:var(--gold-light);font-weight:700;margin-top:2px;">
+                                ${m.title || 'Lãnh đạo dự án'}
                             </div>
-                            <div class="card-actions">
+                            ${m.notes ? `<div style="font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
+                            <div class="card-actions" style="margin-top:auto;padding-top:10px;">
                                 ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
                                 ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
                             </div>

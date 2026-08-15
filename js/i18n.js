@@ -964,7 +964,57 @@
     ['Tên/nickname/logo/avatar theo lựa chọn', 'Name/nickname/logo/avatar of your choice'],
     ['Vinh danh nổi bật trong tổng kết', 'Prominently honored in the wrap-up'],
     ['Thư/giấy tri ân đặc biệt', 'Special thank-you letter'],
-    ['🤝 Tài trợ dự án', '🤝 Sponsor the Project']
+    ['🤝 Tài trợ dự án', '🤝 Sponsor the Project'],
+    // ============ Dashboard sidebar (TABS) ============
+    ['Hồ sơ của tôi', 'My Profile'],
+    ['Thay frame', 'Change Frame'],
+    ['Quản lý sự kiện', 'Manage Events'],
+    ['Đơn tuyển & Nhân sự', 'Applications & Staff'],
+    ['Bảng Thông báo', 'Announcements'],
+    ['Sổ tay Tài chính', 'Finance Ledger'],
+    ['Giao dịch & Quỹ', 'Transactions & Funds'],
+    ['Feedback & Báo lỗi', 'Feedback & Bug Reports'],
+    ['Thư viện Tài liệu', 'Document Library'],
+    ['Quản lý Bài dự thi', 'Manage Submissions'],
+    ['Quản lý tài khoản', 'Account Management'],
+    ['📧 Gửi email', '📧 Send Email'],
+    ['📧 Gửi email hàng loạt', '📧 Send Bulk Emails'],
+    ['📨 Gửi email hàng loạt', '📨 Send Bulk Emails'],
+    ['📝 Chấm điểm & đánh giá', '📝 Scoring & Review'],
+    ['Chấm điểm & đánh giá', 'Scoring & Review'],
+    ['Bảng xếp hạng', 'Leaderboard'],
+    ['Khu vực nội bộ', 'Private Area'],
+    // ============ Dashboard overview stats ============
+    ['📊 Tổng quan vận hành', '📊 Operations Overview'],
+    // ============ Voting portal config (dashboard) ============
+    ['⏰ Cấu hình cổng bình chọn', '⏰ Voting Portal Settings'],
+    ['💾 Lưu cấu hình', '💾 Save Settings'],
+    // ============ Dashboard admin / data panel ============
+    ['🗄️ Quan tri du lieu', '🗄️ Data Management'],
+    ['📤 Xuat tat ca du lieu (JSON)', '📤 Export All Data (JSON)'],
+    ['📤 Xuat nguoi dung (CSV)', '📤 Export Users (CSV)'],
+    ['📤 Xuat su kien (CSV)', '📤 Export Events (CSV)'],
+    ['📤 Xuat cong viec (CSV)', '📤 Export Tasks (CSV)'],
+    ['📥 Nhap du lieu tu file', '📥 Import Data from File'],
+    ['🔧 Bat bao tri', '🔧 Enable Maintenance'],
+    ['🔓 Tat bao tri', '🔓 Disable Maintenance'],
+    ['⚠️ Cleanup role sai', '⚠️ Cleanup invalid roles'],
+    // ============ Internal announcements ============
+    ['📢 Bảng tin nội bộ mới nhất', '📢 Latest Internal Announcements'],
+    ['Bảng tin nội bộ mới nhất', 'Latest Internal Announcements'],
+    ['Chưa có thông báo nào.', 'No announcements yet.'],
+    // ============ Feedback FAB ============
+    ['Góp ý / báo lỗi', 'Feedback / Report Bug'],
+    ['Góp ý và báo lỗi', 'Feedback and bug reports'],
+    // ============ Rules: Fair Device Classification ============
+    ['Hạng mục Ống Kính Di Động (Mobile):', 'Mobile Lens Category:'],
+    ['Hạng mục Ống Kính Điện Ảnh (Camera):', 'Camera Lens Category:'],
+    ['Dành riêng cho phim quay bằng điện thoại, độ phân giải tối thiểu 1080p. Khuyến khích sự sáng tạo không giới hạn thiết bị.', 'Exclusively for films shot on phones, minimum 1080p resolution. Creativity is encouraged without device limits.'],
+    ['Dành cho máy ảnh, máy quay chuyên dụng (Mirrorless, DSLR...). Yêu cầu kỹ thuật tối thiểu 1080p, khuyến khích 4K.', 'For cameras and dedicated camcorders (Mirrorless, DSLR...). Minimum 1080p requirement, 4K encouraged.'],
+    ['Thời lượng tác phẩm:', 'Film Duration:'],
+    ['Từ 3 đến 7 phút (tính cả credit đầu/cuối), nộp bài qua liên kết Drive hoặc Youtube ẩn.', '3 to 7 minutes (including opening/closing credits), submitted via a Drive link or unlisted YouTube.'],
+    ['Điểm đánh giá các tác phẩm dự thi được quyết định 100% bằng lượt **Bình chọn trực tuyến** từ cộng đồng.', 'Contest entries are scored 100% by **Online Voting** from the community.'],
+    ['Để đảm bảo tính công bằng tối đa và tránh gian lận vote, hệ thống tích hợp công nghệ quét địa chỉ IP và mã thiết bị đặc biệt. Mỗi địa chỉ IP hoặc thiết bị chỉ được bình chọn 1 lần duy nhất cho mỗi tác phẩm.', 'To ensure maximum fairness and prevent vote fraud, the system integrates IP address and device fingerprint scanning. Each IP address or device may vote only once per entry.']
   ];
 
   // ---------------------------------------------------------------------------

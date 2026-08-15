@@ -293,15 +293,42 @@
             return src;
         }
 
+        function canonicalDeptName(dept, title, role, name) {
+            const t = (String(dept || '') + ' ' + String(title || '') + ' ' + String(role || '') + ' ' + String(name || '')).toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').replace(/[_-]/g, ' ');
+            
+            if (/founder|president|chu tich|sang lap|co founder|dong sang lap|ban dieu hanh|bdh|dieu hanh|global/.test(t) ||
+                /minh hoang|thanh nga|minh anh/.test(t)) {
+                return 'Ban Điều Hành';
+            }
+            if (/nhan su|hr|anh thu|thao vy|my nga/.test(t)) return 'Ban Nhân Sự';
+            if (/truyen thong|comms|mkt|marketing|pr|quynh giang|ngoc ha|ngoc phung|hoang ngan|thanh truc/.test(t)) return 'Ban Truyền Thông';
+            if (/media|hau ky|san xuat|video|design|thanh thao/.test(t) || (name && name.includes('Yến Nhi') && (!dept || /media/i.test(dept) || /media/i.test(title)))) return 'Ban Media';
+            if (/noi dung|content|huu binh|phuong thao|thai anh|aris/.test(t)) return 'Ban Nội Dung';
+            if (/duyet|kiem duyet|ngoc diep|phuong linh/.test(t) || (name && name.includes('Yến Nhi') && (!dept || /duyet/i.test(dept) || /duyet/i.test(title)))) return 'Ban Duyệt Bài';
+            
+            if (dept) {
+                const d = String(dept).trim();
+                if (/duyet/i.test(d)) return 'Ban Duyệt Bài';
+                if (/noi.*dung/i.test(d)) return 'Ban Nội Dung';
+                if (/truyen.*thong/i.test(d)) return 'Ban Truyền Thông';
+                if (/media/i.test(d)) return 'Ban Media';
+                if (/nhan.*su/i.test(d)) return 'Ban Nhân Sự';
+            }
+            return dept ? String(dept).trim() : 'Ban Khác';
+        }
+
         function populateBans(data) {
             const sel = document.getElementById('banPicker');
             if (!sel) return;
             const members = allMembers(data);
             const banSet = {};
             members.forEach(function(m) {
-                const d = String(m.dept || '').trim().toUpperCase();
-                if (d) banSet[d] = true;
+                const d = canonicalDeptName(m.dept, m.title, m.role, m.name);
+                if (d && d !== 'Ban Khác') banSet[d] = true;
             });
+            const defaultBans = ['Ban Duyệt Bài', 'Ban Media', 'Ban Nhân Sự', 'Ban Nội Dung', 'Ban Truyền Thông'];
+            defaultBans.forEach(function(b) { banSet[b] = true; });
             const bans = Object.keys(banSet).sort(function(a, b) { return a.localeCompare(b, 'vi'); });
             sel.innerHTML = '<option value="">Tất cả các Ban</option>' +
                 bans.map(function(b) {
@@ -312,7 +339,7 @@
         }
 
         function applyBan(ban) {
-            currentBan = ban ? String(ban).trim().toUpperCase() : '';
+            currentBan = ban ? String(ban).trim() : '';
             const clearBtn = document.getElementById('clearBanBtn');
             if (clearBtn) clearBtn.style.display = currentBan ? 'inline-block' : 'none';
             if (cached) render(cached);
@@ -347,10 +374,11 @@
             if (!top.length) return '';
             return '<div class="podium">' + top.map(function(item) {
                 const cls = item.rank === 1 ? 'p1' : item.rank === 2 ? 'p2' : 'p3';
+                const deptDisplay = canonicalDeptName(item.dept, item.title, item.role, item.name);
                 return '<div class="pod-card ' + cls + '">' +
                     '<div class="medal">' + medalFor(item.rank) + '</div>' +
                     '<div class="pod-name">' + esc(item.name) + '</div>' +
-                    '<div class="pod-dept">' + esc(item.dept || '—') + (item.role ? ' · ' + esc(item.role) : '') + '</div>' +
+                    '<div class="pod-dept">' + esc(deptDisplay || '—') + (item.role ? ' · ' + esc(item.role) : '') + '</div>' +
                     '<div class="pod-points">' + item.totalPoints + ' XP</div>' +
                     '</div>';
             }).join('') + '</div>';
@@ -369,10 +397,11 @@
                     if (currentGroup === 'all') metaParts.push(item.group === 'core' ? '⭐ BTC' : '👥 Thành viên');
                     if (item.pointEntries) metaParts.push(item.pointEntries + ' lần cộng điểm');
                     if (item.reasons && item.reasons.length) metaParts.push(item.reasons.join(', '));
+                    const deptDisplay = canonicalDeptName(item.dept, item.title, item.role, item.name);
                     return '<div class="row">' +
                         '<div class="rank-no">' + medalFor(item.rank) + ' ' + item.rank + '</div>' +
                         '<div class="member-info"><div class="name">' + esc(item.name) + '</div><div class="meta">' + esc(metaParts.join(' · ')) + '</div></div>' +
-                        '<div class="dept-cell">' + esc(item.dept || '—') + '</div>' +
+                        '<div class="dept-cell">' + esc(deptDisplay || '—') + '</div>' +
                         '<div class="points-cell">' + item.totalPoints + ' XP</div>' +
                         '</div>';
                 }).join('') + '</div>';
@@ -384,24 +413,45 @@
                 return '<div class="empty"><div class="icon">🏅</div><div>Chưa có dữ liệu thành viên.</div></div>';
             }
 
+            // 5 Ban chuyên môn chính thức của Ý Niệm Điện Ảnh
+            const OFFICIAL_5_BANS = [
+                'Ban Duyệt Bài',
+                'Ban Nội Dung',
+                'Ban Truyền Thông',
+                'Ban Media',
+                'Ban Nhân Sự'
+            ];
+
             const banMap = {};
+            OFFICIAL_5_BANS.forEach(function(bName) {
+                banMap[bName] = { name: bName, members: [] };
+            });
+
             members.forEach(function(m) {
-                const d = String(m.dept || '').trim();
-                if (!d) return;
-                const key = d.toUpperCase();
-                if (!banMap[key]) banMap[key] = { name: d, members: [] };
-                banMap[key].members.push(m);
+                const cDept = canonicalDeptName(m.dept, m.title, m.role, m.name);
+                if (banMap[cDept]) {
+                    banMap[cDept].members.push(m);
+                }
+            });
+
+            // Sắp xếp 5 ban theo số điểm của Top 1 cao nhất
+            const sortedBans = OFFICIAL_5_BANS.slice().sort(function(a, b) {
+                const topA = banMap[a].members.slice().sort(function(x, y) { return y.totalPoints - x.totalPoints; })[0];
+                const topB = banMap[b].members.slice().sort(function(x, y) { return y.totalPoints - x.totalPoints; })[0];
+                const ptsA = topA ? topA.totalPoints : -1;
+                const ptsB = topB ? topB.totalPoints : -1;
+                return ptsB - ptsA;
             });
 
             const cards = [];
-            Object.keys(banMap).sort(function(a, b) {
-                const pa = banMap[a].members.slice().sort(function(x, y) { return y.totalPoints - x.totalPoints; });
-                const pb = banMap[b].members.slice().sort(function(x, y) { return y.totalPoints - x.totalPoints; });
-                return (pb[0] ? pb[0].totalPoints : 0) - (pa[0] ? pa[0].totalPoints : 0) || a.localeCompare(b, 'vi');
-            }).forEach(function(key, idx) {
-                const ban = banMap[key];
-                const top = ban.members.slice().sort(function(x, y) { return y.totalPoints - x.totalPoints || x.name.localeCompare(y.name, 'vi'); })[0];
+            sortedBans.forEach(function(bName, idx) {
+                const ban = banMap[bName];
+                const sortedMembers = ban.members.slice().sort(function(x, y) {
+                    return y.totalPoints - x.totalPoints || x.name.localeCompare(y.name, 'vi');
+                });
+                const top = sortedMembers[0];
                 if (!top) return;
+
                 const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '';
                 cards.push(
                     '<div class="ban-card">' +
@@ -415,7 +465,7 @@
             });
 
             if (!cards.length) {
-                return '<div class="empty"><div class="icon">🏅</div><div>Chưa có Ban nào được gán cho thành viên.</div></div>';
+                return '<div class="empty"><div class="icon">🏅</div><div>Chưa có dữ liệu cho 5 Ban chuyên môn.</div></div>';
             }
             return '<div class="ban-grid">' + cards.join('') + '</div>';
         }
@@ -423,7 +473,8 @@
         function appliesBan(list) {
             if (!currentBan) return list;
             return list.filter(function(m) {
-                return String(m.dept || '').trim().toUpperCase() === currentBan;
+                const c = canonicalDeptName(m.dept, m.title, m.role, m.name);
+                return c.toLowerCase() === currentBan.toLowerCase();
             });
         }
 

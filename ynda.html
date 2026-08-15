@@ -649,13 +649,6 @@
     <button class="nav" data-page="role-review"><span class="ico">⚑</span>Đánh giá vai trò tuần</button>
     <button class="nav" data-page="tools"><span class="ico">⚡</span>Tương tác & Thưởng</button>
 
-    <div class="nav-label">Cổng thông tin dự án</div>
-    <a href="/" class="nav"><span class="ico">🏠</span>Trang chủ chính</a>
-    <a href="/bang-xep-hang" class="nav"><span class="ico">🏆</span>Bảng Xếp Hạng</a>
-    <a href="/ban-to-chuc" class="nav"><span class="ico">💼</span>Ban Tổ Chức</a>
-    <a href="/cham-diem" class="nav"><span class="ico">📝</span>Chấm Điểm &amp; Đánh Giá</a>
-    <a href="/schedule" class="nav"><span class="ico">📅</span>Lịch &amp; Ca Trực</a>
-    <a href="/vinh-danh" class="nav"><span class="ico">🎖️</span>Khu Vinh Danh</a>
 
     <div class="user-card" id="userCard">
       <div class="avatar" id="userAvatar">?</div>
@@ -1501,11 +1494,11 @@ async function loadLeaderboard() {
           monthly: (legacy.monthly && legacy.monthly.all) ? legacy.monthly.all : (legacy.all || []),
           periodMonth: legacy.currentMonth || '',
           byDept: {
-            TRUYEN_THONG: (legacy.all || []).filter(x => /truyền thông/i.test(x.dept || '')),
-            MEDIA: (legacy.all || []).filter(x => /media/i.test(x.dept || '')),
-            NOI_DUNG: (legacy.all || []).filter(x => /nội dung/i.test(x.dept || '')),
-            NHAN_SU: (legacy.all || []).filter(x => /nhân sự/i.test(x.dept || '')),
-            DUYET_BAI: (legacy.all || []).filter(x => /duyệt bài/i.test(x.dept || ''))
+            TRUYEN_THONG: (legacy.all || []).filter(x => /truy[eề]n\s*th[oô]ng|truyen_thong/i.test(x.dept || '')),
+            MEDIA: (legacy.all || []).filter(x => /media|h[aậ]u\s*k[yỳ]/i.test(x.dept || '')),
+            NOI_DUNG: (legacy.all || []).filter(x => /n[oộ]i\s*dung|noi_dung|content/i.test(x.dept || '')),
+            NHAN_SU: (legacy.all || []).filter(x => /nh[aâ]n\s*s[uự]|nhan_su|hr/i.test(x.dept || '')),
+            DUYET_BAI: (legacy.all || []).filter(x => /duy[eệ]t/i.test(x.dept || ''))
           }
         };
       }

@@ -56,9 +56,10 @@ async function readMembers(sid) {
     const roleUpper = String(m.role || '').toUpperCase();
     const isExec = roleUpper === 'FOUNDER' || roleUpper === 'PRESIDENT' || roleUpper === 'CO_FOUNDER';
     const isCore = isExec || roleUpper === 'CORE' || roleUpper === 'VICE';
+    const deptCanonical = authHelper.canonicalDept ? authHelper.canonicalDept(m.ban, m.rawRole, m.role, m.name) : (m.ban || m.department || (isExec ? 'Ban Điều Hành' : ''));
     return {
       name: m.name,
-      dept: m.ban || m.department || (isExec ? 'Ban Điều Hành' : ''),
+      dept: deptCanonical,
       role: isExec ? 'Lãnh đạo' : (isCore ? 'Core' : 'Thành viên'),
       title: m.rawRole || (isExec ? 'Lãnh đạo' : (isCore ? 'Core Member' : 'Thành viên')),
       email: m.email || '',

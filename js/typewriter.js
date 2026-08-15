@@ -20,7 +20,16 @@
 
     var currentActiveTimer = null;
     var sloganLoopTimer = null;
-    var isRunning = false;
+    var currentRunId = 0;
+    var isPaused = false;
+
+    // Lắng nghe visibilitychange 1 lần duy nhất toàn cục
+    if (!window.__ynda_typewriter_visibility_bound) {
+        window.__ynda_typewriter_visibility_bound = true;
+        document.addEventListener('visibilitychange', function () {
+            isPaused = document.hidden;
+        });
+    }
 
     function startHeroTypewriter(customEyebrow, customTitle) {
         var eyebrowEl = document.getElementById('heroTypewriterEyebrow');
@@ -32,12 +41,21 @@
 
         if (!eyebrowEl && !titleEl && !sloganEl) return;
 
-        if (currentActiveTimer) clearTimeout(currentActiveTimer);
-        if (sloganLoopTimer) clearTimeout(sloganLoopTimer);
+        // Tăng runId để hủy toàn bộ callback / timeout của các lần chạy trước đó ngay lập tức
+        var runId = ++currentRunId;
+
+        if (currentActiveTimer) {
+            clearTimeout(currentActiveTimer);
+            currentActiveTimer = null;
+        }
+        if (sloganLoopTimer) {
+            clearTimeout(sloganLoopTimer);
+            sloganLoopTimer = null;
+        }
 
         var eyebrowTarget = (customEyebrow || (eyebrowEl ? eyebrowEl.getAttribute('data-text') : '') || DEFAULT_EYEBROW).trim();
         var rawTitle = customTitle || DEFAULT_TITLE;
-        var titleLines = rawTitle.split(/<br\s*\/?>|\n/i).map(function(s){ return s.replace(/<[^>]*>/g, '').trim(); }).filter(Boolean);
+        var titleLines = rawTitle.split(/<br\s*\/?>|\n/i).map(function (s) { return s.replace(/<[^>]*>/g, '').trim(); }).filter(Boolean);
         if (titleLines.length === 0) titleLines = ["Ý Niệm", "Điện Ảnh"];
 
         var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -51,7 +69,7 @@
             return;
         }
 
-        // Đặt trạng thái ban đầu
+        // Đặt trạng thái ban đầu an toàn
         if (eyebrowEl) eyebrowEl.textContent = '';
         if (titleEl) titleEl.innerHTML = '';
         if (sloganEl) sloganEl.textContent = '';
@@ -60,28 +78,28 @@
         if (cursorTitle) cursorTitle.style.display = 'none';
         if (cursorSlogan) cursorSlogan.style.display = 'none';
 
-        isRunning = true;
-
         // --- BƯỚC 1: Gõ Eyebrow ("Dự án cộng đồng về điện ảnh") ---
         function typeEyebrow(callback) {
             if (!eyebrowEl) {
                 if (callback) callback();
                 return;
             }
-            var i = 0;
-            function step() {
-                if (i < eyebrowTarget.length) {
-                    eyebrowEl.textContent += eyebrowTarget.charAt(i);
+            var i = 1;
+            function stepEyebrow() {
+                if (runId !== currentRunId) return;
+                if (i <= eyebrowTarget.length) {
+                    eyebrowEl.textContent = eyebrowTarget.substring(0, i);
                     i++;
-                    currentActiveTimer = setTimeout(step, 28);
+                    currentActiveTimer = setTimeout(stepEyebrow, 28);
                 } else {
                     currentActiveTimer = setTimeout(function () {
+                        if (runId !== currentRunId) return;
                         if (cursorEyebrow) cursorEyebrow.style.display = 'none';
                         if (callback) callback();
                     }, 120);
                 }
             }
-            step();
+            stepEyebrow();
         }
 
         // --- BƯỚC 2: Gõ Tiêu đề H1 ("Ý Niệm \n Điện Ảnh") ---
@@ -93,28 +111,31 @@
             if (cursorTitle) cursorTitle.style.display = 'inline-block';
 
             var lineIndex = 0;
-            var charIndex = 0;
+            var charIndex = 1;
             var renderedLines = [];
 
             function stepTitle() {
+                if (runId !== currentRunId) return;
                 var currentLineText = titleLines[lineIndex];
-                if (charIndex < currentLineText.length) {
-                    charIndex++;
+                if (charIndex <= currentLineText.length) {
                     var currentLineHtml = currentLineText.substring(0, charIndex);
                     var fullHtml = renderedLines.concat([currentLineHtml]).join('<br>');
                     titleEl.innerHTML = fullHtml;
+                    charIndex++;
                     currentActiveTimer = setTimeout(stepTitle, 50);
                 } else {
                     renderedLines.push(currentLineText);
                     lineIndex++;
-                    charIndex = 0;
+                    charIndex = 1;
                     if (lineIndex < titleLines.length) {
                         currentActiveTimer = setTimeout(function () {
+                            if (runId !== currentRunId) return;
                             titleEl.innerHTML = renderedLines.join('<br>') + '<br>';
                             currentActiveTimer = setTimeout(stepTitle, 70);
                         }, 90);
                     } else {
                         currentActiveTimer = setTimeout(function () {
+                            if (runId !== currentRunId) return;
                             if (cursorTitle) cursorTitle.style.display = 'none';
                             if (callback) callback();
                         }, 200);
@@ -132,14 +153,17 @@
             var phraseIndex = 0;
             var charIndex = 0;
             var isDeleting = false;
-            var isPaused = false;
 
             function getRandomSpeed() {
                 return Math.floor(Math.random() * 20) + 35;
             }
 
             function typeSloganStep() {
-                if (isPaused) return;
+                if (runId !== currentRunId) return;
+                if (isPaused) {
+                    sloganLoopTimer = setTimeout(typeSloganStep, 200);
+                    return;
+                }
 
                 var currentPhrase = SLOGAN_PHRASES[phraseIndex];
 
@@ -176,21 +200,14 @@
             }
 
             typeSloganStep();
-
-            document.addEventListener('visibilitychange', function () {
-                if (document.hidden) {
-                    isPaused = true;
-                    if (sloganLoopTimer) clearTimeout(sloganLoopTimer);
-                } else if (isPaused) {
-                    isPaused = false;
-                    typeSloganStep();
-                }
-            });
         }
 
         currentActiveTimer = setTimeout(function () {
+            if (runId !== currentRunId) return;
             typeEyebrow(function () {
+                if (runId !== currentRunId) return;
                 typeTitle(function () {
+                    if (runId !== currentRunId) return;
                     startSloganLoop();
                 });
             });
@@ -204,7 +221,7 @@
             startHeroTypewriter();
         });
     } else {
-        setTimeout(function() {
+        setTimeout(function () {
             startHeroTypewriter();
         }, 50);
     }

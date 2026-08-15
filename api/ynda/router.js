@@ -137,7 +137,7 @@ router.post('/tasks', auth.requireRole('task', 'create'), async (req, res) => {
 
 router.get('/tasks', async (req, res) => {
   const tasks = await ynda.tasks.listTasks({
-    status: req.query.status, scope: req.query.scope, department: req.query.department
+    status: req.query.status, scope: req.query.scope, department: req.query.department, channel: req.query.channel
   });
   res.json({ tasks });
 });

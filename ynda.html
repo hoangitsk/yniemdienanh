@@ -588,22 +588,91 @@
     }
 
     /* =========================================================================
-       GANTT CHART STYLES (SƠ ĐỒ TIẾN ĐỘ THEO PHÂN BAN)
+       GANTT CHART STYLES (SƠ ĐỒ TIẾN ĐỘ THEO 2 KÊNH & PHÂN BAN)
        ========================================================================= */
+    .content.gantt-fullwidth {
+      max-width: 100% !important;
+      padding: 22px 28px 60px !important;
+    }
     .gantt-wrapper {
       background: var(--bg-card);
       border: 1px solid var(--line);
       border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 12px 36px rgba(0,0,0,0.35);
-      margin-top: 18px;
+      box-shadow: 0 16px 44px rgba(0,0,0,0.45);
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
     }
+
+    /* 2-Channel Switcher Tabs */
+    .gantt-channel-tabs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: rgba(14, 16, 26, 0.95);
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+    }
+    .gantt-channel-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      background: #141724;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #9ea2b5;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s ease;
+      white-space: nowrap;
+    }
+    .gantt-channel-tab:hover {
+      background: #1c2136;
+      color: #fff;
+      border-color: rgba(255,255,255,0.2);
+    }
+    .gantt-channel-tab.active {
+      background: linear-gradient(135deg, rgba(228,184,102,0.2), rgba(122,80,34,0.15));
+      border-color: var(--gold);
+      color: var(--gold-light);
+      box-shadow: 0 4px 16px rgba(228,184,102,0.18);
+    }
+    .gantt-channel-tab.channel-kc.active {
+      background: linear-gradient(135deg, rgba(228,184,102,0.25), rgba(122,80,34,0.2));
+      border-color: var(--gold);
+      color: var(--gold-light);
+      box-shadow: 0 4px 16px rgba(228,184,102,0.22);
+    }
+    .gantt-channel-tab.channel-kp.active {
+      background: linear-gradient(135deg, rgba(34,211,238,0.22), rgba(147,51,234,0.18));
+      border-color: #22d3ee;
+      color: #67e8f9;
+      box-shadow: 0 4px 16px rgba(34,211,238,0.2);
+    }
+    .gantt-channel-tab .tab-icon {
+      font-size: 16px;
+    }
+    .gantt-channel-tab .tab-count {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      background: rgba(255,255,255,0.08);
+      color: inherit;
+    }
+
+    /* Header Toolbar */
     .gantt-header-toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 14px 20px;
+      padding: 12px 20px;
       background: rgba(255,255,255,0.02);
       border-bottom: 1px solid var(--line);
       flex-wrap: wrap;
@@ -624,6 +693,7 @@
       transition: all .2s ease;
       display: inline-flex;
       align-items: center;
+      gap: 6px;
       justify-content: center;
     }
     .gantt-nav-btn:hover {
@@ -642,7 +712,7 @@
     .gantt-filters {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
     .gantt-select, .gantt-search {
@@ -677,14 +747,51 @@
       color: #050c14;
       font-weight: 700;
     }
+
+    /* Zoom & View Controls */
+    .gantt-zoom-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      background: #090a10;
+      border: 1px solid #2c3042;
+      border-radius: 8px;
+      padding: 3px 5px;
+    }
+    .zoom-label {
+      font-size: 10.5px;
+      color: var(--muted);
+      padding: 0 4px;
+    }
+    .gantt-zoom-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 4px 7px;
+      font-size: 11px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .gantt-zoom-btn.active, .gantt-zoom-btn:hover {
+      background: #1f253d;
+      color: #fff;
+    }
+    .gantt-zoom-btn.active {
+      color: var(--gold-light);
+      font-weight: 700;
+    }
+
+    /* Gantt Main Container */
     .gantt-container {
       display: grid;
-      grid-template-columns: 360px 1fr;
-      min-height: 520px;
+      grid-template-columns: 380px 1fr;
+      min-height: 560px;
       position: relative;
+      background: #080911;
     }
     @media (max-width: 992px) {
-      .gantt-container { grid-template-columns: 260px 1fr; }
+      .gantt-container { grid-template-columns: 280px 1fr; }
     }
     .gantt-tree-col {
       background: #0b0d16;
@@ -696,6 +803,7 @@
       height: 54px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       padding: 0 16px;
       font-weight: 700;
       font-size: 11px;
@@ -704,7 +812,63 @@
       letter-spacing: 0.5px;
       border-bottom: 1px solid var(--line);
       background: #0e111d;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
+
+    /* Channel Group Row Header (Tree) */
+    .gantt-channel-section {
+      border-bottom: 2px solid rgba(255,255,255,0.08);
+    }
+    .gantt-channel-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all .2s;
+    }
+    .gantt-channel-header-kc {
+      background: linear-gradient(90deg, rgba(228,184,102,0.18), rgba(20,22,34,0.95));
+      border-left: 4px solid var(--gold);
+      color: var(--gold-light);
+    }
+    .gantt-channel-header-kp {
+      background: linear-gradient(90deg, rgba(34,211,238,0.18), rgba(20,22,34,0.95));
+      border-left: 4px solid #22d3ee;
+      color: #67e8f9;
+    }
+    .gantt-channel-header-row:hover {
+      filter: brightness(1.15);
+    }
+
+    /* Channel Divider in Timeline */
+    .gantt-timeline-channel-divider {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      border-bottom: 2px solid rgba(255,255,255,0.08);
+      box-sizing: border-box;
+    }
+    .gantt-timeline-channel-kc {
+      background: linear-gradient(90deg, rgba(228,184,102,0.12), rgba(10,12,20,0.8));
+      color: var(--gold-light);
+    }
+    .gantt-timeline-channel-kp {
+      background: linear-gradient(90deg, rgba(34,211,238,0.12), rgba(10,12,20,0.8));
+      color: #67e8f9;
+    }
+
+    /* Dept Rows */
     .gantt-dept-group {
       border-bottom: 1px solid rgba(255,255,255,0.05);
     }
@@ -712,12 +876,12 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 14px;
-      background: rgba(255,255,255,0.03);
+      padding: 10px 14px 10px 22px;
+      background: rgba(255,255,255,0.025);
       cursor: pointer;
       font-weight: 600;
-      font-size: 13px;
-      color: #fff;
+      font-size: 12.5px;
+      color: #e2e8f0;
       transition: background .2s;
     }
     .gantt-dept-row:hover {
@@ -725,18 +889,19 @@
     }
     .gantt-dept-badge {
       font-size: 11px;
-      padding: 2px 7px;
+      padding: 2px 8px;
       border-radius: 10px;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.08);
       color: var(--gold-light);
       margin-left: auto;
+      font-family: 'DM Mono', monospace;
     }
     .gantt-task-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 8px 14px 8px 24px;
-      height: 48px;
+      padding: 8px 14px 8px 30px;
+      height: 50px;
       box-sizing: border-box;
       border-bottom: 1px solid rgba(255,255,255,0.03);
       cursor: pointer;
@@ -771,10 +936,11 @@
       white-space: nowrap;
     }
     .gantt-task-sub {
-      font-size: 10px;
+      font-size: 10.5px;
       color: var(--muted);
       display: flex;
       gap: 6px;
+      margin-top: 2px;
     }
     
     /* Timeline Grid */
@@ -794,28 +960,28 @@
       z-index: 10;
     }
     .gantt-day-cell {
-      flex: 0 0 38px;
-      width: 38px;
       text-align: center;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      border-right: 1px solid rgba(255,255,255,0.04);
+      border-right: 1px solid rgba(255,255,255,0.05);
       box-sizing: border-box;
       font-size: 11px;
+      user-select: none;
+      flex-shrink: 0;
     }
     .gantt-day-cell.today {
-      background: rgba(228, 184, 102, 0.15);
+      background: rgba(228, 184, 102, 0.18);
       border-right-color: var(--gold);
       color: var(--gold-light);
       font-weight: 700;
     }
     .gantt-day-cell.weekend {
-      background: rgba(255,255,255,0.015);
+      background: rgba(255,255,255,0.02);
       color: #71717a;
     }
-    .gantt-day-num { font-weight: 600; font-size: 12px; }
-    .gantt-day-name { font-size: 10px; color: var(--muted); }
+    .gantt-day-num { font-weight: 700; font-size: 12px; }
+    .gantt-day-name { font-size: 10px; color: var(--muted); margin-top: 1px; }
     .gantt-timeline-body {
       position: relative;
     }
@@ -823,9 +989,10 @@
       height: 38px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
       background: rgba(255,255,255,0.015);
+      box-sizing: border-box;
     }
     .gantt-timeline-row {
-      height: 48px;
+      height: 50px;
       position: relative;
       border-bottom: 1px solid rgba(255,255,255,0.03);
       box-sizing: border-box;
@@ -837,20 +1004,20 @@
       pointer-events: none;
     }
     .gantt-grid-line {
-      flex: 0 0 38px;
-      width: 38px;
-      border-right: 1px solid rgba(255,255,255,0.03);
+      border-right: 1px solid rgba(255,255,255,0.035);
       box-sizing: border-box;
+      flex-shrink: 0;
     }
     .gantt-grid-line.today-line {
-      background: rgba(228, 184, 102, 0.05);
-      border-right: 1px dashed rgba(228, 184, 102, 0.4);
+      background: rgba(228, 184, 102, 0.06);
+      border-right: 2px dashed rgba(228, 184, 102, 0.6);
+      box-shadow: 0 0 10px rgba(228, 184, 102, 0.25);
     }
     .gantt-bar {
       position: absolute;
       top: 9px;
-      height: 30px;
-      border-radius: 6px;
+      height: 32px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       padding: 0 10px;
@@ -861,13 +1028,13 @@
       overflow: hidden;
       text-overflow: ellipsis;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
       transition: transform .15s, box-shadow .15s;
       z-index: 5;
     }
     .gantt-bar:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.7);
       z-index: 8;
     }
     .gantt-bar-media { background: linear-gradient(135deg, #2563eb, #1d4ed8); border: 1px solid #60a5fa; }
@@ -883,7 +1050,7 @@
       bottom: 0;
       background: rgba(255,255,255,0.22);
       pointer-events: none;
-      border-radius: 5px 0 0 5px;
+      border-radius: 7px 0 0 7px;
     }
 
     @media (max-width: 1080px) {
@@ -1067,21 +1234,43 @@
       </div>
     </section>
 
-    <!-- SƠ ĐỒ GANTT (GANTT CHART THEO PHÂN BAN) -->
+    <!-- SƠ ĐỒ GANTT (GANTT CHART THEO 2 KÊNH & PHÂN BAN) -->
     <section id="gantt" class="tab-page">
       <div class="page-head">
         <div>
           <div class="eyebrow" id="ganttEyebrow">Tiến độ &amp; Phân bổ thời gian · Timeline</div>
           <h1 id="ganttHeadline">Sơ đồ Gantt (Gantt Chart)</h1>
-          <p id="ganttDesc">Trực quan hóa tiến độ công việc theo từng Phân ban, theo dõi deadline và phân bổ thời gian thực hiện rõ ràng.</p>
+          <p id="ganttDesc">Trực quan hóa tiến độ công việc theo 2 Kênh (Kênh Chính &amp; Kênh Phụ), theo dõi deadline và phân bổ thời gian thực hiện rõ ràng.</p>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <div class="gantt-lang-toggle">
             <button class="gantt-lang-btn active" id="btnLangVi" onclick="setGanttLang('vi')">🇻🇳 Tiếng Việt</button>
             <button class="gantt-lang-btn" id="btnLangEn" onclick="setGanttLang('en')">🇬🇧 English</button>
           </div>
+          <button class="btn ghost" id="btnGanttWide" onclick="toggleGanttFullWidth()" title="Phóng to / Thu gọn sơ đồ toàn khung ngang">
+            <span id="ganttExpandIcon">⛶</span> <span id="ganttExpandText">Toàn khung</span>
+          </button>
           <button class="btn primary" onclick="openCreateTask()">+ <span id="ganttCreateBtnText">Tạo nhiệm vụ</span></button>
         </div>
+      </div>
+
+      <!-- 2 Channel Tabs Switcher -->
+      <div class="gantt-channel-tabs">
+        <button class="gantt-channel-tab active" data-channel="ALL" onclick="setGanttChannel('ALL', this)">
+          <span class="tab-icon">🌟</span>
+          <span class="tab-title">Tất cả các kênh</span>
+          <span class="tab-count" id="countAllChannels">0</span>
+        </button>
+        <button class="gantt-channel-tab channel-kc" data-channel="KENH_CHINH" onclick="setGanttChannel('KENH_CHINH', this)">
+          <span class="tab-icon">🎬</span>
+          <span class="tab-title">KÊNH CHÍNH (Main Channel)</span>
+          <span class="tab-count" id="countKenhChinh">0</span>
+        </button>
+        <button class="gantt-channel-tab channel-kp" data-channel="KENH_PHU" onclick="setGanttChannel('KENH_PHU', this)">
+          <span class="tab-icon">📱</span>
+          <span class="tab-title">KÊNH PHỤ (Secondary Channel)</span>
+          <span class="tab-count" id="countKenhPhu">0</span>
+        </button>
       </div>
 
       <div class="gantt-wrapper">
@@ -1095,6 +1284,12 @@
           </div>
 
           <div class="gantt-filters">
+            <select class="gantt-select" id="ganttChannelFilter" onchange="syncChannelFilter(this.value)">
+              <option value="ALL">Tất cả kênh (All Channels)</option>
+              <option value="KENH_CHINH">🎬 Kênh Chính (Main Channel)</option>
+              <option value="KENH_PHU">📱 Kênh Phụ (Secondary Channel)</option>
+            </select>
+
             <select class="gantt-select" id="ganttDeptFilter" onchange="renderGanttChart()">
               <option value="ALL">Tất cả các Ban (All Depts)</option>
               <option value="MEDIA">Ban Media</option>
@@ -1102,7 +1297,7 @@
               <option value="NOI_DUNG">Ban Nội dung</option>
               <option value="NHAN_SU">Ban Nhân sự</option>
               <option value="DUYET_BAI">Ban Duyệt bài</option>
-              <option value="GLOBAL">Toàn dự án (Global)</option>
+              <option value="GLOBAL">Toàn dự án / Kênh (Global)</option>
             </select>
 
             <select class="gantt-select" id="ganttStatusFilter" onchange="renderGanttChart()">
@@ -1114,12 +1309,19 @@
             </select>
 
             <input type="text" class="gantt-search" id="ganttSearchInput" placeholder="🔍 Tìm kiếm nhiệm vụ..." oninput="renderGanttChart()">
+
+            <div class="gantt-zoom-group">
+              <span class="zoom-label">Độ rộng:</span>
+              <button class="gantt-zoom-btn" onclick="setGanttZoom(38)" id="zoomBtn38">Gọn</button>
+              <button class="gantt-zoom-btn active" onclick="setGanttZoom(50)" id="zoomBtn50">Chuẩn</button>
+              <button class="gantt-zoom-btn" onclick="setGanttZoom(66)" id="zoomBtn66">Rộng</button>
+            </div>
           </div>
         </div>
 
-        <!-- Layout Sơ đồ Gantt: Cột trái (Phân ban & Task) + Cột phải (Timeline) -->
+        <!-- Layout Sơ đồ Gantt: Cột trái (Kênh & Phân ban & Task) + Cột phải (Timeline) -->
         <div class="gantt-container" id="ganttContainer">
-          <!-- Cột Danh sách theo Ban (Left Tree) -->
+          <!-- Cột Danh sách theo Kênh & Ban (Left Tree) -->
           <div class="gantt-tree-col" id="ganttTreeCol"></div>
           <!-- Cột Lưới thời gian (Right Timeline) -->
           <div class="gantt-timeline-col" id="ganttTimelineCol"></div>
@@ -1410,6 +1612,16 @@ function go(page) {
   if (navBtn) navBtn.classList.add('active');
   const titleEl = el('currentViewTitle');
   if (titleEl) titleEl.textContent = PAGE_TITLES[page] || page.toUpperCase();
+
+  const contentEl = document.querySelector('.content');
+  if (contentEl) {
+    if (page === 'gantt' && ganttIsFullWidth) {
+      contentEl.classList.add('gantt-fullwidth');
+    } else {
+      contentEl.classList.remove('gantt-fullwidth');
+    }
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   if (page === 'dashboard') loadDashboard();
@@ -1544,45 +1756,250 @@ async function loadDashboard() {
 // -----------------------------------------------------------------------------
 // 2. TẢI BẢNG NHIỆM VỤ (BOARD) THỰC TẾ
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// DỮ LIỆU MẪU CHUẨN THEO 2 KÊNH (KÊNH CHÍNH & KÊNH PHỤ)
+// -----------------------------------------------------------------------------
+const DEFAULT_OP_TASKS = [
+  // --- KÊNH CHÍNH (MAIN CHANNEL) ---
+  {
+    TASK_ID: 'TASK-KC-001',
+    CODE: 'KC-MED-01',
+    TITLE: 'Dựng video Phân tích Ngôn ngữ Điện ảnh phim "Oppenheimer"',
+    DESCRIPTION: 'Dựng video chuyên sâu 12-15 phút phân tích thủ pháp ánh sáng, góc quay và cấu trúc âm thanh trong Oppenheimer. Gắn intro/outro chính thức của Ý Niệm Điện Ảnh.',
+    EXPECTED_OUTPUT: 'File master 4K / 1080p60 + Project Premiere/DaVinci + Thumbnail 16:9.',
+    DEPARTMENT: 'MEDIA',
+    CHANNEL: 'KENH_CHINH',
+    SCOPE: 'DEPARTMENT_OPEN',
+    STATUS: 'IN_PROGRESS',
+    XP_FINAL: 3.0,
+    DIFFICULTY: 'Lớn (M3)',
+    ASSIGNEE_NAME: 'Trần Hoàng',
+    WORK_START: '2026-08-04T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-16T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KC-002',
+    CODE: 'KC-TRU-01',
+    TITLE: 'Chiến dịch truyền thông Trailer & Premiere Talkshow Đạo diễn',
+    DESCRIPTION: 'Xây dựng bài viết truyền thông đa kênh, thiết kế poster chính thức và lên lịch seeding 30 group điện ảnh trước ngày phát sóng tập 1.',
+    EXPECTED_OUTPUT: 'Content plan + Bài viết đã duyệt + Báo cáo tiếp cận > 50,000 view.',
+    DEPARTMENT: 'TRUYEN_THONG',
+    CHANNEL: 'KENH_CHINH',
+    SCOPE: 'DEPARTMENT_OPEN',
+    STATUS: 'OPEN',
+    XP_FINAL: 2.0,
+    DIFFICULTY: 'Khá (M2)',
+    ASSIGNEE_NAME: 'Nguyễn Thảo',
+    WORK_START: '2026-08-10T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-20T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KC-003',
+    CODE: 'KC-NOI-01',
+    TITLE: 'Biên kịch & Kịch bản phân cảnh Series "Góc nhìn Đạo diễn #02"',
+    DESCRIPTION: 'Nghiên cứu tài liệu đạo diễn Denis Villeneuve, viết kịch bản dẫn chuyện chi tiết kèm timecode trích dẫn phim Dune Part 2.',
+    EXPECTED_OUTPUT: 'File Word/Google Docs kịch bản 3,500 từ chuẩn format phân cảnh.',
+    DEPARTMENT: 'NOI_DUNG',
+    CHANNEL: 'KENH_CHINH',
+    SCOPE: 'DEPARTMENT_OPEN',
+    STATUS: 'COMPLETED',
+    XP_FINAL: 2.5,
+    DIFFICULTY: 'Lớn (M3)',
+    ASSIGNEE_NAME: 'Lê Minh',
+    WORK_START: '2026-08-01T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-09T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KC-004',
+    CODE: 'KC-NHS-01',
+    TITLE: 'Tổ chức phỏng vấn & Onboarding Đợt 1 Ban Sản xuất Kênh Chính',
+    DESCRIPTION: 'Điều phối 12 lịch phỏng vấn ứng viên ban sản xuất phim, gửi email kết quả và hướng dẫn nhập môn hệ thống YNDA.',
+    EXPECTED_OUTPUT: 'Biên bản chấm điểm phỏng vấn + 100% ứng viên được onboard đúng hạn.',
+    DEPARTMENT: 'NHAN_SU',
+    CHANNEL: 'KENH_CHINH',
+    SCOPE: 'MANDATORY',
+    STATUS: 'COMPLETED',
+    XP_FINAL: 1.5,
+    DIFFICULTY: 'Vừa (M2)',
+    ASSIGNEE_NAME: 'Phạm Anh',
+    WORK_START: '2026-08-02T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-08T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KC-005',
+    CODE: 'KC-DUY-01',
+    TITLE: 'Thẩm định chất lượng & duyệt bản dựng Final Cut Series #01',
+    DESCRIPTION: 'Kiểm duyệt toàn diện âm thanh (loudness -14 LUFS), hiệu chỉnh màu sắc, độ chính xác thuật ngữ điện ảnh và bản quyền nhạc.',
+    EXPECTED_OUTPUT: 'Checklist nghiệm thu 15 tiêu chí ĐẠT + Phê duyệt xuất bản.',
+    DEPARTMENT: 'DUYET_BAI',
+    CHANNEL: 'KENH_CHINH',
+    SCOPE: 'DEPARTMENT_OPEN',
+    STATUS: 'SUBMITTED',
+    XP_FINAL: 1.5,
+    DIFFICULTY: 'Vừa (M2)',
+    ASSIGNEE_NAME: 'BĐH Kiểm duyệt',
+    WORK_START: '2026-08-15T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-22T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KC-006',
+    CODE: 'KC-GLO-01',
+    TITLE: 'Phủ sóng & Tương tác đồng loạt đợt công chiếu Kênh Chính',
+    DESCRIPTION: 'Nhiệm vụ mở toàn dự án: Tương tác 4 nền tảng (Like, Share, Comment chuyên sâu) trong 24h đầu video Kênh Chính lên sóng.',
+    EXPECTED_OUTPUT: 'Ảnh chụp màn hình hoàn thành tương tác đúng quy định.',
+    DEPARTMENT: 'GLOBAL',
+    CHANNEL: 'KENH_CHINH',
+    SCOPE: 'GLOBAL_OPEN',
+    STATUS: 'OPEN',
+    XP_FINAL: 2.0,
+    DIFFICULTY: 'Vừa (M2)',
+    ASSIGNEE_NAME: 'Toàn thành viên',
+    WORK_START: '2026-08-16T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-28T23:59:00Z'
+  },
+
+  // --- KÊNH PHỤ (SECONDARY CHANNEL) ---
+  {
+    TASK_ID: 'TASK-KP-001',
+    CODE: 'KP-MED-01',
+    TITLE: 'Biên tập Series 05 video Shorts/TikTok Hậu trường & Behind The Scenes',
+    DESCRIPTION: 'Cắt dựng 5 video ngắn dọc (9:16) bắt trend, lồng phụ đề động cá tính và hiệu ứng sound fx sôi động cho Kênh Phụ.',
+    EXPECTED_OUTPUT: '5 file MP4 1080x1920 + Thumbnail bắt mắt cho TikTok/Reels/Shorts.',
+    DEPARTMENT: 'MEDIA',
+    CHANNEL: 'KENH_PHU',
+    SCOPE: 'DEPARTMENT_OPEN',
+    STATUS: 'IN_PROGRESS',
+    XP_FINAL: 2.0,
+    DIFFICULTY: 'Khá (M2)',
+    ASSIGNEE_NAME: 'Đặng Tuấn',
+    WORK_START: '2026-08-08T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-18T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KP-002',
+    CODE: 'KP-TRU-01',
+    TITLE: 'Tổ chức Minigame Đoán Phim & Tương tác Cộng đồng Kênh Phụ',
+    DESCRIPTION: 'Thiết kế ấn phẩm minigame nhận vé xem phim, đăng bài và điều phối trao thưởng cho khán giả tương tác trên story Kênh Phụ.',
+    EXPECTED_OUTPUT: 'Ảnh banner game + Báo cáo > 200 lượt tham gia hợp lệ.',
+    DEPARTMENT: 'TRUYEN_THONG',
+    CHANNEL: 'KENH_PHU',
+    SCOPE: 'DEPARTMENT_OPEN',
+    STATUS: 'OPEN',
+    XP_FINAL: 1.5,
+    DIFFICULTY: 'Vừa (M2)',
+    ASSIGNEE_NAME: 'Vũ Lan',
+    WORK_START: '2026-08-14T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-24T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KP-003',
+    CODE: 'KP-NOI-01',
+    TITLE: 'Tổng hợp Tin tức Điện ảnh Nhanh & Meme Review Cuối tuần',
+    DESCRIPTION: 'Biên soạn 3 kịch bản video ngắn cập nhật tin tức phòng vé và châm biếm điện ảnh vui nhộn dành riêng cho kênh phụ.',
+    EXPECTED_OUTPUT: '3 kịch bản voice-over < 60 giây kèm gợi ý visual.',
+    DEPARTMENT: 'NOI_DUNG',
+    CHANNEL: 'KENH_PHU',
+    SCOPE: 'DEPARTMENT_OPEN',
+    STATUS: 'COMPLETED',
+    XP_FINAL: 1.0,
+    DIFFICULTY: 'Nhỏ (M1)',
+    ASSIGNEE_NAME: 'Hoàng Yến',
+    WORK_START: '2026-08-05T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-12T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KP-004',
+    CODE: 'KP-NHS-01',
+    TITLE: 'Trực phản hồi Comment & Tin nhắn độc giả Kênh Phụ ca tối',
+    DESCRIPTION: 'Trực fanpage & kênh TikTok vệ tinh từ 21h-23h, tương tác duyên dáng với người xem và lọc spam.',
+    EXPECTED_OUTPUT: 'Ảnh chụp màn hình tương tác và phản hồi 100% comment trong ca trực.',
+    DEPARTMENT: 'NHAN_SU',
+    CHANNEL: 'KENH_PHU',
+    SCOPE: 'MANDATORY',
+    STATUS: 'IN_PROGRESS',
+    XP_FINAL: 1.0,
+    DIFFICULTY: 'Nhỏ (M1)',
+    ASSIGNEE_NAME: 'Bùi Đức',
+    WORK_START: '2026-08-11T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-25T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KP-005',
+    CODE: 'KP-DUY-01',
+    TITLE: 'Kiểm duyệt Format & Nhịp độ Video Ngắn Kênh Phụ',
+    DESCRIPTION: 'Duyệt chất lượng hook 3 giây đầu, kiểm tra phụ đề chính tả và đảm bảo không vi phạm nhạc bản quyền TikTok.',
+    EXPECTED_OUTPUT: 'Phê duyệt 5 video ngắn đủ điều kiện đăng tải.',
+    DEPARTMENT: 'DUYET_BAI',
+    CHANNEL: 'KENH_PHU',
+    SCOPE: 'DEPARTMENT_OPEN',
+    STATUS: 'OPEN',
+    XP_FINAL: 1.0,
+    DIFFICULTY: 'Nhỏ (M1)',
+    ASSIGNEE_NAME: 'Nguyễn Hải',
+    WORK_START: '2026-08-17T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-23T23:59:00Z'
+  },
+  {
+    TASK_ID: 'TASK-KP-006',
+    CODE: 'KP-GLO-01',
+    TITLE: 'Đẩy tương tác chéo & Kéo traffic từ Kênh Phụ sang Kênh Chính',
+    DESCRIPTION: 'Chia sẻ video Kênh Phụ kèm link trỏ về video dài trên Kênh Chính tại các hội nhóm điện ảnh sinh viên.',
+    EXPECTED_OUTPUT: 'Link bài chia sẻ hoặc ảnh minh chứng tương tác chéo.',
+    DEPARTMENT: 'GLOBAL',
+    CHANNEL: 'KENH_PHU',
+    SCOPE: 'GLOBAL_OPEN',
+    STATUS: 'OPEN',
+    XP_FINAL: 1.0,
+    DIFFICULTY: 'Nhỏ (M1)',
+    ASSIGNEE_NAME: 'Toàn thành viên',
+    WORK_START: '2026-08-12T08:00:00Z',
+    SUBMISSION_DEADLINE: '2026-08-29T23:59:00Z'
+  }
+];
+
 const STARTER_TASK_TEMPLATES = [
   {
     TITLE: '📢 Tương tác & Bump bài tuyển thành viên (4 nền tảng)',
     SCOPE: 'GLOBAL_OPEN',
     DEPARTMENT: 'GLOBAL',
+    CHANNEL: 'KENH_CHINH',
     DIFFICULTY: 'Nhỏ',
     ESTIMATED_TIME_MIN: 15,
-    DESCRIPTION: 'Thực hiện React + Share + Comment trên 4 nền tảng: Facebook, TikTok, Threads, Instagram. Trong 1 giờ đầu (Early Window) nhận +0.5 XP/nền tảng (+2.0 XP cả 4). Sau 1h đến 24h (Late Window) nhận +0.25 XP/nền tảng.',
-    EXPECTED_OUTPUT: 'Hoàn thành đủ 3 hành động (React, Share, Comment) trên các nền tảng và nộp ảnh chụp màn hình minh chứng.',
-    PROOF_REQUIREMENT: 'Ảnh chụp màn hình: Reaction, Bình luận, Tin nhắn chia sẻ trên Facebook / TikTok / Threads / Instagram.'
+    DESCRIPTION: 'Thực hiện React + Share + Comment trên 4 nền tảng: Facebook, TikTok, Threads, Instagram.',
+    EXPECTED_OUTPUT: 'Hoàn thành đủ 3 hành động và nộp ảnh chụp màn hình minh chứng.',
+    PROOF_REQUIREMENT: 'Ảnh chụp màn hình Reaction, Bình luận, Tin nhắn chia sẻ.'
   },
   {
-    TITLE: '🎬 Biên tập video Recap Workshop Điện Ảnh',
+    TITLE: '🎬 Biên tập video Recap Workshop Điện Ảnh Kênh Chính',
     SCOPE: 'DEPARTMENT_OPEN',
     DEPARTMENT: 'MEDIA',
+    CHANNEL: 'KENH_CHINH',
     DIFFICULTY: 'Lớn',
     ESTIMATED_TIME_MIN: 120,
-    DESCRIPTION: 'Dựng video dọc ngắn 60s tổng hợp khoảnh khắc đẹp nhất của buổi Workshop làm phim, lồng nhạc bản quyền, gắn watermark logo Ý Niệm Điện Ảnh.',
-    EXPECTED_OUTPUT: 'File MP4 1080x1920 hoặc link Google Drive thư mục Approved.',
-    PROOF_REQUIREMENT: 'Đường dẫn thư mục Google Drive chứa file video render và project file (Premiere / CapCut / DaVinci).'
+    DESCRIPTION: 'Dựng video recap workshop chất lượng cao, chuẩn màu sắc thương hiệu Ý Niệm Điện Ảnh.',
+    EXPECTED_OUTPUT: 'File MP4 1080p + Thư mục Drive dự án.',
+    PROOF_REQUIREMENT: 'Link Google Drive chứa file video render và project file.'
   },
   {
-    TITLE: '📱 Viết bài truyền thông & Seeding bài viết vào Group',
+    TITLE: '📱 Dựng 3 clip TikTok hậu trường vui nhộn Kênh Phụ',
     SCOPE: 'DEPARTMENT_OPEN',
-    DEPARTMENT: 'TRUYEN_THONG',
+    DEPARTMENT: 'MEDIA',
+    CHANNEL: 'KENH_PHU',
     DIFFICULTY: 'Khá',
     ESTIMATED_TIME_MIN: 60,
-    DESCRIPTION: 'Soạn nội dung bài viết truyền thông theo chủ đề tuần và chia sẻ vào các nhóm học sinh/sinh viên đam mê điện ảnh.',
-    EXPECTED_OUTPUT: 'Bài viết được đăng trên fanpage + Danh sách link chia sẻ nhóm.',
-    PROOF_REQUIREMENT: 'Link bài viết + Ảnh chụp màn hình chia sẻ vào các nhóm (từ 20 nhóm trở lên quay video màn hình).'
+    DESCRIPTION: 'Biên tập 3 video dọc bắt trend TikTok cho kênh phụ, chèn âm thanh meme và phụ đề vui nhộn.',
+    EXPECTED_OUTPUT: '3 video 1080x1920 hoàn chỉnh.',
+    PROOF_REQUIREMENT: 'Link Drive 3 video render.'
   },
   {
-    TITLE: '⚡ Trực fanpage & Phản hồi ứng viên tuyển dụng ca tối',
+    TITLE: '⚡ Trực tương tác & Trả lời comment Kênh Phụ',
     SCOPE: 'MANDATORY',
     DEPARTMENT: 'NHAN_SU',
+    CHANNEL: 'KENH_PHU',
     DIFFICULTY: 'Vừa',
     ESTIMATED_TIME_MIN: 45,
-    DESCRIPTION: 'Nhiệm vụ bắt buộc: Trực tin nhắn fanpage từ 20h-22h, hướng dẫn ứng viên nộp đơn dự tuyển và giải đáp thắc mắc.',
-    EXPECTED_OUTPUT: 'Báo cáo số lượng tin nhắn đã xử lý và phản hồi đúng tone of voice.',
+    DESCRIPTION: 'Trực phản hồi comment độc giả trên kênh phụ và kéo traffic về kênh chính.',
+    EXPECTED_OUTPUT: 'Báo cáo số lượng tin nhắn/bình luận đã xử lý.',
     PROOF_REQUIREMENT: 'Ảnh chụp màn hình hộp thư fanpage ca trực.'
   }
 ];
@@ -1597,6 +2014,7 @@ async function initStarterTasks() {
         description: t.DESCRIPTION,
         expectedOutput: t.EXPECTED_OUTPUT,
         department: t.DEPARTMENT,
+        channel: t.CHANNEL || 'KENH_CHINH',
         scope: t.SCOPE,
         submissionDeadline: new Date(Date.now() + 48 * 3600 * 1000).toISOString()
       });
@@ -1613,11 +2031,11 @@ async function loadBoard(force = false) {
   }
   try {
     const data = await api('/board');
-    allMissions = (data.board && Array.isArray(data.board)) ? data.board : [];
+    allMissions = (data.board && Array.isArray(data.board) && data.board.length) ? data.board : DEFAULT_OP_TASKS;
     renderBoardCards(allMissions);
   } catch (e) {
     if (!allMissions || !allMissions.length) {
-      allMissions = [];
+      allMissions = DEFAULT_OP_TASKS;
       renderBoardCards(allMissions);
     }
   }
@@ -1644,12 +2062,13 @@ function formatDeadlineWithCountdown(dateStr) {
 }
 
 function renderBoardCards(list) {
-  if (!list || !list.length) {
+  const displayList = (list && list.length) ? list : DEFAULT_OP_TASKS;
+  if (!displayList || !displayList.length) {
     el('boardCardsGrid').innerHTML = `
       <div class="empty-state" style="grid-column:1/-1;padding:60px 20px;text-align:center;">
         <div style="font-size:3rem;margin-bottom:14px">⚡</div>
         <h3 style="color:var(--gold-light);font-size:1.35rem;margin-bottom:8px;font-family:'Playfair Display',serif">Hiện chưa có nhiệm vụ nào đang mở</h3>
-        <p style="color:var(--muted);max-width:540px;margin:0 auto 24px;font-size:13px;line-height:1.7">Hệ thống hoạt động với dữ liệu thực tế 100%. Bạn có thể tự tạo nhiệm vụ mới hoặc khởi tạo nhanh các nhiệm vụ mẫu chuẩn YNDA vào hệ thống.</p>
+        <p style="color:var(--muted);max-width:540px;margin:0 auto 24px;font-size:13px;line-height:1.7">Hệ thống hoạt động với dữ liệu 2 Kênh (Kênh Chính & Kênh Phụ). Bạn có thể tạo nhiệm vụ mới hoặc khởi tạo nhanh các nhiệm vụ mẫu chuẩn.</p>
         <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
           <button class="btn primary" onclick="openCreateTask()">+ Tạo nhiệm vụ mới</button>
           <button class="btn" style="border-color:var(--gold);color:var(--gold-light)" onclick="initStarterTasks()">🚀 Khởi tạo nhiệm vụ chuẩn vào hệ thống</button>
@@ -1658,18 +2077,21 @@ function renderBoardCards(list) {
     `;
     return;
   }
-  el('boardCardsGrid').innerHTML = list.map(t => {
+  el('boardCardsGrid').innerHTML = displayList.map(t => {
     const isMandatory = String(t.SCOPE || t.TASK_TYPE || '').toUpperCase() === 'MANDATORY';
     const isGlobal = String(t.SCOPE || t.TASK_TYPE || '').toUpperCase() === 'GLOBAL_OPEN';
     const badgeClass = isMandatory ? 'mandatory' : (isGlobal ? 'global' : 'dept');
     const deadlineDisplay = formatDeadlineWithCountdown(t.SUBMISSION_DEADLINE);
     const diff = t.DIFFICULTY || 'Vừa';
+    const chName = (t.CHANNEL || 'KENH_CHINH') === 'KENH_PHU' ? '📱 Kênh Phụ' : '🎬 Kênh Chính';
+    const chStyle = (t.CHANNEL || 'KENH_CHINH') === 'KENH_PHU' ? 'color:#22d3ee;border-color:rgba(34,211,238,0.4)' : 'color:var(--gold-light);border-color:rgba(228,184,102,0.4)';
 
     return `
       <article class="mission-card">
         <div class="card-meta">
           <span class="badge ${badgeClass}">${t.CODE || t.TASK_ID} · ${formatScope(t.SCOPE)}</span>
-          <span class="difficulty-tag">◆ Độ khó: ${diff}</span>
+          <span class="badge" style="${chStyle};background:rgba(0,0,0,0.4)">${chName}</span>
+          <span class="difficulty-tag">◆ ${diff}</span>
         </div>
         <h2>${t.TITLE || 'Nhiệm vụ'}</h2>
         <p>${t.DESCRIPTION || t.EXPECTED_OUTPUT || 'Xem chi tiết để biết yêu cầu bằng chứng và các bước thực hiện.'}</p>
@@ -1691,27 +2113,55 @@ function renderBoardCards(list) {
 function filterBoard(type, btn) {
   document.querySelectorAll('#board .filter-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  const source = (allMissions && allMissions.length) ? allMissions : DEFAULT_OP_TASKS;
   if (type === 'ALL') {
-    renderBoardCards(allMissions);
+    renderBoardCards(source);
   } else if (['GLOBAL_OPEN', 'DEPARTMENT_OPEN', 'MANDATORY'].includes(type)) {
-    renderBoardCards(allMissions.filter(t => (t.SCOPE || t.TASK_TYPE) === type));
+    renderBoardCards(source.filter(t => (t.SCOPE || t.TASK_TYPE) === type));
   } else {
-    renderBoardCards(allMissions.filter(t => t.DEPARTMENT === type));
+    renderBoardCards(source.filter(t => t.DEPARTMENT === type));
   }
 }
 
 // =============================================================================
-// SƠ ĐỒ GANTT (GANTT CHART THEO PHÂN BAN & BILINGUAL VI/EN)
+// SƠ ĐỒ GANTT (GANTT CHART THEO 2 KÊNH & PHÂN BAN & TOÀN KHUNG)
 // =============================================================================
 let ganttCurrentDate = new Date();
 let ganttLang = 'vi';
 let ganttCollapsedDepts = {};
+let ganttCollapsedChannels = {};
+let ganttSelectedChannel = 'ALL'; // 'ALL' | 'KENH_CHINH' | 'KENH_PHU'
+let ganttCellWidth = 50; // 38 | 50 | 66
+let ganttIsFullWidth = true;
+
+const GANTT_CHANNELS = {
+  KENH_CHINH: {
+    id: 'KENH_CHINH',
+    name: 'Kênh Chính (Main Channel)',
+    badge: '🎬 KÊNH CHÍNH',
+    shortName: 'Kênh Chính',
+    desc: 'Kênh phát sóng chính thức, Video chuyên sâu, Phim ngắn & Talkshow',
+    color: '#e4b866',
+    headerClass: 'gantt-channel-header-kc',
+    timelineClass: 'gantt-timeline-channel-kc'
+  },
+  KENH_PHU: {
+    id: 'KENH_PHU',
+    name: 'Kênh Phụ (Secondary Channel)',
+    badge: '📱 KÊNH PHỤ',
+    shortName: 'Kênh Phụ',
+    desc: 'Kênh vệ tinh, Shorts, Reels, TikTok, Behind The Scenes & Meme',
+    color: '#22d3ee',
+    headerClass: 'gantt-channel-header-kp',
+    timelineClass: 'gantt-timeline-channel-kp'
+  }
+};
 
 const GANTT_I18N = {
   vi: {
     eyebrow: 'Tiến độ & Phân bổ thời gian · Timeline',
     headline: 'Sơ đồ Gantt (Gantt Chart)',
-    desc: 'Trực quan hóa tiến độ công việc theo từng Phân ban, theo dõi deadline và phân bổ thời gian thực hiện rõ ràng.',
+    desc: 'Trực quan hóa tiến độ công việc theo 2 Kênh (Kênh Chính & Kênh Phụ), theo dõi deadline và phân bổ thời gian thực hiện rõ ràng.',
     createTask: 'Tạo nhiệm vụ',
     todayBtn: 'Hôm nay',
     allDepts: 'Tất cả các Ban (All Depts)',
@@ -1721,7 +2171,7 @@ const GANTT_I18N = {
     statusReview: 'Chờ duyệt (Review)',
     statusDone: 'Hoàn thành (Completed)',
     searchPlaceholder: '🔍 Tìm kiếm nhiệm vụ...',
-    taskColTitle: 'PHÂN BAN & NHIỆM VỤ',
+    taskColTitle: 'KÊNH & PHÂN BAN & NHIỆM VỤ',
     days: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
     monthNames: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
     deptNames: {
@@ -1730,9 +2180,9 @@ const GANTT_I18N = {
       NOI_DUNG: 'Ban Nội dung',
       NHAN_SU: 'Ban Nhân sự',
       DUYET_BAI: 'Ban Duyệt bài',
-      GLOBAL: 'Toàn dự án (Global)'
+      GLOBAL: 'Toàn dự án / Kênh'
     },
-    noTasks: 'Chưa có nhiệm vụ nào trong tháng này.',
+    noTasks: 'Không có nhiệm vụ nào khớp với bộ lọc trong tháng này.',
     deadlineLabel: 'Hạn chót:',
     assigneeLabel: 'Phụ trách:',
     unassigned: 'Chưa nhận'
@@ -1740,7 +2190,7 @@ const GANTT_I18N = {
   en: {
     eyebrow: 'Schedule & Time Allocation · Timeline',
     headline: 'Gantt Chart & Progress',
-    desc: 'Visual progress roadmap grouped by department, track deadlines and execution timelines seamlessly.',
+    desc: 'Visual progress roadmap grouped by 2 Channels (Main & Sub) and departments, tracking deadlines seamlessly.',
     createTask: 'New Task',
     todayBtn: 'Today',
     allDepts: 'All Departments',
@@ -1750,7 +2200,7 @@ const GANTT_I18N = {
     statusReview: 'In Review',
     statusDone: 'Completed',
     searchPlaceholder: '🔍 Search tasks...',
-    taskColTitle: 'DEPARTMENTS & TASKS',
+    taskColTitle: 'CHANNELS & DEPARTMENTS',
     days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
     deptNames: {
@@ -1759,17 +2209,71 @@ const GANTT_I18N = {
       NOI_DUNG: 'Content Dept',
       NHAN_SU: 'HR & Operations',
       DUYET_BAI: 'Quality Review Dept',
-      GLOBAL: 'Global / Project-wide'
+      GLOBAL: 'Channel / Global'
     },
-    noTasks: 'No tasks found for this month.',
+    noTasks: 'No tasks found matching filter for this month.',
     deadlineLabel: 'Deadline:',
     assigneeLabel: 'Assignee:',
     unassigned: 'Unassigned'
   }
 };
 
+function toggleGanttFullWidth() {
+  ganttIsFullWidth = !ganttIsFullWidth;
+  const content = document.querySelector('.content');
+  if (content) content.classList.toggle('gantt-fullwidth', ganttIsFullWidth);
+  const icon = el('ganttExpandIcon');
+  const text = el('ganttExpandText');
+  if (icon) icon.textContent = ganttIsFullWidth ? '🗗' : '⛶';
+  if (text) text.textContent = ganttIsFullWidth ? 'Thu gọn' : 'Toàn khung';
+  try { localStorage.setItem('ynda_gantt_fullwidth', ganttIsFullWidth ? '1' : '0'); } catch (_) {}
+  renderGanttChart();
+}
+
+function setGanttZoom(width) {
+  ganttCellWidth = width;
+  ['zoomBtn38', 'zoomBtn50', 'zoomBtn66'].forEach(id => {
+    const btn = el(id);
+    if (btn) btn.classList.remove('active');
+  });
+  const activeBtn = el(`zoomBtn${width}`);
+  if (activeBtn) activeBtn.classList.add('active');
+  try { localStorage.setItem('ynda_gantt_cell_width', String(width)); } catch (_) {}
+  renderGanttChart();
+}
+
+function setGanttChannel(channel, btn) {
+  ganttSelectedChannel = channel;
+  document.querySelectorAll('.gantt-channel-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const select = el('ganttChannelFilter');
+  if (select) select.value = channel;
+  renderGanttChart();
+}
+
+function syncChannelFilter(val) {
+  ganttSelectedChannel = val;
+  document.querySelectorAll('.gantt-channel-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.channel === val);
+  });
+  renderGanttChart();
+}
+
+function toggleGanttChannel(channelKey) {
+  ganttCollapsedChannels[channelKey] = !ganttCollapsedChannels[channelKey];
+  renderGanttChart();
+}
+
+function toggleGanttDept(deptKey) {
+  ganttCollapsedDepts[deptKey] = !ganttCollapsedDepts[deptKey];
+  renderGanttChart();
+}
+
 function setGanttLang(lang) {
   ganttLang = lang;
+  if (window.YNDA_i18n && window.YNDA_i18n.getLanguage() !== lang) {
+    window.YNDA_i18n.setLanguage(lang, true);
+  }
   const btnVi = el('btnLangVi');
   const btnEn = el('btnLangEn');
   if (btnVi) btnVi.classList.toggle('active', lang === 'vi');
@@ -1783,6 +2287,14 @@ function setGanttLang(lang) {
   if (el('ganttTodayBtn')) el('ganttTodayBtn').textContent = t.todayBtn;
   renderGanttChart();
 }
+
+window.addEventListener('ynda:lang-changed', e => {
+  const newLang = e.detail?.lang || 'vi';
+  if (ganttLang !== newLang) {
+    ganttLang = newLang;
+    setGanttLang(newLang);
+  }
+});
 
 function prevGanttMonth() {
   ganttCurrentDate.setMonth(ganttCurrentDate.getMonth() - 1);
@@ -1799,21 +2311,23 @@ function todayGanttMonth() {
   renderGanttChart();
 }
 
-function toggleGanttDept(dept) {
-  ganttCollapsedDepts[dept] = !ganttCollapsedDepts[dept];
-  renderGanttChart();
-}
-
 async function renderGanttChart() {
+  // Ensure full-width container class if enabled
+  const contentEl = document.querySelector('.content');
+  if (contentEl && ganttIsFullWidth) {
+    contentEl.classList.add('gantt-fullwidth');
+  }
+
   if (!allMissions || !allMissions.length) {
     try {
       const data = await api('/board');
-      allMissions = (data.board && Array.isArray(data.board)) ? data.board : [];
+      allMissions = (data.board && Array.isArray(data.board) && data.board.length) ? data.board : DEFAULT_OP_TASKS;
     } catch (_) {
-      allMissions = [];
+      allMissions = DEFAULT_OP_TASKS;
     }
   }
 
+  const sourceTasks = (allMissions && allMissions.length) ? allMissions : DEFAULT_OP_TASKS;
   const i18n = GANTT_I18N[ganttLang] || GANTT_I18N.vi;
   const year = ganttCurrentDate.getFullYear();
   const month = ganttCurrentDate.getMonth();
@@ -1834,20 +2348,31 @@ async function renderGanttChart() {
   const selectedStatus = el('ganttStatusFilter') ? el('ganttStatusFilter').value : 'ALL';
   const searchKeyword = (el('ganttSearchInput') ? el('ganttSearchInput').value : '').trim().toLowerCase();
 
+  // Channel counts for tabs
+  const kcCount = sourceTasks.filter(t => (t.CHANNEL || 'KENH_CHINH') === 'KENH_CHINH').length;
+  const kpCount = sourceTasks.filter(t => (t.CHANNEL || 'KENH_CHINH') === 'KENH_PHU').length;
+  if (el('countAllChannels')) el('countAllChannels').textContent = sourceTasks.length;
+  if (el('countKenhChinh')) el('countKenhChinh').textContent = kcCount;
+  if (el('countKenhPhu')) el('countKenhPhu').textContent = kpCount;
+
   // Department order
   const DEPTS = ['MEDIA', 'TRUYEN_THONG', 'NOI_DUNG', 'NHAN_SU', 'DUYET_BAI', 'GLOBAL'];
 
   // Filter tasks
-  let filtered = allMissions.filter(t => {
+  let filtered = sourceTasks.filter(t => {
+    const ch = t.CHANNEL || 'KENH_CHINH';
+    if (ganttSelectedChannel !== 'ALL' && ch !== ganttSelectedChannel) return false;
     if (selectedDept !== 'ALL' && t.DEPARTMENT !== selectedDept) return false;
     const st = String(t.STATUS || 'OPEN').toUpperCase();
     if (selectedStatus !== 'ALL' && st !== selectedStatus) return false;
     if (searchKeyword) {
-      const matchText = (String(t.TITLE || '') + ' ' + String(t.CODE || '') + ' ' + String(t.DESCRIPTION || '')).toLowerCase();
+      const matchText = (String(t.TITLE || '') + ' ' + String(t.CODE || '') + ' ' + String(t.DESCRIPTION || '') + ' ' + ch).toLowerCase();
       if (!matchText.includes(searchKeyword)) return false;
     }
     return true;
   });
+
+  const cellWidth = ganttCellWidth || 50;
 
   // Build Day Headers
   let daysHeaderHtml = '';
@@ -1859,7 +2384,7 @@ async function renderGanttChart() {
     const dayName = i18n.days[dayOfWeek];
 
     daysHeaderHtml += `
-      <div class="gantt-day-cell ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}">
+      <div class="gantt-day-cell ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}" style="width:${cellWidth}px; flex:0 0 ${cellWidth}px">
         <span class="gantt-day-num">${d}</span>
         <span class="gantt-day-name">${dayName}</span>
       </div>
@@ -1870,105 +2395,144 @@ async function renderGanttChart() {
   let gridLinesHtml = '<div class="gantt-grid-lines">';
   for (let d = 1; d <= daysInMonth; d++) {
     const isToday = (d === todayDateNum);
-    gridLinesHtml += `<div class="gantt-grid-line ${isToday ? 'today-line' : ''}"></div>`;
+    gridLinesHtml += `<div class="gantt-grid-line ${isToday ? 'today-line' : ''}" style="width:${cellWidth}px; flex:0 0 ${cellWidth}px"></div>`;
   }
   gridLinesHtml += '</div>';
 
-  let treeHtml = `<div class="gantt-tree-header">${i18n.taskColTitle} (${filtered.length})</div>`;
+  let treeHtml = `<div class="gantt-tree-header">
+    <span>${i18n.taskColTitle} (${filtered.length})</span>
+    <small style="color:var(--muted);font-weight:normal;font-size:10.5px">${ganttSelectedChannel === 'ALL' ? '2 KÊNH HOẠT ĐỘNG' : GANTT_CHANNELS[ganttSelectedChannel]?.badge || ''}</small>
+  </div>`;
   let timelineRowsHtml = '';
 
-  DEPTS.forEach(deptKey => {
-    if (selectedDept !== 'ALL' && selectedDept !== deptKey) return;
-    const deptTasks = filtered.filter(t => (t.DEPARTMENT || 'GLOBAL') === deptKey);
-    if (!deptTasks.length && selectedDept === 'ALL' && searchKeyword) return;
+  const channelsToRender = ganttSelectedChannel === 'ALL' 
+    ? ['KENH_CHINH', 'KENH_PHU'] 
+    : [ganttSelectedChannel];
 
-    const deptName = i18n.deptNames[deptKey] || deptKey;
-    const isCollapsed = !!ganttCollapsedDepts[deptKey];
-    const arrow = isCollapsed ? '▶' : '▼';
+  channelsToRender.forEach(channelKey => {
+    const chMeta = GANTT_CHANNELS[channelKey] || GANTT_CHANNELS.KENH_CHINH;
+    const chTasks = filtered.filter(t => (t.CHANNEL || 'KENH_CHINH') === channelKey);
 
-    // Left tree department group header
+    if (ganttSelectedChannel === 'ALL' && !chTasks.length && searchKeyword) return;
+
+    const isChCollapsed = !!ganttCollapsedChannels[channelKey];
+    const chArrow = isChCollapsed ? '▶' : '▼';
+
+    // Channel Header Row in Tree
     treeHtml += `
-      <div class="gantt-dept-group">
-        <div class="gantt-dept-row" onclick="toggleGanttDept('${deptKey}')">
-          <span>${arrow} 📁 ${deptName}</span>
-          <span class="gantt-dept-badge">${deptTasks.length}</span>
+      <div class="gantt-channel-section">
+        <div class="gantt-channel-header-row ${chMeta.headerClass}" onclick="toggleGanttChannel('${channelKey}')" title="Bấm để ẩn/hiện ${chMeta.name}">
+          <span>${chArrow} ${chMeta.badge} · <span style="font-weight:600;font-size:12px;opacity:0.95">${chMeta.name}</span></span>
+          <span class="gantt-dept-badge" style="background:rgba(0,0,0,0.4);color:${chMeta.color}">${chTasks.length} nhiệm vụ</span>
         </div>
     `;
 
-    // Right timeline divider
-    timelineRowsHtml += `<div class="gantt-timeline-dept-divider"></div>`;
+    // Channel Divider in Timeline
+    timelineRowsHtml += `
+      <div class="gantt-timeline-channel-divider ${chMeta.timelineClass}">
+        <span>${chMeta.badge} — ${chMeta.desc}</span>
+      </div>
+    `;
 
-    if (!isCollapsed) {
-      deptTasks.forEach(task => {
-        const st = String(task.STATUS || 'OPEN').toUpperCase();
-        const dotClass = st === 'COMPLETED' ? 'status-done' 
-                       : (st === 'IN_PROGRESS' || st === 'CLAIMED' || st === 'WORKING') ? 'status-progress'
-                       : (st === 'SUBMITTED' || st === 'HUMAN_REVIEW') ? 'status-review'
-                       : 'status-open';
+    if (!isChCollapsed) {
+      DEPTS.forEach(deptKey => {
+        if (selectedDept !== 'ALL' && selectedDept !== deptKey) return;
+        const deptTasks = chTasks.filter(t => (t.DEPARTMENT || 'GLOBAL') === deptKey);
+        if (!deptTasks.length && selectedDept === 'ALL' && searchKeyword) return;
 
-        const xp = task.XP_FINAL || task.XP_AI_RECOMMENDED || 1;
-        const diff = task.DIFFICULTY || 'M2';
+        const deptName = i18n.deptNames[deptKey] || deptKey;
+        const deptUniqueKey = `${channelKey}__${deptKey}`;
+        const isDeptCollapsed = !!ganttCollapsedDepts[deptUniqueKey];
+        const deptArrow = isDeptCollapsed ? '▶' : '▼';
 
+        // Department Row in Tree
         treeHtml += `
-          <div class="gantt-task-row" onclick="openMissionDetail('${task.TASK_ID || task.CODE}')" title="Bấm để xem chi tiết & nhận việc">
-            <span class="gantt-status-dot ${dotClass}"></span>
-            <div class="gantt-task-meta">
-              <div class="gantt-task-name">${task.CODE ? `<b>${task.CODE}</b> ` : ''}${task.TITLE || 'Nhiệm vụ'}</div>
-              <div class="gantt-task-sub">
-                <span style="color:var(--gold)">+${xp} XP</span> · 
-                <span>${diff}</span> · 
-                <span>${task.ASSIGNEE_NAME || i18n.unassigned}</span>
-              </div>
+          <div class="gantt-dept-group">
+            <div class="gantt-dept-row" onclick="toggleGanttDept('${deptUniqueKey}')">
+              <span>${deptArrow} 📁 ${deptName}</span>
+              <span class="gantt-dept-badge">${deptTasks.length}</span>
             </div>
-          </div>
         `;
 
-        // Calculate timeline position
-        const startDt = task.WORK_START ? new Date(task.WORK_START) 
-                      : task.OPEN_TIME ? new Date(task.OPEN_TIME) 
-                      : (task.CREATED_AT ? new Date(task.CREATED_AT) : new Date(year, month, 1));
-        const endDt = task.SUBMISSION_DEADLINE ? new Date(task.SUBMISSION_DEADLINE)
-                    : task.CLAIM_DEADLINE ? new Date(task.CLAIM_DEADLINE)
-                    : new Date(startDt.getTime() + 3 * 86400000);
+        // Department Divider in Timeline
+        timelineRowsHtml += `<div class="gantt-timeline-dept-divider"></div>`;
 
-        // Check if task intersects with current month
-        const monthStart = new Date(year, month, 1, 0, 0, 0);
-        const monthEnd = new Date(year, month, daysInMonth, 23, 59, 59);
+        if (!isDeptCollapsed) {
+          deptTasks.forEach(task => {
+            const st = String(task.STATUS || 'OPEN').toUpperCase();
+            const dotClass = st === 'COMPLETED' ? 'status-done' 
+                           : (st === 'IN_PROGRESS' || st === 'CLAIMED' || st === 'WORKING') ? 'status-progress'
+                           : (st === 'SUBMITTED' || st === 'HUMAN_REVIEW') ? 'status-review'
+                           : 'status-open';
 
-        let barHtml = '';
-        if (endDt >= monthStart && startDt <= monthEnd) {
-          const effectiveStart = startDt < monthStart ? 1 : startDt.getDate();
-          const effectiveEnd = endDt > monthEnd ? daysInMonth : endDt.getDate();
-          const spanDays = Math.max(1, effectiveEnd - effectiveStart + 1);
+            const xp = task.XP_FINAL || task.XP_AI_RECOMMENDED || 1;
+            const diff = task.DIFFICULTY || 'Vừa';
+            const chTag = (task.CHANNEL || 'KENH_CHINH') === 'KENH_PHU' ? '📱 Kênh Phụ' : '🎬 Kênh Chính';
 
-          const leftPx = (effectiveStart - 1) * 38 + 2;
-          const widthPx = Math.max(34, spanDays * 38 - 4);
+            treeHtml += `
+              <div class="gantt-task-row" onclick="openMissionDetail('${task.TASK_ID || task.CODE}')" title="Bấm để xem chi tiết & nhận việc">
+                <span class="gantt-status-dot ${dotClass}"></span>
+                <div class="gantt-task-meta">
+                  <div class="gantt-task-name">${task.CODE ? `<b>${task.CODE}</b> ` : ''}${task.TITLE || 'Nhiệm vụ'}</div>
+                  <div class="gantt-task-sub">
+                    <span style="color:var(--gold)">+${xp} XP</span> · 
+                    <span>${diff}</span> · 
+                    <span>${task.ASSIGNEE_NAME || i18n.unassigned}</span>
+                  </div>
+                </div>
+              </div>
+            `;
 
-          const deptClass = deptKey === 'MEDIA' ? 'gantt-bar-media'
-                          : deptKey === 'TRUYEN_THONG' ? 'gantt-bar-truyenthong'
-                          : deptKey === 'NOI_DUNG' ? 'gantt-bar-noidung'
-                          : deptKey === 'NHAN_SU' ? 'gantt-bar-nhansu'
-                          : deptKey === 'DUYET_BAI' ? 'gantt-bar-duyetbai'
-                          : 'gantt-bar-global';
+            // Calculate timeline position
+            const startDt = task.WORK_START ? new Date(task.WORK_START) 
+                          : task.OPEN_TIME ? new Date(task.OPEN_TIME) 
+                          : (task.CREATED_AT ? new Date(task.CREATED_AT) : new Date(year, month, 1));
+            const endDt = task.SUBMISSION_DEADLINE ? new Date(task.SUBMISSION_DEADLINE)
+                        : task.CLAIM_DEADLINE ? new Date(task.CLAIM_DEADLINE)
+                        : new Date(startDt.getTime() + 3 * 86400000);
 
-          const progressPct = st === 'COMPLETED' ? 100 : (st === 'IN_PROGRESS' || st === 'WORKING' || st === 'SUBMITTED') ? 60 : 20;
+            // Check if task intersects with current month
+            const monthStart = new Date(year, month, 1, 0, 0, 0);
+            const monthEnd = new Date(year, month, daysInMonth, 23, 59, 59);
 
-          const startStr = `${startDt.getDate()}/${startDt.getMonth()+1}`;
-          const endStr = `${endDt.getDate()}/${endDt.getMonth()+1}`;
+            let barHtml = '';
+            if (endDt >= monthStart && startDt <= monthEnd) {
+              const effectiveStart = startDt < monthStart ? 1 : startDt.getDate();
+              const effectiveEnd = endDt > monthEnd ? daysInMonth : endDt.getDate();
+              const spanDays = Math.max(1, effectiveEnd - effectiveStart + 1);
 
-          barHtml = `
-            <div class="gantt-bar ${deptClass}" style="left:${leftPx}px; width:${widthPx}px" onclick="openMissionDetail('${task.TASK_ID || task.CODE}')" title="${task.CODE || ''} - ${task.TITLE || ''} (${startStr} - ${endStr}) | +${xp} XP">
-              <div class="gantt-bar-progress" style="width:${progressPct}%"></div>
-              <span style="position:relative;z-index:2;overflow:hidden;text-overflow:ellipsis">${startStr}-${endStr}: ${task.TITLE || 'Nhiệm vụ'}</span>
-            </div>
-          `;
+              const leftPx = (effectiveStart - 1) * cellWidth + 2;
+              const widthPx = Math.max(34, spanDays * cellWidth - 4);
+
+              const deptClass = deptKey === 'MEDIA' ? 'gantt-bar-media'
+                              : deptKey === 'TRUYEN_THONG' ? 'gantt-bar-truyenthong'
+                              : deptKey === 'NOI_DUNG' ? 'gantt-bar-noidung'
+                              : deptKey === 'NHAN_SU' ? 'gantt-bar-nhansu'
+                              : deptKey === 'DUYET_BAI' ? 'gantt-bar-duyetbai'
+                              : 'gantt-bar-global';
+
+              const progressPct = st === 'COMPLETED' ? 100 : (st === 'IN_PROGRESS' || st === 'WORKING' || st === 'SUBMITTED') ? 60 : 20;
+
+              const startStr = `${startDt.getDate()}/${startDt.getMonth()+1}`;
+              const endStr = `${endDt.getDate()}/${endDt.getMonth()+1}`;
+
+              barHtml = `
+                <div class="gantt-bar ${deptClass}" style="left:${leftPx}px; width:${widthPx}px" onclick="openMissionDetail('${task.TASK_ID || task.CODE}')" title="[${chTag}] ${task.CODE || ''} - ${task.TITLE || ''} (${startStr} - ${endStr}) | +${xp} XP | Phụ trách: ${task.ASSIGNEE_NAME || i18n.unassigned}">
+                  <div class="gantt-bar-progress" style="width:${progressPct}%"></div>
+                  <span style="position:relative;z-index:2;overflow:hidden;text-overflow:ellipsis">${startStr}-${endStr}: ${task.TITLE || 'Nhiệm vụ'}</span>
+                </div>
+              `;
+            }
+
+            timelineRowsHtml += `
+              <div class="gantt-timeline-row">
+                ${barHtml}
+              </div>
+            `;
+          });
         }
 
-        timelineRowsHtml += `
-          <div class="gantt-timeline-row">
-            ${barHtml}
-          </div>
-        `;
+        treeHtml += `</div>`;
       });
     }
 
@@ -1983,7 +2547,7 @@ async function renderGanttChart() {
   if (el('ganttTimelineCol')) {
     el('ganttTimelineCol').innerHTML = `
       <div class="gantt-days-header">${daysHeaderHtml}</div>
-      <div class="gantt-timeline-body" style="width:${daysInMonth * 38}px">
+      <div class="gantt-timeline-body" style="width:${daysInMonth * cellWidth}px">
         ${gridLinesHtml}
         ${timelineRowsHtml}
       </div>
@@ -1991,9 +2555,9 @@ async function renderGanttChart() {
   }
 
   // Auto-scroll timeline to today if current month
-  if (isCurrentMonth && todayDateNum > 4 && el('ganttTimelineCol')) {
+  if (isCurrentMonth && todayDateNum > 3 && el('ganttTimelineCol')) {
     setTimeout(() => {
-      const scrollPos = Math.max(0, (todayDateNum - 4) * 38);
+      const scrollPos = Math.max(0, (todayDateNum - 3) * cellWidth);
       el('ganttTimelineCol').scrollTo({ left: scrollPos, behavior: 'smooth' });
     }, 100);
   }
@@ -2004,7 +2568,7 @@ async function renderGanttChart() {
 // -----------------------------------------------------------------------------
 async function openMissionDetail(ref) {
   try {
-    let t = allMissions.find(x => x.TASK_ID === ref || x.CODE === ref);
+    let t = (allMissions && allMissions.find(x => x.TASK_ID === ref || x.CODE === ref)) || DEFAULT_OP_TASKS.find(x => x.TASK_ID === ref || x.CODE === ref) || DEFAULT_OP_TASKS[0];
     let rel = null;
     try {
       const data = await api(`/tasks/${encodeURIComponent(ref)}/detail`);
@@ -2014,18 +2578,19 @@ async function openMissionDetail(ref) {
       }
     } catch (_) {}
 
-    if (!t) t = DEFAULT_OP_TASKS.find(x => x.TASK_ID === ref || x.CODE === ref) || DEFAULT_OP_TASKS[0];
     const hasClaim = !!(rel && rel.claim) || (myLocalClaims && myLocalClaims[t.TASK_ID]);
+    const chName = (t.CHANNEL || 'KENH_CHINH') === 'KENH_PHU' ? '📱 KÊNH PHỤ (Secondary Channel)' : '🎬 KÊNH CHÍNH (Main Channel)';
 
     showModal(`
-      <div class="eyebrow">${t.CODE || t.TASK_ID} · ${formatScope(t.SCOPE)}</div>
+      <div class="eyebrow">${chName} · ${t.CODE || t.TASK_ID} · ${formatScope(t.SCOPE)}</div>
       <h2>${t.TITLE}</h2>
       <p>${t.DESCRIPTION || t.EXPECTED_OUTPUT || ''}</p>
       <div class="form-grid">
+        <label>Kênh phát sóng & Dự án<input value="${chName}" disabled style="color:var(--gold-light);font-weight:700"></label>
         <label>Phần thưởng XP<input value="${t.XP_FINAL || 0} XP" disabled></label>
         <label>Độ khó & Thời gian ước tính<input value="${t.DIFFICULTY || 'Vừa'} (${t.ESTIMATED_TIME_MIN || 60} phút)" disabled></label>
         <label>Thời gian bắt đầu làm (Work Start)<input value="${t.WORK_START ? new Date(t.WORK_START).toLocaleString('vi-VN') : 'Linh hoạt'}" disabled></label>
-        <label>Thời gian chủ động chốt bài (Deadline)<input value="${t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'Linh hoạt (Chưa chốt)'}" disabled style="color:var(--gold-light);font-weight:700;border-color:var(--gold)"></label>
+        <label class="wide">Thời gian chủ động chốt bài (Deadline)<input value="${t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'Linh hoạt (Chưa chốt)'}" disabled style="color:var(--gold-light);font-weight:700;border-color:var(--gold)"></label>
         <label class="wide">Yêu cầu bằng chứng (Proof Requirement)<textarea rows="2" disabled>${t.PROOF_REQUIREMENT || 'Ảnh chụp màn hình / Đường dẫn Drive / File đính kèm theo tiêu chuẩn.'}</textarea></label>
       </div>
       <div class="dialog-foot">
@@ -2565,9 +3130,15 @@ function openCreateTask() {
   showModal(`
     <div class="eyebrow">TẠO NHIỆM VỤ · TÍCH HỢP AI</div>
     <h2>Khởi tạo nhiệm vụ mới</h2>
-    <p>AI sẽ phân tích độ khó, thời gian hoàn thành và đề xuất mức XP chuẩn. Thời gian chủ động chốt bài giúp phân bổ timeline minh bạch.</p>
+    <p>AI sẽ phân tích độ khó, thời gian hoàn thành và đề xuất mức XP chuẩn. Phân loại theo 2 Kênh giúp đồng bộ tiến độ và sơ đồ Gantt minh bạch.</p>
     <div class="form-grid">
       <label class="wide">Tên nhiệm vụ<input id="createTitle" placeholder="Ví dụ: Biên tập video recap workshop điện ảnh"></label>
+      <label>Kênh phát sóng & Dự án
+        <select id="createChannel">
+          <option value="KENH_CHINH">🎬 Kênh Chính (Main Channel)</option>
+          <option value="KENH_PHU">📱 Kênh Phụ (Secondary Channel)</option>
+        </select>
+      </label>
       <label>Ban phụ trách
         <select id="createDept">
           <option value="MEDIA">Ban Media</option>
@@ -2575,6 +3146,7 @@ function openCreateTask() {
           <option value="NOI_DUNG">Ban Nội dung</option>
           <option value="NHAN_SU">Ban Nhân sự</option>
           <option value="DUYET_BAI">Ban Duyệt bài</option>
+          <option value="GLOBAL">Toàn dự án / Kênh</option>
           <option value="CO_VAN">Ban Cố vấn chuyên môn</option>
         </select>
       </label>
@@ -2588,7 +3160,7 @@ function openCreateTask() {
       <label>Hạn chót nhận việc (Claim)
         <input id="createClaimDeadline" type="datetime-local">
       </label>
-      <label>Thời gian chủ động chốt bài (Deadline)
+      <label class="wide">Thời gian chủ động chốt bài (Deadline)
         <input id="createSubmitDeadline" type="datetime-local" value="${defSubmitStr}">
         <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
           <button type="button" class="btn" style="padding:2px 6px;font-size:10px" onclick="setCreateDeadlinePreset(24)">+24h</button>
@@ -2610,6 +3182,7 @@ async function submitCreateTask() {
   try {
     const title = el('createTitle').value.trim();
     const output = el('createOutput').value.trim();
+    const channel = el('createChannel') ? el('createChannel').value : 'KENH_CHINH';
     if (!title || !output) throw new Error('Vui lòng nhập tên nhiệm vụ và mô tả tiêu chuẩn đầu ra.');
 
     // Kiểm tra token xác thực, nếu chưa có thì tự động mở đăng nhập Google
@@ -2626,6 +3199,7 @@ async function submitCreateTask() {
       title,
       description: output,
       expectedOutput: output,
+      channel,
       department: el('createDept').value,
       scope: el('createScope').value,
       claimDeadline: el('createClaimDeadline').value || undefined,
@@ -2847,5 +3421,6 @@ auth.onAuthStateChanged(async user => {
   }
 });
 </script>
+<script src="/js/i18n.js"></script>
 </body>
 </html>

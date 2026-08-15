@@ -155,7 +155,19 @@ router.post('/tasks/:ref/analyze', auth.requireRole('task', 'create'), async (re
     const task = await ynda.tasks.getTask(req.params.ref);
     if (!task) return res.status(404).json({ error: 'Task không tồn tại.' });
     const analysis = await ynda.ai.analyzeTask(task, ynda.geminiFactory());
-    res.json({ analysis });
+    const updates = {
+      XP_AI_RECOMMENDED: analysis.xp != null ? round2(toNumber(analysis.xp)) : task.XP_AI_RECOMMENDED,
+      XP_FINAL: analysis.xp != null ? round2(toNumber(analysis.xp)) : task.XP_FINAL,
+      DIFFICULTY: analysis.difficulty || task.DIFFICULTY,
+      DIFFICULTY_REASON: analysis.reasoning || task.DIFFICULTY_REASON,
+      ESTIMATED_TIME_MIN: analysis.estimatedTimeMin || task.ESTIMATED_TIME_MIN,
+      STATUS: config.TASK_STATUS.OPEN
+    };
+    if (analysis.proofRequirement && !task.PROOF_REQUIREMENT) {
+      updates.PROOF_REQUIREMENT = analysis.proofRequirement;
+    }
+    const updated = await ynda.tasks.updateTask(task.TASK_ID, updates);
+    res.json({ analysis, task: updated || { ...task, ...updates } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

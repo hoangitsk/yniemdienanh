@@ -620,7 +620,6 @@
     <a href="/bang-xep-hang">🏆 Bảng Xếp Hạng</a>
     <a href="/ban-to-chuc">💼 Ban Tổ Chức</a>
     <a href="/cham-diem">📝 Chấm Điểm</a>
-    <a href="/schedule">📅 Ca Trực</a>
     <a href="/vinh-danh">🎖️ Vinh Danh</a>
   </div>
 </nav>
@@ -1874,6 +1873,8 @@ async function submitCreateTask() {
     const output = el('createOutput').value.trim();
     if (!title || !output) throw new Error('Vui lòng nhập tên nhiệm vụ và mô tả tiêu chuẩn đầu ra.');
 
+    toast('⏳ Đang tạo nhiệm vụ và phân tích điểm XP bằng AI...');
+
     const res = await api('/tasks', 'POST', {
       title,
       description: output,
@@ -1881,14 +1882,27 @@ async function submitCreateTask() {
       department: el('createDept').value,
       scope: el('createScope').value,
       claimDeadline: el('createClaimDeadline').value || undefined,
-      submissionDeadline: el('createSubmitDeadline').value || undefined
+      submissionDeadline: el('createSubmitDeadline').value || undefined,
+      status: 'OPEN'
     });
 
-    await api(`/tasks/${encodeURIComponent(res.task.TASK_ID)}/analyze`, 'POST').catch(() => null);
+    let task = res.task || {};
+    let finalXp = task.XP_FINAL || 1;
+    let diff = task.DIFFICULTY || 'M2';
+
+    try {
+      const analyzeRes = await api(`/tasks/${encodeURIComponent(task.TASK_ID)}/analyze`, 'POST');
+      if (analyzeRes) {
+        if (analyzeRes.task) task = analyzeRes.task;
+        if (analyzeRes.analysis && analyzeRes.analysis.xp != null) finalXp = analyzeRes.analysis.xp;
+        if (analyzeRes.analysis && analyzeRes.analysis.difficulty) diff = analyzeRes.analysis.difficulty;
+      }
+    } catch (_) {}
 
     closeModal();
-    toast(`Đã tạo nhiệm vụ ${res.task.CODE}. AI đã phân tích và cập nhật vào Bảng nhiệm vụ.`);
-    loadBoard();
+    toast(`🎉 Đã tạo nhiệm vụ ${task.CODE || 'mới'} (+${finalXp} XP · Độ khó: ${diff})! Đã cập nhật vào Bảng nhiệm vụ.`);
+    await loadBoard();
+    go('board');
   } catch (e) {
     toast(e.message);
   }

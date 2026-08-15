@@ -187,10 +187,11 @@ module.exports = async function getBtcList(req, res) {
       const rawRoleNorm = normalizeText(m.rawRole || '');
       const deptCanonical = canonicalDept(m.ban, m.rawRole, m.role, m.name);
 
+      const isAdvisor = roleUpper === 'ADVISOR' || /co van|advisor|tham van|chuyen mon/.test(rawRoleNorm) || /co van|advisor/i.test(m.ban || '');
       const isExec = roleUpper === 'FOUNDER' || roleUpper === 'PRESIDENT' || roleUpper === 'CO_FOUNDER' ||
         /founder|president|chu tich|sang lap|dong sang lap/.test(rawRoleNorm);
 
-      const isLead = !isExec && (roleUpper === 'CORE' || roleUpper === 'VICE' || /truong|pho|head|lead|core|vice/.test(rawRoleNorm));
+      const isLead = !isExec && (isAdvisor || roleUpper === 'CORE' || roleUpper === 'VICE' || /truong|pho|head|lead|core|vice/.test(rawRoleNorm));
       const isBtc = isExec || isLead;
 
       const title = formatProperTitle(roleUpper, m.rawRole, deptCanonical);

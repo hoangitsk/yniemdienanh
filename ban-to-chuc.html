@@ -587,6 +587,7 @@
             <div class="filter-pills" id="filterPills">
                 <button class="pill active" onclick="setDepartmentFilter('ALL')">🌟 Tất cả</button>
                 <button class="pill" onclick="setDepartmentFilter('Ban Điều Hành')">👑 Ban Điều Hành</button>
+                <button class="pill" onclick="setDepartmentFilter('Ban Cố Vấn Chuyên Môn')">🎓 Ban Cố Vấn</button>
                 <button class="pill" onclick="setDepartmentFilter('LEADS_ONLY')">⭐ Trưởng & Phó Ban</button>
                 <button class="pill" onclick="setDepartmentFilter('Ban Nhân Sự')">👥 Ban Nhân Sự</button>
                 <button class="pill" onclick="setDepartmentFilter('Ban Truyền Thông')">📢 Ban Truyền Thông</button>
@@ -632,6 +633,7 @@
             'hoangngminh3@gmail.com': 'Ban Điều Hành',
             'dongthithanhngaxg@gmail.com': 'Ban Điều Hành',
             'minhanhbinhduong@gmail.com': 'Ban Điều Hành',
+            'hannahpham283.work@gmail.com': 'Ban Cố Vấn Chuyên Môn',
             'chocopiecuahaanh@gmail.com': 'Ban Nhân Sự',
             'vivianqnam@gmail.com': 'Ban Nhân Sự',
             'nga517923@gmail.com': 'Ban Nhân Sự',
@@ -639,7 +641,7 @@
             'ngocha2008th@gmail.com': 'Ban Truyền Thông',
             'phanhongocphung209@gmail.com': 'Ban Truyền Thông',
             'nganfth30011@gmail.com': 'Ban Truyền Thông',
-            'trucntt8210@gmail.com': 'Ban Truyền Thông',
+            'trucntt8210@gmail.com': 'Ban Media / Hậu Kỳ',
             'nguyentranyennhi04062009@gmail.com': 'Ban Media / Hậu Kỳ',
             'thaomam0305@gmail.com': 'Ban Media / Hậu Kỳ',
             'binhdinh081206@gmail.com': 'Ban Nội Dung',
@@ -654,9 +656,11 @@
             'hoangngminh3@gmail.com': 'https://www.facebook.com/Harlanitskt',
             'dongthithanhngaxg@gmail.com': 'https://www.facebook.com/profile.php?id=61580310922568',
             'minhanhbinhduong@gmail.com': 'https://www.facebook.com/share/1JESFwpoLm/?mibextid=wwXIfr',
+            'hannahpham283.work@gmail.com': 'https://www.facebook.com/search/top?q=Ph%E1%BA%A1m%20T%E1%BB%91%20Uy%C3%AAn',
             'chocopiecuahaanh@gmail.com': 'https://www.facebook.com/share/1DEsMBmVFe/?mibextid=wwXIfr',
             'quynhgiang101517@gmail.com': 'https://www.facebook.com/search/top?q=Qu%E1%BB%B3nhh%20Giang',
             'ngocha2008th@gmail.com': 'https://www.facebook.com/ngocha.Joli/',
+            'trucntt8210@gmail.com': 'https://www.facebook.com/search/top?q=Sb%20N%20Sth',
             'nguyentranyennhi04062009@gmail.com': 'https://www.facebook.com/share/1BTn6csj9C/',
             'thaomam0305@gmail.com': 'https://www.facebook.com/share/1BhbFe4gRA/?mibextid=wwXIfr',
             'binhdinh081206@gmail.com': 'https://www.facebook.com/share/14hzEJdYN8s/?mibextid=wwXIfr',
@@ -675,7 +679,7 @@
                 .trim();
         }
 
-        const VALID_DEPTS = ['Ban Điều Hành', 'Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
+        const VALID_DEPTS = ['Ban Điều Hành', 'Ban Cố Vấn Chuyên Môn', 'Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
 
         function resolveDept(m) {
             // 1. Nếu API đã trả về dept chính xác → dùng luôn
@@ -685,8 +689,9 @@
             const email = String(m.email || '').toLowerCase().trim();
             if (KNOWN_DEPTS[email]) return KNOWN_DEPTS[email];
 
-            // 3. Tra bằng cột BAN từ sheet (ví dụ: "NHÂN SỰ", "TRUYỀN THÔNG", "MEDIA"...)
+            // 3. Tra bằng cột BAN từ sheet (ví dụ: "CỐ VẤN CHUYÊN MÔN", "NHÂN SỰ", "TRUYỀN THÔNG", "MEDIA"...)
             const banNorm = normText(m.ban || m.dept || '');
+            if (/co van|advisor|chuyen mon|tham van/.test(banNorm)) return 'Ban Cố Vấn Chuyên Môn';
             if (/bdh|dieu hanh|global/.test(banNorm)) return 'Ban Điều Hành';
             if (/nhan su|hr/.test(banNorm)) return 'Ban Nhân Sự';
             if (/truyen thong|comms/.test(banNorm)) return 'Ban Truyền Thông';
@@ -696,13 +701,14 @@
 
             // 4. Fallback: regex trên rawRole + name
             const t = normText((m.rawRole || '') + ' ' + (m.title || '') + ' ' + (m.role || '') + ' ' + (m.name || ''));
+            if (/co van|advisor|chuyen mon|tham van|to uyen/.test(t)) return 'Ban Cố Vấn Chuyên Môn';
             if (/founder|president|chu tich|sang lap|co founder|dong sang lap|ban dieu hanh|bdh|dieu hanh|global|minh hoang|thanh nga|minh anh/.test(t)) return 'Ban Điều Hành';
             if (/nhan su|hr|anh thu|thao vy|my nga/.test(t)) return 'Ban Nhân Sự';
-            if (/truyen thong|comms|mkt|marketing|pr|quynh giang|ngoc ha|ngoc phung|hoang ngan|thanh truc/.test(t)) return 'Ban Truyền Thông';
-            if (/media|hau ky|san xuat|video|design|thanh thao/.test(t) || (normText(m.name).includes('yen nhi') && (/media/i.test(m.dept || '') || /media/i.test(m.rawRole || '')))) return 'Ban Media / Hậu Kỳ';
+            if (/truyen thong|comms|mkt|marketing|pr|quynh giang|ngoc ha|ngoc phung|hoang ngan/.test(t)) return 'Ban Truyền Thông';
+            if (/media|hau ky|san xuat|video|design|thanh thao|thanh truc/.test(t) || (normText(m.name).includes('yen nhi') && (/media/i.test(m.dept || '') || /media/i.test(m.rawRole || '')))) return 'Ban Media / Hậu Kỳ';
             if (/noi dung|content|huu binh|phuong thao|thai anh|aris/.test(t)) return 'Ban Nội Dung';
             if (/duyet|kiem duyet|ngoc diep|phuong linh/.test(t) || (normText(m.name).includes('yen nhi') && (/duyet/i.test(m.dept || '') || /duyet/i.test(m.rawRole || '')))) return 'Ban Duyệt Bài';
-            return 'Ban Khác';
+            return m.dept || 'Ban Khác';
         }
 
         function resolveFbLink(m) {
@@ -725,6 +731,9 @@
 
         function getRoleBadge(role, title) {
             const t = normText((title || '') + ' ' + (role || ''));
+            if (/co van|advisor|tham van|chuyen mon/.test(t)) {
+                return '<span class="role-tag advisor" style="background:rgba(228,184,102,0.18);color:#f59e0b;border:1px solid rgba(245,158,11,0.35);font-weight:700;">🎓 Cố Vấn Chuyên Môn</span>';
+            }
             if (/co founder|dong sang lap/.test(t)) {
                 return '<span class="role-tag admin">🤝 Đồng Sáng Lập</span>';
             }
@@ -851,7 +860,7 @@
             }
 
             // 2. Render each Department (Trưởng Ban on top + Thành Viên below)
-            const orderedDepts = ['Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
+            const orderedDepts = ['Ban Cố Vấn Chuyên Môn', 'Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
             const allDeptKeys = Array.from(new Set([...orderedDepts, ...Object.keys(deptGroups)]));
 
             allDeptKeys.forEach(deptName => {

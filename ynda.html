@@ -1060,14 +1060,39 @@ function go(page) {
   if (page === 'role-review') loadRoleReviews();
 }
 
+// Lấy token xác thực Firebase, tự động đợi phục hồi phiên đăng nhập
+async function getAuthToken() {
+  if (auth && auth.currentUser) {
+    try {
+      return await auth.currentUser.getIdToken();
+    } catch (e) {
+      console.warn('getIdToken error:', e.message);
+    }
+  }
+  // Nếu Firebase auth đang phục hồi trạng thái từ IndexedDB
+  if (auth && typeof auth.onAuthStateChanged === 'function') {
+    const user = await new Promise(resolve => {
+      const unsub = auth.onAuthStateChanged(u => {
+        unsub();
+        resolve(u);
+      });
+      setTimeout(() => resolve(null), 1200);
+    });
+    if (user) {
+      try {
+        return await user.getIdToken();
+      } catch (_) {}
+    }
+  }
+  return null;
+}
+
 // Gọi API backend với token Firebase tự động
 async function api(path, method = 'GET', body = null) {
   const headers = { 'Content-Type': 'application/json' };
-  if (auth.currentUser) {
-    try {
-      const token = await auth.currentUser.getIdToken();
-      headers['Authorization'] = `Bearer ${token}`;
-    } catch (e) {}
+  const token = await getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
   const res = await fetch('/api/ynda' + path, {
     method,
@@ -1075,7 +1100,12 @@ async function api(path, method = 'GET', body = null) {
     body: body ? JSON.stringify(body) : undefined
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Lỗi hệ thống (${res.status})`);
+  if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error(data.error || 'Vui lòng bấm nút "Đăng nhập Google" ở góc trên để xác thực phiên làm việc.');
+    }
+    throw new Error(data.error || `Lỗi hệ thống (${res.status})`);
+  }
   return data;
 }
 
@@ -1872,6 +1902,14 @@ async function submitCreateTask() {
     const title = el('createTitle').value.trim();
     const output = el('createOutput').value.trim();
     if (!title || !output) throw new Error('Vui lòng nhập tên nhiệm vụ và mô tả tiêu chuẩn đầu ra.');
+
+    // Kiểm tra token xác thực, nếu chưa có thì tự động mở đăng nhập Google
+    const token = await getAuthToken();
+    if (!token && !auth.currentUser) {
+      toast('🔐 Đang mở đăng nhập Google để xác thực quyền quản trị...');
+      await signInWithGoogle();
+      if (!auth.currentUser) throw new Error('Vui lòng hoàn tất đăng nhập Google để tiếp tục tạo nhiệm vụ.');
+    }
 
     toast('⏳ Đang tạo nhiệm vụ và phân tích điểm XP bằng AI...');
 

@@ -66,6 +66,7 @@ function formatProperTitle(role, rawRole, ban) {
   if (r === 'FOUNDER') return raw || 'Sáng lập / Founder';
   if (r === 'CO_FOUNDER') return raw || 'Đồng sáng lập / Co-founder';
   if (r === 'PRESIDENT') return raw || 'Chủ tịch / President';
+  if (r === 'ADVISOR' || /co van|advisor/i.test(r) || /co van|advisor/i.test(raw)) return raw || 'Cố vấn chuyên môn';
   if (r === 'CORE') {
     if (raw && !/member|thanh vien/i.test(raw)) return raw;
     return b ? `Trưởng Ban ${b}` : 'Trưởng Ban';

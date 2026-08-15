@@ -54,14 +54,15 @@ async function readMembers(sid) {
   const rawMembers = await authHelper.readRankingMembers(sheetsApi, sid);
   return (rawMembers || []).map(m => {
     const roleUpper = String(m.role || '').toUpperCase();
+    const isAdvisor = roleUpper === 'ADVISOR' || /co van|advisor/i.test(m.rawRole || '') || /co van/i.test(m.ban || '');
     const isExec = roleUpper === 'FOUNDER' || roleUpper === 'PRESIDENT' || roleUpper === 'CO_FOUNDER';
-    const isCore = isExec || roleUpper === 'CORE' || roleUpper === 'VICE';
+    const isCore = isExec || isAdvisor || roleUpper === 'CORE' || roleUpper === 'VICE';
     const deptCanonical = authHelper.canonicalDept ? authHelper.canonicalDept(m.ban, m.rawRole, m.role, m.name) : (m.ban || m.department || (isExec ? 'Ban Điều Hành' : ''));
     return {
       name: m.name,
       dept: deptCanonical,
-      role: isExec ? 'Lãnh đạo' : (isCore ? 'Core' : 'Thành viên'),
-      title: m.rawRole || (isExec ? 'Lãnh đạo' : (isCore ? 'Core Member' : 'Thành viên')),
+      role: isAdvisor ? 'Cố vấn chuyên môn' : (isExec ? 'Lãnh đạo' : (isCore ? 'Core' : 'Thành viên')),
+      title: m.rawRole || (isAdvisor ? 'Cố vấn chuyên môn' : (isExec ? 'Lãnh đạo' : (isCore ? 'Core Member' : 'Thành viên'))),
       email: m.email || '',
       phone: m.phone || '',
       facebook: m.facebook || '',

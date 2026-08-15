@@ -1157,6 +1157,7 @@
       <div class="board-tools" style="margin-bottom:16px">
         <button class="filter-btn active" onclick="switchLbTab('all', this)">🏆 Tổng sắp toàn dự án</button>
         <button class="filter-btn" onclick="switchLbTab('core', this)">⭐ Ban điều hành & Core</button>
+        <button class="filter-btn" onclick="switchLbTab('dept_CO_VAN', this)">🎓 Ban Cố vấn</button>
         <button class="filter-btn" onclick="switchLbTab('members', this)">👥 Thành viên</button>
         <button class="filter-btn" onclick="switchLbTab('monthly', this)">📅 Xếp hạng theo tháng</button>
         <button class="filter-btn" onclick="switchLbTab('dept_TRUYEN_THONG', this)">🏅 Ban Truyền thông</button>
@@ -2206,6 +2207,7 @@ async function loadLeaderboard() {
           monthly: (legacy.monthly && legacy.monthly.all) ? legacy.monthly.all : (legacy.all || []),
           periodMonth: legacy.currentMonth || '',
           byDept: {
+            CO_VAN: (legacy.all || []).filter(x => /c[oố]\s*v[aấ]n|advisor/i.test(x.dept || '') || /c[oố]\s*v[aấ]n|advisor/i.test(x.role || '')),
             TRUYEN_THONG: (legacy.all || []).filter(x => /truy[eề]n\s*th[oô]ng|truyen_thong/i.test(x.dept || '')),
             MEDIA: (legacy.all || []).filter(x => /media|h[aậ]u\s*k[yỳ]/i.test(x.dept || '')),
             NOI_DUNG: (legacy.all || []).filter(x => /n[oộ]i\s*dung|noi_dung|content/i.test(x.dept || '')),
@@ -2573,6 +2575,7 @@ function openCreateTask() {
           <option value="NOI_DUNG">Ban Nội dung</option>
           <option value="NHAN_SU">Ban Nhân sự</option>
           <option value="DUYET_BAI">Ban Duyệt bài</option>
+          <option value="CO_VAN">Ban Cố vấn chuyên môn</option>
         </select>
       </label>
       <label>Phạm vi nhiệm vụ

@@ -4739,19 +4739,19 @@
 
         // ================= INTERNAL ZONE / DASHBOARD =================
         const TABS = {
-            overview: { icon: '📊', label: 'Tổng quan', roles: ['admin', 'organizer', 'member'] },
-            gantt: { icon: '📅', label: 'Sơ đồ Gantt', roles: ['admin', 'organizer', 'member'] },
-            profile: { icon: '👤', label: 'Hồ sơ của tôi', roles: ['admin', 'organizer', 'member'] },
-            changeFrame: { icon: '🖼️', label: 'Thay frame', roles: ['admin', 'organizer', 'member'] },
-            events: { icon: '🎬', label: 'Quản lý sự kiện', roles: ['admin', 'organizer'] },
-            members: { icon: '👥', label: 'Đơn tuyển & Nhân sự', roles: ['admin', 'organizer'] },
-            announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'member'] },
-            budget: { icon: '💰', label: 'Sổ tay Tài chính', roles: ['admin', 'organizer'] },
-            transactions: { icon: '💳', label: 'Giao dịch & Quỹ', roles: ['admin', 'organizer'] },
-            feedback: { icon: '💬', label: 'Feedback & Báo lỗi', roles: ['admin', 'organizer'] },
-            docs: { icon: '📁', label: 'Thư viện Tài liệu', roles: ['admin', 'organizer', 'member'] },
-            submissions: { icon: '🎥', label: 'Quản lý Bài dự thi', roles: ['admin', 'organizer'] },
-            accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin'] },
+            overview: { icon: '📊', label: 'Tổng quan', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'member'] },
+            gantt: { icon: '📅', label: 'Sơ đồ Gantt', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'member'] },
+            profile: { icon: '👤', label: 'Hồ sơ của tôi', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'member'] },
+            changeFrame: { icon: '🖼️', label: 'Thay frame', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'member'] },
+            events: { icon: '🎬', label: 'Quản lý sự kiện', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'leader'] },
+            members: { icon: '👥', label: 'Đơn tuyển & Nhân sự', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'leader'] },
+            announce: { icon: '📢', label: 'Bảng Thông báo', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'member'] },
+            budget: { icon: '💰', label: 'Sổ tay Tài chính', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'leader'] },
+            transactions: { icon: '💳', label: 'Giao dịch & Quỹ', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'leader'] },
+            feedback: { icon: '💬', label: 'Feedback & Báo lỗi', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'leader'] },
+            docs: { icon: '📁', label: 'Thư viện Tài liệu', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'member'] },
+            submissions: { icon: '🎥', label: 'Quản lý Bài dự thi', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'leader'] },
+            accounts: { icon: '🔐', label: 'Quản lý tài khoản', roles: ['admin', 'organizer', 'founder', 'president', 'core', 'vice', 'leader'] },
         };
 
         let curTab = 'overview';
@@ -4762,7 +4762,10 @@
         function canAccessDashboardTab(tab) {
             const config = TABS[tab];
             if (!config || !session) return false;
-            if (config.roles.includes(session.role || 'member')) return true;
+            const r = String(session.role || 'member').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+            const isCoreUser = ['admin', 'organizer', 'founder', 'president', 'core_founder', 'co_founder', 'core', 'vice', 'leader', 'truong ban', 'pho ban'].includes(r);
+            if (isCoreUser) return true;
+            if (config.roles.includes(r)) return true;
             const dept = normalizedSessionDept();
             return tab === 'members' && (dept.includes('nhan su') || dept.includes('hr') || dept.includes('truyen thong') || dept.includes('pr') || dept.includes('marketing') || dept.includes('mkt'));
         }

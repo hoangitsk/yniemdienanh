@@ -1622,6 +1622,26 @@ async function loadBoard(force = false) {
   }
 }
 
+function formatDeadlineWithCountdown(dateStr) {
+  if (!dateStr) return '<span style="color:var(--muted)">Linh hoạt (Chưa chốt)</span>';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return String(dateStr);
+  const now = new Date();
+  const diffMs = d.getTime() - now.getTime();
+  const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  const timeFormatted = d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+  
+  if (diffMs < 0) {
+    return `<span style="color:var(--red);font-weight:700">🔴 Quá hạn (${timeFormatted})</span>`;
+  }
+  if (diffHours <= 24) {
+    return `<span style="color:#f59e0b;font-weight:700">⏳ Gấp (${diffHours}h nữa · ${timeFormatted})</span>`;
+  }
+  return `<span style="color:var(--gold-light);font-weight:600">⏱️ ${timeFormatted} (Còn ${diffDays} ngày)</span>`;
+}
+
 function renderBoardCards(list) {
   if (!list || !list.length) {
     el('boardCardsGrid').innerHTML = `
@@ -1641,7 +1661,7 @@ function renderBoardCards(list) {
     const isMandatory = String(t.SCOPE || t.TASK_TYPE || '').toUpperCase() === 'MANDATORY';
     const isGlobal = String(t.SCOPE || t.TASK_TYPE || '').toUpperCase() === 'GLOBAL_OPEN';
     const badgeClass = isMandatory ? 'mandatory' : (isGlobal ? 'global' : 'dept');
-    const deadline = t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : 'Chưa thiết lập';
+    const deadlineDisplay = formatDeadlineWithCountdown(t.SUBMISSION_DEADLINE);
     const diff = t.DIFFICULTY || 'Vừa';
 
     return `
@@ -1654,8 +1674,8 @@ function renderBoardCards(list) {
         <p>${t.DESCRIPTION || t.EXPECTED_OUTPUT || 'Xem chi tiết để biết yêu cầu bằng chứng và các bước thực hiện.'}</p>
         <div class="card-bottom">
           <div class="deadline">
-            HẠN CHÓT NỘP BÀI
-            <b>${deadline}</b>
+            THỜI GIAN CHỦ ĐỘNG CHỐT BÀI
+            <b>${deadlineDisplay}</b>
           </div>
           <div>
             <div class="xp-tag">+${t.XP_FINAL || t.XP_AI_RECOMMENDED || 0} XP</div>
@@ -2004,7 +2024,7 @@ async function openMissionDetail(ref) {
         <label>Phần thưởng XP<input value="${t.XP_FINAL || 0} XP" disabled></label>
         <label>Độ khó & Thời gian ước tính<input value="${t.DIFFICULTY || 'Vừa'} (${t.ESTIMATED_TIME_MIN || 60} phút)" disabled></label>
         <label>Thời gian bắt đầu làm (Work Start)<input value="${t.WORK_START ? new Date(t.WORK_START).toLocaleString('vi-VN') : 'Linh hoạt'}" disabled></label>
-        <label>Hạn chót nộp bài (Deadline)<input value="${t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'Không giới hạn'}" disabled></label>
+        <label>Thời gian chủ động chốt bài (Deadline)<input value="${t.SUBMISSION_DEADLINE ? new Date(t.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'Linh hoạt (Chưa chốt)'}" disabled style="color:var(--gold-light);font-weight:700;border-color:var(--gold)"></label>
         <label class="wide">Yêu cầu bằng chứng (Proof Requirement)<textarea rows="2" disabled>${t.PROOF_REQUIREMENT || 'Ảnh chụp màn hình / Đường dẫn Drive / File đính kèm theo tiêu chuẩn.'}</textarea></label>
       </div>
       <div class="dialog-foot">
@@ -2122,7 +2142,7 @@ async function loadMyMissions() {
         <div class="mid">${(m.task?.CODE || 'TASK').replace('-', '<br>')}</div>
         <div>
           <h3>${m.task?.TITLE || 'Nhiệm vụ'}</h3>
-          <p>Trạng thái: <b style="color:var(--gold)">${formatStatus(m.status)}</b> · Hạn chót: ${m.task?.SUBMISSION_DEADLINE ? new Date(m.task.SUBMISSION_DEADLINE).toLocaleString('vi-VN') : 'Linh hoạt'}</p>
+          <p>Trạng thái: <b style="color:var(--gold)">${formatStatus(m.status)}</b> · Chủ động chốt bài: ${formatDeadlineWithCountdown(m.task?.SUBMISSION_DEADLINE)}</p>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn primary" onclick="openSubmitProof('${m.task?.TASK_ID}')">Nộp bằng chứng</button>
@@ -2245,8 +2265,9 @@ function renderLeaderboardTab(tab) {
     const roleUpper = String(e.role || '').toUpperCase();
     const isCore = roleUpper.includes('CORE') || roleUpper.includes('FOUNDER') || roleUpper.includes('PRESIDENT') || roleUpper.includes('VICE');
     const isVice = roleUpper.includes('VICE');
-    const rolePt = isCore ? (isVice ? 0.75 : 1.0) : 0;
-    const roleContrib = rolePt * 0.6;
+    const rolePt = Number(e.rolePoint != null ? e.rolePoint : (isCore ? (isVice ? 0.75 : 1.0) : 0));
+    const roleContrib = Number(e.roleContribution != null ? e.roleContribution : (rolePt * 0.6));
+    const totalScore = Number(e.overall != null ? e.overall : ((e.taskXp || 0) + roleContrib));
 
     return `
       <div class="rank-card ${isTop1 ? 'top1' : ''}">
@@ -2257,10 +2278,10 @@ function renderLeaderboardTab(tab) {
           <small>${formatDepartment(e.department)} · ${formatRole(e.role)} · Đã xong: ${e.completedTasks || 0} task · Chất lượng: ${e.qualityScore || 95}%</small>
         </div>
         <div class="rank-metrics">
-          <div class="score">${Number(e.overall || 0).toFixed(1)} XP</div>
+          <div class="score">${totalScore.toFixed(1)} XP</div>
           <div class="breakdown">
-            Task: ${e.taskXp || e.overall || 0} XP
-            ${rolePt ? ` · Vai trò: +${rolePt} (${roleContrib > 0 ? '+' + roleContrib.toFixed(2) : '0'} tổng)` : ''}
+            Task: ${e.taskXp || 0} XP
+            ${rolePt ? ` · Vai trò: +${rolePt} (+${roleContrib.toFixed(2)} tổng)` : ''}
           </div>
         </div>
       </div>
@@ -2523,14 +2544,26 @@ async function submitShareGroupBonus() {
   }
 }
 
+function setCreateDeadlinePreset(hours) {
+  const target = new Date(Date.now() + hours * 3600 * 1000);
+  const pad = n => String(n).padStart(2, '0');
+  const str = `${target.getFullYear()}-${pad(target.getMonth()+1)}-${pad(target.getDate())}T${pad(target.getHours())}:${pad(target.getMinutes())}`;
+  const elSub = el('createSubmitDeadline');
+  if (elSub) elSub.value = str;
+}
+
 // -----------------------------------------------------------------------------
 // TẠO NHIỆM VỤ MỚI (AI ANALYSIS)
 // -----------------------------------------------------------------------------
 function openCreateTask() {
+  const defSubmit = new Date(Date.now() + 48 * 3600 * 1000);
+  const pad = n => String(n).padStart(2, '0');
+  const defSubmitStr = `${defSubmit.getFullYear()}-${pad(defSubmit.getMonth()+1)}-${pad(defSubmit.getDate())}T${pad(defSubmit.getHours())}:${pad(defSubmit.getMinutes())}`;
+
   showModal(`
     <div class="eyebrow">TẠO NHIỆM VỤ · TÍCH HỢP AI</div>
     <h2>Khởi tạo nhiệm vụ mới</h2>
-    <p>AI sẽ phân tích độ khó, thời gian hoàn thành và đề xuất mức XP chuẩn. Thay đổi XP cần có lý do rõ ràng.</p>
+    <p>AI sẽ phân tích độ khó, thời gian hoàn thành và đề xuất mức XP chuẩn. Thời gian chủ động chốt bài giúp phân bổ timeline minh bạch.</p>
     <div class="form-grid">
       <label class="wide">Tên nhiệm vụ<input id="createTitle" placeholder="Ví dụ: Biên tập video recap workshop điện ảnh"></label>
       <label>Ban phụ trách
@@ -2549,8 +2582,18 @@ function openCreateTask() {
           <option value="MANDATORY">Nhiệm vụ bắt buộc (Mandatory Task)</option>
         </select>
       </label>
-      <label>Hạn chót nhận việc<input id="createClaimDeadline" type="datetime-local"></label>
-      <label>Hạn chót nộp bài<input id="createSubmitDeadline" type="datetime-local"></label>
+      <label>Hạn chót nhận việc (Claim)
+        <input id="createClaimDeadline" type="datetime-local">
+      </label>
+      <label>Thời gian chủ động chốt bài (Deadline)
+        <input id="createSubmitDeadline" type="datetime-local" value="${defSubmitStr}">
+        <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+          <button type="button" class="btn" style="padding:2px 6px;font-size:10px" onclick="setCreateDeadlinePreset(24)">+24h</button>
+          <button type="button" class="btn" style="padding:2px 6px;font-size:10px" onclick="setCreateDeadlinePreset(48)">+48h</button>
+          <button type="button" class="btn" style="padding:2px 6px;font-size:10px" onclick="setCreateDeadlinePreset(72)">+3 ngày</button>
+          <button type="button" class="btn" style="padding:2px 6px;font-size:10px" onclick="setCreateDeadlinePreset(168)">+1 tuần</button>
+        </div>
+      </label>
       <label class="wide">Mô tả & Tiêu chuẩn đầu ra (Expected Output)<textarea id="createOutput" rows="3" placeholder="Mô tả chi tiết yêu cầu đầu ra, các bước thực hiện và tiêu chuẩn nghiệm thu..."></textarea></label>
     </div>
     <div class="dialog-foot">

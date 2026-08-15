@@ -571,13 +571,15 @@
             const email = normalize(user && user.email);
             if (email === PROJECT_ADMIN_EMAIL) return true;
             const role = normalize(user && user.role);
-            if (['admin', 'organizer'].includes(role)) return true;
+            if (['admin', 'organizer', 'founder', 'president', 'core_founder', 'co_founder', 'core', 'vice', 'leader', 'truong ban', 'pho ban'].includes(role)) return true;
             const context = [
                 normalize(user && user.dept),
                 normalize(user && user.position),
                 normalize(user && user.title),
                 normalize(user && user.leadershipTitle)
             ].filter(Boolean).join(' ');
+            if (context.includes('core') || context.includes('ban dieu hanh') || context.includes('chu tich') ||
+                context.includes('truong') || context.includes('pho') || context.includes('lead') || context.includes('head')) return true;
             return context.includes('nhan su') || context.includes('hr') ||
                 context.includes('truyen thong') || context.includes('pr') ||
                 context.includes('marketing') || context.includes('mkt');

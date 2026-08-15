@@ -3,106 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Bảng xếp hạng thành viên và ban tổ chức - Ý Niệm Điện Ảnh. Xem ai đang dẫn đầu về điểm đóng góp, theo tổng điểm và theo từng tháng.">
-    <title>Bảng Xếp Hạng — Ý Niệm Điện Ảnh</title>
+    <meta name="description" content="Bảng xếp hạng thành viên và Ban Điều Hành - Ý Niệm Điện Ảnh. Hệ thống vinh danh cống hiến thực tế từ Google Sheets & Sổ Cái XP.">
+    <title>Bảng Xếp Hạng Đóng Góp · Ý Niệm Điện Ảnh</title>
     <link rel="icon" type="image/png" href="/Logo/avtar.png">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <style>
-        :root { --navy:#07111d; --card:#10263b; --gold:#e4b866; --gold-light:#f3dba3; --text:#f8fafc; --muted:#aab6c5; --line:rgba(228,184,102,.25); }
-        * { box-sizing:border-box; }
-        body { margin:0; min-height:100vh; font-family:'Be Vietnam Pro',sans-serif; color:var(--text); background:radial-gradient(circle at 82% 0%,rgba(84,132,170,.18),transparent 22rem),linear-gradient(135deg,#07111d 0%,#102b44 52%,#06101b 100%); }
-        nav { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:14px 6%; border-bottom:1px solid var(--line); background:rgba(5,12,20,.9); }
-        .brand { display:flex; align-items:center; gap:10px; color:var(--text); text-decoration:none; font-family:'Playfair Display',serif; font-weight:700; }
-        .brand img { width:44px; height:44px; border-radius:8px; object-fit:cover; }
-        nav a:not(.brand) { color:var(--gold-light); font-weight:600; text-decoration:none; }
-        main { max-width:1120px; margin:0 auto; padding:56px 24px 80px; }
-        .eyebrow { color:var(--gold); font-size:.76rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
-        h1,h2,h3 { font-family:'Playfair Display',serif; }
-        h1 { margin:10px 0 12px; color:var(--gold-light); font-size:clamp(2.2rem,5vw,3.6rem); line-height:1.1; }
-        .lead { max-width:680px; margin:0 0 30px; color:var(--muted); line-height:1.7; }
-        .tabs { display:flex; gap:10px; margin:0 0 26px; flex-wrap:wrap; }
-        .tab { flex:1; min-width:200px; padding:14px 18px; border:1px solid rgba(228,184,102,.28); border-radius:14px; background:rgba(5,12,20,.5); color:var(--muted); font-weight:700; font-size:.95rem; cursor:pointer; transition:all .2s; text-align:center; }
-        .tab:hover { border-color:var(--gold); color:var(--gold-light); }
-        .tab.active { background:linear-gradient(135deg,rgba(228,184,102,.2),rgba(228,184,102,.05)); border-color:var(--gold); color:var(--gold-light); box-shadow:0 0 24px rgba(228,184,102,.12); }
-        .tab .count { opacity:.75; font-weight:500; font-size:.8rem; }
-        .month-select { display:none; margin:-10px 0 22px; align-items:center; gap:12px; }
-        .month-select.visible { display:flex; }
-        .month-select label { color:var(--muted); font-size:.86rem; font-weight:600; }
-        .month-select select { padding:9px 14px; border-radius:10px; border:1px solid rgba(228,184,102,.35); background:rgba(5,12,20,.7); color:var(--gold-light); font-size:.9rem; font-weight:600; cursor:pointer; outline:none; }
-        .month-select select:focus { border-color:var(--gold); box-shadow:0 0 12px rgba(228,184,102,.15); }
-        .month-badge { color:var(--gold-light); font-weight:700; font-size:.9rem; }
-        .ban-select { display:none; margin:0 0 22px; align-items:center; gap:12px; }
-        .ban-select.visible { display:flex; }
-        .ban-select label { color:var(--muted); font-size:.86rem; font-weight:600; }
-        .ban-select select { padding:9px 14px; border-radius:10px; border:1px solid rgba(228,184,102,.35); background:rgba(5,12,20,.7); color:var(--gold-light); font-size:.9rem; font-weight:600; cursor:pointer; outline:none; }
-        .ban-select select:focus { border-color:var(--gold); box-shadow:0 0 12px rgba(228,184,102,.15); }
-        .clear-filter { background:none; border:none; color:var(--muted); cursor:pointer; font-size:.8rem; font-weight:600; text-decoration:underline; }
-        .clear-filter:hover { color:var(--gold-light); }
-        .ban-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
-        .ban-card { border:1px solid var(--line); border-radius:18px; padding:18px 20px; background:rgba(5,12,20,.5); }
-        .ban-card .ban-name { color:var(--gold); font-weight:800; font-size:.8rem; letter-spacing:.08em; text-transform:uppercase; }
-        .ban-card .ban-champ { margin-top:10px; display:flex; align-items:center; gap:10px; }
-        .ban-card .ban-medal { font-size:1.5rem; }
-        .ban-card .ban-nm { font-weight:700; color:var(--text); }
-        .ban-card .ban-meta { color:var(--muted); font-size:.78rem; margin-top:3px; }
-        .ban-card .ban-pts { margin-top:12px; display:inline-block; padding:4px 12px; border-radius:999px; background:rgba(228,184,102,.15); color:var(--gold-light); font-weight:800; font-size:.95rem; }
-        .podium { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px; }
-        .pod-card { border:1px solid var(--line); border-radius:18px; padding:22px 16px; text-align:center; background:rgba(5,12,20,.55); }
-        .pod-card.p1 { border-color:rgba(228,184,102,.7); box-shadow:0 0 30px rgba(228,184,102,.18); order:2; }
-        .pod-card.p2 { order:1; }
-        .pod-card.p3 { order:3; }
-        .medal { font-size:2rem; line-height:1; }
-        .pod-name { margin-top:10px; font-weight:700; color:var(--text); font-size:1rem; }
-        .pod-dept { color:var(--muted); font-size:.78rem; margin-top:4px; }
-        .pod-points { margin-top:10px; display:inline-block; padding:4px 14px; border-radius:999px; background:rgba(228,184,102,.15); color:var(--gold-light); font-weight:800; font-size:1.05rem; }
-        .board { border:1px solid var(--line); border-radius:18px; overflow:hidden; background:rgba(5,12,20,.45); }
-        .row { display:grid; grid-template-columns:64px 1fr 1fr 120px; align-items:center; gap:10px; padding:14px 20px; border-bottom:1px solid rgba(228,184,102,.1); }
-        .row:last-child { border-bottom:0; }
-        .row.head { background:rgba(228,184,102,.08); color:var(--muted); font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; font-weight:700; }
-        .rank-no { text-align:center; font-weight:800; color:var(--gold); font-size:1.1rem; }
-        .member-info .name { font-weight:700; color:var(--text); }
-        .member-info .meta { color:var(--muted); font-size:.78rem; margin-top:3px; }
-        .dept-cell { color:var(--muted); font-size:.85rem; }
-        .points-cell { text-align:right; font-weight:800; color:var(--gold-light); }
-        .empty { text-align:center; padding:60px 20px; color:var(--muted); }
-        .empty .icon { font-size:3rem; margin-bottom:12px; }
-        footer { padding:28px; border-top:1px solid var(--line); color:var(--muted); font-size:.86rem; text-align:center; }
-        .loading { text-align:center; padding:60px 20px; color:var(--muted); }
-        .refresh { margin-top:22px; text-align:right; }
-        .refresh button { padding:8px 18px; border-radius:10px; border:1px solid rgba(228,184,102,.3); background:transparent; color:var(--gold-light); cursor:pointer; font-size:.8rem; font-weight:600; }
-        .refresh button:hover { background:rgba(228,184,102,.12); }
-        .error { text-align:center; padding:40px 20px; color:var(--danger,#ff7f7f); }
-        .note-box { margin-top:28px; border:1px solid var(--line); border-radius:14px; background:rgba(5,12,20,.4); }
-        .note-box summary { padding:14px 20px; cursor:pointer; font-weight:700; color:var(--gold-light); font-size:.92rem; user-select:none; }
-        .note-box summary:hover { color:var(--gold); }
-        .note-box ul { margin:0; padding:0 20px 16px 44px; color:var(--muted); font-size:.86rem; line-height:1.85; }
-        .note-box li strong { color:var(--gold-light); }
-        @media (max-width:720px) {
-            nav { padding:12px 20px; }
-            main { padding:38px 16px 60px; }
-            .podium { grid-template-columns:1fr; }
-            .pod-card.p1 { order:1; } .pod-card.p2 { order:2; } .pod-card.p3 { order:3; }
-            .row { grid-template-columns:44px 1fr 90px; }
-            .dept-cell { display:none; }
+        :root { 
+            --navy-darkest: #04070d;
+            --navy-dark: #07111d;
+            --navy-card: #0c1d2d;
+            --navy-light: #122438;
+            --card: rgba(12, 29, 45, 0.75); 
+            --gold: #e4b866; 
+            --gold-light: #f3dba3; 
+            --gold-dark: #b88628;
+            --text: #f8fafc; 
+            --muted: #94a3b8; 
+            --line: rgba(228, 184, 102, 0.22); 
+            --glow: 0 0 24px rgba(228, 184, 102, 0.22);
+            --success: #63d19e;
+            --danger: #f18383;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            min-height: 100vh; 
+            font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif; 
+            color: var(--text); 
+            background: 
+                radial-gradient(circle at 15% 15%, rgba(228, 184, 102, 0.1), transparent 30rem),
+                radial-gradient(circle at 85% 85%, rgba(84, 132, 170, 0.12), transparent 25rem),
+                linear-gradient(135deg, #04070d 0%, #0c1d2d 50%, #04070d 100%); 
+            background-attachment: fixed;
+            line-height: 1.6;
+        }
+        
+        /* Unified Navigation */
+        nav { 
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 16px; 
+            padding: 14px 5%; 
+            border-bottom: 1px solid var(--line); 
+            background: rgba(4, 7, 13, 0.88); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .brand { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.15rem; }
+        .brand img { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; border: 1.5px solid var(--gold); }
+        .nav-links { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .nav-links a { color: var(--muted); font-weight: 600; text-decoration: none; font-size: 0.88rem; transition: color 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .nav-links a:hover, .nav-links a.active { color: var(--gold-light); }
+        .nav-btn {
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+            color: #04070d !important;
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-weight: 700 !important;
+            font-size: 0.85rem !important;
+            box-shadow: 0 4px 14px rgba(228, 184, 102, 0.28);
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+        .nav-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(228, 184, 102, 0.4); }
+
+        .mobile-toggle { display: none; background: none; border: 1px solid var(--line); color: var(--gold-light); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; }
+
+        main { max-width: 1160px; margin: 0 auto; padding: 44px 20px 80px; }
+        .eyebrow { color: var(--gold); font-size: .78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; font-family: 'DM Mono', monospace; }
+        h1, h2, h3 { font-family: 'Playfair Display', serif; }
+        h1 { margin: 8px 0 12px; color: var(--gold-light); font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.15; }
+        .lead { max-width: 760px; margin: 0 0 28px; color: var(--muted); line-height: 1.7; font-size: 0.95rem; }
+
+        /* Unified Tabs */
+        .tabs { display: flex; gap: 10px; margin: 0 0 24px; flex-wrap: wrap; }
+        .tab { flex: 1; min-width: 170px; padding: 13px 16px; border: 1px solid rgba(228, 184, 102, .25); border-radius: 12px; background: rgba(4, 7, 13, .65); color: var(--muted); font-weight: 700; font-size: .92rem; cursor: pointer; transition: all .2s; text-align: center; }
+        .tab:hover { border-color: var(--gold); color: var(--gold-light); }
+        .tab.active { background: linear-gradient(135deg, rgba(228, 184, 102, .22), rgba(228, 184, 102, .06)); border-color: var(--gold); color: var(--gold-light); box-shadow: var(--glow); }
+        .tab .count { opacity: .85; font-weight: 600; font-size: .8rem; margin-left: 4px; font-family: 'DM Mono', monospace; }
+
+        .month-select { display: none; margin: -6px 0 22px; align-items: center; gap: 12px; }
+        .month-select.visible { display: flex; }
+        .month-select label { color: var(--muted); font-size: .86rem; font-weight: 600; }
+        .month-select select { padding: 9px 14px; border-radius: 10px; border: 1px solid rgba(228, 184, 102, .35); background: rgba(4, 7, 13, .8); color: var(--gold-light); font-size: .9rem; font-weight: 600; cursor: pointer; outline: none; }
+        .month-select select:focus { border-color: var(--gold); box-shadow: 0 0 12px rgba(228, 184, 102, .15); }
+        .month-badge { color: var(--gold-light); font-weight: 700; font-size: .9rem; font-family: 'DM Mono', monospace; }
+
+        .ban-select { display: none; margin: 0 0 22px; align-items: center; gap: 12px; }
+        .ban-select.visible { display: flex; }
+        .ban-select label { color: var(--muted); font-size: .86rem; font-weight: 600; }
+        .ban-select select { padding: 9px 14px; border-radius: 10px; border: 1px solid rgba(228, 184, 102, .35); background: rgba(4, 7, 13, .8); color: var(--gold-light); font-size: .9rem; font-weight: 600; cursor: pointer; outline: none; }
+        .ban-select select:focus { border-color: var(--gold); box-shadow: 0 0 12px rgba(228, 184, 102, .15); }
+        .clear-filter { background: none; border: none; color: var(--muted); cursor: pointer; font-size: .8rem; font-weight: 600; text-decoration: underline; }
+        .clear-filter:hover { color: var(--gold-light); }
+
+        .ban-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+        .ban-card { border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; background: rgba(12, 29, 45, 0.65); backdrop-filter: blur(8px); box-shadow: 0 10px 24px rgba(0,0,0,0.25); }
+        .ban-card .ban-name { color: var(--gold); font-weight: 800; font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; font-family: 'DM Mono', monospace; }
+        .ban-card .ban-champ { margin-top: 10px; display: flex; align-items: center; gap: 12px; }
+        .ban-card .ban-medal { font-size: 1.6rem; }
+        .ban-card .ban-nm { font-weight: 700; color: var(--text); font-size: 1.05rem; }
+        .ban-card .ban-meta { color: var(--muted); font-size: .8rem; margin-top: 3px; }
+        .ban-card .ban-pts { margin-top: 12px; display: inline-block; padding: 5px 14px; border-radius: 999px; background: rgba(228, 184, 102, .18); color: var(--gold-light); font-weight: 800; font-size: .95rem; border: 1px solid rgba(228, 184, 102, 0.3); font-family: 'DM Mono', monospace; }
+
+        /* Podium */
+        .podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; align-items: end; }
+        .pod-card { border: 1px solid var(--line); border-radius: 18px; padding: 24px 16px; text-align: center; background: rgba(12, 29, 45, 0.7); backdrop-filter: blur(8px); transition: transform 0.2s; }
+        .pod-card:hover { transform: translateY(-3px); }
+        .pod-card.p1 { border-color: rgba(228, 184, 102, .8); box-shadow: 0 0 35px rgba(228, 184, 102, .25); order: 2; padding-top: 32px; background: linear-gradient(180deg, rgba(228, 184, 102, 0.15) 0%, rgba(12, 29, 45, 0.85) 100%); }
+        .pod-card.p2 { order: 1; }
+        .pod-card.p3 { order: 3; }
+        .medal { font-size: 2.4rem; line-height: 1; margin-bottom: 6px; }
+        .pod-name { margin-top: 6px; font-weight: 800; color: #fff; font-size: 1.1rem; }
+        .pod-dept { color: var(--muted); font-size: .82rem; margin-top: 4px; }
+        .pod-points { margin-top: 12px; display: inline-block; padding: 5px 16px; border-radius: 999px; background: rgba(228, 184, 102, .2); color: var(--gold-light); font-weight: 800; font-size: 1.1rem; border: 1px solid rgba(228, 184, 102, 0.35); font-family: 'DM Mono', monospace; }
+
+        /* Table Board */
+        .board { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: rgba(12, 29, 45, 0.6); backdrop-filter: blur(8px); box-shadow: 0 16px 36px rgba(0,0,0,0.3); }
+        .row { display: grid; grid-template-columns: 72px 1fr 1fr 140px; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid rgba(228, 184, 102, .1); transition: background 0.15s; }
+        .row:hover:not(.head) { background: rgba(228, 184, 102, 0.05); }
+        .row:last-child { border-bottom: 0; }
+        .row.head { background: rgba(228, 184, 102, .1); color: var(--gold-light); font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 800; font-family: 'DM Mono', monospace; }
+        .rank-no { text-align: center; font-weight: 800; color: var(--gold); font-size: 1.1rem; font-family: 'DM Mono', monospace; }
+        .member-info .name { font-weight: 700; color: var(--text); font-size: 0.96rem; }
+        .member-info .meta { color: var(--muted); font-size: .78rem; margin-top: 3px; line-height: 1.4; }
+        .dept-cell { color: var(--muted); font-size: .88rem; font-weight: 500; }
+        .points-cell { text-align: right; font-weight: 800; color: var(--gold-light); font-size: 1.05rem; font-family: 'DM Mono', monospace; }
+
+        .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+        .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+        footer { padding: 32px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: .86rem; text-align: center; background: rgba(4, 7, 13, 0.7); }
+        .loading { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 0.95rem; }
+        .refresh { margin-top: 22px; text-align: right; }
+        .refresh button { padding: 9px 18px; border-radius: 10px; border: 1px solid rgba(228, 184, 102, .35); background: rgba(228, 184, 102, 0.08); color: var(--gold-light); cursor: pointer; font-size: .84rem; font-weight: 700; transition: all 0.2s; }
+        .refresh button:hover { background: rgba(228, 184, 102, .2); transform: translateY(-1px); }
+        .error { text-align: center; padding: 40px 20px; color: var(--danger); }
+        .note-box { margin-top: 32px; border: 1px solid var(--line); border-radius: 14px; background: rgba(12, 29, 45, 0.6); backdrop-filter: blur(8px); }
+        .note-box summary { padding: 16px 20px; cursor: pointer; font-weight: 800; color: var(--gold-light); font-size: .95rem; user-select: none; }
+        .note-box summary:hover { color: var(--gold); }
+        .note-box ul { margin: 0; padding: 0 20px 18px 44px; color: var(--muted); font-size: .88rem; line-height: 1.9; }
+        .note-box li strong { color: var(--gold-light); }
+
+        @media (max-width: 768px) {
+            nav { padding: 12px 18px; }
+            .mobile-toggle { display: block; }
+            .nav-links { display: none; width: 100%; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 0 6px; }
+            .nav-links.open { display: flex; }
+            main { padding: 32px 16px 60px; }
+            .podium { grid-template-columns: 1fr; }
+            .pod-card.p1 { order: 1; } .pod-card.p2 { order: 2; } .pod-card.p3 { order: 3; }
+            .row { grid-template-columns: 52px 1fr 95px; }
+            .dept-cell { display: none; }
         }
     </style>
 </head>
 <body>
     <nav>
         <a class="brand" href="/"><img src="/Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh">Ý Niệm Điện Ảnh</a>
-        <div style="display:flex;align-items:center;gap:18px;">
-            <a href="/ban-to-chuc" style="color:var(--gold);text-decoration:none;font-weight:700;font-size:0.9rem;">💼 Ban Tổ Chức</a>
-            <a href="/">← Trang chủ</a>
+        <button class="mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+        <div class="nav-links">
+            <a href="/">🏠 Trang chủ</a>
+            <a href="/ynda">⚡ Nhiệm Vụ</a>
+            <a href="/bang-xep-hang" class="active">🏆 Bảng Xếp Hạng</a>
+            <a href="/ban-to-chuc">💼 Ban Tổ Chức</a>
+            <a href="/cham-diem">📝 Chấm Điểm</a>
+            <a href="/schedule">📅 Ca Trực</a>
+            <a href="/vinh-danh">🎖️ Vinh Danh</a>
+            <a href="/ynda" class="nav-btn">Quest Board →</a>
         </div>
     </nav>
     <main>
-        <p class="eyebrow">Cộng đồng · Bảng xếp hạng</p>
-        <h1>Bảng Xếp Hạng</h1>
-        <p class="lead">Xếp hạng theo tổng điểm đóng góp của các thành viên và Ban Tổ Chức. Điểm được cập nhật mỗi khi cộng điểm vào Google Sheet.</p>
+        <p class="eyebrow">Hệ Thống Vinh Danh & Cống Hiến</p>
+        <h1>Bảng Xếp Hạng Đóng Góp</h1>
+        <p class="lead">Ghi nhận minh bạch tổng điểm cống hiến của thành viên và Ban Điều Hành. Tự động cập nhật theo thời gian thực từ Sổ Cái XP và Google Sheets.</p>
 
         <div class="tabs">
             <button class="tab active" data-group="all" onclick="switchGroup('all')">🏆 Overall Ranking <span class="count" id="countAll"></span></button>
-            <button class="tab" data-group="core" onclick="switchGroup('core')">⭐ Core <span class="count" id="countCore"></span></button>
+            <button class="tab" data-group="core" onclick="switchGroup('core')">⭐ Core & BTC <span class="count" id="countCore"></span></button>
             <button class="tab" data-group="mem" onclick="switchGroup('mem')">👥 Thành viên <span class="count" id="countMem"></span></button>
             <button class="tab" data-group="monthly" onclick="switchGroup('monthly')">📅 Theo tháng</button>
             <button class="tab" data-group="ban" onclick="switchGroup('ban')">🏅 Top mỗi Ban</button>
@@ -127,20 +208,23 @@
         </div>
 
         <div class="refresh">
-            <button onclick="loadRanking(true)">🔄 Làm mới</button>
+            <button onclick="loadRanking(true)">🔄 Làm mới dữ liệu</button>
         </div>
 
         <div class="note-box">
-            <details>
-                <summary>📌 Cách tính điểm</summary>
+            <details open>
+                <summary>📌 Nguyên tắc tính điểm & Quy đổi Overall</summary>
                 <ul>
-                    <li>Điểm được cộng dựa trên các nhiệm vụ và hoạt động đã hoàn thành, theo mức điểm được quy định cho từng hoạt động.</li>
-                    <li>Member và Core/Vice có cách tính điểm riêng để đảm bảo công bằng theo vai trò.</li>
-                    <li>Điểm đóng góp được chuẩn hóa về thang 100, sau đó kết hợp với điểm đánh giá định kỳ để tạo thành Overall.</li>
-                    <li>Overall là điểm dùng để xếp hạng chung trên BXH.</li>
-                    <li>🏆 <strong>Top 8 Overall cuối mùa sẽ nhận Certificate Xuất sắc.</strong></li>
-                    <li>Điểm được ghi nhận dựa trên minh chứng/sản phẩm hoàn thành và có thể được kiểm tra, đối soát.</li>
-                    <li>Bảng xếp hạng là công cụ ghi nhận đóng góp, không phải đánh giá giá trị cá nhân.</li>
+                    <li><strong>Task XP chuẩn:</strong> Core, Vice và Member khi nhận và hoàn thành nhiệm vụ đều nhận 100% Task XP công bằng như nhau.</li>
+                    <li><strong>Điểm Vai trò (Role Point):</strong> Core mặc định <strong>+1.0 RP/tuần</strong>, Vice mặc định <strong>+0.75 RP/tuần</strong> để ghi nhận trách nhiệm quản lý.</li>
+                    <li><strong>Quy đổi Overall 60%:</strong> Điểm vai trò chỉ tính <strong>60%</strong> vào điểm tổng sắp Overall (Core nhận tối đa +0.6/tuần vào Overall, Vice nhận +0.45/tuần).</li>
+                    <li><strong>Công thức Overall:</strong>
+                        <br>• <em>Core:</em> Overall = Task XP + Bonus XP − Penalty + (Role Point × 0.6)
+                        <br>• <em>Vice:</em> Overall = Task XP + Bonus XP − Penalty + (Role Point × 0.6)
+                        <br>• <em>Member:</em> Overall = Task XP + Bonus XP − Penalty
+                    </li>
+                    <li>🏆 <strong>Vinh Danh Cuối Season:</strong> Vinh danh <strong>Top 8 Overall</strong> xuất sắc nhất dự án + <strong>3 Special Selection</strong> (do Ban Điều Hành đề xuất và Founder quyết định dựa trên tính chủ động, cống hiến và giải quyết vấn đề).</li>
+                    <li><strong>Lịch sử & Mùa giải:</strong> Hết Season 1, điểm sẽ được lưu vào kho lưu trữ (Archive) và bắt đầu Season 2 với thang điểm mới.</li>
                 </ul>
             </details>
         </div>
@@ -267,7 +351,7 @@
                     '<div class="medal">' + medalFor(item.rank) + '</div>' +
                     '<div class="pod-name">' + esc(item.name) + '</div>' +
                     '<div class="pod-dept">' + esc(item.dept || '—') + (item.role ? ' · ' + esc(item.role) : '') + '</div>' +
-                    '<div class="pod-points">' + item.totalPoints + ' điểm</div>' +
+                    '<div class="pod-points">' + item.totalPoints + ' XP</div>' +
                     '</div>';
             }).join('') + '</div>';
         }
@@ -289,7 +373,7 @@
                         '<div class="rank-no">' + medalFor(item.rank) + ' ' + item.rank + '</div>' +
                         '<div class="member-info"><div class="name">' + esc(item.name) + '</div><div class="meta">' + esc(metaParts.join(' · ')) + '</div></div>' +
                         '<div class="dept-cell">' + esc(item.dept || '—') + '</div>' +
-                        '<div class="points-cell">' + item.totalPoints + '</div>' +
+                        '<div class="points-cell">' + item.totalPoints + ' XP</div>' +
                         '</div>';
                 }).join('') + '</div>';
         }
@@ -325,7 +409,7 @@
                     '<div class="ban-champ"><div class="ban-medal">' + medal + '</div>' +
                     '<div><div class="ban-nm">' + esc(top.name) + '</div>' +
                     '<div class="ban-meta">' + esc(top.title || top.role || '') + '</div></div></div>' +
-                    '<div class="ban-pts">Top 1 · ' + top.totalPoints + ' điểm</div>' +
+                    '<div class="ban-pts">Top 1 · ' + top.totalPoints + ' XP</div>' +
                     '</div>'
                 );
             });

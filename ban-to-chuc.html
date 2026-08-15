@@ -8,7 +8,7 @@
     <link rel="icon" href="/Logo/avtar.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #04070d;
@@ -525,9 +525,13 @@
             background: rgba(4, 9, 16, 0.9);
         }
 
+        .mobile-toggle { display: none; background: none; border: 1px solid rgba(228, 184, 102, 0.3); color: var(--gold-light); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; }
+
         @media (max-width: 768px) {
             nav { padding: 12px 18px; }
-            .nav-links a:not(.nav-btn) { display: none; }
+            .mobile-toggle { display: block; }
+            .nav-links { display: none; width: 100%; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 0 6px; }
+            .nav-links.open { display: flex; }
             main { padding: 36px 16px 60px; }
             .exec-grid { grid-template-columns: 1fr; }
             .member-grid { grid-template-columns: 1fr; }
@@ -544,12 +548,16 @@
             <img src="/Logo/avtar.png" alt="Ý Niệm Điện Ảnh">
             Ý Niệm Điện Ảnh
         </a>
+        <button class="mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
         <div class="nav-links">
-            <a href="/">Trang chủ</a>
-            <a href="/bang-xep-hang">Bảng xếp hạng</a>
-            <a href="/ban-to-chuc" class="active">Ban Tổ Chức</a>
-            <a href="/vinh-danh">Vinh danh</a>
-            <a href="/dashboard" class="nav-btn">⚙️ Dashboard</a>
+            <a href="/">🏠 Trang chủ</a>
+            <a href="/ynda">⚡ Nhiệm Vụ</a>
+            <a href="/bang-xep-hang">🏆 Bảng Xếp Hạng</a>
+            <a href="/ban-to-chuc" class="active">💼 Ban Tổ Chức</a>
+            <a href="/cham-diem">📝 Chấm Điểm</a>
+            <a href="/schedule">📅 Ca Trực</a>
+            <a href="/vinh-danh">🎖️ Vinh Danh</a>
+            <a href="/ynda" class="nav-btn">Quest Board →</a>
         </div>
     </nav>
 

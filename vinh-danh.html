@@ -4,57 +4,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Khu vinh danh những người đồng hành cùng Ý Niệm Điện Ảnh.">
-    <title>Khu vinh danh — Ý Niệm Điện Ảnh</title>
+    <title>Khu Vinh Danh · Ý Niệm Điện Ảnh</title>
     <link rel="icon" type="image/png" href="/Logo/avtar.png">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <style>
-        :root { --navy:#07111d; --card:#10263b; --gold:#e4b866; --gold-light:#f3dba3; --text:#f8fafc; --muted:#aab6c5; --line:rgba(228,184,102,.25); }
-        * { box-sizing:border-box; }
-        body { margin:0; min-height:100vh; font-family:'Be Vietnam Pro',sans-serif; color:var(--text); background:radial-gradient(circle at 82% 0%,rgba(84,132,170,.18),transparent 22rem),linear-gradient(135deg,#07111d 0%,#102b44 52%,#06101b 100%); }
-        nav { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:14px 6%; border-bottom:1px solid var(--line); background:rgba(5,12,20,.9); }
-        .brand { display:flex; align-items:center; gap:10px; color:var(--text); text-decoration:none; font-family:'Playfair Display',serif; font-weight:700; }
-        .brand img { width:44px; height:44px; border-radius:8px; object-fit:cover; }
-        nav a:not(.brand) { color:var(--gold-light); font-weight:600; text-decoration:none; }
-        main { max-width:1120px; margin:0 auto; padding:64px 24px 80px; }
-        .eyebrow { color:var(--gold); font-size:.76rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
-        h1,h2,h3 { font-family:'Playfair Display',serif; }
-        h1 { margin:10px 0 12px; color:var(--gold-light); font-size:clamp(2.4rem,6vw,4.5rem); line-height:1.1; }
-        .lead { max-width:680px; margin:0 0 34px; color:var(--muted); line-height:1.7; }
-        .card { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(260px,.8fr); gap:30px; padding:30px; border:1px solid var(--line); border-radius:20px; background:rgba(5,12,20,.55); box-shadow:0 18px 44px rgba(0,0,0,.22); }
-        .badge { display:inline-flex; padding:5px 11px; border:1px solid rgba(228,184,102,.35); border-radius:999px; color:var(--gold-light); font-size:.75rem; font-weight:700; }
-        h2 { margin:14px 0 2px; font-size:clamp(1.7rem,3vw,2.3rem); }
-        .role { margin:0 0 20px; color:var(--gold); }
-        .story p { color:var(--muted); line-height:1.7; }
-        .story strong { color:var(--text); }
-        .thanks { padding-top:18px; border-top:1px solid var(--line); color:var(--gold-light)!important; font-weight:700; }
-        dl { margin:0; padding:20px; border-radius:14px; background:rgba(228,184,102,.08); }
-        dl div { padding:12px 0; border-bottom:1px solid rgba(228,184,102,.16); }
-        dl div:last-child { border:0; }
-        dt { color:var(--muted); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; }
-        dd { margin:4px 0 0; color:var(--gold-light); font-weight:700; }
-        footer { padding:28px; border-top:1px solid var(--line); color:var(--muted); font-size:.86rem; text-align:center; }
-        @media (max-width:720px) { nav { padding:12px 20px; } main { padding:42px 16px 60px; } .card { grid-template-columns:1fr; padding:22px 18px; gap:20px; } }
+        :root { 
+            --navy-darkest: #04070d;
+            --navy-dark: #07111d;
+            --card: rgba(12, 29, 45, 0.75); 
+            --gold: #e4b866; 
+            --gold-light: #f3dba3; 
+            --gold-dark: #b88628;
+            --text: #f8fafc; 
+            --muted: #94a3b8; 
+            --line: rgba(228, 184, 102, 0.22); 
+            --glow: 0 0 24px rgba(228, 184, 102, 0.22);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            min-height: 100vh; 
+            font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif; 
+            color: var(--text); 
+            background: 
+                radial-gradient(circle at 82% 0%, rgba(84, 132, 170, 0.18), transparent 22rem),
+                linear-gradient(135deg, #04070d 0%, #0c1d2d 52%, #04070d 100%); 
+            background-attachment: fixed;
+            line-height: 1.6;
+        }
+
+        /* Unified Navigation */
+        nav { 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 16px; 
+            padding: 14px 5%; 
+            border-bottom: 1px solid var(--line); 
+            background: rgba(4, 7, 13, 0.88); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px); 
+        }
+        .brand { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.15rem; }
+        .brand img { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; border: 1.5px solid var(--gold); }
+        .nav-links { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .nav-links a { color: var(--muted); font-weight: 600; text-decoration: none; font-size: 0.88rem; transition: color 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .nav-links a:hover, .nav-links a.active { color: var(--gold-light); }
+        .nav-btn { background: linear-gradient(135deg, var(--gold-light), var(--gold-dark)); color: #04070d !important; padding: 7px 16px; border-radius: 8px; font-weight: 700 !important; font-size: 0.85rem !important; box-shadow: 0 4px 14px rgba(228, 184, 102, 0.28); }
+        .mobile-toggle { display: none; background: none; border: 1px solid var(--line); color: var(--gold-light); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; }
+
+        main { max-width: 1140px; margin: 0 auto; padding: 56px 20px 80px; }
+        .eyebrow { color: var(--gold); font-size: .78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-family: 'DM Mono', monospace; }
+        h1, h2, h3 { font-family: 'Playfair Display', serif; }
+        h1 { margin: 10px 0 12px; color: var(--gold-light); font-size: clamp(2.4rem, 6vw, 3.8rem); line-height: 1.15; }
+        .lead { max-width: 680px; margin: 0 0 34px; color: var(--muted); line-height: 1.7; font-size: 0.96rem; }
+        
+        .card { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, .8fr); gap: 30px; padding: 36px; border: 1px solid var(--line); border-radius: 20px; background: rgba(12, 29, 45, 0.7); backdrop-filter: blur(12px); box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35); }
+        .badge { display: inline-flex; padding: 5px 14px; border: 1px solid rgba(228, 184, 102, .35); border-radius: 999px; color: var(--gold-light); font-size: .78rem; font-weight: 700; background: rgba(228, 184, 102, 0.12); font-family: 'DM Mono', monospace; }
+        h2 { margin: 14px 0 4px; font-size: clamp(1.7rem, 3vw, 2.3rem); color: var(--gold-light); }
+        .role { margin: 0 0 20px; color: var(--gold); font-weight: 600; font-size: 0.95rem; }
+        .story p { color: var(--muted); line-height: 1.8; margin-bottom: 12px; }
+        .story strong { color: var(--text); }
+        .thanks { padding-top: 18px; border-top: 1px solid var(--line); color: var(--gold-light) !important; font-weight: 700; }
+        dl { margin: 0; padding: 22px; border-radius: 14px; background: rgba(228, 184, 102, .06); border: 1px solid var(--line); }
+        dl div { padding: 14px 0; border-bottom: 1px solid rgba(228, 184, 102, .16); }
+        dl div:last-child { border: 0; }
+        dt { color: var(--muted); font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; font-family: 'DM Mono', monospace; }
+        dd { margin: 4px 0 0; color: var(--gold-light); font-weight: 700; font-size: 1.05rem; }
+        
+        footer { padding: 32px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: .86rem; text-align: center; background: rgba(4, 7, 13, 0.7); }
+        
+        @media (max-width: 768px) { 
+            nav { padding: 12px 18px; } 
+            .mobile-toggle { display: block; }
+            .nav-links { display: none; width: 100%; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 0 6px; }
+            .nav-links.open { display: flex; }
+            main { padding: 36px 16px 60px; } 
+            .card { grid-template-columns: 1fr; padding: 24px 18px; gap: 24px; } 
+        }
     </style>
 </head>
 <body>
     <nav>
         <a class="brand" href="/"><img src="/Logo/avtar.png" alt="Logo Ý Niệm Điện Ảnh">Ý Niệm Điện Ảnh</a>
-        <div style="display:flex;align-items:center;gap:18px;">
-            <a href="/ban-to-chuc" style="color:var(--gold);text-decoration:none;font-weight:700;font-size:0.9rem;">💼 Ban Tổ Chức</a>
-            <a href="/">← Trang chủ</a>
+        <button class="mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+        <div class="nav-links">
+            <a href="/">🏠 Trang chủ</a>
+            <a href="/ynda">⚡ Nhiệm Vụ</a>
+            <a href="/bang-xep-hang">🏆 Bảng Xếp Hạng</a>
+            <a href="/ban-to-chuc">💼 Ban Tổ Chức</a>
+            <a href="/cham-diem">📝 Chấm Điểm</a>
+            <a href="/schedule">📅 Ca Trực</a>
+            <a href="/vinh-danh" class="active">🎖️ Vinh Danh</a>
+            <a href="/ynda" class="nav-btn">Quest Board →</a>
         </div>
     </nav>
     <main>
-        <p class="eyebrow">Khu vinh danh</p>
+        <p class="eyebrow">Khu Vinh Danh</p>
         <h1>Những Người Đồng Hành</h1>
-        <p class="lead">Những sự tin tưởng đã giúp ngôi nhà trực tuyến của Ý Niệm Điện Ảnh tiếp tục sáng đèn.</p>
+        <p class="lead">Những sự tin tưởng và đồng hành quý báu đã giúp nền tảng trực tuyến của Ý Niệm Điện Ảnh tiếp tục phát triển.</p>
         <article class="card">
             <div class="story">
                 <span class="badge">Người Donate Đầu Tiên</span>
                 <h2>Trần Đại Lục Châu</h2>
                 <p class="role">Người đồng hành duy trì website — Season 1</p>
-                <p>Cảm ơn bạn đã đóng góp <strong>100.000 VNĐ</strong> để hỗ trợ duy trì website Ý Niệm Điện Ảnh.</p>
-                <p>Khoản đóng góp được dành riêng cho nền tảng trực tuyến và <strong>không thuộc quỹ giải thưởng</strong>.</p>
+                <p>Cảm ơn bạn đã đóng góp <strong>100.000 VNĐ</strong> để hỗ trợ duy trì và phát triển nền tảng trực tuyến Ý Niệm Điện Ảnh.</p>
+                <p>Khoản đóng góp được dành riêng cho cơ sở hạ tầng website và <strong>không thuộc quỹ giải thưởng</strong>.</p>
                 <p class="thanks">Cảm ơn bạn vì đã giúp ngôi nhà trực tuyến của chúng mình tiếp tục sáng đèn.</p>
             </div>
             <dl>

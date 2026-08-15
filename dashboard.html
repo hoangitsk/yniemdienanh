@@ -4740,6 +4740,7 @@
         // ================= INTERNAL ZONE / DASHBOARD =================
         const TABS = {
             overview: { icon: '📊', label: 'Tổng quan', roles: ['admin', 'organizer', 'member'] },
+            gantt: { icon: '📅', label: 'Sơ đồ Gantt', roles: ['admin', 'organizer', 'member'] },
             profile: { icon: '👤', label: 'Hồ sơ của tôi', roles: ['admin', 'organizer', 'member'] },
             changeFrame: { icon: '🖼️', label: 'Thay frame', roles: ['admin', 'organizer', 'member'] },
             events: { icon: '🎬', label: 'Quản lý sự kiện', roles: ['admin', 'organizer'] },
@@ -4833,6 +4834,7 @@
             
             const renderers = {
                 changeFrame() { window.location.href = 'change-frame.html'; },
+                gantt() { window.location.href = 'ynda.html#gantt'; },
                 overview() {
                     const myTasks = d.tasks.filter(t => t.assignee === session.name && t.status !== 'done').length;
                     const cfg = d.config || {};

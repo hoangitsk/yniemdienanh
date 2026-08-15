@@ -105,7 +105,8 @@ else console.log(`  OK: index.html is ${indexSize} bytes`);
 
 if (failures) {
     console.error(`=== Smoke test FAILED (${failures} issue${failures === 1 ? '' : 's'}) ===`);
-    process.exitCode = 1;
+    process.exit(1);
 } else {
     console.log('=== Smoke test complete ===');
+    process.exit(0);
 }

@@ -587,6 +587,305 @@
       font-size: 13px;
     }
 
+    /* =========================================================================
+       GANTT CHART STYLES (SƠ ĐỒ TIẾN ĐỘ THEO PHÂN BAN)
+       ========================================================================= */
+    .gantt-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.35);
+      margin-top: 18px;
+    }
+    .gantt-header-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+    .gantt-nav-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .gantt-nav-btn {
+      background: #141724;
+      border: 1px solid var(--line);
+      color: #fff;
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all .2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gantt-nav-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold-light);
+      background: rgba(228,184,102,0.1);
+    }
+    .gantt-month-label {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--gold-light);
+      min-width: 170px;
+      text-align: center;
+    }
+    .gantt-filters {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .gantt-select, .gantt-search {
+      background: #090a10;
+      border: 1px solid #2c3042;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      outline: none;
+    }
+    .gantt-select:focus, .gantt-search:focus {
+      border-color: var(--gold);
+    }
+    .gantt-lang-toggle {
+      display: inline-flex;
+      border: 1px solid #2c3042;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .gantt-lang-btn {
+      background: #090a10;
+      border: none;
+      color: var(--muted);
+      padding: 6px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .gantt-lang-btn.active {
+      background: var(--gold);
+      color: #050c14;
+      font-weight: 700;
+    }
+    .gantt-container {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      min-height: 520px;
+      position: relative;
+    }
+    @media (max-width: 992px) {
+      .gantt-container { grid-template-columns: 260px 1fr; }
+    }
+    .gantt-tree-col {
+      background: #0b0d16;
+      border-right: 1px solid var(--line);
+      overflow-y: auto;
+      user-select: none;
+    }
+    .gantt-tree-header {
+      height: 54px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-weight: 700;
+      font-size: 11px;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--line);
+      background: #0e111d;
+    }
+    .gantt-dept-group {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .gantt-dept-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.03);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      color: #fff;
+      transition: background .2s;
+    }
+    .gantt-dept-row:hover {
+      background: rgba(228,184,102,0.08);
+    }
+    .gantt-dept-badge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.1);
+      color: var(--gold-light);
+      margin-left: auto;
+    }
+    .gantt-task-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px 8px 24px;
+      height: 48px;
+      box-sizing: border-box;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .gantt-task-row:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    .gantt-status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-open { background: #60a5fa; box-shadow: 0 0 8px rgba(96,165,250,0.6); }
+    .status-progress { background: #facc15; box-shadow: 0 0 8px rgba(250,204,21,0.6); }
+    .status-review { background: #c084fc; box-shadow: 0 0 8px rgba(192,132,252,0.6); }
+    .status-done { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.6); }
+    .status-overdue { background: #f87171; box-shadow: 0 0 8px rgba(248,113,113,0.6); }
+    .gantt-task-meta {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    .gantt-task-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: #e2e8f0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .gantt-task-sub {
+      font-size: 10px;
+      color: var(--muted);
+      display: flex;
+      gap: 6px;
+    }
+    
+    /* Timeline Grid */
+    .gantt-timeline-col {
+      overflow-x: auto;
+      overflow-y: hidden;
+      position: relative;
+      background: #090b12;
+    }
+    .gantt-days-header {
+      height: 54px;
+      display: flex;
+      border-bottom: 1px solid var(--line);
+      background: #0e111d;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .gantt-day-cell {
+      flex: 0 0 38px;
+      width: 38px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-right: 1px solid rgba(255,255,255,0.04);
+      box-sizing: border-box;
+      font-size: 11px;
+    }
+    .gantt-day-cell.today {
+      background: rgba(228, 184, 102, 0.15);
+      border-right-color: var(--gold);
+      color: var(--gold-light);
+      font-weight: 700;
+    }
+    .gantt-day-cell.weekend {
+      background: rgba(255,255,255,0.015);
+      color: #71717a;
+    }
+    .gantt-day-num { font-weight: 600; font-size: 12px; }
+    .gantt-day-name { font-size: 10px; color: var(--muted); }
+    .gantt-timeline-body {
+      position: relative;
+    }
+    .gantt-timeline-dept-divider {
+      height: 38px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.015);
+    }
+    .gantt-timeline-row {
+      height: 48px;
+      position: relative;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      box-sizing: border-box;
+    }
+    .gantt-grid-lines {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      pointer-events: none;
+    }
+    .gantt-grid-line {
+      flex: 0 0 38px;
+      width: 38px;
+      border-right: 1px solid rgba(255,255,255,0.03);
+      box-sizing: border-box;
+    }
+    .gantt-grid-line.today-line {
+      background: rgba(228, 184, 102, 0.05);
+      border-right: 1px dashed rgba(228, 184, 102, 0.4);
+    }
+    .gantt-bar {
+      position: absolute;
+      top: 9px;
+      height: 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      transition: transform .15s, box-shadow .15s;
+      z-index: 5;
+    }
+    .gantt-bar:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+      z-index: 8;
+    }
+    .gantt-bar-media { background: linear-gradient(135deg, #2563eb, #1d4ed8); border: 1px solid #60a5fa; }
+    .gantt-bar-truyenthong { background: linear-gradient(135deg, #7c3aed, #5b21b6); border: 1px solid #a78bfa; }
+    .gantt-bar-noidung { background: linear-gradient(135deg, #d97706, #92400e); border: 1px solid #fbbf24; }
+    .gantt-bar-nhansu { background: linear-gradient(135deg, #0891b2, #0e7490); border: 1px solid #22d3ee; }
+    .gantt-bar-duyetbai { background: linear-gradient(135deg, #db2777, #9d174d); border: 1px solid #f472b6; }
+    .gantt-bar-global { background: linear-gradient(135deg, #e4b866, #996515); border: 1px solid #f7cb83; color: #050c14; }
+    .gantt-bar-progress {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      background: rgba(255,255,255,0.22);
+      pointer-events: none;
+      border-radius: 5px 0 0 5px;
+    }
+
     @media (max-width: 1080px) {
       .missions { grid-template-columns: repeat(2, 1fr); }
       .stats { grid-template-columns: repeat(3, 1fr); }
@@ -638,6 +937,7 @@
     <div class="nav-label">Không gian làm việc</div>
     <button class="nav active" data-page="dashboard"><span class="ico">◈</span>Tổng quan</button>
     <button class="nav" data-page="board"><span class="ico">◉</span>Bảng nhiệm vụ</button>
+    <button class="nav" data-page="gantt"><span class="ico">📊</span>Sơ đồ Gantt (Timeline)</button>
     <button class="nav" data-page="mine"><span class="ico">◷</span>Nhiệm vụ của tôi <span class="nav-badge" id="myMissionBadge" style="background:#3d2754;color:#dfb8fc">0</span></button>
     <button class="nav" data-page="leaderboard"><span class="ico">♛</span>Bảng vinh danh</button>
 
@@ -764,6 +1064,66 @@
 
       <div class="missions" id="boardCardsGrid">
         <div class="empty-state" style="grid-column: 1 / -1;">Đang tải danh sách nhiệm vụ...</div>
+      </div>
+    </section>
+
+    <!-- SƠ ĐỒ GANTT (GANTT CHART THEO PHÂN BAN) -->
+    <section id="gantt" class="tab-page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow" id="ganttEyebrow">Tiến độ &amp; Phân bổ thời gian · Timeline</div>
+          <h1 id="ganttHeadline">Sơ đồ Gantt (Gantt Chart)</h1>
+          <p id="ganttDesc">Trực quan hóa tiến độ công việc theo từng Phân ban, theo dõi deadline và phân bổ thời gian thực hiện rõ ràng.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="gantt-lang-toggle">
+            <button class="gantt-lang-btn active" id="btnLangVi" onclick="setGanttLang('vi')">🇻🇳 Tiếng Việt</button>
+            <button class="gantt-lang-btn" id="btnLangEn" onclick="setGanttLang('en')">🇬🇧 English</button>
+          </div>
+          <button class="btn primary" onclick="openCreateTask()">+ <span id="ganttCreateBtnText">Tạo nhiệm vụ</span></button>
+        </div>
+      </div>
+
+      <div class="gantt-wrapper">
+        <!-- Toolbar điều khiển tháng & bộ lọc -->
+        <div class="gantt-header-toolbar">
+          <div class="gantt-nav-group">
+            <button class="gantt-nav-btn" onclick="prevGanttMonth()" title="Tháng trước">◀</button>
+            <span class="gantt-month-label" id="ganttMonthLabel">Tháng 8, 2026</span>
+            <button class="gantt-nav-btn" onclick="nextGanttMonth()" title="Tháng sau">▶</button>
+            <button class="gantt-nav-btn" onclick="todayGanttMonth()" id="ganttTodayBtn">Hôm nay</button>
+          </div>
+
+          <div class="gantt-filters">
+            <select class="gantt-select" id="ganttDeptFilter" onchange="renderGanttChart()">
+              <option value="ALL">Tất cả các Ban (All Depts)</option>
+              <option value="MEDIA">Ban Media</option>
+              <option value="TRUYEN_THONG">Ban Truyền thông</option>
+              <option value="NOI_DUNG">Ban Nội dung</option>
+              <option value="NHAN_SU">Ban Nhân sự</option>
+              <option value="DUYET_BAI">Ban Duyệt bài</option>
+              <option value="GLOBAL">Toàn dự án (Global)</option>
+            </select>
+
+            <select class="gantt-select" id="ganttStatusFilter" onchange="renderGanttChart()">
+              <option value="ALL">Tất cả trạng thái (All Status)</option>
+              <option value="OPEN">Đang mở (Open)</option>
+              <option value="IN_PROGRESS">Đang làm (In Progress)</option>
+              <option value="SUBMITTED">Chờ duyệt (Review)</option>
+              <option value="COMPLETED">Hoàn thành (Completed)</option>
+            </select>
+
+            <input type="text" class="gantt-search" id="ganttSearchInput" placeholder="🔍 Tìm kiếm nhiệm vụ..." oninput="renderGanttChart()">
+          </div>
+        </div>
+
+        <!-- Layout Sơ đồ Gantt: Cột trái (Phân ban & Task) + Cột phải (Timeline) -->
+        <div class="gantt-container" id="ganttContainer">
+          <!-- Cột Danh sách theo Ban (Left Tree) -->
+          <div class="gantt-tree-col" id="ganttTreeCol"></div>
+          <!-- Cột Lưới thời gian (Right Timeline) -->
+          <div class="gantt-timeline-col" id="ganttTimelineCol"></div>
+        </div>
       </div>
     </section>
 
@@ -1030,6 +1390,7 @@ document.querySelectorAll('.nav').forEach(b => {
 const PAGE_TITLES = {
   dashboard: 'TỔNG QUAN',
   board: 'BẢNG NHIỆM VỤ',
+  gantt: 'SƠ ĐỒ GANTT (GANTT CHART)',
   mine: 'NHIỆM VỤ CỦA TÔI',
   leaderboard: 'BẢNG VINH DANH',
   review: 'DUYỆT BẰNG CHỨNG',
@@ -1052,6 +1413,7 @@ function go(page) {
 
   if (page === 'dashboard') loadDashboard();
   if (page === 'board') loadBoard();
+  if (page === 'gantt') renderGanttChart();
   if (page === 'mine') loadMyMissions();
   if (page === 'leaderboard') loadLeaderboard();
   if (page === 'review') loadReviewQueue();
@@ -1244,14 +1606,19 @@ async function initStarterTasks() {
   loadBoard();
 }
 
-async function loadBoard() {
+async function loadBoard(force = false) {
+  if (allMissions && allMissions.length && !force) {
+    renderBoardCards(allMissions);
+  }
   try {
     const data = await api('/board');
     allMissions = (data.board && Array.isArray(data.board)) ? data.board : [];
     renderBoardCards(allMissions);
   } catch (e) {
-    allMissions = [];
-    renderBoardCards(allMissions);
+    if (!allMissions || !allMissions.length) {
+      allMissions = [];
+      renderBoardCards(allMissions);
+    }
   }
 }
 
@@ -1312,9 +1679,305 @@ function filterBoard(type, btn) {
   }
 }
 
-// -----------------------------------------------------------------------------
-// CHI TIẾT NHIỆM VỤ & NHẬN VIỆC
-// -----------------------------------------------------------------------------
+// =============================================================================
+// SƠ ĐỒ GANTT (GANTT CHART THEO PHÂN BAN & BILINGUAL VI/EN)
+// =============================================================================
+let ganttCurrentDate = new Date();
+let ganttLang = 'vi';
+let ganttCollapsedDepts = {};
+
+const GANTT_I18N = {
+  vi: {
+    eyebrow: 'Tiến độ & Phân bổ thời gian · Timeline',
+    headline: 'Sơ đồ Gantt (Gantt Chart)',
+    desc: 'Trực quan hóa tiến độ công việc theo từng Phân ban, theo dõi deadline và phân bổ thời gian thực hiện rõ ràng.',
+    createTask: 'Tạo nhiệm vụ',
+    todayBtn: 'Hôm nay',
+    allDepts: 'Tất cả các Ban (All Depts)',
+    allStatus: 'Tất cả trạng thái (All Status)',
+    statusOpen: 'Đang mở (Open)',
+    statusProgress: 'Đang làm (In Progress)',
+    statusReview: 'Chờ duyệt (Review)',
+    statusDone: 'Hoàn thành (Completed)',
+    searchPlaceholder: '🔍 Tìm kiếm nhiệm vụ...',
+    taskColTitle: 'PHÂN BAN & NHIỆM VỤ',
+    days: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+    monthNames: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+    deptNames: {
+      MEDIA: 'Ban Media',
+      TRUYEN_THONG: 'Ban Truyền thông',
+      NOI_DUNG: 'Ban Nội dung',
+      NHAN_SU: 'Ban Nhân sự',
+      DUYET_BAI: 'Ban Duyệt bài',
+      GLOBAL: 'Toàn dự án (Global)'
+    },
+    noTasks: 'Chưa có nhiệm vụ nào trong tháng này.',
+    deadlineLabel: 'Hạn chót:',
+    assigneeLabel: 'Phụ trách:',
+    unassigned: 'Chưa nhận'
+  },
+  en: {
+    eyebrow: 'Schedule & Time Allocation · Timeline',
+    headline: 'Gantt Chart & Progress',
+    desc: 'Visual progress roadmap grouped by department, track deadlines and execution timelines seamlessly.',
+    createTask: 'New Task',
+    todayBtn: 'Today',
+    allDepts: 'All Departments',
+    allStatus: 'All Status',
+    statusOpen: 'Open',
+    statusProgress: 'In Progress',
+    statusReview: 'In Review',
+    statusDone: 'Completed',
+    searchPlaceholder: '🔍 Search tasks...',
+    taskColTitle: 'DEPARTMENTS & TASKS',
+    days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    deptNames: {
+      MEDIA: 'Media Dept',
+      TRUYEN_THONG: 'Communications Dept',
+      NOI_DUNG: 'Content Dept',
+      NHAN_SU: 'HR & Operations',
+      DUYET_BAI: 'Quality Review Dept',
+      GLOBAL: 'Global / Project-wide'
+    },
+    noTasks: 'No tasks found for this month.',
+    deadlineLabel: 'Deadline:',
+    assigneeLabel: 'Assignee:',
+    unassigned: 'Unassigned'
+  }
+};
+
+function setGanttLang(lang) {
+  ganttLang = lang;
+  const btnVi = el('btnLangVi');
+  const btnEn = el('btnLangEn');
+  if (btnVi) btnVi.classList.toggle('active', lang === 'vi');
+  if (btnEn) btnEn.classList.toggle('active', lang === 'en');
+  const t = GANTT_I18N[lang];
+  if (el('ganttEyebrow')) el('ganttEyebrow').textContent = t.eyebrow;
+  if (el('ganttHeadline')) el('ganttHeadline').textContent = t.headline;
+  if (el('ganttDesc')) el('ganttDesc').textContent = t.desc;
+  if (el('ganttSearchInput')) el('ganttSearchInput').placeholder = t.searchPlaceholder;
+  if (el('ganttCreateBtnText')) el('ganttCreateBtnText').textContent = t.createTask;
+  if (el('ganttTodayBtn')) el('ganttTodayBtn').textContent = t.todayBtn;
+  renderGanttChart();
+}
+
+function prevGanttMonth() {
+  ganttCurrentDate.setMonth(ganttCurrentDate.getMonth() - 1);
+  renderGanttChart();
+}
+
+function nextGanttMonth() {
+  ganttCurrentDate.setMonth(ganttCurrentDate.getMonth() + 1);
+  renderGanttChart();
+}
+
+function todayGanttMonth() {
+  ganttCurrentDate = new Date();
+  renderGanttChart();
+}
+
+function toggleGanttDept(dept) {
+  ganttCollapsedDepts[dept] = !ganttCollapsedDepts[dept];
+  renderGanttChart();
+}
+
+async function renderGanttChart() {
+  if (!allMissions || !allMissions.length) {
+    try {
+      const data = await api('/board');
+      allMissions = (data.board && Array.isArray(data.board)) ? data.board : [];
+    } catch (_) {
+      allMissions = [];
+    }
+  }
+
+  const i18n = GANTT_I18N[ganttLang] || GANTT_I18N.vi;
+  const year = ganttCurrentDate.getFullYear();
+  const month = ganttCurrentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Header month label
+  const monthLabel = ganttLang === 'vi' 
+    ? `${i18n.monthNames[month]}, ${year}` 
+    : `${i18n.monthNames[month]} ${year}`;
+  if (el('ganttMonthLabel')) el('ganttMonthLabel').textContent = monthLabel;
+
+  const today = new Date();
+  const isCurrentMonth = (today.getFullYear() === year && today.getMonth() === month);
+  const todayDateNum = isCurrentMonth ? today.getDate() : -1;
+
+  // Filter inputs
+  const selectedDept = el('ganttDeptFilter') ? el('ganttDeptFilter').value : 'ALL';
+  const selectedStatus = el('ganttStatusFilter') ? el('ganttStatusFilter').value : 'ALL';
+  const searchKeyword = (el('ganttSearchInput') ? el('ganttSearchInput').value : '').trim().toLowerCase();
+
+  // Department order
+  const DEPTS = ['MEDIA', 'TRUYEN_THONG', 'NOI_DUNG', 'NHAN_SU', 'DUYET_BAI', 'GLOBAL'];
+
+  // Filter tasks
+  let filtered = allMissions.filter(t => {
+    if (selectedDept !== 'ALL' && t.DEPARTMENT !== selectedDept) return false;
+    const st = String(t.STATUS || 'OPEN').toUpperCase();
+    if (selectedStatus !== 'ALL' && st !== selectedStatus) return false;
+    if (searchKeyword) {
+      const matchText = (String(t.TITLE || '') + ' ' + String(t.CODE || '') + ' ' + String(t.DESCRIPTION || '')).toLowerCase();
+      if (!matchText.includes(searchKeyword)) return false;
+    }
+    return true;
+  });
+
+  // Build Day Headers
+  let daysHeaderHtml = '';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const curDayDate = new Date(year, month, d);
+    const dayOfWeek = curDayDate.getDay();
+    const isToday = (d === todayDateNum);
+    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+    const dayName = i18n.days[dayOfWeek];
+
+    daysHeaderHtml += `
+      <div class="gantt-day-cell ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}">
+        <span class="gantt-day-num">${d}</span>
+        <span class="gantt-day-name">${dayName}</span>
+      </div>
+    `;
+  }
+
+  // Build grid lines
+  let gridLinesHtml = '<div class="gantt-grid-lines">';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = (d === todayDateNum);
+    gridLinesHtml += `<div class="gantt-grid-line ${isToday ? 'today-line' : ''}"></div>`;
+  }
+  gridLinesHtml += '</div>';
+
+  let treeHtml = `<div class="gantt-tree-header">${i18n.taskColTitle} (${filtered.length})</div>`;
+  let timelineRowsHtml = '';
+
+  DEPTS.forEach(deptKey => {
+    if (selectedDept !== 'ALL' && selectedDept !== deptKey) return;
+    const deptTasks = filtered.filter(t => (t.DEPARTMENT || 'GLOBAL') === deptKey);
+    if (!deptTasks.length && selectedDept === 'ALL' && searchKeyword) return;
+
+    const deptName = i18n.deptNames[deptKey] || deptKey;
+    const isCollapsed = !!ganttCollapsedDepts[deptKey];
+    const arrow = isCollapsed ? '▶' : '▼';
+
+    // Left tree department group header
+    treeHtml += `
+      <div class="gantt-dept-group">
+        <div class="gantt-dept-row" onclick="toggleGanttDept('${deptKey}')">
+          <span>${arrow} 📁 ${deptName}</span>
+          <span class="gantt-dept-badge">${deptTasks.length}</span>
+        </div>
+    `;
+
+    // Right timeline divider
+    timelineRowsHtml += `<div class="gantt-timeline-dept-divider"></div>`;
+
+    if (!isCollapsed) {
+      deptTasks.forEach(task => {
+        const st = String(task.STATUS || 'OPEN').toUpperCase();
+        const dotClass = st === 'COMPLETED' ? 'status-done' 
+                       : (st === 'IN_PROGRESS' || st === 'CLAIMED' || st === 'WORKING') ? 'status-progress'
+                       : (st === 'SUBMITTED' || st === 'HUMAN_REVIEW') ? 'status-review'
+                       : 'status-open';
+
+        const xp = task.XP_FINAL || task.XP_AI_RECOMMENDED || 1;
+        const diff = task.DIFFICULTY || 'M2';
+
+        treeHtml += `
+          <div class="gantt-task-row" onclick="openMissionDetail('${task.TASK_ID || task.CODE}')" title="Bấm để xem chi tiết & nhận việc">
+            <span class="gantt-status-dot ${dotClass}"></span>
+            <div class="gantt-task-meta">
+              <div class="gantt-task-name">${task.CODE ? `<b>${task.CODE}</b> ` : ''}${task.TITLE || 'Nhiệm vụ'}</div>
+              <div class="gantt-task-sub">
+                <span style="color:var(--gold)">+${xp} XP</span> · 
+                <span>${diff}</span> · 
+                <span>${task.ASSIGNEE_NAME || i18n.unassigned}</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Calculate timeline position
+        const startDt = task.WORK_START ? new Date(task.WORK_START) 
+                      : task.OPEN_TIME ? new Date(task.OPEN_TIME) 
+                      : (task.CREATED_AT ? new Date(task.CREATED_AT) : new Date(year, month, 1));
+        const endDt = task.SUBMISSION_DEADLINE ? new Date(task.SUBMISSION_DEADLINE)
+                    : task.CLAIM_DEADLINE ? new Date(task.CLAIM_DEADLINE)
+                    : new Date(startDt.getTime() + 3 * 86400000);
+
+        // Check if task intersects with current month
+        const monthStart = new Date(year, month, 1, 0, 0, 0);
+        const monthEnd = new Date(year, month, daysInMonth, 23, 59, 59);
+
+        let barHtml = '';
+        if (endDt >= monthStart && startDt <= monthEnd) {
+          const effectiveStart = startDt < monthStart ? 1 : startDt.getDate();
+          const effectiveEnd = endDt > monthEnd ? daysInMonth : endDt.getDate();
+          const spanDays = Math.max(1, effectiveEnd - effectiveStart + 1);
+
+          const leftPx = (effectiveStart - 1) * 38 + 2;
+          const widthPx = Math.max(34, spanDays * 38 - 4);
+
+          const deptClass = deptKey === 'MEDIA' ? 'gantt-bar-media'
+                          : deptKey === 'TRUYEN_THONG' ? 'gantt-bar-truyenthong'
+                          : deptKey === 'NOI_DUNG' ? 'gantt-bar-noidung'
+                          : deptKey === 'NHAN_SU' ? 'gantt-bar-nhansu'
+                          : deptKey === 'DUYET_BAI' ? 'gantt-bar-duyetbai'
+                          : 'gantt-bar-global';
+
+          const progressPct = st === 'COMPLETED' ? 100 : (st === 'IN_PROGRESS' || st === 'WORKING' || st === 'SUBMITTED') ? 60 : 20;
+
+          const startStr = `${startDt.getDate()}/${startDt.getMonth()+1}`;
+          const endStr = `${endDt.getDate()}/${endDt.getMonth()+1}`;
+
+          barHtml = `
+            <div class="gantt-bar ${deptClass}" style="left:${leftPx}px; width:${widthPx}px" onclick="openMissionDetail('${task.TASK_ID || task.CODE}')" title="${task.CODE || ''} - ${task.TITLE || ''} (${startStr} - ${endStr}) | +${xp} XP">
+              <div class="gantt-bar-progress" style="width:${progressPct}%"></div>
+              <span style="position:relative;z-index:2;overflow:hidden;text-overflow:ellipsis">${startStr}-${endStr}: ${task.TITLE || 'Nhiệm vụ'}</span>
+            </div>
+          `;
+        }
+
+        timelineRowsHtml += `
+          <div class="gantt-timeline-row">
+            ${barHtml}
+          </div>
+        `;
+      });
+    }
+
+    treeHtml += `</div>`;
+  });
+
+  if (!filtered.length) {
+    treeHtml += `<div class="empty-state">${i18n.noTasks}</div>`;
+  }
+
+  if (el('ganttTreeCol')) el('ganttTreeCol').innerHTML = treeHtml;
+  if (el('ganttTimelineCol')) {
+    el('ganttTimelineCol').innerHTML = `
+      <div class="gantt-days-header">${daysHeaderHtml}</div>
+      <div class="gantt-timeline-body" style="width:${daysInMonth * 38}px">
+        ${gridLinesHtml}
+        ${timelineRowsHtml}
+      </div>
+    `;
+  }
+
+  // Auto-scroll timeline to today if current month
+  if (isCurrentMonth && todayDateNum > 4 && el('ganttTimelineCol')) {
+    setTimeout(() => {
+      const scrollPos = Math.max(0, (todayDateNum - 4) * 38);
+      el('ganttTimelineCol').scrollTo({ left: scrollPos, behavior: 'smooth' });
+    }, 100);
+  }
+}
+
 // -----------------------------------------------------------------------------
 // CHI TIẾT NHIỆM VỤ & NHẬN VIỆC
 // -----------------------------------------------------------------------------
@@ -2127,7 +2790,11 @@ auth.onAuthStateChanged(async user => {
     el('authBtn').onclick = signInWithGoogle;
   }
   await loadDashboard();
-  loadBoard();
+  await loadBoard();
+  const hash = window.location.hash.replace('#', '');
+  if (hash && ['dashboard', 'board', 'gantt', 'mine', 'leaderboard', 'review', 'ledger', 'team', 'role-review', 'tools'].includes(hash)) {
+    go(hash);
+  }
 });
 </script>
 </body>

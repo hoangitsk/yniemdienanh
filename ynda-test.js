@@ -92,7 +92,8 @@ async function main() {
     openTime: '2026-08-10T00:00:00', claimDeadline: '2026-08-11T21:00:00',
     workStart: '2026-08-16T20:00:00', submissionDeadline: '2026-08-17T23:59:00',
     skills: 'Edit, Premiere', unlimitedSlots: 'FALSE', slots: 1,
-    seasonId: 'SEA-1'
+    seasonId: 'SEA-1',
+    status: config.TASK_STATUS.DRAFT
   }, { USER_ID: core.USER_ID });
   assert.strictEqual(taskA.STATUS, config.TASK_STATUS.DRAFT);
   assert.ok(taskA.CODE.startsWith('MEDIA-'));

@@ -124,44 +124,15 @@
         var senderName = esc(sender.name || 'Đội ngũ Ý Niệm Điện Ảnh');
         var senderPosition = esc(sender.dept || roleLabels[sender.role] || sender.role || 'Thành viên');
         var signature = '<p>Trân trọng,<br><strong>' + senderName + '</strong><br>' + senderPosition + '<br>Ý Niệm Điện Ảnh</p>';
-        function getDepartmentGroupLink(deptName) {
-            var customLink = document.getElementById('bulkMessLink') ? document.getElementById('bulkMessLink').value.trim() : '';
-            if (customLink) return { name: 'Messenger', url: customLink };
-            var d = String(deptName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            if (d.includes('noi dung') || d.includes('duyet bai')) {
-                return {
-                    name: 'Ban Nội dung & Duyệt bài',
-                    url: 'https://m.me/j/AbYWXdZyqbheibXd/?send_source=gc%3Acopy_invite_link_c'
-                };
-            }
-            if (d.includes('media') || d.includes('truyen thong') || d.includes('pr') || d.includes('mkt') || d.includes('marketing') || d.includes('design') || d.includes('edit')) {
-                return {
-                    name: 'Ban Media & Truyền thông',
-                    url: 'https://m.me/j/AbbV1CGoOXkaGF0t/?send_source=gc%3Acopy_invite_link_c'
-                };
-            }
-            return null;
-        }
-
-        var grp = getDepartmentGroupLink(dept);
-        var groupInviteHtml = '';
-        if (grp) {
-            groupInviteHtml = '<p style="margin:16px 0"><a href="' + grp.url + '" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700" target="_blank">👉 Tham gia nhóm Messenger ' + grp.name + '</a></p>';
-        } else {
-            groupInviteHtml = '<p style="margin:16px 0">' +
-                '<a href="https://m.me/j/AbYWXdZyqbheibXd/?send_source=gc%3Acopy_invite_link_c" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700;margin-right:8px" target="_blank">Nhóm Nội dung & Duyệt bài</a> ' +
-                '<a href="https://m.me/j/AbbV1CGoOXkaGF0t/?send_source=gc%3Acopy_invite_link_c" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700" target="_blank">Nhóm Media & Truyền thông</a></p>';
-        }
-        groupInviteHtml += '<p style="margin-top:12px;font-size:0.88rem;color:#cbd5e1">💡 <em>Lưu ý: Nếu không tham gia bằng đường link Messenger trên được, bạn vui lòng kết bạn Facebook với Trưởng Ban tại <a href="https://www.facebook.com/Harlanitskt" style="color:#e4b866;font-weight:700" target="_blank">Facebook Harlanitskt</a> để được hỗ trợ thêm vào nhóm nhé!</em></p>';
 
         var templates = {
             approve: {
                 subject: '[Ý Niệm Điện Ảnh] Kết quả ứng tuyển — ' + (app.name || ''),
-                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Ban Nhân Sự vui mừng thông báo hồ sơ ứng tuyển vào <strong>' + dept + '</strong> của bạn đã được chính thức thông qua.</p>' + groupInviteHtml + '<p>Chào mừng bạn đến với đại gia đình Ý Niệm Điện Ảnh! ✨</p>' + signature
+                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Ban Nhân Sự vui mừng thông báo hồ sơ ứng tuyển vào <strong>' + dept + '</strong> của bạn đã được chính thức thông qua.</p><p>Chào mừng bạn đến với đại gia đình Ý Niệm Điện Ảnh! ✨</p>' + signature
             },
             interview_group: {
                 subject: '[Ý Niệm Điện Ảnh] Thư mời tham gia Nhóm Phỏng vấn — ' + (app.name || ''),
-                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Chúc mừng bạn đã chính thức được chọn tham gia vòng Phỏng vấn ứng tuyển vị trí <strong>' + dept + '</strong>!</p><p>Để chuẩn bị cho buổi phỏng vấn và nhận các thông tin sắp xếp lịch trực tiếp, bạn vui lòng bấm tham gia nhóm Messenger phỏng vấn dưới đây:</p>' + groupInviteHtml + '<p>Vui lòng tham gia nhóm sớm để không bỏ lỡ các thông tin quan trọng từ Ban Nhân Sự nhé.</p>' + signature
+                body: '<p>Xin chào <strong>' + name + '</strong>,</p><p>Chúc mừng bạn đã chính thức được chọn tham gia vòng Phỏng vấn ứng tuyển vị trí <strong>' + dept + '</strong>!</p><p>Ban Nhân Sự sẽ liên hệ và trao đổi trực tiếp các thông tin sắp xếp lịch phỏng vấn đến bạn trong thời gian sớm nhất.</p>' + signature
             },
             round1_pass: {
                 subject: '[Ý Niệm Điện Ảnh] Chúc mừng bạn đã vượt qua vòng 1 — ' + (app.name || ''),
@@ -467,37 +438,11 @@
                 }
             }
             function ensureDepartmentGroupLinksInBody(body, app) {
-                if (!body) return body;
-                if (body.includes('m.me/j/AbYWXdZyqbheibXd') || body.includes('m.me/j/AbbV1CGoOXkaGF0t')) return body;
-                
-                var dept = app.dept || '';
-                var d = String(dept).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                var grp = null;
-                if (d.includes('noi dung') || d.includes('duyet bai')) {
-                    grp = { name: 'Ban Nội dung & Duyệt bài', url: 'https://m.me/j/AbYWXdZyqbheibXd/?send_source=gc%3Acopy_invite_link_c' };
-                } else if (d.includes('media') || d.includes('truyen thong') || d.includes('pr') || d.includes('mkt') || d.includes('marketing') || d.includes('design') || d.includes('edit')) {
-                    grp = { name: 'Ban Media & Truyền thông', url: 'https://m.me/j/AbbV1CGoOXkaGF0t/?send_source=gc%3Acopy_invite_link_c' };
-                }
-
-                var groupHtml = '';
-                if (grp) {
-                    groupHtml = '<p style="margin:16px 0"><a href="' + grp.url + '" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700" target="_blank">👉 Tham gia nhóm Messenger ' + grp.name + '</a></p>';
-                } else {
-                    groupHtml = '<p style="margin:16px 0">' +
-                        '<a href="https://m.me/j/AbYWXdZyqbheibXd/?send_source=gc%3Acopy_invite_link_c" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700;margin-right:8px" target="_blank">Nhóm Nội dung & Duyệt bài</a> ' +
-                        '<a href="https://m.me/j/AbbV1CGoOXkaGF0t/?send_source=gc%3Acopy_invite_link_c" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#e4b866;color:#111827;text-decoration:none;font-weight:700" target="_blank">Nhóm Media & Truyền thông</a></p>';
-                }
-                groupHtml += '<p style="margin-top:12px;font-size:0.88rem;color:#cbd5e1">💡 <em>Lưu ý: Nếu không tham gia bằng đường link Messenger trên được, bạn vui lòng kết bạn Facebook với Trưởng Ban tại <a href="https://www.facebook.com/Harlanitskt" style="color:#e4b866;font-weight:700" target="_blank">Facebook Harlanitskt</a> để được hỗ trợ thêm vào nhóm nhé!</em></p>';
-
-                return body + groupHtml;
+                return body || '';
             }
 
             apps.forEach(function (app) {
                 if (!contents[String(app.id)]) contents[String(app.id)] = fallbackEmail(app, type, scheduleCode);
-                if (type === 'approve' || type === 'interview_group') {
-                    var c = contents[String(app.id)];
-                    if (c && c.body) c.body = ensureDepartmentGroupLinksInBody(c.body, app);
-                }
             });
             window.bulkEmailDraft = {
                 apps: apps,

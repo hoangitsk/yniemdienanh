@@ -497,9 +497,9 @@
                     </label>
                     <span style="font-size:0.78rem;color:var(--text-muted)">Xem trước</span>
                 </div>
-                <textarea id="body" rows="10" placeholder="Viết nội dung ở đây...&#10;&#10;Hỗ trợ Markdown nhẹ: **in đậm**, *in nghiêng*, [nhãn](https://...)."></textarea>
+                <textarea id="body" rows="10" placeholder="Viết nội dung ở đây...&#10;&#10;✨ Hỗ trợ toàn bộ mã HTML: &lt;p&gt;, &lt;strong&gt;, &lt;a href='...'&gt;, &lt;table&gt;, &lt;div style='...'&gt;, v.v.&#10;✨ Hoặc viết văn bản / Markdown nhanh: **in đậm**, *in nghiêng*, [nhãn link](https://...)."></textarea>
                 <div id="previewBox" class="preview-box hidden"></div>
-                <div class="hint">Nội dung sẽ được bọc trong mẫu thư chính thức của Ý Niệm Điện Ảnh (logo + chân trang).</div>
+                <div class="hint">Nội dung sẽ được tự động lồng vào giao diện email sang trọng chính thức của Ý Niệm Điện Ảnh (có Logo Header & Chân trang bảo mật). Bật công tắc 'Xem trước' ở trên để xem bản dựng HTML thực tế.</div>
 
                 <label for="attachment">Tệp đính kèm (PDF, tối đa 2 MB — không bắt buộc)</label>
                 <input id="attachment" type="file" accept=".pdf,application/pdf">
@@ -623,7 +623,14 @@
             const box = document.getElementById('previewBox');
             const body = document.getElementById('body');
             if (checked) {
-                box.textContent = body.value || '(Trống)';
+                const raw = (body.value || '').trim();
+                if (!raw) {
+                    box.innerHTML = '<div style="color:var(--text-muted);font-style:italic">Chưa có nội dung...</div>';
+                } else if (/<\/?(?:p|div|br|strong|b|em|i|ul|ol|li|a|h[1-6]|table|tr|td|span|img)\b/i.test(raw)) {
+                    box.innerHTML = raw;
+                } else {
+                    box.innerHTML = raw.split(/\n\s*\n+/).map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('');
+                }
                 box.classList.remove('hidden');
             } else {
                 box.classList.add('hidden');

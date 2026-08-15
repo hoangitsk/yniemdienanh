@@ -17,19 +17,44 @@ function normalizeText(s) {
 }
 
 function canonicalDept(dept, rawRole, role, name) {
-  const t = (String(dept || '') + ' ' + String(rawRole || '') + ' ' + String(role || '') + ' ' + String(name || '')).toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd');
+  const d = String(dept || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').trim();
   
-  if (/founder|president|chu tich|sang lap|co founder|dong sang lap|ban dieu hanh|bdh|dieu hanh|global/.test(t) ||
-      /minh hoang|thanh nga|minh anh/.test(t)) {
-    return 'Ban Điều Hành';
+  if (d) {
+    if (/media|hau ky|video|design|edit|san xuat/.test(d)) return 'Ban Media / Hậu Kỳ';
+    if (/truyen thong|comms|pr|mkt|marketing/.test(d)) return 'Ban Truyền Thông';
+    if (/noi dung|content/.test(d)) return 'Ban Nội Dung';
+    if (/nhan su|hr/.test(d)) return 'Ban Nhân Sự';
+    if (/duyet|kiem duyet/.test(d)) return 'Ban Duyệt Bài';
+    if (/founder|president|chu tich|sang lap|co founder|dong sang lap|ban dieu hanh|bdh|dieu hanh|global/.test(d)) return 'Ban Điều Hành';
   }
-  if (/nhan su|hr|anh thu|thao vy|my nga/.test(t)) return 'Ban Nhân Sự';
-  if (/truyen thong|comms|mkt|marketing|pr|quynh giang|ngoc ha|ngoc phung|hoang ngan|thanh truc/.test(t)) return 'Ban Truyền Thông';
-  if (/media|hau ky|san xuat|video|design|thanh thao/.test(t) || (name && name.includes('Yến Nhi') && (!dept || dept.toLowerCase().includes('media') || /media/i.test(rawRole)))) return 'Ban Media / Hậu Kỳ';
-  if (/noi dung|content|huu binh|phuong thao|thai anh|aris/.test(t)) return 'Ban Nội Dung';
-  if (/duyet|kiem duyet|ngoc diep|phuong linh/.test(t) || (name && name.includes('Yến Nhi') && (!dept || dept.toLowerCase().includes('duyệt') || /duyet/i.test(rawRole)))) return 'Ban Duyệt Bài';
-  
+
+  const r = (String(rawRole || '') + ' ' + String(role || '')).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').trim();
+  if (r && !/^(member|thanh vien|ctv)$/.test(r)) {
+    if (/media|hau ky|video|design|edit|san xuat/.test(r)) return 'Ban Media / Hậu Kỳ';
+    if (/truyen thong|comms|pr|mkt|marketing/.test(r)) return 'Ban Truyền Thông';
+    if (/noi dung|content/.test(r)) return 'Ban Nội Dung';
+    if (/nhan su|hr/.test(r)) return 'Ban Nhân Sự';
+    if (/duyet|kiem duyet/.test(r)) return 'Ban Duyệt Bài';
+    if (/founder|president|chu tich|sang lap|co founder|dong sang lap|ban dieu hanh|bdh|dieu hanh|global/.test(r)) return 'Ban Điều Hành';
+  }
+
+  const n = String(name || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').trim();
+  if (n) {
+    if (/minh hoang|thanh nga|minh anh/.test(n)) return 'Ban Điều Hành';
+    if (/thanh thao|thanh truc/.test(n)) return 'Ban Media / Hậu Kỳ';
+    if (/anh thu|thao vy|my nga/.test(n)) return 'Ban Nhân Sự';
+    if (/quynh giang|ngoc ha|ngoc phung|hoang ngan/.test(n)) return 'Ban Truyền Thông';
+    if (/huu binh|phuong thao|thai anh|aris/.test(n)) return 'Ban Nội Dung';
+    if (/ngoc diep|phuong linh/.test(n)) return 'Ban Duyệt Bài';
+    if (/yen nhi/.test(n)) {
+      if (/duyet/i.test(r) || /duyet/i.test(d)) return 'Ban Duyệt Bài';
+      return 'Ban Media / Hậu Kỳ';
+    }
+  }
+
   return 'Ban Khác';
 }
 

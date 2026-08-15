@@ -73,9 +73,9 @@ module.exports = async (req, res) => {
     const sender = normalizeEmailSender(req.body);
     const typeInstruction = {
         approve: 'Thông báo được duyệt và chào mừng gia nhập dự án.',
-        round1_pass: 'Chúc mừng vượt qua vòng 1; nói rõ trong 3 ngày tới sẽ có email khác để chọn lịch phỏng vấn, chưa yêu cầu chọn lịch trong thư này.',
-        interview: 'Mời phỏng vấn; bắt buộc dùng đúng trường scheduleUrl riêng của từng ứng viên để chọn thời gian rảnh; nói rõ hệ thống chốt lúc 0h hằng ngày theo giờ Việt Nam và ứng viên chưa được chốt vẫn có thể cập nhật đến hết hạn.',
-        interview_group: 'Mời tham gia nhóm phỏng vấn Messenger theo Ban của ứng viên để chuẩn bị trao đổi phỏng vấn.',
+        round1_pass: 'Chúc mừng vượt qua vòng 1.',
+        interview: 'Mời tham gia phỏng vấn.',
+        interview_group: 'Thông báo và hướng dẫn phỏng vấn theo Ban của ứng viên.',
         reject: 'Từ chối lịch sự, chân thành, cảm ơn ứng viên và chúc họ may mắn.',
         attachment_followup: 'Gửi bổ sung tài liệu còn thiếu trong email trước; lời nhắn ngắn gọn, xin lỗi nhẹ nhàng và nhắc ứng viên xem file đính kèm.',
         custom: 'Thư tùy chỉnh theo đúng mô tả riêng của người phụ trách bên dưới.'
@@ -84,11 +84,6 @@ module.exports = async (req, res) => {
     const prompt = `Bạn là trợ lý soạn email cho dự án Ý Niệm Điện Ảnh.
 Thông tin chính thức từ Sổ tay dự án:
 ${PROJECT_HANDBOOK_EMAIL_CONTEXT}
-
-Link tham gia nhóm Messenger chính thức theo Ban (CHỈ CHÈN khi thư là loại Duyệt/Chào mừng hoặc Mời nhóm phỏng vấn; KHÔNG tự ý chèn vào Thư tùy chỉnh trừ khi mô tả có yêu cầu):
-- Ban Nội dung / Ban Duyệt bài: https://m.me/j/AbYWXdZyqbheibXd/?send_source=gc%3Acopy_invite_link_c
-- Ban Media / Ban Truyền thông: https://m.me/j/AbbV1CGoOXkaGF0t/?send_source=gc%3Acopy_invite_link_c
-- Nếu không vào nhóm bằng link được, nhắc ứng viên kết bạn Facebook với Trưởng ban tại: https://www.facebook.com/Harlanitskt
 
 ${emailSenderPromptContext(sender)}
 

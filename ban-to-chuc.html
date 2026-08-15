@@ -478,112 +478,71 @@
             background: rgba(228, 184, 102, 0.25);
         }
 
-        /* LEAD GRID & CARDS (TRƯỞNG BAN & PHÓ BAN) */
-        .lead-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 18px;
-            margin-bottom: 22px;
-        }
-        .lead-card {
-            border-radius: 16px;
-            padding: 22px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .lead-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3.5px;
-        }
-        .lead-card:hover {
-            transform: translateY(-4px);
-        }
-
-        /* CORE LEAD (TRƯỞNG BAN) */
-        .lead-card.core-lead {
-            background: linear-gradient(145deg, rgba(14, 34, 28, 0.95), rgba(7, 20, 18, 0.9));
-            border: 1.5px solid rgba(52, 211, 153, 0.45);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(52, 211, 153, 0.06);
-        }
-        .lead-card.core-lead::before {
-            background: linear-gradient(90deg, #059669, #34d399, #a7f3d0, #34d399, #059669);
-        }
-        .lead-card.core-lead:hover {
-            border-color: #34d399;
-            box-shadow: 0 16px 40px rgba(52, 211, 153, 0.22), inset 0 0 25px rgba(52, 211, 153, 0.1);
-        }
-        .avatar-circle.lead-avatar-core {
-            background: linear-gradient(135deg, rgba(52, 211, 153, 0.3), rgba(7, 20, 18, 0.95));
-            border: 2px solid #34d399;
-            color: #6ee7b7;
-            box-shadow: 0 0 16px rgba(52, 211, 153, 0.35);
-        }
-
-        /* VICE LEAD (PHÓ BAN) */
-        .lead-card.vice-lead {
-            background: linear-gradient(145deg, rgba(14, 28, 48, 0.95), rgba(7, 16, 32, 0.9));
-            border: 1.5px solid rgba(56, 189, 248, 0.45);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.06);
-        }
-        .lead-card.vice-lead::before {
-            background: linear-gradient(90deg, #0284c7, #38bdf8, #bae6fd, #38bdf8, #0284c7);
-        }
-        .lead-card.vice-lead:hover {
-            border-color: #38bdf8;
-            box-shadow: 0 16px 40px rgba(56, 189, 248, 0.22), inset 0 0 25px rgba(56, 189, 248, 0.1);
-        }
-        .avatar-circle.lead-avatar-vice {
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(7, 16, 32, 0.95));
-            border: 2px solid #38bdf8;
-            color: #7dd3fc;
-            box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
-        }
-
-        /* MEMBER GRID */
+        /* UNIFIED BALANCED MEMBER GRID */
         .member-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 18px;
-            margin-bottom: 30px;
+            gap: 16px;
+            margin-bottom: 28px;
         }
         .member-card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 14px;
             padding: 18px;
-            transition: all 0.25s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             flex-direction: column;
             gap: 10px;
             backdrop-filter: blur(8px);
-        }
-        .member-card.is-lead {
-            border-color: rgba(52, 211, 153, 0.4);
-            background: linear-gradient(145deg, rgba(16, 24, 45, 0.85), rgba(10, 16, 32, 0.8));
-            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.08);
+            position: relative;
+            overflow: hidden;
         }
         .member-card:hover {
             transform: translateY(-3px);
             border-color: var(--card-hover);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
         }
+
+        /* ROLE-BASED ACCENTS IN SAME BALANCED GRID */
+        .member-card.is-core-lead {
+            border: 1.5px solid rgba(52, 211, 153, 0.5);
+            background: linear-gradient(145deg, rgba(14, 32, 26, 0.88), rgba(8, 18, 16, 0.82));
+            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.1);
+        }
+        .member-card.is-core-lead:hover {
+            border-color: #34d399;
+            box-shadow: 0 12px 30px rgba(52, 211, 153, 0.2);
+        }
+
+        .member-card.is-vice-lead {
+            border: 1.5px solid rgba(56, 189, 248, 0.5);
+            background: linear-gradient(145deg, rgba(14, 28, 48, 0.88), rgba(8, 16, 30, 0.82));
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.1);
+        }
+        .member-card.is-vice-lead:hover {
+            border-color: #38bdf8;
+            box-shadow: 0 12px 30px rgba(56, 189, 248, 0.2);
+        }
+
+        .member-card.is-advisor {
+            border: 1.5px solid rgba(245, 158, 11, 0.55);
+            background: linear-gradient(145deg, rgba(32, 26, 46, 0.88), rgba(16, 20, 32, 0.82));
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.12);
+        }
+        .member-card.is-advisor:hover {
+            border-color: #fbbf24;
+            box-shadow: 0 12px 30px rgba(245, 158, 11, 0.25);
+        }
+
         .mem-top {
             display: flex;
             align-items: center;
             gap: 12px;
         }
         .mem-avatar {
-            width: 44px;
-            height: 44px;
+            width: 46px;
+            height: 46px;
             border-radius: 50%;
             background: rgba(228, 184, 102, 0.15);
             border: 1.5px solid rgba(228, 184, 102, 0.35);
@@ -591,14 +550,28 @@
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 1.05rem;
             color: var(--gold-light);
             flex-shrink: 0;
+            transition: all 0.2s;
         }
-        .member-card.is-lead .mem-avatar {
-            border-color: var(--success);
-            color: var(--success);
-            background: rgba(52, 211, 153, 0.15);
+        .member-card.is-core-lead .mem-avatar {
+            border-color: #34d399;
+            color: #6ee7b7;
+            background: rgba(52, 211, 153, 0.2);
+            box-shadow: 0 0 12px rgba(52, 211, 153, 0.25);
+        }
+        .member-card.is-vice-lead .mem-avatar {
+            border-color: #38bdf8;
+            color: #7dd3fc;
+            background: rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+        }
+        .member-card.is-advisor .mem-avatar {
+            border-color: #f59e0b;
+            color: #fef08a;
+            background: rgba(245, 158, 11, 0.2);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
         }
         .mem-name {
             font-weight: 700;
@@ -970,7 +943,7 @@
                 html += `</div>`;
             }
 
-            // 2. Render each Department (Trưởng Ban on top + Thành Viên below)
+            // 2. Render each Department (Trưởng Ban on top + Thành Viên below, all in ONE balanced grid!)
             const orderedDepts = ['Ban Cố Vấn', 'Ban Nhân Sự', 'Ban Truyền Thông', 'Ban Media / Hậu Kỳ', 'Ban Nội Dung', 'Ban Duyệt Bài'];
             const allDeptKeys = Array.from(new Set([...orderedDepts, ...Object.keys(deptGroups)]));
 
@@ -982,127 +955,64 @@
                 if (!totalInDept) return;
 
                 const isAdvisorDept = deptName === 'Ban Cố Vấn' || deptName === 'Ban Cố Vấn Chuyên Môn';
-
-                if (isAdvisorDept) {
-                    html += `
-                        <div class="section-header">
-                            <div class="section-title" style="color:#fbbf24">🎓 Ban Cố Vấn</div>
-                            <div class="section-line" style="background:linear-gradient(90deg, rgba(245,158,11,0.5), transparent)"></div>
-                            <span class="section-badge" style="background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);color:#fef08a">${totalInDept} Cố Vấn Cấp Cao</span>
-                        </div>
-                        <div class="exec-grid" style="margin-bottom:30px;">
-                    `;
-                    const allAdvisors = [...group.leads, ...group.members];
-                    allAdvisors.forEach(m => {
-                        const initials = getInitials(m.name);
-                        const badge = getRoleBadge(m.role, m.title);
-                        const fb = resolveFbLink(m);
-                        html += `
-                            <div class="advisor-card">
-                                <div class="card-top">
-                                    <div class="avatar-circle advisor-avatar">${initials}</div>
-                                    <div class="exec-info">
-                                        <h3 style="color:#fff;font-size:1.25rem;">${m.name}</h3>
-                                        ${badge}
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="card-dept" style="color:#f59e0b">🎓 Ban Cố Vấn</div>
-                                    <div style="margin-top:4px;color:#fef08a;font-weight:700;font-size:0.95rem;">${m.title || 'Cố vấn chuyên môn'}</div>
-                                    ${m.notes ? `<div style="margin-top:6px;font-size:0.82rem;color:var(--muted);">${m.notes}</div>` : ''}
-                                </div>
-                                <div class="card-actions">
-                                    ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
-                                    ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
-                                </div>
-                            </div>
-                        `;
-                    });
-                    html += `</div>`;
-                    return;
-                }
+                const deptIcon = isAdvisorDept ? '🎓' : '🏢';
 
                 html += `
                     <div class="section-header">
-                        <div class="section-title">🏢 ${deptName}</div>
+                        <div class="section-title">${deptIcon} ${deptName}</div>
                         <div class="section-line"></div>
-                        <span class="section-badge">${totalInDept} Nhân sự (${group.leads.length} Lãnh đạo, ${group.members.length} Thành viên)</span>
+                        <span class="section-badge">${totalInDept} Nhân sự${group.leads.length ? ` (${group.leads.length} Lãnh đạo, ${group.members.length} Thành viên)` : ''}</span>
                     </div>
+                    <div class="member-grid">
                 `;
 
-                // 1. Render Trưởng Ban & Phó Ban (Phân cấp lãnh đạo nổi bật)
-                if (group.leads.length) {
-                    html += `<div class="lead-grid">`;
-                    group.leads.forEach(m => {
-                        const initials = getInitials(m.name);
-                        const badge = getRoleBadge(m.role, m.title);
-                        const fb = resolveFbLink(m);
-                        const isVice = /vice|pho ban|pho lead|pho/i.test(m.rawRole || '') || /vice|pho/i.test(m.role || '');
-                        const cardClass = isVice ? 'lead-card vice-lead' : 'lead-card core-lead';
-                        const avatarClass = isVice ? 'avatar-circle lead-avatar-vice' : 'avatar-circle lead-avatar-core';
-                        const titleColor = isVice ? '#38bdf8' : '#34d399';
+                // Combine Leads + Members (Leads are first), and render in the same balanced grid!
+                const deptMembers = [...group.leads, ...group.members];
+                deptMembers.forEach(m => {
+                    const initials = getInitials(m.name);
+                    const badge = getRoleBadge(m.role, m.title);
+                    const fb = resolveFbLink(m);
 
-                        html += `
-                            <div class="${cardClass}">
-                                <div class="card-top">
-                                    <div class="${avatarClass}">${initials}</div>
-                                    <div class="exec-info">
-                                        <h3 style="color:#fff;font-size:1.18rem;">${m.name}</h3>
-                                        ${badge}
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="card-dept">🏢 ${deptName}</div>
-                                    <div style="margin-top:4px;color:${titleColor};font-weight:700;font-size:0.92rem;">${m.title || (isVice ? 'Phó Ban' : 'Trưởng Ban')}</div>
-                                    ${m.notes ? `<div style="margin-top:6px;font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
-                                </div>
-                                <div class="card-actions">
-                                    ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
-                                    ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
-                                </div>
-                            </div>
-                        `;
-                    });
-                    html += `</div>`;
-                }
+                    const roleUpper = String(m.role || '').toUpperCase();
+                    const rawRoleNorm = normText(m.rawRole || '');
+                    const isAdvisor = isAdvisorDept || roleUpper === 'ADVISOR' || /co van|advisor|tham van|chuyen mon/.test(rawRoleNorm);
+                    const isVice = !isAdvisor && (roleUpper === 'VICE' || /vice|pho ban|pho lead|pho/.test(rawRoleNorm));
+                    const isCore = !isAdvisor && !isVice && (roleUpper === 'CORE' || /truong|head|lead|core/.test(rawRoleNorm) || m.isLead);
 
-                // 2. Render Thành Viên Ban
-                if (group.members.length) {
-                    if (group.leads.length) {
-                        html += `
-                            <div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);text-transform:uppercase;margin:18px 0 12px;display:flex;align-items:center;gap:10px;">
-                                <span>👥 Thành viên ban</span>
-                                <div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>
-                            </div>
-                        `;
+                    let cardModifier = '';
+                    let titleColor = 'var(--gold-light)';
+                    if (isAdvisor) {
+                        cardModifier = 'is-advisor';
+                        titleColor = '#fef08a';
+                    } else if (isCore) {
+                        cardModifier = 'is-core-lead';
+                        titleColor = '#34d399';
+                    } else if (isVice) {
+                        cardModifier = 'is-vice-lead';
+                        titleColor = '#38bdf8';
                     }
-                    html += `<div class="member-grid">`;
-                    group.members.forEach(m => {
-                        const initials = getInitials(m.name);
-                        const badge = getRoleBadge(m.role, m.title);
-                        const fb = resolveFbLink(m);
-                        html += `
-                            <div class="member-card">
-                                <div class="mem-top">
-                                    <div class="mem-avatar">${initials}</div>
-                                    <div>
-                                        <div class="mem-name">${m.name}</div>
-                                        ${badge}
-                                    </div>
-                                </div>
-                                <div style="font-size:0.88rem;color:var(--gold-light);font-weight:600;margin-top:2px;">
-                                    ${m.title || 'Thành viên'}
-                                </div>
-                                ${m.notes ? `<div style="font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
-                                <div class="card-actions" style="margin-top:auto;padding-top:10px;">
-                                    ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
-                                    ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
+
+                    html += `
+                        <div class="member-card ${cardModifier}">
+                            <div class="mem-top">
+                                <div class="mem-avatar">${initials}</div>
+                                <div>
+                                    <div class="mem-name">${m.name}</div>
+                                    ${badge}
                                 </div>
                             </div>
-                        `;
-                    });
-                    html += `</div>`;
-                }
+                            <div style="font-size:0.88rem;color:${titleColor};font-weight:700;margin-top:2px;">
+                                ${m.title || (isAdvisor ? 'Cố vấn chuyên môn' : isCore ? 'Trưởng Ban' : isVice ? 'Phó Ban' : 'Thành viên')}
+                            </div>
+                            ${m.notes ? `<div style="font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
+                            <div class="card-actions" style="margin-top:auto;padding-top:10px;">
+                                ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
+                                ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
             });
 
             container.innerHTML = html;

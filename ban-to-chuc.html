@@ -478,6 +478,76 @@
             background: rgba(228, 184, 102, 0.25);
         }
 
+        /* LEAD GRID & CARDS (TRƯỞNG BAN & PHÓ BAN) */
+        .lead-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+        .lead-card {
+            border-radius: 16px;
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .lead-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3.5px;
+        }
+        .lead-card:hover {
+            transform: translateY(-4px);
+        }
+
+        /* CORE LEAD (TRƯỞNG BAN) */
+        .lead-card.core-lead {
+            background: linear-gradient(145deg, rgba(14, 34, 28, 0.95), rgba(7, 20, 18, 0.9));
+            border: 1.5px solid rgba(52, 211, 153, 0.45);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(52, 211, 153, 0.06);
+        }
+        .lead-card.core-lead::before {
+            background: linear-gradient(90deg, #059669, #34d399, #a7f3d0, #34d399, #059669);
+        }
+        .lead-card.core-lead:hover {
+            border-color: #34d399;
+            box-shadow: 0 16px 40px rgba(52, 211, 153, 0.22), inset 0 0 25px rgba(52, 211, 153, 0.1);
+        }
+        .avatar-circle.lead-avatar-core {
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.3), rgba(7, 20, 18, 0.95));
+            border: 2px solid #34d399;
+            color: #6ee7b7;
+            box-shadow: 0 0 16px rgba(52, 211, 153, 0.35);
+        }
+
+        /* VICE LEAD (PHÓ BAN) */
+        .lead-card.vice-lead {
+            background: linear-gradient(145deg, rgba(14, 28, 48, 0.95), rgba(7, 16, 32, 0.9));
+            border: 1.5px solid rgba(56, 189, 248, 0.45);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.06);
+        }
+        .lead-card.vice-lead::before {
+            background: linear-gradient(90deg, #0284c7, #38bdf8, #bae6fd, #38bdf8, #0284c7);
+        }
+        .lead-card.vice-lead:hover {
+            border-color: #38bdf8;
+            box-shadow: 0 16px 40px rgba(56, 189, 248, 0.22), inset 0 0 25px rgba(56, 189, 248, 0.1);
+        }
+        .avatar-circle.lead-avatar-vice {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(7, 16, 32, 0.95));
+            border: 2px solid #38bdf8;
+            color: #7dd3fc;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+        }
+
         /* MEMBER GRID */
         .member-grid {
             display: grid;
@@ -958,36 +1028,81 @@
                         <div class="section-line"></div>
                         <span class="section-badge">${totalInDept} Nhân sự (${group.leads.length} Lãnh đạo, ${group.members.length} Thành viên)</span>
                     </div>
-                    <div class="member-grid">
                 `;
 
-                // Render Leads first, then Members
-                const sortedDeptMembers = [...group.leads, ...group.members];
-                sortedDeptMembers.forEach(m => {
-                    const initials = getInitials(m.name);
-                    const badge = getRoleBadge(m.role, m.title);
-                    const fb = resolveFbLink(m);
-                    html += `
-                        <div class="member-card ${m.isLead ? 'is-lead' : ''}">
-                            <div class="mem-top">
-                                <div class="mem-avatar">${initials}</div>
-                                <div>
-                                    <div class="mem-name">${m.name}</div>
-                                    ${badge}
+                // 1. Render Trưởng Ban & Phó Ban (Phân cấp lãnh đạo nổi bật)
+                if (group.leads.length) {
+                    html += `<div class="lead-grid">`;
+                    group.leads.forEach(m => {
+                        const initials = getInitials(m.name);
+                        const badge = getRoleBadge(m.role, m.title);
+                        const fb = resolveFbLink(m);
+                        const isVice = /vice|pho ban|pho lead|pho/i.test(m.rawRole || '') || /vice|pho/i.test(m.role || '');
+                        const cardClass = isVice ? 'lead-card vice-lead' : 'lead-card core-lead';
+                        const avatarClass = isVice ? 'avatar-circle lead-avatar-vice' : 'avatar-circle lead-avatar-core';
+                        const titleColor = isVice ? '#38bdf8' : '#34d399';
+
+                        html += `
+                            <div class="${cardClass}">
+                                <div class="card-top">
+                                    <div class="${avatarClass}">${initials}</div>
+                                    <div class="exec-info">
+                                        <h3 style="color:#fff;font-size:1.18rem;">${m.name}</h3>
+                                        ${badge}
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="card-dept">🏢 ${deptName}</div>
+                                    <div style="margin-top:4px;color:${titleColor};font-weight:700;font-size:0.92rem;">${m.title || (isVice ? 'Phó Ban' : 'Trưởng Ban')}</div>
+                                    ${m.notes ? `<div style="margin-top:6px;font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
+                                </div>
+                                <div class="card-actions">
+                                    ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
+                                    ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
                                 </div>
                             </div>
-                            <div style="font-size:0.88rem;color:${m.isLead ? 'var(--success)' : 'var(--gold-light)'};font-weight:600;margin-top:2px;">
-                                ${m.title || (m.isLead ? 'Trưởng Ban' : 'Thành viên')}
+                        `;
+                    });
+                    html += `</div>`;
+                }
+
+                // 2. Render Thành Viên Ban
+                if (group.members.length) {
+                    if (group.leads.length) {
+                        html += `
+                            <div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);text-transform:uppercase;margin:18px 0 12px;display:flex;align-items:center;gap:10px;">
+                                <span>👥 Thành viên ban</span>
+                                <div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>
                             </div>
-                            ${m.notes ? `<div style="font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
-                            <div class="card-actions" style="margin-top:auto;padding-top:10px;">
-                                ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
-                                ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
+                        `;
+                    }
+                    html += `<div class="member-grid">`;
+                    group.members.forEach(m => {
+                        const initials = getInitials(m.name);
+                        const badge = getRoleBadge(m.role, m.title);
+                        const fb = resolveFbLink(m);
+                        html += `
+                            <div class="member-card">
+                                <div class="mem-top">
+                                    <div class="mem-avatar">${initials}</div>
+                                    <div>
+                                        <div class="mem-name">${m.name}</div>
+                                        ${badge}
+                                    </div>
+                                </div>
+                                <div style="font-size:0.88rem;color:var(--gold-light);font-weight:600;margin-top:2px;">
+                                    ${m.title || 'Thành viên'}
+                                </div>
+                                ${m.notes ? `<div style="font-size:0.8rem;color:var(--muted);">${m.notes}</div>` : ''}
+                                <div class="card-actions" style="margin-top:auto;padding-top:10px;">
+                                    ${fb ? `<a href="${fb}" target="_blank" rel="noopener" class="btn-link fb">🔗 Facebook</a>` : ''}
+                                    ${m.email ? `<a href="mailto:${m.email}" class="btn-link mail">✉️ Email</a>` : ''}
+                                </div>
                             </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
+                        `;
+                    });
+                    html += `</div>`;
+                }
             });
 
             container.innerHTML = html;

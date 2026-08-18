@@ -549,123 +549,62 @@
             </form>
         </div>
 
-        <!-- ============ FORM 3: THÀNH VIÊN & ĐĂNG NHẬP ============ -->
+        <!-- ============ FORM 3: THÀNH VIÊN & ĐĂNG NHẬP (GOOGLE ONLY) ============ -->
         <div class="form-card" id="form-member">
-            <!-- ĐĂNG NHẬP FORM -->
+            <!-- GOOGLE AUTH AREA -->
             <div id="loginArea">
-                <h2 style="color:var(--gold);margin-bottom:10px">🔐 Đăng Nhập Khu Vực Nội Bộ</h2>
-                <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:20px">Truy cập hồ sơ của bạn và quản lý công việc dự án.</p>
-                
-                <form onsubmit="event.preventDefault();submitLogin()">
-                    <label for="liEmail">Email</label>
-                    <input id="liEmail" type="email" required placeholder="email@gmail.com">
-                    
-                    <label for="liPass">Mật khẩu</label>
-                    <input id="liPass" type="password" required placeholder="••••••">
-                    
-                    <div class="form-msg" id="liMsg"></div>
-                    <button class="btn btn-gold" id="liSubmitBtn" style="width:100%;margin-top:20px" type="submit">Đăng nhập</button>
-                    
-                    <p style="margin-top:14px;font-size:0.82rem;text-align:center">
-                        <span class="toggle-link" onclick="forgotPassword()">Quên mật khẩu?</span>
-                        <span style="color:var(--text-muted);margin:0 8px">·</span>
-                        <span class="toggle-link" onclick="resendEmailVerification()">Gửi lại email xác thực</span>
+                <div style="text-align:center; padding: 10px 0 10px 0;">
+                    <div style="font-size: 2.8rem; margin-bottom: 12px; filter: drop-shadow(0 4px 12px rgba(228,184,102,0.3));">🍿</div>
+                    <h2 style="color:var(--gold);margin-bottom:10px;font-size:1.6rem">Cổng Thành Viên Ý Niệm Điện Ảnh</h2>
+                    <p style="color:var(--text-muted);font-size:0.92rem;line-height:1.6;max-width:480px;margin:0 auto 24px">
+                        Đăng ký & đăng nhập nhanh chóng chỉ với 1 chạm bằng tài khoản Google. Không cần tạo mật khẩu hay xác thực email thủ công.
                     </p>
-                </form>
 
-                <div style="display:flex; align-items:center; margin: 24px 0 16px 0;">
-                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
-                    <span style="padding: 0 12px; font-size: 0.8rem; color: var(--text-muted);">Hoặc</span>
-                    <hr style="flex:1; border:none; border-top: 1px solid rgba(255,255,255,0.1)">
+                    <div style="background: rgba(228,184,102,0.06); border: 1px solid rgba(228,184,102,0.2); border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: left;">
+                        <div style="font-size: 0.85rem; font-weight: 600; color: var(--gold); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Quyền lợi thành viên</div>
+                        <ul style="margin: 0; padding-left: 18px; color: var(--text-light); font-size: 0.88rem; line-height: 1.8;">
+                            <li>Bình chọn các tác phẩm & theo dõi bảng xếp hạng giải đấu.</li>
+                            <li>Nộp bài thi, đăng ký đội thi và nhận chứng nhận điện tử.</li>
+                            <li>Tham gia trao đổi cùng cộng đồng yêu điện ảnh và các sự kiện dự án.</li>
+                        </ul>
+                    </div>
+
+                    <button class="btn btn-gold" id="btnGoogleAuthMain" style="width:100%; display:flex; align-items:center; justify-content:center; gap:12px; font-size:1.05rem; font-weight:600; padding:15px 20px; box-shadow:0 4px 20px rgba(228,184,102,0.25); cursor:pointer" onclick="submitGoogleLogin()">
+                        <svg width="20" height="20" viewBox="0 0 18 18">
+                            <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.58-5.05-3.71H.92v2.32C2.4 15.96 5.48 18 9 18z"/>
+                            <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V4.98H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4.02l3.03-2.32z"/>
+                            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.89 11.43 0 9 0 5.48 0 2.4 2.04.92 4.98l3.03 2.32C4.66 5.16 6.65 3.58 9 3.58z"/>
+                        </svg>
+                        Tiếp tục với Google (Đăng ký / Đăng nhập)
+                    </button>
+
+                    <p style="margin-top:20px;font-size:0.8rem;text-align:center;color:var(--text-muted);line-height:1.5">
+                        Bằng việc tiếp tục, bạn đồng ý với <a href="/terms" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline">Điều khoản sử dụng</a> và <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline">Chính sách quyền riêng tư</a> của Ý Niệm Điện Ảnh.
+                    </p>
                 </div>
-
-                <button class="btn btn-line" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px" onclick="submitGoogleLogin()">
-                    <svg width="18" height="18" viewBox="0 0 18 18">
-                        <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
-                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.58-5.05-3.71H.92v2.32C2.4 15.96 5.48 18 9 18z"/>
-                        <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V4.98H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4.02l3.03-2.32z"/>
-                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.89 11.43 0 9 0 5.48 0 2.4 2.04.92 4.98l3.03 2.32C4.66 5.16 6.65 3.58 9 3.58z"/>
-                    </svg>
-                    Đăng nhập bằng Google
-                </button>
-
-                <p style="margin-top:20px;font-size:0.88rem;text-align:center;color:var(--text-muted)">
-                    Chưa có tài khoản? <span class="toggle-link" onclick="toggleAuthForm(false)">Đăng ký thành viên</span>
-                </p>
-            </div>
-
-            <!-- ĐĂNG KÝ FORM -->
-            <div id="registerArea" style="display:none">
-                <h2 style="color:var(--gold);margin-bottom:10px">🍿 Tạo Tài Khoản Thành Viên</h2>
-                <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:20px">Nhận tin tức mới nhất, tham gia bình chọn và tương tác với cộng đồng.</p>
-                
-                <form onsubmit="event.preventDefault();submitRegister()">
-                    <label for="rgName">Họ và tên *</label>
-                    <input id="rgName" required placeholder="Nguyễn Văn A">
-                    
-                    <label for="rgEmail">Email đăng ký *</label>
-                    <input id="rgEmail" type="email" required placeholder="email@gmail.com">
-                    
-                    <label for="rgPhone">Số điện thoại / Zalo *</label>
-                    <input id="rgPhone" type="tel" required placeholder="09xxxxxxxx">
-                    
-                    <label for="rgSchool">Trường / đơn vị học tập *</label>
-                    <input id="rgSchool" required placeholder="Tên trường học hoặc nơi công tác">
-                    
-                    <label for="rgClass">Lớp / khoa / năm học *</label>
-                    <input id="rgClass" required placeholder="Ví dụ: 11A1, Khoa Truyền thông, Năm 1">
-                    
-                    <label for="rgInterest">Vai trò quan tâm *</label>
-                    <select id="rgInterest" onchange="toggleInterestOther()" required>
-                        <option value="Khán giả (Bình chọn tác phẩm)">Khán giả (Bình chọn tác phẩm)</option>
-                        <option value="Thí sinh / Người làm phim (Đăng ký đội thi)">Thí sinh / Người làm phim (Đăng ký đội thi)</option>
-                        <option value="Ban tổ chức / Cộng tác viên dự án">Ban tổ chức / Cộng tác viên dự án</option>
-                        <option value="Khách mời / Người tham gia sự kiện (Workshop, Gala...)">Khách mời / Người tham gia sự kiện (Workshop, Gala...)</option>
-                        <option value="Làm phim - Độc lập (Fulltask)">Làm phim - Độc lập (Fulltask)</option>
-                        <option value="Khác (nhập bên dưới)">Khác (nhập bên dưới)</option>
-                    </select>
-                    <input id="rgInterestOther" placeholder="Nhập vai trò khác..." style="display:none;margin-top:8px">
-                    
-                    <label for="rgIntro">Giới thiệu ngắn (Không bắt buộc)</label>
-                    <textarea id="rgIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
-                    
-                    <label for="rgPass">Mật khẩu (Tối thiểu 6 ký tự) *</label>
-                    <input id="rgPass" type="password" required placeholder="••••••">
-                    
-                    <!-- Turnstile -->
-                    <div id="turnstile-register" style="margin-top:16px;display:flex;justify-content:center"></div>
-                    
-                    <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:var(--text-muted);margin-top:14px;cursor:pointer">
-                        <input id="agreeTerms" type="checkbox" required style="margin-top:3px;width:auto;min-width:auto;flex-shrink:0">
-                        <span>Tôi đồng ý với <a href="/terms" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Điều khoản sử dụng</a> và <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Chính sách quyền riêng tư</a>.</span>
-                    </label>
-
-                    <div class="form-msg" id="rgMsg"></div>
-                    <button class="btn btn-gold" id="rgSubmitBtn" style="width:100%;margin-top:20px" type="submit">Tạo tài khoản</button>
-                    
-                    <p style="margin-top:20px;font-size:0.88rem;text-align:center;color:var(--text-muted)">
-                        Đã có tài khoản? <span class="toggle-link" onclick="toggleAuthForm(true)">Đăng nhập ngay</span>
-                    </p>
-                </form>
             </div>
 
             <!-- GOOGLE ADDITIONAL INFO -->
             <div id="googleAdditionalArea" style="display:none">
-                <h2 style="color:var(--gold);margin-bottom:10px">Hoàn Tất Thông Tin Tài Khoản</h2>
-                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px">Google đã xác thực tài khoản của bạn. Bổ sung thông tin khi tiện; bạn cũng có thể làm sau.</p>
+                <div style="text-align:center; margin-bottom: 20px;">
+                    <div style="font-size: 2.4rem; margin-bottom: 8px;">✨</div>
+                    <h2 style="color:var(--gold);margin-bottom:8px">🍿 Hoàn Tất Thông Tin Thành Viên</h2>
+                    <p style="color:var(--text-muted);font-size:0.88rem;line-height:1.5">Tài khoản Google đã kết nối. Hãy bổ sung thông tin để thuận tiện nhận thông báo và quyền lợi nhé.</p>
+                </div>
                 
                 <form onsubmit="event.preventDefault();submitGoogleAdditional()">
                     <label for="ggName">Họ và tên *</label>
-                    <input id="ggName" required>
+                    <input id="ggName" required placeholder="Nguyễn Văn A">
                     
-                    <label for="ggEmail">Email</label>
-                    <input id="ggEmail" type="email" disabled style="opacity:0.6;cursor:not-allowed">
+                    <label for="ggEmail">Email đã liên kết</label>
+                    <input id="ggEmail" type="email" disabled style="opacity:0.7;cursor:not-allowed;background:rgba(255,255,255,0.05)">
                     
                     <label for="ggPhone">Số điện thoại / Zalo *</label>
                     <input id="ggPhone" type="tel" required placeholder="09xxxxxxxx">
                     
                     <label for="ggSchool">Trường / đơn vị học tập *</label>
-                    <input id="ggSchool" required placeholder="Tên trường học của bạn">
+                    <input id="ggSchool" required placeholder="Tên trường học hoặc nơi công tác">
                     
                     <label for="ggClass">Lớp / khoa / năm học *</label>
                     <input id="ggClass" required placeholder="Ví dụ: 11A1, Khoa Truyền thông, Năm 1">
@@ -675,16 +614,18 @@
                         <option value="Khán giả (Bình chọn tác phẩm)">Khán giả (Bình chọn tác phẩm)</option>
                         <option value="Thí sinh / Người làm phim (Đăng ký đội thi)">Thí sinh / Người làm phim (Đăng ký đội thi)</option>
                         <option value="Ban tổ chức / Cộng tác viên dự án">Ban tổ chức / Cộng tác viên dự án</option>
+                        <option value="Khách mời / Người tham gia sự kiện (Workshop, Gala...)">Khách mời / Người tham gia sự kiện (Workshop, Gala...)</option>
+                        <option value="Làm phim - Độc lập (Fulltask)">Làm phim - Độc lập (Fulltask)</option>
                         <option value="Khác (nhập bên dưới)">Khác (nhập bên dưới)</option>
                     </select>
                     <input id="ggInterestOther" placeholder="Nhập vai trò khác..." style="display:none;margin-top:8px">
 
                     <label for="ggIntro">Giới thiệu ngắn (Không bắt buộc)</label>
-                    <textarea id="ggIntro" placeholder="Giới thiệu bản thân..."></textarea>
+                    <textarea id="ggIntro" placeholder="Bạn thích điện ảnh ở điểm nào? Bạn muốn tham gia dự án như thế nào?"></textarea>
                     
                     <div class="form-msg" id="ggMsg"></div>
                     <button class="btn btn-gold" id="ggSubmitBtn" style="width:100%;margin-top:20px" type="submit">Hoàn tất đăng ký</button>
-                    <button class="btn btn-line" type="button" onclick="skipGoogleProfileCompletion()" style="width:100%;margin-top:10px">Làm sau</button>
+                    <button class="btn btn-line" type="button" onclick="skipGoogleProfileCompletion()" style="width:100%;margin-top:10px">Để sau & Vào Bảng điều khiển</button>
                 </form>
             </div>
         </div>
@@ -1116,45 +1057,54 @@
             }
         }
 
-        // UI state toggle between Login and Register
+        // UI state toggle for Google Auth
         function renderGoogleOnlyAuth() {
-            const area = document.getElementById('loginArea');
-            if (!area) return;
-            area.innerHTML = `
-                <h2 style="color:var(--gold);margin-bottom:10px">🔐 Đăng nhập bằng Google</h2>
-                <p style="color:var(--text-muted);font-size:.9rem;line-height:1.6;margin-bottom:22px">Dùng tài khoản Google để vào cộng đồng, tham gia hoạt động và quản lý hồ sơ. Không cần mật khẩu hoặc mã xác nhận email riêng.</p>
-                <button class="btn btn-gold" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="submitGoogleLogin()">🔐 Tiếp tục với Google</button>
-                <p style="color:var(--text-muted);font-size:.78rem;text-align:center;line-height:1.5;margin:16px 0 0">Lần đầu đăng nhập, bạn có thể bổ sung số điện thoại, trường học và thông tin quan tâm sau.</p>
-                <p style="margin-top:20px;font-size:0.88rem;text-align:center;color:var(--text-muted)">
-                    Chưa có tài khoản? <span class="toggle-link" onclick="toggleAuthForm(false)">Đăng ký thành viên</span>
-                </p>`;
-            document.getElementById('registerArea').style.display = 'none';
+            const loginArea = document.getElementById('loginArea');
+            const additionalArea = document.getElementById('googleAdditionalArea');
+            if (loginArea) loginArea.style.display = 'block';
+            if (additionalArea) additionalArea.style.display = 'none';
         }
 
         function toggleAuthForm(showLogin) {
-            document.getElementById('googleAdditionalArea').style.display = 'none';
-            if (showLogin) {
-                renderGoogleOnlyAuth();
-                document.getElementById('loginArea').style.display = 'block';
-                document.getElementById('registerArea').style.display = 'none';
-            } else {
-                document.getElementById('loginArea').style.display = 'none';
-                document.getElementById('registerArea').style.display = 'block';
-            }
+            renderGoogleOnlyAuth();
         }
 
         function showGoogleProfileCompletion(user, profile) {
             googleUserTemp = user;
-            document.getElementById('loginArea').style.display = 'none';
-            document.getElementById('registerArea').style.display = 'none';
-            document.getElementById('googleAdditionalArea').style.display = 'block';
-            document.getElementById('ggName').value = profile.name || user.displayName || '';
-            document.getElementById('ggEmail').value = user.email || '';
-            document.getElementById('ggPhone').value = profile.phone || '';
-            document.getElementById('ggSchool').value = profile.school || '';
-            document.getElementById('ggClass').value = profile.className || '';
-            document.getElementById('ggInterest').value = profile.interest || 'Khán giả (Bình chọn tác phẩm)';
-            document.getElementById('ggIntro').value = profile.intro || '';
+            const loginArea = document.getElementById('loginArea');
+            const additionalArea = document.getElementById('googleAdditionalArea');
+            if (loginArea) loginArea.style.display = 'none';
+            if (additionalArea) additionalArea.style.display = 'block';
+
+            const nameInput = document.getElementById('ggName');
+            const emailInput = document.getElementById('ggEmail');
+            const phoneInput = document.getElementById('ggPhone');
+            const schoolInput = document.getElementById('ggSchool');
+            const classInput = document.getElementById('ggClass');
+            const interestSelect = document.getElementById('ggInterest');
+            const introInput = document.getElementById('ggIntro');
+
+            if (nameInput) nameInput.value = (profile && profile.name) || (user && user.displayName) || '';
+            if (emailInput) emailInput.value = (user && user.email) || (profile && profile.email) || '';
+            if (phoneInput) phoneInput.value = (profile && profile.phone) || '';
+            if (schoolInput) schoolInput.value = (profile && profile.school) || '';
+            if (classInput) classInput.value = (profile && profile.className) || '';
+            if (interestSelect) {
+                const validOptions = Array.from(interestSelect.options).map(o => o.value);
+                if (profile && profile.interest && validOptions.includes(profile.interest)) {
+                    interestSelect.value = profile.interest;
+                } else if (profile && profile.interest) {
+                    interestSelect.value = 'Khác (nhập bên dưới)';
+                    const otherInput = document.getElementById('ggInterestOther');
+                    if (otherInput) {
+                        otherInput.style.display = 'block';
+                        otherInput.value = profile.interest;
+                    }
+                } else {
+                    interestSelect.value = 'Khán giả (Bình chọn tác phẩm)';
+                }
+            }
+            if (introInput) introInput.value = (profile && profile.intro) || '';
         }
 
         const deptDescriptions = {
@@ -1449,206 +1399,15 @@
                 return;
             }
 
-            if (isCoFounder && (!vision || vision.length < 30)) {
-                msgEl.textContent = "Tầm nhìn & đóng góp phải dài tối thiểu 30 ký tự!";
-                return;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Đang gửi đơn ứng tuyển...";
-
-            try {
-                // One deterministic document per account/application type makes
-                // double-clicks and multi-tab retries converge on one record.
-                const nextId = String(session.id) + '_' + type;
-                const newApp = {
-                    id: nextId,
-                    type: type,
-                    name: name,
-                    userId: session && session.id,
-                    email: session && session.email ? session.email : email,
-                    phone: phone,
-                    intro: intro,
-                    dept: dept,
-                    position: position,
-                    vision: vision,
-                    status: 'pending',
-                    date: new Date().toISOString().slice(0, 10)
-                };
-
-                await saveItem('applications', newApp);
-
-                msgEl.className = "form-msg ok";
-                msgEl.textContent = "✅ Đã gửi đơn thành công! Hội đồng sáng lập sẽ liên hệ lại với bạn sớm nhất qua Zalo/Email.";
-                
-                // Clear form inputs safely
-                if (phoneEl) phoneEl.value = '';
-                if (introEl) introEl.value = '';
-                if (visionEl) visionEl.value = '';
-
-                showToast("Gửi đơn tuyển đợt 2 thành công!", "success");
-
-                setTimeout(() => {
-                    msgEl.textContent = '';
-                    msgEl.className = 'form-msg';
-                }, 4000);
-            } catch (err) {
-                msgEl.className = "form-msg err";
-                msgEl.textContent = "Gặp lỗi: " + err.message;
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = isCoFounder ? (type === 'president' ? "Gửi đơn tuyển đợt 2 - President" : "Gửi đơn tuyển đợt 2 - Co-founder") : "Gửi đơn tuyển đợt 2 - BTC";
-            }
-        }
-
-        // ================= FLOW: AUTHENTICATION =================
+            if (isCoFounder && (!visi        // ================= FLOW: AUTHENTICATION (GOOGLE ONLY) =================
         async function submitLogin() {
-            const email = document.getElementById('liEmail').value.trim().toLowerCase();
-            const pass = document.getElementById('liPass').value;
-            const msg = document.getElementById('liMsg');
-            const submitBtn = document.getElementById('liSubmitBtn');
-            
-            msg.className = 'form-msg err'; msg.textContent = '';
-            
-            if (!email || !pass) {
-                msg.textContent = 'Vui lòng nhập email và mật khẩu!';
-                return;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Đang đăng nhập...";
-
-            try {
-                if (authInstance && useFirebase) {
-                    const cred = await authInstance.signInWithEmailAndPassword(email, pass);
-                    
-                    if (!cred.user.emailVerified && email !== PROJECT_ADMIN_EMAIL) {
-                        // Re-send verification link
-                        try {
-                            const idToken = await cred.user.getIdToken();
-                            const userDoc2 = await dbInstance.collection('users').doc(cred.user.uid).get().catch(() => null);
-                            const loginName = userDoc2?.data()?.name || email.split('@')[0];
-                            
-                            await fetch('/api/email/send-verification', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idToken, email, userName: loginName })
-                            });
-                        } catch (e) {
-                            console.warn('Verification link skip:', e.message);
-                        }
-                        
-                        await authInstance.signOut();
-                        showToast('📧 EMAIL CHƯA XÁC THỰC! Vui lòng kiểm tra hộp thư đến/spam.', 'error');
-                        msg.textContent = 'Tài khoản chưa xác thực. Một email xác nhận mới đã được gửi vào Gmail của bạn!';
-                        return;
-                    }
-
-                    showToast("Đăng nhập thành công!", "success");
-                    // Firestore handles redirect in onAuthStateChanged
-                } else {
-                    msg.textContent = 'Không thể đăng nhập an toàn khi Firebase không khả dụng. Vui lòng mở website qua HTTPS và thử lại.';
-                    return;
-                }
-            } catch (err) {
-                msg.textContent = err.message || 'Lỗi đăng nhập.';
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Đăng nhập";
-            }
+            // Forward legacy login requests to Google auth
+            await submitGoogleLogin();
         }
 
         async function submitRegister() {
-            const name = document.getElementById('rgName').value.trim();
-            const email = document.getElementById('rgEmail').value.trim().toLowerCase();
-            const phone = document.getElementById('rgPhone').value.trim();
-            const school = document.getElementById('rgSchool').value.trim();
-            const className = document.getElementById('rgClass').value.trim();
-            const interestSelect = document.getElementById('rgInterest').value;
-            const interestOther = document.getElementById('rgInterestOther').value.trim();
-            const interest = interestSelect === 'Khác (nhập bên dưới)' ? interestOther : interestSelect;
-            const intro = document.getElementById('rgIntro').value.trim();
-            const pass = document.getElementById('rgPass').value;
-            
-            const msg = document.getElementById('rgMsg');
-            const submitBtn = document.getElementById('rgSubmitBtn');
-            
-            msg.className = 'form-msg err'; msg.textContent = '';
-            
-            if (!name || !email || !phone || !school || !className || !pass) {
-                msg.textContent = 'Vui lòng điền đầy đủ các trường thông tin bắt buộc!';
-                return;
-            }
-            if (pass.length < 6) {
-                msg.textContent = 'Mật khẩu phải dài từ 6 ký tự trở lên!';
-                return;
-            }
-
-            // Verify turnstile if using firebase
-            if (useFirebase) {
-                const tr = getTurnstileResponse();
-                if (!tr) {
-                    msg.textContent = 'Vui lòng hoàn tất mã kiểm tra Turnstile để chống spam!';
-                    return;
-                }
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Đang xử lý...";
-
-            try {
-                if (authInstance && useFirebase) {
-                    // 1. Create account on Firebase auth
-                    const cred = await authInstance.createUserWithEmailAndPassword(email, pass);
-                    
-                    // 2. Save user profile metadata in Firestore
-                    const newUser = {
-                        id: cred.user.uid,
-                        name: name,
-                        email: email,
-                        phone: phone,
-                        school: school,
-                        className: className,
-                        interest: interest,
-                        intro: intro,
-                        role: 'member',
-                        createdAt: new Date().toISOString().slice(0, 10)
-                    };
-                    
-                    await dbInstance.collection('users').doc(cred.user.uid).set(newUser);
-                    
-                    // 3. Send verification email via backend
-                    try {
-                        const idToken = await cred.user.getIdToken();
-                        await fetch('/api/email/send-verification', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ idToken, email, userName: name })
-                        });
-                    } catch (e) {
-                        console.warn("Send verification mail failed:", e);
-                    }
-
-                    await authInstance.signOut();
-                    
-                    msg.className = 'form-msg ok';
-                    msg.textContent = '✅ Đăng ký thành công! Hãy mở hộp thư Gmail của ' + email + ' và click vào link xác nhận để kích hoạt tài khoản trước khi đăng nhập nhé.';
-                    showToast("Đăng ký thành công! Vui lòng check Gmail của bạn.", "success");
-                    
-                    setTimeout(() => {
-                        toggleAuthForm(true);
-                        msg.textContent = '';
-                    }, 8000);
-                } else {
-                    msg.textContent = 'Không thể tạo tài khoản an toàn khi Firebase không khả dụng. Vui lòng mở website qua HTTPS và thử lại.';
-                    return;
-                }
-            } catch (err) {
-                msg.textContent = err.message || 'Có lỗi xảy ra khi tạo tài khoản.';
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Tạo tài khoản";
-            }
+            // Forward legacy register requests to Google auth
+            await submitGoogleLogin();
         }
 
         async function submitGoogleLogin() {
@@ -1658,12 +1417,16 @@
             }
             
             const provider = new firebase.auth.GoogleAuthProvider();
+            const btn = document.getElementById('btnGoogleAuthMain');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite">🔄</span> Đang kết nối Google...`;
+            }
+
             try {
                 const cred = await authInstance.signInWithPopup(provider);
                 const isNewUser = cred.additionalUserInfo?.isNewUser;
-                // KHÔNG lowercase email: rules yêu cầu khớp chính xác với
-                // request.auth.token.email (claim từ ID token), lowercase làm
-                // lệch case → Firestore báo "Missing or insufficient permissions".
+                // KHÔNG lowercase email: Firestore rules yêu cầu khớp chính xác với request.auth.token.email
                 const email = cred.user.email;
                 googleUserTemp = cred.user;
                 
@@ -1671,7 +1434,7 @@
                 const userDoc = await dbInstance.collection('users').doc(cred.user.uid).get();
                 
                 if (isNewUser || !userDoc.exists) {
-                    // Google đã xác thực email; chỉ tạo hồ sơ tối thiểu, phần còn lại bổ sung sau.
+                    // Tạo hồ sơ thành viên mặc định
                     const userProfile = {
                         id: cred.user.uid,
                         name: cred.user.displayName || 'Thành viên mới',
@@ -1679,7 +1442,7 @@
                         phone: '',
                         school: '',
                         className: '',
-                        interest: '',
+                        interest: 'Khán giả (Bình chọn tác phẩm)',
                         intro: '',
                         role: 'member',
                         createdAt: new Date().toISOString().slice(0, 10),
@@ -1688,20 +1451,49 @@
                     };
                     await dbInstance.collection('users').doc(cred.user.uid).set(userProfile);
                     showGoogleProfileCompletion(cred.user, userProfile);
-                    showToast("Đã tạo tài khoản bằng Google!", "success");
+                    showToast("🎉 Đăng ký bằng tài khoản Google thành công!", "success");
                 } else {
                     const profile = userDoc.data() || {};
-                    if (!profile.phone || !profile.school || !profile.className) {
+                    if (!profile.profileCompleted && (!profile.phone || !profile.school || !profile.className)) {
                         showGoogleProfileCompletion(cred.user, profile);
+                        showToast("Vui lòng hoàn tất một vài thông tin hồ sơ nhé!", "info");
                     } else {
-                        showToast("Đăng nhập thành công!", "success");
+                        showToast("✅ Đăng nhập thành công!", "success");
+                        const params = new URLSearchParams(window.location.search);
+                        const redirectUrl = params.get('redirect');
+                        if (redirectUrl) {
+                            window.location.href = redirectUrl;
+                        } else if (currentTabId === 'organizer' || currentTabId === 'president' || currentTabId === 'cofounder') {
+                            renderRecruitmentForms();
+                        } else {
+                            setTimeout(() => {
+                                window.location.href = '/dashboard';
+                            }, 800);
+                        }
                     }
                 }
             } catch (e) {
-                // Phân biệt lỗi để dễ truy vết: auth vs firestore
                 const code = e && e.code ? e.code : '';
                 console.error("Google login error:", code, e);
-                showToast("Lỗi đăng nhập Google: " + e.message, "error");
+                if (code === 'auth/popup-closed-by-user') {
+                    showToast("Bạn đã đóng cửa sổ đăng nhập Google.", "info");
+                } else if (code === 'auth/cancelled-popup-request') {
+                    // Request was replaced or cancelled
+                } else {
+                    showToast("Lỗi kết nối Google: " + (e.message || code), "error");
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 18 18">
+                            <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.58-5.05-3.71H.92v2.32C2.4 15.96 5.48 18 9 18z"/>
+                            <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V4.98H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4.02l3.03-2.32z"/>
+                            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.89 11.43 0 9 0 5.48 0 2.4 2.04.92 4.98l3.03 2.32C4.66 5.16 6.65 3.58 9 3.58z"/>
+                        </svg>
+                        Tiếp tục với Google (Đăng ký / Đăng nhập)`;
+                }
             }
         }
 
@@ -1714,7 +1506,7 @@
             const className = document.getElementById('ggClass').value.trim();
             const interestSelect = document.getElementById('ggInterest').value;
             const interestOther = document.getElementById('ggInterestOther').value.trim();
-            const interest = interestSelect === 'Khác (nhập bên dưới)' ? interestOther : interestSelect;
+            const interest = interestSelect === 'Khác (nhập bên dưới)' ? (interestOther || 'Khác') : interestSelect;
             const intro = document.getElementById('ggIntro').value.trim();
             
             const msg = document.getElementById('ggMsg');
@@ -1723,34 +1515,94 @@
             msg.className = 'form-msg err'; msg.textContent = '';
             
             if (!name || !phone || !school || !className) {
-                msg.textContent = 'Vui lòng điền đầy đủ các thông tin bắt buộc!';
+                msg.textContent = 'Vui lòng điền đầy đủ các thông tin bắt buộc (*)!';
+                return;
+            }
+
+            const phoneRegex = /^0[0-9]{9}$/;
+            if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
+                msg.textContent = 'Số điện thoại / Zalo phải gồm đúng 10 chữ số (VD: 09xxxxxxxx)!';
                 return;
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = "Đang lưu...";
+            submitBtn.textContent = "Đang lưu hồ sơ...";
 
             try {
                 const userProfile = {
                     name: name,
-                    email: googleUserTemp.email.toLowerCase(),
+                    email: googleUserTemp.email,
                     phone: phone,
                     school: school,
                     className: className,
                     interest: interest,
                     intro: intro,
-                    profileCompleted: true
+                    profileCompleted: true,
+                    updatedAt: new Date().toISOString()
                 };
 
                 // Save in Firestore
                 await dbInstance.collection('users').doc(googleUserTemp.uid).set(userProfile, { merge: true });
                 
-                showToast("Cập nhật thông tin tài khoản thành công!", "success");
+                showToast("✨ Cập nhật thông tin thành viên thành công!", "success");
                 
-                // Session will sync and onAuthStateChanged redirects
-                window.location.href = '/dashboard';
+                const params = new URLSearchParams(window.location.search);
+                const redirectUrl = params.get('redirect');
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                } else if (currentTabId === 'organizer' || currentTabId === 'president' || currentTabId === 'cofounder') {
+                    renderRecruitmentForms();
+                    document.getElementById('googleAdditionalArea').style.display = 'none';
+                    document.getElementById('loginArea').style.display = 'block';
+                } else {
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 800);
+                }
             } catch (err) {
                 msg.textContent = err.message || 'Lỗi lưu thông tin.';
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Hoàn tất đăng ký";
+            }
+        }
+
+        function skipGoogleProfileCompletion() {
+            const params = new URLSearchParams(window.location.search);
+            const redirectUrl = params.get('redirect');
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            } else {
+                window.location.href = '/dashboard';
+            }
+        }
+
+        async function forgotPassword() {
+            showToast("Hệ thống sử dụng đăng nhập an toàn bằng Google. Vui lòng bấm 'Tiếp tục với Google'.", "info");
+        }
+
+        async function resendEmailVerification() {
+            showToast("Tài khoản Google đã được xác thực tự động.", "info");
+        }
+
+        // ================= PAGE INITIALIZATION =================
+        window.addEventListener('DOMContentLoaded', async () => {
+            initStars();
+            renderGoogleOnlyAuth();
+            await initFirebaseAndData();
+            
+            // Handle URL action parameters if passed
+            const params = new URLSearchParams(window.location.search);
+            const tabAction = params.get('tab') || params.get('action');
+            if (tabAction === 'cofounder' || tabAction === 'president') {
+                selectTab(tabAction);
+            } else if (tabAction === 'organizer') {
+                selectTab('organizer');
+            } else {
+                // Default: member portal (register / login via Google)
+                selectTab('member');
+                renderGoogleOnlyAuth();
+            }
+        });�i lưu thông tin.';
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Hoàn tất đăng ký";
             }

@@ -4469,8 +4469,10 @@
             document.getElementById('successPopup').classList.remove('open');
         }
         function toggleAuth(login) {
-            document.getElementById('loginForm').style.display = login ? 'block' : 'none';
-            document.getElementById('registerForm').style.display = login ? 'none' : 'block';
+            const lf = document.getElementById('loginForm');
+            if (lf) lf.style.display = login ? 'block' : 'none';
+            const rf = document.getElementById('registerForm');
+            if (rf) rf.style.display = login ? 'none' : 'block';
             const ggForm = document.getElementById('googleAdditionalForm');
             if (ggForm) ggForm.style.display = 'none';
         }

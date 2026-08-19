@@ -536,7 +536,7 @@
                 
                 <label for="orgPosition">Vị trí ứng tuyển *</label>
                 <select id="orgPosition" onchange="updatePositionAvailability()" required style="margin-bottom:18px">
-                    <option value="member" id="opt-position-member">Thành viên (Member)</option>
+                    <option value="member" id="opt-position-member">Thành viên</option>
                     <option value="vice_lead" id="opt-position-vice_lead">Phó ban</option>
                     <option value="core" id="opt-position-core" disabled style="color:rgba(255,255,255,0.4)">Core Member (Tạm đóng nhận đơn)</option>
                 </select>
@@ -1399,14 +1399,61 @@
                 return;
             }
 
-            if (isCoFounder && (!visi        // ================= FLOW: AUTHENTICATION (GOOGLE ONLY) =================
+            if (isCoFounder && (!vision || vision.length < 30)) {
+                msgEl.textContent = "Tầm nhìn và đóng góp phải dài tối thiểu 30 ký tự!";
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Đang gửi đơn ứng tuyển...";
+
+            try {
+                const nextId = String(session.id) + '_' + type;
+                const newApp = {
+                    id: nextId,
+                    type: type,
+                    name: name,
+                    userId: session && session.id,
+                    email: session && session.email ? session.email : email,
+                    phone: phone,
+                    intro: intro,
+                    dept: dept,
+                    position: position,
+                    vision: vision,
+                    status: 'pending',
+                    date: new Date().toISOString().slice(0, 10)
+                };
+
+                await saveItem('applications', newApp);
+
+                msgEl.className = "form-msg ok";
+                msgEl.textContent = "✅ Đã gửi đơn thành công! Hội đồng sáng lập sẽ liên hệ lại với bạn sớm nhất qua Zalo/Email.";
+                
+                if (phoneEl) phoneEl.value = '';
+                if (introEl) introEl.value = '';
+                if (visionEl) visionEl.value = '';
+
+                showToast("Gửi đơn tuyển đợt 2 thành công!", "success");
+
+                setTimeout(() => {
+                    msgEl.textContent = '';
+                    msgEl.className = 'form-msg';
+                }, 4000);
+            } catch (err) {
+                msgEl.className = "form-msg err";
+                msgEl.textContent = "Gặp lỗi: " + err.message;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = isCoFounder ? (type === 'president' ? "Gửi đơn tuyển đợt 2 - President" : "Gửi đơn tuyển đợt 2 - Co-founder") : "Gửi đơn tuyển đợt 2 - BTC";
+            }
+        }
+
+        // ================= FLOW: AUTHENTICATION (GOOGLE ONLY) =================
         async function submitLogin() {
-            // Forward legacy login requests to Google auth
             await submitGoogleLogin();
         }
 
         async function submitRegister() {
-            // Forward legacy register requests to Google auth
             await submitGoogleLogin();
         }
 
@@ -1601,69 +1648,6 @@
                 // Default: member portal (register / login via Google)
                 selectTab('member');
                 renderGoogleOnlyAuth();
-            }
-        });�i lưu thông tin.';
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Hoàn tất đăng ký";
-            }
-        }
-
-        function skipGoogleProfileCompletion() {
-            window.location.href = '/dashboard';
-        }
-
-        async function forgotPassword() {
-            const email = document.getElementById('liEmail').value.trim();
-            if (!email) {
-                showToast("Vui lòng nhập Email của bạn vào ô Email đăng nhập trước khi bấm Quên mật khẩu!", "error");
-                return;
-            }
-            
-            if (useFirebase && authInstance) {
-                try {
-                    await authInstance.sendPasswordResetEmail(email);
-                    showToast("📧 Đã gửi liên kết đặt lại mật khẩu thành công! Hãy kiểm tra hòm thư Gmail của bạn.", "success");
-                } catch(e) {
-                    showToast("Gặp lỗi: " + e.message, "error");
-                }
-            } else {
-                showToast("Tính năng này không hỗ trợ ở chế độ offline.", "error");
-            }
-        }
-
-        async function resendEmailVerification() {
-            const email = document.getElementById('liEmail').value.trim();
-            if (!email) {
-                showToast("Vui lòng nhập Email của bạn trước!", "error");
-                return;
-            }
-            if (useFirebase && authInstance) {
-                showToast("Vui lòng thử đăng nhập lại để hệ thống tự động kiểm tra và gửi email xác nhận mới nhất.", "info");
-            } else {
-                showToast("Tính năng này không hỗ trợ ở chế độ offline.", "error");
-            }
-        }
-
-        // ================= PAGE INITIALIZATION =================
-        window.addEventListener('DOMContentLoaded', async () => {
-            initStars();
-            renderGoogleOnlyAuth();
-            await initFirebaseAndData();
-            
-            // Handle URL action parameters if passed
-            const params = new URLSearchParams(window.location.search);
-            const tabAction = params.get('tab') || params.get('action');
-                        if (tabAction === 'cofounder' || tabAction === 'president') {
-                selectTab(tabAction);
-            } else if (tabAction === 'organizer') {
-                selectTab('organizer');
-            } else if (tabAction === 'register') {
-                selectTab('member');
-                toggleAuthForm(false);
-            } else {
-                // Default: member / login tab
-                selectTab('member');
-                toggleAuthForm(true);
             }
         });
     </script>
